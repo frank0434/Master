@@ -23,8 +23,23 @@ Jones, C. A. and Kiniry, J. R. 1986. CERES-Maize: a simulation model of maize gr
 ## To clarify
 
 **the development stage of the crop**
+trifoliate??
+why post-grazing cuts?
 
+1. no relationship between days to 50% seedling emergence or rate of emergence and soil tmep. this indicates that the conditions were not non-limiting. other variables to consider 
 
 ## Equations
 
 PSMD = PSMDi-1 + EPi – rainfalli
+
+## Yield difference driver
+
+1. Moot, D. J., Brown, H. E., Pollock, K. and Mills, A. 2008. Yield and water use of
+temperate pastures in summer dry environments. Proceedings of the New
+Zealand Grassland Association, 70, 51-57.
+
+
+
+# apsim understanding 
+
+https://www.sciencedirect.com/science/article/abs/pii/S1161030118300406?via%3Dihub
