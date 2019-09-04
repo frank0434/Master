@@ -1,0 +1,41 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+#20190904
+
+_Note_
+
+1. temp was not the only factro affecting DM production rate. section 4.3.2.5
+
+2. Seedling lucerne did not display constant DM partitioning below ground which suggests
+a single Proot value was inappropriate for seedling growth
+
+3. a desired root biomass is 4 to 5 t DM/ha
+
+_Questions_
+
+1. what are the rules to decide the regrowth cycle?
+
+2. section 4.3.2.5. growth rate differed at the same mean air temperature dependingon the direction of temperature change? -- is it ture temperature effect of photoperiod? 
+
+
+3. Pp effect on DM partitioning to the root were not consistent in two sites?  -
+**Seedling lucerne grown at Ashley Dene did not show the same seasonal variation, which suggests crop ontogeny when under water stress overrides the environmental signals which regulate partitioning. The Proot of seedling crops was maintained at 0.53 for all sowing dates (Figure 4.10).** -- is this ture?
+
+4. self-thinning - what is the driver? resources?
+
+_To read_
+
+self-thinning 
+
+Moot, D. J., Pollock, K. M. and Lewis, B. 2012. Plant population, yield and water use of
+lucerne sown in autumn at four sowing rates. Proceedings of the New Zealand
+Grassland Association, 74, 97-102.
+
+hydrothermal time 
+
+Watt, M. S., Bloomberg, M. and Finch-Savage, W. E. 2011. Development of a
+hydrothermal time model that accurately characterises how thermoinhibition
+regulates seed germination. Plant, Cell and Environment, 34, 870-876.
