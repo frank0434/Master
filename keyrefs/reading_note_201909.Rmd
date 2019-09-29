@@ -93,3 +93,17 @@ the critical limiting deficit method is site and species specific. This method u
 as a measure of water stress and relates it to yield to define a critical level where yield is
 decreased (Penman, 1971). Furthermore, it offers no explanation of the mechanisms
 responsible for the yield decrease
+
+
+# 20190929
+
+A Comparison Between **Major Artificial Intelligence Models** for Crop Yield Prediction: Case Study of the Midwestern United States, 2006–2015
+
+_Note_ explain the major AL models in R and py. could be a great ref
+
+**thoughts about the objectives**
+
+1. working water stress model 
+2. comparison machine learning models 
+3. apsim compares to machine learning models 
+4. causal interferene??
