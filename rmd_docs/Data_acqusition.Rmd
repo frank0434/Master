@@ -1,0 +1,162 @@
+---
+title: "Data_acquisition"
+author: "jian (AKA Frank) liu"
+date: "04/10/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE,warning=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+source("../R/packages.R")
+source("../R/functions.R")
+```
+
+
+## Import data from apsimx
+
+* All phenotype data are stored in `Excel` files on [the apsimx github account](https://github.com/APSIMInitiative/ApsimX/tree/master/Prototypes/Lucerne).
+
+* All weather files are in the `.met` format and also available on github.
+
+* Soil data and N content of crop component data are mixed in the `Excel` files, which may require sub-setting. 
+
+* A copy of Richard's data (plant, soil moisture and weather) are in the local hard drive. 
+
+**Plan**
+
+1. clone the repo to local 
+   _path:_  "C:/Data/latest_apsimx/ApsimX/Prototypes/Lucerne"
+2. read necessary Excel files
+3. tidy up 
+4. join up
+5. store in SQLite
+
+
+### Browser the data folder
+
+```{r browser the data folder}
+path_apX = "C:/Data/latest_apsimx/ApsimX/Prototypes/Lucerne"
+xlsxs = list.files(path_apX, pattern = "^\\w.+\\.xlsx")
+xlsxs
+```
+
+_Note_
+
+Need to explore what data inside these `Excel` files
+
+
+```{r try out new pkg and exam file 1}
+exam_xlsxs(path_apX, xlsxs[1])
+```
+
+File `r file.path(path_apX, xlsxs[1])` has the expts done in Lincoln. 
+
+
+```{r exam file 2}
+exam_xlsxs(path_apX, xlsxs[2])
+```
+
+File `r file.path(path_apX, xlsxs[2])` is from **Argentina**. Seems only the data from `Elliot` has water relative information with total number of obs at 26. 
+
+```{r exam file 3}
+exam_xlsxs(path_apX, xlsxs[3])
+
+```
+
+File `r file.path(path_apX, xlsxs[3])` is from **AshleyDene**. Must be the Richard data. 
+
+```{r exam file 4}
+exam_xlsxs(path_apX, xlsxs[4])
+
+```
+
+File `r file.path(path_apX, xlsxs[4])` probably is not immediately useful. 
+
+
+```{r exam file 5}
+exam_xlsxs(path_apX, xlsxs[5])
+
+```
+
+File `r file.path(path_apX, xlsxs[5])` could be a validation set???
+
+
+```{r exam file 6}
+# exam_xlsxs(path_apX, xlsxs[6])
+
+```
+
+File `r file.path(path_apX, xlsxs[6])` has data from lincoln, ashleydene and other places over a few years period. need more metadata if want to use this one for any purpose. 
+
+
+```{r exam file 7}
+exam_xlsxs(path_apX, xlsxs[7])
+
+```
+
+File `r file.path(path_apX, xlsxs[7])` seems a duplicated version of last file. Is `Total_SW` for total soil water?? 
+
+
+
+```{r exam file 8}
+exam_xlsxs(path_apX, xlsxs[8])
+
+```
+
+File `r file.path(path_apX, xlsxs[8])` is not immediately useful. 
+
+
+
+File `r file.path(path_apX, xlsxs[9]) ` & `r file.path(path_apX, xlsxs[10])` are duplicated?? need to confirm with Xiumei. 
+
+```{r exam file 11}
+exam_xlsxs(path_apX, xlsxs[11])
+
+```
+
+File `r file.path(path_apX, xlsxs[11])` is not immediately useful. 
+
+```{r exam file 12}
+exam_xlsxs(path_apX, xlsxs[12])
+
+```
+
+File `r file.path(path_apX, xlsxs[12])` is not immediately useful. 
+
+
+_Note_
+
+1. Need metadata for variable names 
+2. Trial design and data collection method
+3. Soil information for water expts
+4. Extract all water relevant data and integrate together? 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
