@@ -43,3 +43,19 @@ Zealand Grassland Association, 70, 51-57.
 # apsim understanding 
 
 https://www.sciencedirect.com/science/article/abs/pii/S1161030118300406?via%3Dihub
+
+
+# 20191004
+
+First attempt to integrate the data sets together from github. 
+There are 12 `Excel` files. 
+Some of them are duplicated. 
+Some of them have insufficient information about the variables and expt locations.
+All lack of metadata. 
+
+**To do**
+
+1. Ask if xiumei knows the story behind the data sets.
+2. Use only Richard data as a starting point. 
+
+
