@@ -132,6 +132,48 @@ _Note_
 4. Extract all water relevant data and integrate together? 
 
 
+```{r}
+l <- lapply(xlsxs[-c(6,9,10)], function(x){
+  exam_xlsxs(path_apX, x)
+  
+})
+names(l) <- xlsxs[-c(6,9,10)]
+potentials <- rbindlist(l, idcol = "id")
+potentials <- potentials[, water := stringr::str_extract(string = tolower(value), "water|irr|dry|ashley")][!is.na(water)]
+
+```
+total number of obs is `r sum(potentials$cnt)`
+
+## Richard data set
+
+```{r richard}
+path_richard = "C:/Data/lucern_workshop/Data/APSIM_Sim.xlsx"
+# file_richard = read_excel(path_richard,
+#                           skip = 9, 
+#                           col_types = c("text","text","date","text","text",
+#                                         rep("numeric", 117)))
+# inspect_cat(file_richard)
+use_python("C:/Data/anaconda/python.exe")
+
+```
+
+what **S AND E** MEANS? SOWING AND EMERGE?
+Alpha|	Growth Stage|		No.
+ ---|---|---
+S|	Sowing	|	1
+E	|Emergence	|	3
+J	|Juvenile	|	4
+Fi|	Visible Bud	|	5
+Fl | Flower Open	|	6
+
+_Note_
+Richard excel file has mix variable types. `read_excel` has trouble to deal with it. try python's pandas
+
+```{python}
+import pandas as pd
+print(path_richard)
+
+```
 
 
 
