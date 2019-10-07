@@ -35,7 +35,7 @@ source("../R/functions.R")
 ### Browser the data folder
 
 ```{r browser the data folder}
-path_apX = "C:/Data/latest_apsimx/ApsimX/Prototypes/Lucerne"
+path_apX = "../Data/Lucerne/"
 xlsxs = list.files(path_apX, pattern = "^\\w.+\\.xlsx")
 xlsxs
 ```
@@ -147,14 +147,19 @@ total number of obs is `r sum(potentials$cnt)`
 ## Richard data set
 
 ```{r richard}
-path_richard = "C:/Data/lucern_workshop/Data/APSIM_Sim.xlsx"
+path_richard = "../Data/APSIM_Sim_allobs.txt"
 # file_richard = read_excel(path_richard,
 #                           skip = 9, 
 #                           col_types = c("text","text","date","text","text",
 #                                         rep("numeric", 117)))
 # inspect_cat(file_richard)
-use_python("C:/Data/anaconda/python.exe")
+dt = fread(path_richard, skip = 9, na.strings = c("","NA"), select = 1:118)
+dt = dt[-nrow(dt), ]#excluded the * 
+dt = dt[, Date := dmy(Date)]
 
+
+dt_SD_lookup = fread(path_richard, skip = 9, na.strings = c("","NA"), select = 120:122)
+dt_SD_lookup = dt_SD_lookup[!is.na(AD)]
 ```
 
 what **S AND E** MEANS? SOWING AND EMERGE?
@@ -166,16 +171,41 @@ J	|Juvenile	|	4
 Fi|	Visible Bud	|	5
 Fl | Flower Open	|	6
 
+
 _Note_
 Richard excel file has mix variable types. `read_excel` has trouble to deal with it. try python's pandas
+_Solution_ manually save it to `.txt`, `fread` can handle the type of variables 
 
-```{python}
-import pandas as pd
-print(path_richard)
+
+### inspect the data
+
+```{r main table}
+colnames(dt)
 
 ```
 
+_couldn't use `inspect_cat` because of duplicated colnames?_
+There are two `Plant No.` variables.
+One is the harvest area plant number and the other one is the plant number per $m^2$
 
+there are multiply tables in one sheet. 
+need to separate into different tables 
+
+look at the factor columns only 
+
+```{r main table col}
+sapply(dt[,1:11], unique)
+```
+
+
+_Note_ 
+1. Need to figure out what `ES` and `*` stands for.
+2. same for the `Site` col.
+3. same for the `Date` col, and the `Date` col need to be converted.
+4. all the rest of cols have this `*`.
+
+
+**The `*`** means the end of the main table. 
 
 
 

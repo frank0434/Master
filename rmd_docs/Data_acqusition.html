@@ -385,9 +385,9 @@ $(document).ready(function () {
 <div id="import-data-from-apsimx" class="section level2">
 <h2>Import data from apsimx</h2>
 <ul>
-<li><p>All pheontype data are stored in <code>Excel</code> files on <a href="https://github.com/APSIMInitiative/ApsimX/tree/master/Prototypes/Lucerne">the apsimx github account</a>.</p></li>
+<li><p>All phenotype data are stored in <code>Excel</code> files on <a href="https://github.com/APSIMInitiative/ApsimX/tree/master/Prototypes/Lucerne">the apsimx github account</a>.</p></li>
 <li><p>All weather files are in the <code>.met</code> format and also available on github.</p></li>
-<li><p>Soil data and N content of crop component data are mixed in the <code>Excel</code> files, which may require subsetting.</p></li>
+<li><p>Soil data and N content of crop component data are mixed in the <code>Excel</code> files, which may require sub-setting.</p></li>
 <li><p>A copy of Richard’s data (plant, soil moisture and weather) are in the local hard drive.</p></li>
 </ul>
 <p><strong>Plan</strong></p>
@@ -400,16 +400,12 @@ $(document).ready(function () {
 </ol>
 <div id="browser-the-data-folder" class="section level3">
 <h3>Browser the data folder</h3>
-<pre class="r"><code>path_apX = &quot;C:/Data/latest_apsimx/ApsimX/Prototypes/Lucerne&quot;
-xlsxs = list.files(path_apX, pattern = &quot;^\\w.+\\.xlsx&quot;)
-xlsxs</code></pre>
 <pre><code>##  [1] &quot;AllObs.xlsx&quot;          &quot;Argentina.xlsx&quot;       &quot;AshelyDene.xlsx&quot;     
 ##  [4] &quot;GM.xlsx&quot;              &quot;Hudson.xlsx&quot;          &quot;Lucerne_All_Obs.xlsx&quot;
 ##  [7] &quot;LucerneAllObs.xlsx&quot;   &quot;Nekia.xlsx&quot;           &quot;ObsAll.xlsx&quot;         
 ## [10] &quot;ObsAllData.xlsx&quot;      &quot;RootN.xlsx&quot;           &quot;Rutherglen.xlsx&quot;</code></pre>
 <p><em>Note</em></p>
 <p>Need to explore what data inside these <code>Excel</code> files</p>
-<pre class="r"><code>exam_xlsxs(path_apX, xlsxs[1])</code></pre>
 <pre><code>## # A tibble: 18 x 2
 ##    value                            cnt
 ##    &lt;chr&gt;                          &lt;int&gt;
@@ -431,8 +427,7 @@ xlsxs</code></pre>
 ## 16 Iversen_9SowingDateSD2Waterirr    66
 ## 17 Iversen_9SowingDateSD3Waterirr    58
 ## 18 Iversen_9SowingDateSD4Waterirr    49</code></pre>
-<p>File C:/Data/latest_apsimx/ApsimX/Prototypes/Lucerne/AllObs.xlsx has the expts done in Lincoln.</p>
-<pre class="r"><code>exam_xlsxs(path_apX, xlsxs[2])</code></pre>
+<p>File ../Data/Lucerne//AllObs.xlsx has the expts done in Lincoln.</p>
 <pre><code>## # A tibble: 9 x 2
 ##   value                       cnt
 ##   &lt;chr&gt;                     &lt;int&gt;
@@ -445,8 +440,7 @@ xlsxs</code></pre>
 ## 7 BalcarceDefoliation          12
 ## 8 CambridgeDefoliation         12
 ## 9 Elliot dry                   12</code></pre>
-<p>File C:/Data/latest_apsimx/ApsimX/Prototypes/Lucerne/Argentina.xlsx is from <strong>Argentina</strong>. Seems only the data from <code>Elliot</code> has water relative information with total number of obs at 26.</p>
-<pre class="r"><code>exam_xlsxs(path_apX, xlsxs[3])</code></pre>
+<p>File ../Data/Lucerne//Argentina.xlsx is from <strong>Argentina</strong>. Seems only the data from <code>Elliot</code> has water relative information with total number of obs at 26.</p>
 <pre><code>## # A tibble: 10 x 2
 ##    value                      cnt
 ##    &lt;chr&gt;                    &lt;int&gt;
@@ -460,25 +454,21 @@ xlsxs</code></pre>
 ##  8 AshleyDeneSowingDateSD8     54
 ##  9 AshleyDeneSowingDateSD9     43
 ## 10 AshleyDeneSowingDateSD10    30</code></pre>
-<p>File C:/Data/latest_apsimx/ApsimX/Prototypes/Lucerne/AshelyDene.xlsx is from <strong>AshleyDene</strong>. Must be the Richard data.</p>
-<pre class="r"><code>exam_xlsxs(path_apX, xlsxs[4])</code></pre>
+<p>File ../Data/Lucerne//AshelyDene.xlsx is from <strong>AshleyDene</strong>. Must be the Richard data.</p>
 <pre><code>## # A tibble: 2 x 2
 ##   value                 cnt
 ##   &lt;chr&gt;               &lt;int&gt;
 ## 1 GriffithDefoliation  1179
 ## 2 MooraDefoliation     1174</code></pre>
-<p>File C:/Data/latest_apsimx/ApsimX/Prototypes/Lucerne/GM.xlsx probabaly is not immediately useful.</p>
-<pre class="r"><code>exam_xlsxs(path_apX, xlsxs[5])</code></pre>
+<p>File ../Data/Lucerne//GM.xlsx probably is not immediately useful.</p>
 <pre><code>## # A tibble: 3 x 2
 ##   value                       cnt
 ##   &lt;chr&gt;                     &lt;int&gt;
 ## 1 HudsonDefoliation           246
 ## 2 TrenqueLauquenDefoliation    13
 ## 3 BalcarceDefoliation          12</code></pre>
-<p>File C:/Data/latest_apsimx/ApsimX/Prototypes/Lucerne/Hudson.xlsx could be a validation set???</p>
-<pre class="r"><code># exam_xlsxs(path_apX, xlsxs[6])</code></pre>
-<p>File C:/Data/latest_apsimx/ApsimX/Prototypes/Lucerne/Lucerne_All_Obs.xlsx has data from lincoln, ashleydene and other places over a few years period. need more metadata if want to use this one for any purpose.</p>
-<pre class="r"><code>exam_xlsxs(path_apX, xlsxs[7])</code></pre>
+<p>File ../Data/Lucerne//Hudson.xlsx could be a validation set???</p>
+<p>File ../Data/Lucerne//Lucerne_All_Obs.xlsx has data from lincoln, ashleydene and other places over a few years period. need more metadata if want to use this one for any purpose.</p>
 <pre><code>## # A tibble: 12 x 2
 ##    value                      cnt
 ##    &lt;chr&gt;                    &lt;int&gt;
@@ -494,21 +484,367 @@ xlsxs</code></pre>
 ## 10 WarraSowingDateSD1          20
 ## 11 JimbourSowingDateStrip3a     6
 ## 12 JimbourSowingDateStrip6      6</code></pre>
-<p>File C:/Data/latest_apsimx/ApsimX/Prototypes/Lucerne/LucerneAllObs.xlsx seems a duplicated version of last file. Is <code>Total_SW</code> for total soil water??</p>
-<pre class="r"><code>exam_xlsxs(path_apX, xlsxs[8])</code></pre>
+<p>File ../Data/Lucerne//LucerneAllObs.xlsx seems a duplicated version of last file. Is <code>Total_SW</code> for total soil water??</p>
 <pre><code>## # A tibble: 2 x 2
 ##   value                   cnt
 ##   &lt;chr&gt;                 &lt;int&gt;
 ## 1 NekiaDefoliation       1127
 ## 2 RutherglenDefoliation    78</code></pre>
-<p>File C:/Data/latest_apsimx/ApsimX/Prototypes/Lucerne/Nekia.xlsx is not immediately useful.</p>
-<p>File C:/Data/latest_apsimx/ApsimX/Prototypes/Lucerne/ObsAll.xlsx &amp; C:/Data/latest_apsimx/ApsimX/Prototypes/Lucerne/ObsAllData.xlsx are duplicated?? need to confirm with Xiumei.</p>
+<p>File ../Data/Lucerne//Nekia.xlsx is not immediately useful.</p>
+<p>File ../Data/Lucerne//ObsAll.xlsx &amp; ../Data/Lucerne//ObsAllData.xlsx are duplicated?? need to confirm with Xiumei.</p>
+<pre><code>## # A tibble: 14 x 2
+##    value                            cnt
+##    &lt;chr&gt;                          &lt;int&gt;
+##  1 Iversen_91DefoliationLL          153
+##  2 Iversen_121DefoliationSSFDFD10    97
+##  3 Iversen_121DefoliationSSFDFD5     97
+##  4 Iversen_121DefoliationSSFDFD2     96
+##  5 Iversen_121DefoliationLLFDFD10    91
+##  6 Iversen_121DefoliationLLFDFD2     89
+##  7 Iversen_121DefoliationLLFDFD5     89
+##  8 Iversen_121DefoliationHHFDFD10    60
+##  9 Iversen_121DefoliationHHFDFD2     60
+## 10 Iversen_121DefoliationHHFDFD5     60
+## 11 Iversen_91DefoliationSS           51
+## 12 Iversen_91DefoliationSL           28
+## 13 Iversen_91DefoliationLS           27
+## 14 Iversen_8Waterirr                 23</code></pre>
+<p>File ../Data/Lucerne//RootN.xlsx is not immediately useful.</p>
+<pre><code>## # A tibble: 1 x 2
+##   value                   cnt
+##   &lt;chr&gt;                 &lt;int&gt;
+## 1 RutherglenDefoliation    53</code></pre>
+<p>File ../Data/Lucerne//Rutherglen.xlsx is not immediately useful.</p>
 <p><em>Note</em></p>
 <ol style="list-style-type: decimal">
 <li>Need metadata for variable names</li>
 <li>Trial design and data collection method</li>
 <li>Soil information for water expts</li>
+<li>Extract all water relevant data and integrate together?</li>
 </ol>
+<p>total number of obs is 1691</p>
+</div>
+</div>
+<div id="richard-data-set" class="section level2">
+<h2>Richard data set</h2>
+<pre><code>##       Data       Site      Date  Season Sowing Date Rep Plot Seed
+## 1: Biomass AshleyDene  4-Jan-11 2010/11         SD1   1    8   CS
+## 2: Biomass AshleyDene  4-Jan-11 2010/11         SD1   2   32   CS
+## 3: Biomass AshleyDene  4-Jan-11 2010/11         SD1   3   50   CS
+## 4: Biomass AshleyDene  4-Jan-11 2010/11         SD1   4   73   CS
+## 5: Biomass AshleyDene 14-Jan-11 2010/11         SD1   1    8   CS
+## 6: Biomass AshleyDene 14-Jan-11 2010/11         SD1   2   32   CS
+##    Rotation No. Harvest No. DAS Height Shoot No. Total FW (g) FW (g)
+## 1:            1           1  75   &lt;NA&gt;      &lt;NA&gt;         35.0  35.00
+## 2:            1           1  75   &lt;NA&gt;      &lt;NA&gt;         17.1  17.10
+## 3:            1           1  75   &lt;NA&gt;      &lt;NA&gt;         25.5  25.50
+## 4:            1           1  75   &lt;NA&gt;      &lt;NA&gt;         19.7  19.70
+## 5:            1           2  85   &lt;NA&gt;       124         33.6  24.28
+## 6:            1           2  85   &lt;NA&gt;        78         34.9  22.79
+##    DW (g) Leaf Area (cm) Leaf FW (g) Leaf DW (g) Stem FW (g) Stem DW (g)
+## 1:   9.70         773.75       35.00        9.70        0.00        0.00
+## 2:   5.20         382.23       17.10        5.20        0.00        0.00
+## 3:   7.89         522.60       25.50        7.89        0.00        0.00
+## 4:   5.91         421.21       19.70        5.91        0.00        0.00
+## 5:   7.67         204.41        9.32        3.17        0.00        0.00
+## 6:   6.97         262.41       12.11        3.94        0.00        0.00
+##    TFW (g) TDW (g) Total.DM Leaf.DM Stem.DM Shoots/m2 Total% Leaf% Stem%
+## 1:   35.00    9.70    485.0   485.0     0.0      &lt;NA&gt;   0.28  0.28  &lt;NA&gt;
+## 2:   17.10    5.20    260.0   260.0     0.0      &lt;NA&gt;   0.30  0.30  &lt;NA&gt;
+## 3:   25.50    7.89    394.5   394.5     0.0      &lt;NA&gt;   0.31  0.31  &lt;NA&gt;
+## 4:   19.70    5.91    295.5   295.5     0.0      &lt;NA&gt;   0.30  0.30  &lt;NA&gt;
+## 5:    9.32    3.17    530.7   530.7     0.0       620   0.32  0.34  &lt;NA&gt;
+## 6:   12.11    3.94    533.7   533.7     0.0       390   0.31  0.33  &lt;NA&gt;
+##    SLA (FW) SLA (DW) LAI (FW) LAI (DW) LAImod Protein (g/100g) MJME   N%
+## 1:    22.11    79.77     0.39     0.39   0.51             &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;
+## 2:    22.35    73.51     0.19     0.19   0.25             &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;
+## 3:    20.49    66.24     0.26     0.26   0.35             &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;
+## 4:    21.38    71.27     0.21     0.21   0.28             &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;
+## 5:    21.93    64.48     0.37     0.34   0.45             &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;
+## 6:    21.67    66.60     0.38     0.36   0.47             &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;
+##    Shoot N Plant No. Crown DW 0-5 cm DW 5-30 cm DW Crown 0-5 cm 5-30 cm
+## 1:    &lt;NA&gt;      &lt;NA&gt;     &lt;NA&gt;      &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;
+## 2:    &lt;NA&gt;      &lt;NA&gt;     &lt;NA&gt;      &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;
+## 3:    &lt;NA&gt;      &lt;NA&gt;     &lt;NA&gt;      &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;
+## 4:    &lt;NA&gt;      &lt;NA&gt;     &lt;NA&gt;      &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;
+## 5:    &lt;NA&gt;      &lt;NA&gt;     &lt;NA&gt;      &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;
+## 6:    &lt;NA&gt;      &lt;NA&gt;     &lt;NA&gt;      &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;
+##    Root.Total Plant No. 1.1? 1.2?  1.R 2.1? 2.2?  2.R 3.1? 3.2?  3.R 4.1?
+## 1:       &lt;NA&gt;      &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;
+## 2:       &lt;NA&gt;      &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;
+## 3:       &lt;NA&gt;      &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;
+## 4:       &lt;NA&gt;      &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;
+## 5:       &lt;NA&gt;      &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;
+## 6:       &lt;NA&gt;      &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;
+##    4.2?  4.R 5.1? 5.2?  5.R 6.1? 6.2?  6.R 7.1? 7.2?  7.R 8.1? 8.2?  8.R
+## 1: &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;
+## 2: &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;
+## 3: &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;
+## 4: &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;
+## 5: &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;
+## 6: &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;
+##    9.1? 9.2?  9.R 10.1? 10.2? 10.R MS node No 2? Leaf No. Total Leaf No.
+## 1: &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;        &lt;NA&gt;           &lt;NA&gt;
+## 2: &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;        &lt;NA&gt;           &lt;NA&gt;
+## 3: &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;        &lt;NA&gt;           &lt;NA&gt;
+## 4: &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;        &lt;NA&gt;           &lt;NA&gt;
+## 5: &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;        &lt;NA&gt;           &lt;NA&gt;
+## 6: &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;        &lt;NA&gt;           &lt;NA&gt;
+##       S    E    J   Fi   Fl Growth stage Plant No S_No E_No J_No Fi_No
+## 1: &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;         &lt;NA&gt;     &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;
+## 2: &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;         &lt;NA&gt;     &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;
+## 3: &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;         &lt;NA&gt;     &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;
+## 4: &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;         &lt;NA&gt;     &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;
+## 5: &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;         &lt;NA&gt;     &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;
+## 6: &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;         &lt;NA&gt;     &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;
+##    F_No SWCES_0-0.2 SWC 0.1 SWC 0.2 SWC 0.3 SWC 0.4 SWC 0.5 SWC 0.6
+## 1: &lt;NA&gt;          NA    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;
+## 2: &lt;NA&gt;          NA    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;
+## 3: &lt;NA&gt;          NA    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;
+## 4: &lt;NA&gt;          NA    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;
+## 5: &lt;NA&gt;          NA    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;
+## 6: &lt;NA&gt;          NA    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;
+##    SWC 0.7 SWC 0.8 SWC 0.9 SWC 0.10 SWC 0.11 SWC 0.12 SWC 0.13 SWC 0.14
+## 1:    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
+## 2:    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
+## 3:    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
+## 4:    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
+## 5:    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
+## 6:    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
+##    SWC 0.15 SWC 0.16 SWC 0.17 SWC 0.18 SWC 0.19 SWC 0.20 SWC 0.21 SWC 0.22
+## 1:     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
+## 2:     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
+## 3:     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
+## 4:     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
+## 5:     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
+## 6:     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
+##    SWC 0.23 SWC 2.3 m (mm)
+## 1:     &lt;NA&gt;             NA
+## 2:     &lt;NA&gt;             NA
+## 3:     &lt;NA&gt;             NA
+## 4:     &lt;NA&gt;             NA
+## 5:     &lt;NA&gt;             NA
+## 6:     &lt;NA&gt;             NA</code></pre>
+<p>what <strong>S AND E</strong> MEANS? SOWING AND EMERGE? Alpha| Growth Stage| No. —|—|— S| Sowing | 1 E |Emergence | 3 J |Juvenile | 4 Fi| Visible Bud | 5 Fl | Flower Open | 6</p>
+<p><em>Note</em> Richard excel file has mix variable types. <code>read_excel</code> has trouble to deal with it. try python’s pandas <em>Solution</em> manually save it to <code>.txt</code>, <code>fread</code> can handle the type of variables</p>
+<div id="inspect-the-data" class="section level3">
+<h3>inspect the data</h3>
+<pre><code>##   [1] &quot;Data&quot;             &quot;Site&quot;             &quot;Date&quot;            
+##   [4] &quot;Season&quot;           &quot;Sowing Date&quot;      &quot;Rep&quot;             
+##   [7] &quot;Plot&quot;             &quot;Seed&quot;             &quot;Rotation No.&quot;    
+##  [10] &quot;Harvest No.&quot;      &quot;DAS&quot;              &quot;Height&quot;          
+##  [13] &quot;Shoot No.&quot;        &quot;Total FW (g)&quot;     &quot;FW (g)&quot;          
+##  [16] &quot;DW (g)&quot;           &quot;Leaf Area (cm)&quot;   &quot;Leaf FW (g)&quot;     
+##  [19] &quot;Leaf DW (g)&quot;      &quot;Stem FW (g)&quot;      &quot;Stem DW (g)&quot;     
+##  [22] &quot;TFW (g)&quot;          &quot;TDW (g)&quot;          &quot;Total.DM&quot;        
+##  [25] &quot;Leaf.DM&quot;          &quot;Stem.DM&quot;          &quot;Shoots/m2&quot;       
+##  [28] &quot;Total%&quot;           &quot;Leaf%&quot;            &quot;Stem%&quot;           
+##  [31] &quot;SLA (FW)&quot;         &quot;SLA (DW)&quot;         &quot;LAI (FW)&quot;        
+##  [34] &quot;LAI (DW)&quot;         &quot;LAImod&quot;           &quot;Protein (g/100g)&quot;
+##  [37] &quot;MJME&quot;             &quot;N%&quot;               &quot;Shoot N&quot;         
+##  [40] &quot;Plant No.&quot;        &quot;Crown DW&quot;         &quot;0-5 cm DW&quot;       
+##  [43] &quot;5-30 cm DW&quot;       &quot;Crown&quot;            &quot;0-5 cm&quot;          
+##  [46] &quot;5-30 cm&quot;          &quot;Root.Total&quot;       &quot;Plant No.&quot;       
+##  [49] &quot;1.1?&quot;             &quot;1.2?&quot;             &quot;1.R&quot;             
+##  [52] &quot;2.1?&quot;             &quot;2.2?&quot;             &quot;2.R&quot;             
+##  [55] &quot;3.1?&quot;             &quot;3.2?&quot;             &quot;3.R&quot;             
+##  [58] &quot;4.1?&quot;             &quot;4.2?&quot;             &quot;4.R&quot;             
+##  [61] &quot;5.1?&quot;             &quot;5.2?&quot;             &quot;5.R&quot;             
+##  [64] &quot;6.1?&quot;             &quot;6.2?&quot;             &quot;6.R&quot;             
+##  [67] &quot;7.1?&quot;             &quot;7.2?&quot;             &quot;7.R&quot;             
+##  [70] &quot;8.1?&quot;             &quot;8.2?&quot;             &quot;8.R&quot;             
+##  [73] &quot;9.1?&quot;             &quot;9.2?&quot;             &quot;9.R&quot;             
+##  [76] &quot;10.1?&quot;            &quot;10.2?&quot;            &quot;10.R&quot;            
+##  [79] &quot;MS node No&quot;       &quot;2? Leaf No.&quot;      &quot;Total Leaf No.&quot;  
+##  [82] &quot;S&quot;                &quot;E&quot;                &quot;J&quot;               
+##  [85] &quot;Fi&quot;               &quot;Fl&quot;               &quot;Growth stage&quot;    
+##  [88] &quot;Plant No&quot;         &quot;S_No&quot;             &quot;E_No&quot;            
+##  [91] &quot;J_No&quot;             &quot;Fi_No&quot;            &quot;F_No&quot;            
+##  [94] &quot;SWCES_0-0.2&quot;      &quot;SWC 0.1&quot;          &quot;SWC 0.2&quot;         
+##  [97] &quot;SWC 0.3&quot;          &quot;SWC 0.4&quot;          &quot;SWC 0.5&quot;         
+## [100] &quot;SWC 0.6&quot;          &quot;SWC 0.7&quot;          &quot;SWC 0.8&quot;         
+## [103] &quot;SWC 0.9&quot;          &quot;SWC 0.10&quot;         &quot;SWC 0.11&quot;        
+## [106] &quot;SWC 0.12&quot;         &quot;SWC 0.13&quot;         &quot;SWC 0.14&quot;        
+## [109] &quot;SWC 0.15&quot;         &quot;SWC 0.16&quot;         &quot;SWC 0.17&quot;        
+## [112] &quot;SWC 0.18&quot;         &quot;SWC 0.19&quot;         &quot;SWC 0.20&quot;        
+## [115] &quot;SWC 0.21&quot;         &quot;SWC 0.22&quot;         &quot;SWC 0.23&quot;        
+## [118] &quot;SWC 2.3 m (mm)&quot;</code></pre>
+<p><em>couldn’t use <code>inspect_cat</code> because of duplicated colnames?</em></p>
+<p>there are multiply tables in one sheet. need to separate into different tables</p>
+<p>look at the factor columns only</p>
+<pre><code>## $Data
+## [1] &quot;Biomass&quot;    &quot;Root&quot;       &quot;Phenology&quot;  &quot;Soil water&quot; &quot;ES&quot;        
+## [6] &quot;*&quot;         
+## 
+## $Site
+## [1] &quot;AshleyDene&quot; &quot;Iversen12&quot;  &quot;*&quot;         
+## 
+## $Date
+##   [1] &quot;4-Jan-11&quot;  &quot;14-Jan-11&quot; &quot;24-Jan-11&quot; &quot;25-Jan-11&quot; &quot;10-Feb-11&quot;
+##   [6] &quot;19-Feb-11&quot; &quot;2-Mar-11&quot;  &quot;15-Mar-11&quot; &quot;25-Mar-11&quot; &quot;7-Apr-11&quot; 
+##  [11] &quot;8-Apr-11&quot;  &quot;28-Apr-11&quot; &quot;3-Feb-11&quot;  &quot;11-May-11&quot; &quot;24-May-11&quot;
+##  [16] &quot;2-Jun-11&quot;  &quot;11-Feb-11&quot; &quot;14-Jun-11&quot; &quot;21-Feb-11&quot; &quot;3-Mar-11&quot; 
+##  [21] &quot;13-Feb-11&quot; &quot;22-Mar-11&quot; &quot;16-Mar-11&quot; &quot;6-Apr-11&quot;  &quot;12-Apr-11&quot;
+##  [26] &quot;27-Apr-11&quot; &quot;1-Apr-11&quot;  &quot;7-Jun-11&quot;  &quot;19-Apr-11&quot; &quot;4-May-11&quot; 
+##  [31] &quot;27-Mar-11&quot; &quot;5-May-11&quot;  &quot;18-Apr-11&quot; &quot;13-May-11&quot; &quot;29-May-11&quot;
+##  [36] &quot;8-Jun-11&quot;  &quot;18-May-11&quot; &quot;27-May-11&quot; &quot;7-May-11&quot;  &quot;20-Jun-11&quot;
+##  [41] &quot;29-Aug-11&quot; &quot;8-Sep-11&quot;  &quot;18-Sep-11&quot; &quot;27-Sep-11&quot; &quot;5-Oct-11&quot; 
+##  [46] &quot;12-Oct-11&quot; &quot;20-Oct-11&quot; &quot;27-Oct-11&quot; &quot;3-Nov-11&quot;  &quot;17-Nov-11&quot;
+##  [51] &quot;24-Nov-11&quot; &quot;1-Dec-11&quot;  &quot;8-Dec-11&quot;  &quot;15-Dec-11&quot; &quot;23-Dec-11&quot;
+##  [56] &quot;16-Jan-12&quot; &quot;7-Feb-12&quot;  &quot;21-Feb-12&quot; &quot;29-Feb-12&quot; &quot;4-Mar-12&quot; 
+##  [61] &quot;16-Mar-12&quot; &quot;23-Mar-12&quot; &quot;6-Apr-12&quot;  &quot;20-Apr-12&quot; &quot;25-Apr-12&quot;
+##  [66] &quot;28-May-12&quot; &quot;11-Jun-12&quot; &quot;11-Jul-12&quot; &quot;30-Nov-11&quot; &quot;7-Dec-11&quot; 
+##  [71] &quot;13-Dec-11&quot; &quot;21-Dec-11&quot; &quot;28-Dec-11&quot; &quot;4-Jan-12&quot;  &quot;11-Jan-12&quot;
+##  [76] &quot;12-Jan-12&quot; &quot;8-Feb-12&quot;  &quot;15-Feb-12&quot; &quot;22-Feb-12&quot; &quot;7-Mar-12&quot; 
+##  [81] &quot;14-Mar-12&quot; &quot;21-Mar-12&quot; &quot;28-Mar-12&quot; &quot;29-Mar-12&quot; &quot;18-Apr-12&quot;
+##  [86] &quot;2-May-12&quot;  &quot;16-May-12&quot; &quot;30-May-12&quot; &quot;13-Jun-12&quot; &quot;19-Jan-12&quot;
+##  [91] &quot;25-Jan-12&quot; &quot;1-Feb-12&quot;  &quot;2-Feb-12&quot;  &quot;4-Apr-12&quot;  &quot;11-Apr-12&quot;
+##  [96] &quot;12-Apr-12&quot; &quot;22-Mar-12&quot; &quot;14-May-12&quot; &quot;15-May-12&quot; &quot;26-Apr-12&quot;
+## [101] &quot;21-Oct-10&quot; &quot;27-Oct-10&quot; &quot;29-Oct-10&quot; &quot;30-Oct-10&quot; &quot;31-Oct-10&quot;
+## [106] &quot;19-Nov-10&quot; &quot;21-Nov-10&quot; &quot;25-Nov-10&quot; &quot;29-Nov-10&quot; &quot;1-Dec-10&quot; 
+## [111] &quot;2-Dec-10&quot;  &quot;6-Dec-10&quot;  &quot;9-Dec-10&quot;  &quot;14-Dec-10&quot; &quot;18-Dec-10&quot;
+## [116] &quot;24-Dec-10&quot; &quot;30-Dec-10&quot; &quot;8-Jan-11&quot;  &quot;13-Jan-11&quot; &quot;19-Jan-11&quot;
+## [121] &quot;23-Jan-11&quot; &quot;31-Jan-11&quot; &quot;4-Feb-11&quot;  &quot;9-Feb-11&quot;  &quot;15-Feb-11&quot;
+## [126] &quot;24-Feb-11&quot; &quot;1-Mar-11&quot;  &quot;6-Mar-11&quot;  &quot;12-Mar-11&quot; &quot;21-Mar-11&quot;
+## [131] &quot;28-Mar-11&quot; &quot;6-Jun-11&quot;  &quot;8-Aug-11&quot;  &quot;22-Aug-11&quot; &quot;5-Sep-11&quot; 
+## [136] &quot;12-Sep-11&quot; &quot;17-Sep-11&quot; &quot;22-Sep-11&quot; &quot;2-Oct-11&quot;  &quot;16-Oct-11&quot;
+## [141] &quot;15-Nov-11&quot; &quot;19-Nov-11&quot; &quot;28-Nov-11&quot; &quot;2-Dec-11&quot;  &quot;11-Dec-11&quot;
+## [146] &quot;3-Jan-12&quot;  &quot;7-Jan-12&quot;  &quot;13-Jan-12&quot; &quot;13-Mar-12&quot; &quot;19-Mar-12&quot;
+## [151] &quot;25-Mar-12&quot; &quot;31-Mar-12&quot; &quot;19-Apr-12&quot; &quot;7-May-12&quot;  &quot;13-May-12&quot;
+## [156] &quot;20-May-12&quot; &quot;5-Jun-12&quot;  &quot;22-Jun-12&quot; &quot;9-Nov-10&quot;  &quot;13-Nov-10&quot;
+## [161] &quot;20-Nov-10&quot; &quot;30-Nov-10&quot; &quot;28-Jan-11&quot; &quot;1-Feb-11&quot;  &quot;7-Feb-11&quot; 
+## [166] &quot;5-Apr-11&quot;  &quot;11-Apr-11&quot; &quot;9-May-11&quot;  &quot;8-Dec-10&quot;  &quot;19-Dec-10&quot;
+## [171] &quot;20-Dec-10&quot; &quot;22-Dec-10&quot; &quot;15-Jan-11&quot; &quot;18-Jan-11&quot; &quot;21-Jan-11&quot;
+## [176] &quot;7-Mar-11&quot;  &quot;13-Apr-11&quot; &quot;3-Jun-11&quot;  &quot;22-Jan-11&quot; &quot;6-Feb-11&quot; 
+## [181] &quot;14-Mar-11&quot; &quot;4-Apr-11&quot;  &quot;16-May-11&quot; &quot;22-Feb-11&quot; &quot;26-Feb-11&quot;
+## [186] &quot;27-Feb-11&quot; &quot;10-Oct-11&quot; &quot;15-Oct-11&quot; &quot;31-Oct-11&quot; &quot;4-Nov-11&quot; 
+## [191] &quot;5-Nov-11&quot;  &quot;6-Nov-11&quot;  &quot;8-Nov-11&quot;  &quot;12-Nov-11&quot; &quot;16-Nov-11&quot;
+## [196] &quot;20-Nov-11&quot; &quot;19-Dec-11&quot; &quot;28-Jan-12&quot; &quot;5-Feb-12&quot;  &quot;9-Feb-12&quot; 
+## [201] &quot;13-Feb-12&quot; &quot;17-Feb-12&quot; &quot;26-Feb-12&quot; &quot;1-Mar-12&quot;  &quot;6-Mar-12&quot; 
+## [206] &quot;11-Mar-12&quot; &quot;26-Mar-12&quot; &quot;8-Apr-12&quot;  &quot;13-Apr-12&quot; &quot;1-May-12&quot; 
+## [211] &quot;7-Nov-11&quot;  &quot;13-Nov-11&quot; &quot;29-Nov-11&quot; &quot;20-Jan-12&quot; &quot;27-Mar-12&quot;
+## [216] &quot;1-Apr-12&quot;  &quot;7-Apr-12&quot;  &quot;9-Dec-11&quot;  &quot;14-Dec-11&quot; &quot;16-Dec-11&quot;
+## [221] &quot;30-Dec-11&quot; &quot;24-Jan-12&quot; &quot;10-Jan-12&quot; &quot;26-Jan-12&quot; &quot;10-Feb-12&quot;
+## [226] &quot;23-Feb-12&quot; &quot;24-Feb-12&quot; &quot;15-Mar-12&quot; &quot;16-Nov-10&quot; &quot;24-Nov-10&quot;
+## [231] &quot;13-Dec-10&quot; &quot;23-Dec-10&quot; &quot;3-Jan-11&quot;  &quot;12-Jan-11&quot; &quot;17-Feb-11&quot;
+## [236] &quot;4-Mar-11&quot;  &quot;29-Apr-11&quot; &quot;10-May-11&quot; &quot;21-May-11&quot; &quot;1-Jun-11&quot; 
+## [241] &quot;25-Jun-11&quot; &quot;28-Jul-11&quot; &quot;11-Aug-11&quot; &quot;25-Aug-11&quot; &quot;7-Sep-11&quot; 
+## [246] &quot;21-Sep-11&quot; &quot;7-Oct-11&quot;  &quot;21-Oct-11&quot; &quot;12-Dec-11&quot; &quot;5-Jan-12&quot; 
+## [251] &quot;28-Feb-12&quot; &quot;22-Apr-12&quot; &quot;9-May-12&quot;  &quot;24-May-12&quot; &quot;12-Jul-12&quot;
+## [256] &quot;25-May-12&quot; &quot;7-Dec-10&quot;  &quot;21-Dec-10&quot; &quot;28-Dec-10&quot; &quot;29-Dec-10&quot;
+## [261] &quot;7-Jan-11&quot;  &quot;20-Jan-11&quot; &quot;30-Jan-11&quot; &quot;8-Feb-11&quot;  &quot;11-Mar-11&quot;
+## [266] &quot;31-Mar-11&quot; &quot;20-Apr-11&quot; &quot;21-Apr-11&quot; &quot;19-May-11&quot; &quot;13-Jun-11&quot;
+## [271] &quot;23-Aug-11&quot; &quot;2-Sep-11&quot;  &quot;29-Sep-11&quot; &quot;6-Oct-11&quot;  &quot;11-Oct-11&quot;
+## [276] &quot;25-Oct-11&quot; &quot;2-Nov-11&quot;  &quot;9-Nov-11&quot;  &quot;18-Nov-11&quot; &quot;20-Dec-11&quot;
+## [281] &quot;2-Jan-12&quot;  &quot;27-Jan-12&quot; &quot;16-Feb-12&quot; &quot;8-Mar-12&quot;  &quot;5-Apr-12&quot; 
+## [286] &quot;23-Jun-12&quot; &quot;10-Mar-11&quot; &quot;2-May-11&quot;  &quot;14-May-11&quot; &quot;28-May-11&quot;
+## [291] &quot;16-Feb-11&quot; &quot;9-Mar-11&quot;  &quot;19-Mar-11&quot; &quot;29-Mar-11&quot; &quot;28-Feb-11&quot;
+## [296] &quot;24-Mar-11&quot; &quot;6-May-11&quot;  &quot;23-May-11&quot; &quot;30-Apr-11&quot; &quot;17-May-11&quot;
+## [301] &quot;31-May-11&quot; &quot;23-May-12&quot; &quot;12-Mar-12&quot; &quot;3-May-12&quot;  &quot;27-Feb-12&quot;
+## [306] &quot;4-Oct-10&quot;  &quot;12-Oct-10&quot; &quot;16-Oct-10&quot; &quot;12-Nov-10&quot; &quot;17-Nov-10&quot;
+## [311] &quot;18-Nov-10&quot; &quot;26-Nov-10&quot; &quot;5-Dec-10&quot;  &quot;5-Jan-11&quot;  &quot;14-Feb-11&quot;
+## [316] &quot;23-Feb-11&quot; &quot;12-May-11&quot; &quot;30-May-11&quot; &quot;29-Oct-11&quot; &quot;4-Dec-11&quot; 
+## [321] &quot;6-Jan-12&quot;  &quot;14-Jan-12&quot; &quot;23-Jan-12&quot; &quot;12-Feb-12&quot; &quot;20-Feb-12&quot;
+## [326] &quot;5-Mar-12&quot;  &quot;10-Mar-12&quot; &quot;30-Mar-12&quot; &quot;10-Apr-12&quot; &quot;16-Apr-12&quot;
+## [331] &quot;23-Apr-12&quot; &quot;30-Apr-12&quot; &quot;26-May-12&quot; &quot;1-Jun-12&quot;  &quot;6-May-12&quot; 
+## [336] &quot;12-May-12&quot; &quot;18-May-12&quot; &quot;4-Nov-10&quot;  &quot;14-Nov-10&quot; &quot;15-Nov-10&quot;
+## [341] &quot;4-Dec-10&quot;  &quot;17-Mar-11&quot; &quot;10-Dec-10&quot; &quot;6-Jan-11&quot;  &quot;11-Jan-11&quot;
+## [346] &quot;16-Jan-11&quot; &quot;26-Jan-11&quot; &quot;5-Mar-11&quot;  &quot;10-Jan-11&quot; &quot;17-Jan-11&quot;
+## [351] &quot;2-Apr-11&quot;  &quot;31-Jan-12&quot; &quot;4-Feb-12&quot;  &quot;20-Mar-12&quot; &quot;27-Dec-11&quot;
+## [356] &quot;15-Jan-12&quot; &quot;22-Jan-12&quot; &quot;5-Feb-11&quot;  &quot;20-May-11&quot; &quot;27-Nov-11&quot;
+## [361] &quot;22-Dec-11&quot; &quot;30-Jan-12&quot; &quot;24-Mar-12&quot; &quot;21-Apr-12&quot; &quot;8-May-12&quot; 
+## [366] &quot;21-Jun-12&quot; &quot;7-Nov-10&quot;  &quot;14-Oct-11&quot; &quot;22-Oct-11&quot; &quot;*&quot;        
+## 
+## $Season
+## [1] &quot;2010/11&quot; &quot;2011/12&quot; &quot;*&quot;      
+## 
+## $`Sowing Date`
+##  [1] &quot;SD1&quot;    &quot;SD2&quot;    &quot;SD3&quot;    &quot;SD4&quot;    &quot;SD5&quot;    &quot;SD6&quot;    &quot;SD7&quot;   
+##  [8] &quot;SD8&quot;    &quot;SD9&quot;    &quot;SD10&quot;   &quot;Fallow&quot; &quot;*&quot;     
+## 
+## $Rep
+## [1] &quot;1&quot; &quot;2&quot; &quot;3&quot; &quot;4&quot; &quot;*&quot;
+## 
+## $Plot
+##   [1] &quot;8&quot;   &quot;32&quot;  &quot;50&quot;  &quot;73&quot;  &quot;3&quot;   &quot;13&quot;  &quot;18&quot;  &quot;22&quot;  &quot;27&quot;  &quot;37&quot;  &quot;45&quot; 
+##  [12] &quot;55&quot;  &quot;60&quot;  &quot;63&quot;  &quot;68&quot;  &quot;78&quot;  &quot;2&quot;   &quot;7&quot;   &quot;12&quot;  &quot;23&quot;  &quot;28&quot;  &quot;38&quot; 
+##  [23] &quot;41&quot;  &quot;46&quot;  &quot;56&quot;  &quot;64&quot;  &quot;74&quot;  &quot;79&quot;  &quot;4&quot;   &quot;9&quot;   &quot;14&quot;  &quot;25&quot;  &quot;35&quot; 
+##  [34] &quot;40&quot;  &quot;49&quot;  &quot;54&quot;  &quot;59&quot;  &quot;62&quot;  &quot;72&quot;  &quot;77&quot;  &quot;17&quot;  &quot;33&quot;  &quot;51&quot;  &quot;69&quot; 
+##  [45] &quot;19&quot;  &quot;30&quot;  &quot;44&quot;  &quot;67&quot;  &quot;5&quot;   &quot;10&quot;  &quot;20&quot;  &quot;26&quot;  &quot;31&quot;  &quot;36&quot;  &quot;43&quot; 
+##  [56] &quot;48&quot;  &quot;58&quot;  &quot;61&quot;  &quot;66&quot;  &quot;76&quot;  &quot;15&quot;  &quot;21&quot;  &quot;53&quot;  &quot;71&quot;  &quot;6&quot;   &quot;11&quot; 
+##  [67] &quot;16&quot;  &quot;24&quot;  &quot;29&quot;  &quot;39&quot;  &quot;42&quot;  &quot;52&quot;  &quot;57&quot;  &quot;65&quot;  &quot;70&quot;  &quot;75&quot;  &quot;1&quot;  
+##  [78] &quot;34&quot;  &quot;47&quot;  &quot;80&quot;  &quot;81&quot;  &quot;82&quot;  &quot;83&quot;  &quot;84&quot;  &quot;85&quot;  &quot;86&quot;  &quot;87&quot;  &quot;88&quot; 
+##  [89] &quot;89&quot;  &quot;90&quot;  &quot;91&quot;  &quot;92&quot;  &quot;93&quot;  &quot;94&quot;  &quot;95&quot;  &quot;96&quot;  &quot;97&quot;  &quot;98&quot;  &quot;99&quot; 
+## [100] &quot;100&quot; NA    &quot;*&quot;  
+## 
+## $Seed
+## [1] &quot;CS&quot; &quot;BS&quot; &quot;AS&quot; &quot;PS&quot; NA   &quot;*&quot; 
+## 
+## $`Rotation No.`
+## [1] &quot;1&quot; &quot;2&quot; &quot;3&quot; &quot;4&quot; &quot;5&quot; NA  &quot;6&quot; &quot;7&quot; &quot;*&quot;
+## 
+## $`Harvest No.`
+##  [1] &quot;1&quot;      &quot;2&quot;      &quot;3&quot;      &quot;0&quot;      &quot;4&quot;      &quot;5&quot;      &quot;6&quot;     
+##  [8] &quot;7&quot;      &quot;8&quot;      &quot;Post&quot;   &quot;9&quot;      &quot;10&quot;     &quot;11&quot;     NA      
+## [15] &quot;S&quot;      &quot;e&quot;      &quot;1st TL&quot; &quot;s&quot;      &quot;*&quot;     
+## 
+## $DAS
+##   [1] &quot;75&quot;  &quot;85&quot;  &quot;95&quot;  &quot;96&quot;  &quot;112&quot; &quot;121&quot; &quot;132&quot; &quot;56&quot;  &quot;145&quot; &quot;155&quot; &quot;66&quot; 
+##  [12] &quot;168&quot; &quot;169&quot; &quot;76&quot;  &quot;189&quot; &quot;86&quot;  &quot;202&quot; &quot;215&quot; &quot;64&quot;  &quot;224&quot; &quot;94&quot;  &quot;236&quot;
+##  [23] &quot;113&quot; &quot;126&quot; &quot;133&quot; &quot;98&quot;  &quot;148&quot; &quot;107&quot; &quot;154&quot; &quot;170&quot; &quot;162&quot; &quot;183&quot; &quot;196&quot;
+##  [34] &quot;210&quot; &quot;217&quot; &quot;89&quot;  &quot;104&quot; &quot;97&quot;  &quot;147&quot; &quot;109&quot; &quot;131&quot; &quot;156&quot; &quot;172&quot; &quot;182&quot;
+##  [45] &quot;161&quot; &quot;188&quot; &quot;48&quot;  &quot;71&quot;  &quot;199&quot; &quot;134&quot; &quot;83&quot;  &quot;114&quot; &quot;152&quot; &quot;99&quot;  &quot;115&quot;
+##  [56] &quot;125&quot; &quot;242&quot; &quot;223&quot; &quot;194&quot; &quot;158&quot; &quot;137&quot; &quot;312&quot; &quot;293&quot; &quot;264&quot; &quot;228&quot; &quot;207&quot;
+##  [67] &quot;322&quot; &quot;303&quot; &quot;274&quot; &quot;238&quot; &quot;332&quot; &quot;313&quot; &quot;284&quot; &quot;248&quot; &quot;227&quot; &quot;341&quot; &quot;257&quot;
+##  [78] &quot;349&quot; &quot;330&quot; &quot;301&quot; &quot;265&quot; &quot;244&quot; &quot;356&quot; &quot;337&quot; &quot;308&quot; &quot;272&quot; &quot;251&quot; &quot;364&quot;
+##  [89] &quot;345&quot; &quot;316&quot; &quot;280&quot; &quot;259&quot; &quot;371&quot; &quot;352&quot; &quot;323&quot; &quot;287&quot; &quot;266&quot; &quot;378&quot; &quot;359&quot;
+## [100] &quot;294&quot; &quot;273&quot; &quot;392&quot; &quot;373&quot; &quot;344&quot; &quot;399&quot; &quot;380&quot; &quot;351&quot; &quot;315&quot; &quot;406&quot; &quot;387&quot;
+## [111] &quot;358&quot; &quot;413&quot; &quot;394&quot; &quot;365&quot; &quot;329&quot; &quot;420&quot; &quot;401&quot; &quot;372&quot; &quot;336&quot; &quot;428&quot; &quot;409&quot;
+## [122] &quot;452&quot; &quot;433&quot; &quot;404&quot; &quot;368&quot; &quot;347&quot; &quot;474&quot; &quot;455&quot; &quot;426&quot; &quot;390&quot; &quot;369&quot; &quot;488&quot;
+## [133] &quot;469&quot; &quot;440&quot; &quot;383&quot; &quot;496&quot; &quot;477&quot; &quot;448&quot; &quot;412&quot; &quot;391&quot; &quot;500&quot; &quot;481&quot; &quot;416&quot;
+## [144] &quot;395&quot; &quot;512&quot; &quot;493&quot; &quot;464&quot; &quot;407&quot; &quot;519&quot; &quot;471&quot; &quot;435&quot; &quot;414&quot; &quot;533&quot; &quot;514&quot;
+## [155] &quot;485&quot; &quot;449&quot; &quot;547&quot; &quot;528&quot; &quot;499&quot; &quot;463&quot; &quot;442&quot; &quot;552&quot; &quot;504&quot; &quot;468&quot; &quot;447&quot;
+## [166] &quot;585&quot; &quot;566&quot; &quot;537&quot; &quot;501&quot; &quot;480&quot; &quot;599&quot; &quot;580&quot; &quot;551&quot; &quot;515&quot; &quot;494&quot; &quot;629&quot;
+## [177] &quot;610&quot; &quot;581&quot; &quot;545&quot; &quot;524&quot; &quot;51&quot;  &quot;58&quot;  &quot;72&quot;  &quot;79&quot;  &quot;93&quot;  &quot;128&quot; &quot;135&quot;
+## [188] &quot;142&quot; &quot;149&quot; &quot;163&quot; &quot;171&quot; &quot;191&quot; &quot;205&quot; &quot;219&quot; &quot;233&quot; &quot;247&quot; &quot;36&quot;  &quot;44&quot; 
+## [199] &quot;65&quot;  &quot;73&quot;  &quot;87&quot;  &quot;157&quot; &quot;177&quot; &quot;33&quot;  &quot;41&quot;  &quot;47&quot;  &quot;54&quot;  &quot;61&quot;  &quot;68&quot; 
+## [210] &quot;82&quot;  &quot;103&quot; &quot;117&quot; &quot;187&quot; &quot;50&quot;  &quot;57&quot;  &quot;106&quot; &quot;127&quot; &quot;141&quot; &quot;531&quot; &quot;538&quot;
+## [221] &quot;559&quot; &quot;573&quot; &quot;587&quot; &quot;601&quot; NA    &quot;0&quot;   &quot;6&quot;   &quot;8&quot;   &quot;9&quot;   &quot;10&quot;  &quot;29&quot; 
+## [232] &quot;31&quot;  &quot;35&quot;  &quot;39&quot;  &quot;42&quot;  &quot;46&quot;  &quot;49&quot;  &quot;70&quot;  &quot;84&quot;  &quot;90&quot;  &quot;102&quot; &quot;111&quot;
+## [243] &quot;136&quot; &quot;151&quot; &quot;167&quot; &quot;173&quot; &quot;179&quot; &quot;195&quot; &quot;209&quot; &quot;218&quot; &quot;291&quot; &quot;305&quot; &quot;319&quot;
+## [254] &quot;326&quot; &quot;331&quot; &quot;346&quot; &quot;360&quot; &quot;403&quot; &quot;439&quot; &quot;443&quot; &quot;509&quot; &quot;521&quot; &quot;527&quot; &quot;539&quot;
+## [265] &quot;546&quot; &quot;564&quot; &quot;570&quot; &quot;577&quot; &quot;593&quot; &quot;4&quot;   &quot;11&quot;  &quot;16&quot;  &quot;20&quot;  &quot;21&quot;  &quot;22&quot; 
+## [276] &quot;23&quot;  &quot;27&quot;  &quot;30&quot;  &quot;45&quot;  &quot;60&quot;  &quot;80&quot;  &quot;123&quot; &quot;139&quot; &quot;153&quot; &quot;160&quot; &quot;181&quot;
+## [287] &quot;190&quot; &quot;286&quot; &quot;300&quot; &quot;307&quot; &quot;317&quot; &quot;327&quot; &quot;375&quot; &quot;384&quot; &quot;388&quot; &quot;393&quot; &quot;397&quot;
+## [298] &quot;424&quot; &quot;430&quot; &quot;436&quot; &quot;490&quot; &quot;502&quot; &quot;508&quot; &quot;520&quot; &quot;558&quot; &quot;574&quot; &quot;591&quot; &quot;12&quot; 
+## [309] &quot;14&quot;  &quot;37&quot;  &quot;38&quot;  &quot;55&quot;  &quot;63&quot;  &quot;69&quot;  &quot;78&quot;  &quot;119&quot; &quot;140&quot; &quot;243&quot; &quot;271&quot;
+## [320] &quot;278&quot; &quot;283&quot; &quot;288&quot; &quot;298&quot; &quot;342&quot; &quot;355&quot; &quot;461&quot; &quot;467&quot; &quot;473&quot; &quot;479&quot; &quot;491&quot;
+## [331] &quot;498&quot; &quot;516&quot; &quot;522&quot; &quot;529&quot; &quot;562&quot; &quot;24&quot;  &quot;25&quot;  &quot;53&quot;  &quot;67&quot;  &quot;74&quot;  &quot;81&quot; 
+## [342] &quot;88&quot;  &quot;221&quot; &quot;235&quot; &quot;252&quot; &quot;262&quot; &quot;276&quot; &quot;306&quot; &quot;310&quot; &quot;328&quot; &quot;425&quot; &quot;431&quot;
+## [353] &quot;437&quot; &quot;462&quot; &quot;486&quot; &quot;526&quot; &quot;7&quot;   &quot;19&quot;  &quot;28&quot;  &quot;32&quot;  &quot;120&quot; &quot;186&quot; &quot;200&quot;
+## [364] &quot;214&quot; &quot;226&quot; &quot;231&quot; &quot;241&quot; &quot;255&quot; &quot;285&quot; &quot;289&quot; &quot;302&quot; &quot;311&quot; &quot;334&quot; &quot;338&quot;
+## [375] &quot;350&quot; &quot;410&quot; &quot;422&quot; &quot;434&quot; &quot;441&quot; &quot;459&quot; &quot;465&quot; &quot;472&quot; &quot;505&quot; &quot;5&quot;   &quot;26&quot; 
+## [386] &quot;62&quot;  &quot;110&quot; &quot;118&quot; &quot;122&quot; &quot;130&quot; &quot;143&quot; &quot;192&quot; &quot;198&quot; &quot;204&quot; &quot;216&quot; &quot;239&quot;
+## [397] &quot;17&quot;  &quot;34&quot;  &quot;146&quot; &quot;164&quot; &quot;176&quot; &quot;203&quot; &quot;211&quot; &quot;138&quot; &quot;144&quot; &quot;150&quot; &quot;15&quot; 
+## [408] &quot;77&quot;  &quot;124&quot; &quot;484&quot; &quot;511&quot; &quot;517&quot; &quot;523&quot; &quot;534&quot; &quot;540&quot; &quot;108&quot; &quot;100&quot; &quot;180&quot;
+## [419] &quot;201&quot; &quot;212&quot; &quot;193&quot; &quot;175&quot; &quot;261&quot; &quot;232&quot; &quot;275&quot; &quot;246&quot; &quot;260&quot; &quot;321&quot; &quot;237&quot;
+## [430] &quot;335&quot; &quot;230&quot; &quot;267&quot; &quot;281&quot; &quot;343&quot; &quot;417&quot; &quot;398&quot; &quot;333&quot; &quot;357&quot; &quot;363&quot; &quot;482&quot;
+## [441] &quot;377&quot; &quot;495&quot; &quot;476&quot; &quot;411&quot; &quot;510&quot; &quot;405&quot; &quot;535&quot; &quot;487&quot; &quot;451&quot; &quot;549&quot; &quot;530&quot;
+## [452] &quot;444&quot; &quot;518&quot; &quot;497&quot; &quot;630&quot; &quot;611&quot; &quot;582&quot; &quot;525&quot; &quot;1&quot;   &quot;3&quot;   &quot;59&quot;  &quot;184&quot;
+## [463] &quot;256&quot; &quot;52&quot;  &quot;178&quot; &quot;353&quot; &quot;367&quot; &quot;386&quot; &quot;423&quot; &quot;507&quot; &quot;542&quot; &quot;556&quot; &quot;563&quot;
+## [474] &quot;575&quot; &quot;576&quot; &quot;628&quot; &quot;646&quot; &quot;40&quot;  &quot;159&quot; &quot;292&quot; &quot;370&quot; &quot;379&quot; &quot;483&quot; &quot;532&quot;
+## [485] &quot;544&quot; &quot;579&quot; &quot;597&quot; &quot;615&quot; &quot;43&quot;  &quot;314&quot; &quot;396&quot; &quot;421&quot; &quot;470&quot; &quot;569&quot; &quot;116&quot;
+## [496] &quot;225&quot; &quot;245&quot; &quot;269&quot; &quot;296&quot; &quot;325&quot; &quot;374&quot; &quot;381&quot; &quot;382&quot; &quot;402&quot; &quot;458&quot; &quot;478&quot;
+## [507] &quot;548&quot; &quot;197&quot; &quot;234&quot; &quot;268&quot; &quot;297&quot; &quot;304&quot; &quot;339&quot; &quot;354&quot; &quot;450&quot; &quot;101&quot; &quot;166&quot;
+## [518] &quot;555&quot; &quot;590&quot; &quot;604&quot; &quot;618&quot; &quot;213&quot; &quot;220&quot; &quot;348&quot; &quot;438&quot; &quot;492&quot; &quot;513&quot; &quot;543&quot;
+## [529] &quot;554&quot; &quot;560&quot; &quot;567&quot; &quot;594&quot; &quot;600&quot; &quot;606&quot; &quot;616&quot; &quot;586&quot; &quot;592&quot; &quot;92&quot;  &quot;174&quot;
+## [540] &quot;277&quot; &quot;432&quot; &quot;445&quot; &quot;536&quot; &quot;18&quot;  &quot;249&quot; &quot;263&quot; &quot;270&quot; &quot;299&quot; &quot;340&quot; &quot;362&quot;
+## [551] &quot;400&quot; &quot;408&quot; &quot;454&quot; &quot;489&quot; &quot;541&quot; &quot;557&quot; &quot;250&quot; &quot;361&quot; &quot;415&quot; &quot;456&quot; &quot;222&quot;
+## [562] &quot;295&quot; &quot;366&quot; &quot;105&quot; &quot;129&quot; &quot;229&quot; &quot;185&quot; &quot;13&quot;  &quot;91&quot;  &quot;240&quot; &quot;419&quot; &quot;457&quot;
+## [573] &quot;565&quot; &quot;598&quot; &quot;626&quot; &quot;647&quot; &quot;376&quot; &quot;506&quot; &quot;595&quot; &quot;279&quot; &quot;385&quot; &quot;588&quot; &quot;254&quot;
+## [584] &quot;309&quot; &quot;429&quot; &quot;453&quot; &quot;318&quot; &quot;2&quot;   &quot;*&quot;</code></pre>
+<p><em>Note</em> 1. Need to figure out what <code>ES</code> and <code>*</code> stands for 2. same for the <code>Site</code> col 3. same for the <code>Date</code> col, and the <code>Date</code> col need to be converted 4. all the rest of cols have this <code>*</code></p>
+<p><strong>The <code>\*</code></strong></p>
 </div>
 </div>
 
