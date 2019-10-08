@@ -44,3 +44,71 @@ hydrothermal time
 Watt, M. S., Bloomberg, M. and Finch-Savage, W. E. 2011. Development of a
 hydrothermal time model that accurately characterises how thermoinhibition
 regulates seed germination. Plant, Cell and Environment, 34, 870-876.
+
+
+#20190924
+
+
+Variation in water extraction with maize plant density and its impact on model
+application
+
+Incorrect parameterisation using constant kl values across plant populations could therefore cause erroneous  recommendations to be made, and these results have implications for any previously conducted crop simulations that use similar methods to model soil water extraction
+when investigating a range of plant populations
+
+
+Effect of irrigation methods and quota on root water
+uptake and biomass of alfalfa in the Wulanbuhe
+sandy region of China
+
+
+the order of dry weight of root was W3 > W2 > W1 and their values were 516.86, 445.25 and 301.57 gm−2, respectively 
+
+[web](http://lvec.ibcas.ac.cn/BaiWenMing)
+
+#20190926
+
+Richard PHD thesis
+
+Water use (WU) is often calculated as the minimum of the actual crop transpiration (ET)
+and the potential transpiration which represents the demand for water from the canopy
+(EPT) (Ritchie, 1972; Monteith, 1986) (Equation 6.1);
+Equation 6.1 $WU = min(ET, EPT )$
+The amount of water in the soil, soil water content (SWC) was calculated to a depth of
+2.3 m using Equation 6.2 Equation 6.2 $SWC = \sum_{bot}^{top} \theta*d$
+
+Where θ is the volumetric water content (VWC) of individual layers as measured in
+Section 6.2.1.2, d is the depth of the layer, top is the 0 to 0.2 m layer and bot is the 2.2
+to 2.3 m layer.
+
+
+
+The water use (WU, mm per period) was calculated for each measurement period using
+Equation 6.3;
+Equation 6.3 $WU = PR – (SWC_E – SWC_S)$
+Where PR is the sum of rainfall for the same period, SWCS and SWCE represent the
+actual soil water content of the profile as measured (Section 6.2.1.2) for the start and
+end of the period, respectively. This equation assumes no rainfall is lost as drainage or
+runoff.
+
+Future research should use the supply and demand method rather than the site and crop
+specific critical limiting deficit framework to quantify water stress. Water stress can be
+quantified as transpiration (ET) in relation to demand (EPT) and related to yield forming
+components to allow comparisons between crops and sites. This is important because
+the critical limiting deficit method is site and species specific. This method uses SWD
+as a measure of water stress and relates it to yield to define a critical level where yield is
+decreased (Penman, 1971). Furthermore, it offers no explanation of the mechanisms
+responsible for the yield decrease
+
+
+# 20190929
+
+A Comparison Between **Major Artificial Intelligence Models** for Crop Yield Prediction: Case Study of the Midwestern United States, 2006–2015
+
+_Note_ explain the major AL models in R and py. could be a great ref
+
+**thoughts about the objectives**
+
+1. working water stress model 
+2. comparison machine learning models 
+3. apsim compares to machine learning models 
+4. causal interferene??
