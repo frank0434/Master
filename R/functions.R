@@ -21,3 +21,24 @@ exam_xlsxs <- function(path_apX, filename){
     select(-prop) 
   df
 }
+
+
+
+# fun2 --------------------------------------------------------------------
+
+#' choose_cols
+#'
+#' @param dt a data.table or data.frame
+#'
+#' @return a vector has colnames for the sepecific table 
+#' 
+#' @export
+#'
+#' 
+choose_cols <- function(dt){
+  logica = sapply(dt, function(x){
+    sum(is.na(x)) == dim(dt)[1]
+  })
+  col_good = names(which(logica != 1))
+  col_good
+}

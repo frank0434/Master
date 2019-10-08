@@ -35,8 +35,8 @@ source("../R/functions.R")
 ### Browser the data folder
 
 ```{r browser the data folder}
-path_apX = "../Data/Lucerne/"
-xlsxs = list.files(path_apX, pattern = "^\\w.+\\.xlsx")
+path_apX <- "../Data/Lucerne/"
+xlsxs <- list.files(path_apX, pattern = "^\\w.+\\.xlsx")
 xlsxs
 ```
 
@@ -152,14 +152,17 @@ path_richard = "../Data/APSIM_Sim_allobs.txt"
 #                           skip = 9, 
 #                           col_types = c("text","text","date","text","text",
 #                                         rep("numeric", 117)))
-# inspect_cat(file_richard)
-dt = fread(path_richard, skip = 9, na.strings = c("","NA"), select = 1:118)
-dt = dt[-nrow(dt), ]#excluded the * 
-dt = dt[, Date := dmy(Date)]
+
+dt <- fread(path_richard, skip = 9, na.strings = c("","NA"), select = 1:118)
+dt <- dt[-nrow(dt), ]#excluded the * 
+# dt <- dt[, Date := dmy(Date)] # keep data as chr since sqlite does not support ISO date
+dt <- dt %>% 
+  as_tibble(.name_repair = "universal") %>% # use tibble format to fix the names 
+  as.data.table() # change it back to data.table
 
 
-dt_SD_lookup = fread(path_richard, skip = 9, na.strings = c("","NA"), select = 120:122)
-dt_SD_lookup = dt_SD_lookup[!is.na(AD)]
+dt_SD_lookup <- fread(path_richard, skip = 9, na.strings = c("","NA"), select = 120:122)
+dt_SD_lookup <- dt_SD_lookup[!is.na(AD)]
 ```
 
 what **S AND E** MEANS? SOWING AND EMERGE?
@@ -181,25 +184,35 @@ _Solution_ manually save it to `.txt`, `fread` can handle the type of variables
 
 ```{r main table}
 colnames(dt)
+tbl <- inspect_cat(dt) %>% 
+  arrange(desc(cnt)) 
+head(tbl)
 
 ```
 
-_couldn't use `inspect_cat` because of duplicated colnames?_
+_couldn't use `inspect_cat` because of duplicated colnames?_ Fixed by using `.name_repair` in `as_tibble`
+
 There are two `Plant No.` variables.
 One is the harvest area plant number and the other one is the plant number per $m^2$
 
-there are multiply tables in one sheet. 
-need to separate into different tables 
+_Note:_
 
-look at the factor columns only 
+1. the number of obs for Total.DM is larger than the obs for Total FW?
+   **not really - there are missing values have been coded as 0**
+
+2. there are multiply tables in one sheet. need to separate into different tables 
+
+
 
 ```{r main table col}
-sapply(dt[,1:11], unique)
+sapply(dt[,1:2], unique)
 ```
 
 
 _Note_ 
 1. Need to figure out what `ES` and `*` stands for.
+**ES** should be evapotranspiration surface SWC 0-0.2m
+
 2. same for the `Site` col.
 3. same for the `Date` col, and the `Date` col need to be converted.
 4. all the rest of cols have this `*`.
@@ -207,17 +220,145 @@ _Note_
 
 **The `*`** means the end of the main table. 
 
+### chop the main table to separate tables 
+
+need a function to figure out which col is not necessary 
+
+```{r Biomass tab}
+biomass <- dt[Data == "Biomass"]
+
+col_good <- choose_cols(biomass) # identify the right cols 
+
+biomass <- biomass[,..col_good] # subset the right cols 
+
+```
+
+
+```{r Root tab}
+
+root <- dt[Data == "Root"]
+
+col_good <- choose_cols(root) # identify the right cols 
+
+root <- root[,..col_good]
+```
+
+
+```{r Phenology tab}
+
+Phenology <- dt[Data == "Phenology"]
+
+col_good <- choose_cols(Phenology) # identify the right cols 
+
+Phenology <- Phenology[,..col_good]
+```
+
+
+```{r Soil water tab}
+
+SoilWater <- dt[Data == "Soil water"]
+
+col_good <- choose_cols(SoilWater) # identify the right cols 
+
+SoilWater <- SoilWater[,..col_good]
+```
+
+
+```{r ES tab}
+
+ES <- dt[Data == "ES"]
+
+col_good <- choose_cols(ES) # identify the right cols 
+
+ES <- ES[,..col_good]
+```
+
+
+### Check again before lock into sqlite
+
+```{r inspect types}
+l <- list(biomass, root, Phenology, SoilWater, ES) # put into a list for quick inspection
+l %>% 
+  lapply(inspect_types)
+l %>%
+  lapply(colnames)
+```
+
+_Note:_
+
+1. variable types are not right
+2. `Plant.No....40` is the plant number in the harvest area.
+3. `Plant.No....48` is the plant number per $m^2$
+4. Phenology tab has biomass cols because missing values as 0s. 
+5. The first 11 cols are the factors.
+6. Variables in Phenology tab should not be change to numeric. 
+
+
+```{r fix Phenology tab}
+cols_11 <- colnames(dt)[1:11] # the master cols
+cols_both <- colnames(Phenology)[colnames(Phenology) %in% colnames(biomass)] # the cols in both tabs
+cols_inPheno <- colnames(Phenology)[cols_both %in% cols_11]
+Phenology <- Phenology[,..cols_inPheno]
+colnames(Phenology)
+```
+
+
+```{r fix the types}
+
+#biomass tab
+
+cols <- colnames(biomass)[!colnames(biomass) %in% cols_11] # the cols need to be converted 
+biomass <- biomass[, (cols) := lapply(.SD, as.numeric), .SD = cols]
+#root tab 
+
+cols <- colnames(root)[!colnames(root) %in% cols_11] # the cols need to be converted 
+root <- root[, (cols) := lapply(.SD, as.numeric), .SD = cols]
+#soilwater tab
+
+cols <- colnames(SoilWater)[!colnames(SoilWater) %in% cols_11] # the cols need to be converted 
+SoilWater <- SoilWater[, (cols) := lapply(.SD, as.numeric), .SD = cols]
+#es tab
+
+cols <- colnames(ES)[!colnames(ES) %in% cols_11] # the cols need to be converted 
+ES <- ES[, (cols) := lapply(.SD, as.numeric), .SD = cols]
+
+```
+
+_Note:_ 
+There two cols has values been converted to NA by coercion. cautions going forward!!!
+
+
+**Rerun** the chunck `inspect types`. everything seems awesome 
 
 
 
+### Lock tabs into sqlite 
 
+```{r sqlite}
 
+con <- dbConnect(SQLite(), "../Data/Richard.sqlite3")
 
+# The sowing date tab first
 
+colnames(dt_SD_lookup)
+dbExecute(con," CREATE TABLE `SowingDate` (
+  `V120` TEXT NOT NULL,
+  `AD` TEXT NOT NULL,
+  `I12` TEXT NOT NULL,
+  PRIMARY KEY (V120)
+);
+")
 
+# dbWriteTable(con, "SowingDate", dt_SD_lookup, append = TRUE)# comment out once appended
 
+# the rest 
+# sqlite does not support ISO date. it will be julian date. 
 
+ls()
+tab_names <- c("biomass",  "root", "Phenology","SoilWater","ES") 
+# purrr::map2(list(biomass, root, Phenology, SoilWater, ES), tab_names, ~ dbWriteTable(con, .y, .x))
 
+```
 
 
 
