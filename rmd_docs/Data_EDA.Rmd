@@ -9,7 +9,32 @@ output:
     toc_depth: 3
 ---
 
+### Expt details 
 
+a. **2** years expt.
+b. **2** sites
+   a. Lincoln Uni
+   b. Ashely Dene
+c. **10** sowing date in both sites. 
+   a. five sowing date in the first year
+   b. five sowing date in second year
+   
+|Year 1 (Seedling crop) | Year 2 (Seedling & Regrowth)|
+|--------| ------------|
+|SD1, SD2, SD3, SD4, SD5| The first five sowing date Regrowth|
+||SD6, SD7, SD8, SD9, SD10|
+_Note:_ The setup helps to compare the seedling and regrowth in the same conditions in Year 2. 
+
+d. **1** cultivar.
+e. **4** reps each site. 
+f. **3** soil types??Need to be confirmed
+   a. stone free - plant available water capaciy (PAWC) 360mm/2.3m
+   b. stony - PAWC 240/2.3m
+   c. very stony 130mm/2.3m 
+g. **22** layers of soil water measurements - 10 cm interval below top 20 cm
+   a. top 20 cm was measured by TDR. 
+   c. remaining 21 layers was meastured by Neutron probe
+h. **1** follow treat in both sites - absolute soil evaporation 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -32,7 +57,7 @@ dbDisconnect(con)
 
 ```{r fix date}
 soilwater <- fix_date(soilwater)
-colnames(soilwater) # to copy the names for id.vars which will be used in the melt fun. 
+# colnames(soilwater) # to copy the names for id.vars which will be used in the melt fun. 
 ```
 
 _Note:_
@@ -53,11 +78,31 @@ soilwater_melted %>%
   geom_point() +
   facet_grid(variable ~ Site ) +
   theme_water()
+soilwater_melted[Sowing.Date %in% paste0("SD", 1:5)] %>% 
+  ggplot(aes(Date, value, color = Sowing.Date)) + 
+  geom_point() +
+  facet_grid(variable ~ Site ) +
+  theme_water() +
+  ggtitle("First 5 sowing date")
 ```
 
 
+```{r profile water}
+soilwater[,.(Date, Site,Sowing.Date,SWC.2.3.m..mm.) ]%>% 
+  ggplot(aes(Date, SWC.2.3.m..mm., color = Sowing.Date)) + 
+  geom_point() +
+  facet_grid( ~ Site ) +
+  theme_water() +
+  ggtitle("Profile water")
+```
+
+
+
 ```{r soilwater hist each layer, fig.height=12, fig.width=12, message=FALSE,warning=FALSE,dpi=300}
-nums <- inspect_num(soilwater)
+
+nums <- inspect_num(soilwater[Site == "AshleyDene"])
+show_plot(nums)
+nums <- inspect_num(soilwater[Site != "AshleyDene"])
 show_plot(nums)
 ```
 
@@ -76,7 +121,7 @@ soilwater_melted %>%
 
 
 
-**The Biomass has `r dim(biomass)[1]` obs. **
+**The Biomass has `r dim(biomass)[1]` obs for two sites. **
 
 
 
@@ -85,6 +130,13 @@ soilwater_melted %>%
 biomass <- fix_date(biomass)
 nums <- inspect_num(biomass)
 show_plot(nums)
+inspect_cat(biomass) %>% 
+  show_plot()
+```
+
+```{r}
+GGally::ggpairs(biomass[,.(Site, Sowing.Date, Date, FW..g.,DW..g.)],aes(colour = Site, alpha = 0.4))
+
 ```
 
 ### Root Overview 
