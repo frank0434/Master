@@ -75,7 +75,10 @@ soilwater_melted %>%
 ### Biomass Overview 
 
 
+
 **The Biomass has `r dim(biomass)[1]` obs. **
+
+
 
 
 ```{r biomass, fig.height=12, fig.width=12, message=FALSE,warning=FALSE,dpi=300}
@@ -86,7 +89,9 @@ show_plot(nums)
 
 ### Root Overview 
 
+
 **The Root tab has `r dim(root)[1]` obs. **
+
 
 ```{r root, fig.height=12, fig.width=12,dpi=300}
 root <- fix_date(root)
