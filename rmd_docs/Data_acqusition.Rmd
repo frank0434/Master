@@ -2,7 +2,11 @@
 title: "Data_acquisition"
 author: "jian (AKA Frank) liu"
 date: "04/10/2019"
-output: html_document
+output:
+  html_document: 
+    code_folding: hide
+    toc: true
+    toc_depth: 3
 ---
 
 ```{r setup, include=FALSE,warning=FALSE}
@@ -127,8 +131,8 @@ File `r file.path(path_apX, xlsxs[12])` is not immediately useful.
 _Note_
 
 1. Need metadata for variable names 
-2. Trial design and data collection method
-3. Soil information for water expts
+2. Trial design and data collection method (probabaly in the papers?)
+3. Soil information for water expts (papers?)
 4. Extract all water relevant data and integrate together? 
 
 
@@ -140,9 +144,12 @@ l <- lapply(xlsxs[-c(6,9,10)], function(x){
 names(l) <- xlsxs[-c(6,9,10)]
 potentials <- rbindlist(l, idcol = "id")
 potentials <- potentials[, water := stringr::str_extract(string = tolower(value), "water|irr|dry|ashley")][!is.na(water)]
-
+potentials
 ```
-total number of obs is `r sum(potentials$cnt)`
+
+**total number of obs is `r sum(potentials$cnt)`**
+There is no Iversen_12 for Richard 10 sowing date expt? 
+
 
 ## Richard data set
 
@@ -308,19 +315,19 @@ colnames(Phenology)
 #biomass tab
 
 cols <- colnames(biomass)[!colnames(biomass) %in% cols_11] # the cols need to be converted 
-biomass <- biomass[, (cols) := lapply(.SD, as.numeric), .SD = cols]
+biomass <- biomass[, (cols) := lapply(.SD, as.numeric), .SDcols = cols]
 #root tab 
 
 cols <- colnames(root)[!colnames(root) %in% cols_11] # the cols need to be converted 
-root <- root[, (cols) := lapply(.SD, as.numeric), .SD = cols]
+root <- root[, (cols) := lapply(.SD, as.numeric), .SDcols = cols]
 #soilwater tab
 
 cols <- colnames(SoilWater)[!colnames(SoilWater) %in% cols_11] # the cols need to be converted 
-SoilWater <- SoilWater[, (cols) := lapply(.SD, as.numeric), .SD = cols]
+SoilWater <- SoilWater[, (cols) := lapply(.SD, as.numeric), .SDcols = cols]
 #es tab
 
 cols <- colnames(ES)[!colnames(ES) %in% cols_11] # the cols need to be converted 
-ES <- ES[, (cols) := lapply(.SD, as.numeric), .SD = cols]
+ES <- ES[, (cols) := lapply(.SD, as.numeric), .SDcols = cols]
 
 ```
 
@@ -331,33 +338,64 @@ There two cols has values been converted to NA by coercion. cautions going forwa
 **Rerun** the chunck `inspect types`. everything seems awesome 
 
 
+### Weather data 
+
+What are the key dates to source the right climate data?
+
+Dates|Event
+----|----
+21-Oct-10 | Sowing Date 1 in AD
+
+
+MORE DATES IN THE `sqlite` file. 
+
+There are quite a few `.met` files. 
+
+
+```{r read mets}
+
+Iversen12 <- fread("../Data/Lucerne/lincoln.met", skip = 8)
+Iversen12_col <- fread("../Data/Lucerne/lincoln.met", skip = 6, nrows = 1)
+colnames(Iversen12) <- colnames(Iversen12_col)
+head(Iversen12)
+
+AshleyDene <- fread("../Data/Lucerne/Weather_AshleyDene.met", skip = 10)
+AshleyDene_col <- fread("../Data/Lucerne/Weather_AshleyDene.met", skip = 8, nrows = 1)
+colnames(AshleyDene) <- colnames(AshleyDene_col)
+
+
+```
+
 
 ### Lock tabs into sqlite 
 
 ```{r sqlite}
 
 con <- dbConnect(SQLite(), "../Data/Richard.sqlite3")
-
+DBI::dbListTables(con)
 # The sowing date tab first
 
 colnames(dt_SD_lookup)
-dbExecute(con," CREATE TABLE `SowingDate` (
-  `V120` TEXT NOT NULL,
-  `AD` TEXT NOT NULL,
-  `I12` TEXT NOT NULL,
-  PRIMARY KEY (V120)
-);
-")
+# dbExecute(con," CREATE TABLE `SowingDate` (
+#   `V120` TEXT NOT NULL,
+#   `AD` TEXT NOT NULL,
+#   `I12` TEXT NOT NULL,
+#   PRIMARY KEY (V120)
+# );
+# ")
 
 # dbWriteTable(con, "SowingDate", dt_SD_lookup, append = TRUE)# comment out once appended
 
 # the rest 
 # sqlite does not support ISO date. it will be julian date. 
 
-ls()
+# ls()
 tab_names <- c("biomass",  "root", "Phenology","SoilWater","ES") 
 # purrr::map2(list(biomass, root, Phenology, SoilWater, ES), tab_names, ~ dbWriteTable(con, .y, .x))
+dbWriteTable(con, "met_Iversen12", Iversen12)
+dbWriteTable(con, "met_AshleyDene", AshleyDene)
 
+DBI::dbDisconnect(con)
 ```
 
 
@@ -366,7 +404,7 @@ tab_names <- c("biomass",  "root", "Phenology","SoilWater","ES")
 
 
 
-
+E
 
 
 
