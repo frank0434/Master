@@ -42,3 +42,31 @@ choose_cols <- function(dt){
   col_good = names(which(logica != 1))
   col_good
 }
+
+
+
+# theme -------------------------------------------------------------------
+
+theme_water <- function(){
+  theme_classic() + 
+    theme(panel.border = element_rect(fill = "NA"))
+}
+
+
+# fix date ----------------------------------------------------------------
+
+#' Title
+#'
+#' @param df 
+#'
+#' @return
+#' @export
+#' 
+
+fix_date <- function(df){
+  
+  dt <- as.data.table(df)
+  dt <- dt[, Date := lubridate::dmy(Date)]
+  
+  dt
+}
