@@ -40,6 +40,9 @@ _Note:_
 `SWC.2.3.m..mm.` is the profile water for each ob?
 Need to fix the layer names
 
+**The soil water has `r dim(soilwater)[1]` obs. **
+
+
 ```{r Plot, fig.height=15, fig.width=10,dpi=300}
 vars <- colnames(soilwater)[c(1:9,33)]
 soilwater_melted <- soilwater %>% 
@@ -71,6 +74,10 @@ soilwater_melted %>%
 
 ### Biomass Overview 
 
+
+**The soil water has `r dim(biomass)[1]` obs. **
+
+
 ```{r biomass, fig.height=12, fig.width=12, message=FALSE,warning=FALSE,dpi=300}
 biomass <- fix_date(biomass)
 nums <- inspect_num(biomass)
@@ -78,6 +85,8 @@ show_plot(nums)
 ```
 
 ### Root Overview 
+
+**The soil water has `r dim(root)[1]` obs. **
 
 ```{r root, fig.height=12, fig.width=12,dpi=300}
 root <- fix_date(root)
