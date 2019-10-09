@@ -1,0 +1,86 @@
+---
+title: "Data_EDA"
+author: "jian (AKA Frank) liu"
+date: "04/10/2019"
+output:
+  html_document: 
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source("../R/packages.R")
+source("../R/functions.R")
+```
+
+### Import data from sqlite
+
+```{r import sqlite}
+con <- dbConnect(SQLite(), "../Data/Richard.sqlite3")
+soilwater <- dbReadTable(con, "SoilWater")
+biomass <- dbReadTable(con, "biomass")
+root <- dbReadTable(con, "root")
+dbDisconnect(con)
+```
+
+
+### Soil Water Overview 
+
+```{r fix date}
+soilwater <- fix_date(soilwater)
+colnames(soilwater) # to copy the names for id.vars which will be used in the melt fun. 
+```
+
+_Note:_
+
+`SWC.2.3.m..mm.` is the profile water for each ob?
+Need to fix the layer names
+
+```{r Plot, fig.height=15, fig.width=10,dpi=300}
+vars <- colnames(soilwater)[c(1:9,33)]
+soilwater_melted <- soilwater %>% 
+  melt(.,id.vars = vars, variable.factor = FALSE) %>% 
+  .[, variable := as.integer(gsub("SWC.0.", "", variable))]
+soilwater_melted %>% 
+  ggplot(aes(Date, value, color = Sowing.Date)) + 
+  geom_point() +
+  facet_grid(variable ~ Site ) +
+  theme_water()
+```
+
+
+```{r soilwater hist each layer, fig.height=12, fig.width=12, message=FALSE,warning=FALSE,dpi=300}
+nums <- inspect_num(soilwater)
+show_plot(nums)
+```
+
+```{r hist}
+soilwater_melted %>% 
+  ggplot(aes(value))+
+  geom_histogram() +
+  facet_grid( ~ Site) +
+  theme_water()
+
+
+
+```
+
+### Biomass Overview 
+
+```{r biomass, fig.height=12, fig.width=12, message=FALSE,warning=FALSE,dpi=300}
+biomass <- fix_date(biomass)
+nums <- inspect_num(biomass)
+show_plot(nums)
+```
+
+### Root Overview 
+
+```{r root, fig.height=12, fig.width=12,dpi=300}
+root <- fix_date(root)
+nums <- inspect_num(root)
+show_plot(nums)
+```
