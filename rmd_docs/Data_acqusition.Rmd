@@ -10,7 +10,7 @@ output:
 ---
 
 ```{r setup, include=FALSE,warning=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 source("../R/packages.R")
 source("../R/functions.R")
 ```
@@ -392,8 +392,8 @@ colnames(dt_SD_lookup)
 # ls()
 tab_names <- c("biomass",  "root", "Phenology","SoilWater","ES") 
 # purrr::map2(list(biomass, root, Phenology, SoilWater, ES), tab_names, ~ dbWriteTable(con, .y, .x))
-dbWriteTable(con, "met_Iversen12", Iversen12)
-dbWriteTable(con, "met_AshleyDene", AshleyDene)
+# dbWriteTable(con, "met_Iversen12", Iversen12)
+# dbWriteTable(con, "met_AshleyDene", AshleyDene)
 
 DBI::dbDisconnect(con)
 ```
