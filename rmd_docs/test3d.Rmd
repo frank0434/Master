@@ -13,6 +13,7 @@ soilwater_melted <- soilwater %>%
   melt(.,id.vars = vars, variable.factor = FALSE) %>% 
   .[, variable := as.integer(gsub("SWC.0.", "", variable))]
 DBI::dbDisconnect(con)
+use_python("C:/Users/Administrator/Anaconda3/python.exe")
 ```
 
 
@@ -135,11 +136,46 @@ no = len(l)
 rows = np.ceil(no/2) + 1
 pos=1
 
-for v in l:
-    Graph = plt.figure(figsize=(18,35))
-    ax = Graph.add_subplot(rows,2,pos)
-    surface3d(v)
-    pos+=1
+# for v in l:
+#     Graph = plt.figure(figsize=(18,35))
+#     ax = Graph.add_subplot(rows,2,pos)
+#     surface3d(v)
+#     pos+=1
+# plt.show()
+plt.subplot(2, 1, 1)
+fig = plt.figure(figsize=(12,10))
+ax = fig.gca(projection='3d')
+
+ax.plot_trisurf(df['DAS'], df['SWC'],df['Depth'], cmap='hsv', linewidth=0.2)
+plt.show()
+```
+https://matplotlib.org/devdocs/tutorials/intermediate/gridspec.html#sphx-glr-tutorials-intermediate-gridspec-py
+
+```{python}
+# fig1, f1_axes = plt.subplots(ncols=2, nrows=2, constrained_layout=True)
+# plt.show()
+df['DAS']=pd.Categorical(df['DAS'])
+df['DAS']=df['DAS'].cat.codes
+fig = plt.figure(figsize=plt.figaspect(0.5))
+x =df['DAS']
+z =df['SWC']
+y =df['Depth']
+#===============
+#  First subplot
+#===============
+# set up the axes for the first plot
+ax = fig.add_subplot(1, 2, 1, projection='3d')
+ax.scatter3D(x,z,y,c = z, marker='o', cmap='hsv')
+#===============
+# Second subplot
+#===============
+# set up the axes for the second plot
+ax = fig.add_subplot(1, 2, 2, projection='3d')
+
+ax.plot_trisurf(x,z,y, cmap='hsv', linewidth=0.2)
+
+# ax.axes.set_xlim3d(left=0.000001, right=9.9999999)
+plt.show()
 ```
 
 ```{python}
