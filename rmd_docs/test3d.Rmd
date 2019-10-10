@@ -91,9 +91,9 @@ def surface3d(dt):
     # df['DAS']=df['DAS'].cat.codes
      
      
-    x =df['DAS']
-    z =df['SWC']
-    y =df['Depth']
+    # x = df['DAS']
+    # z = df['SWC']
+    # y = df['Depth']
     
     # Make the plot
     fig = plt.figure(figsize=(12,10)) # set up the size of the fig
@@ -109,10 +109,11 @@ def surface3d(dt):
     # plt.show()
     #  
      
-    surf = ax.plot_trisurf(y, x, z,  cmap='hsv', linewidth=0.2)
+    surf = ax.plot_trisurf(df['Depth', df['DAS'], df['SWC'],  cmap='hsv', linewidth=0.2)
     fig.colorbar( surf, shrink=0.5, aspect=5)
     # Rotate it
     ax.view_init(30, 45)
+    plt.show()
 
   
 df = r.SD_1_1
@@ -122,7 +123,7 @@ df.columns=["DAS","Depth","SWC"]
 # # And transform the old column name in something numeric
 df['DAS']=pd.Categorical(df['DAS'])
 # df['DAS']=df['DAS'].cat.codes
-df
+# df
 ```
 
 ```{python}
