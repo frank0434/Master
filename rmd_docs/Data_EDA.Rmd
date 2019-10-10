@@ -78,11 +78,13 @@ vars <- colnames(soilwater)[c(1:9,33)]
 soilwater_melted <- soilwater %>% 
   melt(.,id.vars = vars, variable.factor = FALSE) %>% 
   .[, variable := as.integer(gsub("SWC.0.", "", variable))]
-soilwater_melted %>% 
-  ggplot(aes(Date, value, color = Sowing.Date)) + 
+soilwater_melted[, Sowing.Date := fct_relevel(as.factor(Sowing.Date), levels = c(paste0("SD",1:10)))] %>% 
+  
+  ggplot(aes(Date, value, color = as.factor(variable))) + 
   geom_point() +
-  facet_grid(variable ~ Site ) +
-  theme_water()
+  facet_grid(Sowing.Date ~ Site ) +
+  theme_water() +
+  scale_color_viridis_d()
 soilwater_melted[Sowing.Date %in% paste0("SD", 1:5)] %>% 
   ggplot(aes(Date, value, color = Sowing.Date)) + 
   geom_point() +
