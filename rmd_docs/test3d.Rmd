@@ -24,7 +24,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import numpy as np
- 
+import sqlite3
+
 # # Get the data (csv file is hosted on the web)
 # url = 'https://python-graph-gallery.com/wp-content/uploads/volcano.csv'
 # data = pd.read_csv(url)
