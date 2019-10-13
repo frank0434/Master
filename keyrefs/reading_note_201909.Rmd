@@ -112,3 +112,75 @@ _Note_ explain the major AL models in R and py. could be a great ref
 2. comparison machine learning models 
 3. apsim compares to machine learning models 
 4. causal interferene??
+
+
+# 20191012
+
+Hamish 2012 
+
+Paddock |Trt| Period | Method
+-----|------|------|---
+Iv8|irri|30 November 1996 ~ ?| rain fall on site / broadfields
+Iv9| irri|24 October 2000 ~ ?| rain fall on site / broadfields
+Iv9|dry|2001–2002 rain-shelters as required from August to May|
+
+Measurements were made over a 5-year period from 18 August
+1997 to 30 June 2002
+
+SWC was measured the same way as Richard's
+[fig6 is a must](../imgs/water_stressVS_EP.png)
+
+
+While the relationship between T
+and water stress provides insight into the effects of water stress on
+crop water use, it is not necessary to consider in the prediction of
+transpiration when transpiration is constrained to the minimum of
+supply and demand (Eq. (1)). In contrast, biomass production must
+be constrained by water stress. Using the transpiration efficiency
+approach, the daily growth increment (G) is first calculated in
+the absence of water stress and used to estimate EPD. Then G is
+reduced to account for the effects of water stress by multiplying by
+a water stress factor, f(W) = EPS/EPD
+
+# 20191013
+
+ideal test data set for apsimx
+
+1. crop phenology development 
+2. biomass and nutrient accumulatoin of crop organs
+3. measurements of canopy and leaf characteristics
+4. soil water and N status across a range fo environments under stressed and unstressed conditions 
+
+water use and stress responses in wheat
+
+1. actual water uptake is the minimum of demand and the water supply that can be extracted by the root system
+2. water supply relative to demand S/D
+3. stress factor is calculated from S/D that is applied to potential RUE and leaf area expansion each day 
+4. water stress effcts on senescence - $TT_{accum}$ 
+Efficiency (NSE), Model Error (ME) and Mean Absolute Error
+(MAE). When plotting observed vs predicted for all treatment values,
+the spread of absolute values is often dominated by environmental
+variation from site to site, particularly when the dataset includes experimental
+results from a wide range of soil and climate situations. This
+tends to obscure how well the model is predicting response to variation
+in management (i.e. different experimental treatments) at specific locations
+(Mitchell 1997).
+
+**challenges that using large datasets**
+1. specific elments lost in the large number of data points.
+2. one change can worsen another aspect
+
+a smarter system where developers can fast track the changes effects and the overall model performance. 
+
+`build-test-document procedure`
+is `FW` under photosynthesis folder still the water stress function ?
+
+
+current lucerne model phenolodogy based on Ed's 2011 paper
+
+
+Specifically, to
+account for sub-optimal growth conditions, lucerne reserve organs
+(e.g. crowns and taproots) have to be implemented to store nitrogen,
+a root nodule organ is required to fix atmospheric nitrogen and
+water stress responses have to be parameterised
