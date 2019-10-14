@@ -184,3 +184,19 @@ account for sub-optimal growth conditions, lucerne reserve organs
 (e.g. crowns and taproots) have to be implemented to store nitrogen,
 a root nodule organ is required to fix atmospheric nitrogen and
 water stress responses have to be parameterised
+
+# 20191014
+
+Harmonization and translation of crop modeling data to ensure interoperability.
+
+While the various models may implement different algorithms for crop, soil and atmospheric processes, 
+the driving data are generally similar. 
+They typically include:
+daily weather records, 
+soil physical and
+chemical properties, and
+information related to management practices such as planting, fertilization, irrigation and harvest.
+
+**is aspimx adapted from agmip for the json format file?**
+
+
