@@ -401,13 +401,26 @@ DBI::dbDisconnect(con)
 
 
 
+# Attempt to organise all excel dataset into one
 
+```{r}
+# read all excels into a list 
+l <- lapply(xlsxs, function(x){
+  read_excel(file.path(path_apX, x))
+})
 
+# name each element as the excel file name
+names(l) <- gsub("\\.xlsx", "", xlsxs)
+names(l)
 
-E
+# dimension of each excel file
+lapply(l, dim) 
 
+# check which dataset has `SW` OR `SWC` in the variable names
 
-
-
-
+no_SW <- lapply(l, function(x){
+  vars <- colnames(x)
+  sum(grepl( pattern = "SW", x = vars, ignore.case = TRUE, perl = TRUE))
+})
+```
 
