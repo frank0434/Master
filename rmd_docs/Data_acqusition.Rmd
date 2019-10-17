@@ -418,9 +418,50 @@ lapply(l, dim)
 
 # check which dataset has `SW` OR `SWC` in the variable names
 
-no_SW <- lapply(l, function(x){
+no.Of_SW <- lapply(l, function(x){
   vars <- colnames(x)
   sum(grepl( pattern = "SW", x = vars, ignore.case = TRUE, perl = TRUE))
 })
+
+l_swc <-  l[-which(no.Of_SW==0)]
+sapply(l_swc, colnames)
 ```
+
+obsall and obsalldata have duplicated colnames for clock.today. 
+
+```{r fix obvious duplicated colnames}
+# (l$ObsAll %>% colnames())[!(l$ObsAll %>% colnames()) %in% (l$ObsAllData %>% colnames())] # checking the mismatch ones
+
+# fix the obvious duplication
+l_swc$ObsAll <- l_swc$ObsAll %>% 
+  select(- Clock.Today...8, - SimulationName...129) %>% 
+  rename(Clock.Today = Clock.Today...2)
+
+l_swc$ObsAllData <- l_swc$ObsAllData %>% 
+  select(- Clock.Today...8, - SimulationName...104) %>% 
+  rename(Clock.Today = Clock.Today...2)
+
+```
+
+```{r bind to a data table}
+DT <- rbindlist(l_swc, fill = TRUE)
+dim(DT)
+DT <- unique(DT) # remove duplicated obs
+dim(DT)
+colnames(DT) %>% unique()
+# glimpse(DT)
+empty_col <- lapply(DT, function(x){
+  which(sum(is.na(x)) == dim(DT)[1])
+  
+}) 
+vars <- which(empty_col==1) %>% names() #empty colnames that need to be excluded.
+
+DT[,..vars] %>% 
+  vis_miss() # check it is truely missing values 
+cols <- colnames(DT)[!colnames(DT) %in% vars]
+DT <- DT[, ..cols]
+dim(DT)
+```
+
+Need to figure out if those SW cols could be combined 
 
