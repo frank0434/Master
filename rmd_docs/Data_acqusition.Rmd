@@ -406,7 +406,7 @@ DBI::dbDisconnect(con)
 ```{r}
 # read all excels into a list 
 l <- lapply(xlsxs, function(x){
-  read_excel(file.path(path_apX, x))
+  read_excel(file.path(path_apX, x), guess_max = 10000) # increase the guess_max to guess the type of the variable
 })
 
 # name each element as the excel file name
@@ -414,10 +414,21 @@ names(l) <- gsub("\\.xlsx", "", xlsxs)
 names(l)
 
 # dimension of each excel file
-lapply(l, dim) 
+lapply(l, dim) %>% 
+  lapply(`[`,1) %>% 
+  as.tibble() %>% 
+  select(-(ObsAll:ObsAllData)) %>% 
+  apply(1, sum)
 
 # check which dataset has `SW` OR `SWC` in the variable names
 
+
+```
+
+obsall and obsalldata have duplicated colnames for clock.today. 
+
+```{r fix obvious duplicated colnames}
+# (l$ObsAll %>% colnames())[!(l$ObsAll %>% colnames()) %in% (l$ObsAllData %>% colnames())] # checking the mismatch ones
 no.Of_SW <- lapply(l, function(x){
   vars <- colnames(x)
   sum(grepl( pattern = "SW", x = vars, ignore.case = TRUE, perl = TRUE))
@@ -425,26 +436,23 @@ no.Of_SW <- lapply(l, function(x){
 
 l_swc <-  l[-which(no.Of_SW==0)]
 sapply(l_swc, colnames)
-```
-
-obsall and obsalldata have duplicated colnames for clock.today. 
-
-```{r fix obvious duplicated colnames}
-# (l$ObsAll %>% colnames())[!(l$ObsAll %>% colnames()) %in% (l$ObsAllData %>% colnames())] # checking the mismatch ones
 
 # fix the obvious duplication
 l_swc$ObsAll <- l_swc$ObsAll %>% 
   select(- Clock.Today...8, - SimulationName...129) %>% 
-  rename(Clock.Today = Clock.Today...2)
+  rename(SimulationName = SimulationName...1, Clock.Today = Clock.Today...2)
 
 l_swc$ObsAllData <- l_swc$ObsAllData %>% 
   select(- Clock.Today...8, - SimulationName...104) %>% 
-  rename(Clock.Today = Clock.Today...2)
-
+  rename(SimulationName = SimulationName...1, Clock.Today = Clock.Today...2)
+# l_swc$Rutherglen <- NULL #get rid of reduandant data
+# l_swc$Nekia <- read_excel("../Data/Lucerne/Nekia.xlsx", guess_max = 10000)
+# col_types = c("text","date", rep("numeric", 36))
+# obsall <- l_swc$ObsAll
 ```
 
 ```{r bind to a data table}
-DT <- rbindlist(l_swc, fill = TRUE)
+DT <- rbindlist(l_swc, fill = TRUE,use.names = T,idcol = "sourceId")
 dim(DT)
 DT <- unique(DT) # remove duplicated obs
 dim(DT)
@@ -455,9 +463,9 @@ empty_col <- lapply(DT, function(x){
   
 }) 
 vars <- which(empty_col==1) %>% names() #empty colnames that need to be excluded.
-
-DT[,..vars] %>% 
-  vis_miss() # check it is truely missing values 
+# 
+# DT[,..vars] %>% 
+#   vis_miss() # check it is truely missing values 
 cols <- colnames(DT)[!colnames(DT) %in% vars]
 DT <- DT[, ..cols]
 dim(DT)
@@ -465,3 +473,153 @@ dim(DT)
 
 Need to figure out if those SW cols could be combined 
 
+```{r}
+DT %>% 
+  as.tibble() %>% 
+  inspect_na() %>% 
+  arrange(pcnt)
+
+```
+
+quite a few variables have large chunck missing values
+
+
+### exam water obs first
+
+```{r starts with sw}
+
+col_essential <- colnames(DT)[1:2]
+
+col_swc <- c(col_essential, grep("sw", colnames(DT), ignore.case = TRUE, value = TRUE))
+
+
+DT_swc <- DT[,..col_swc] # subsetting swc cols 
+DT_swc <- DT_swc[, (col_swc[-(1:2)]) := lapply(.SD, function(X) as.double(X,length = 3)), 
+                 .SDcols = col_swc[-(1:2)]][] # convert to numeric values 
+
+inspect_num(DT_swc)
+colnames(DT_swc)
+```
+
+what do these swc mean 
+how they have been collected 
+where are they from.... 
+
+excel file has not been read correctly:
+**increase the `guess_format` to 10000**
+
+```{r which is which}
+DT_swc[!is.na(SW2)]
+DT_swc[!is.na(`SW0-25`)]
+DT_swc[!is.na(SW10to40)]
+DT_swc[!is.na(SWC)]
+DT_swc[!is.na(`SW10-50cm`)]
+unique(DT$SimulationName)
+DT_swc[SimulationName == "Iversen_121DefoliationHHFDFD10"]
+melt(DT_swc, id.vars = col_essential)[!is.na(value)][, .N, by = .(SimulationName)]
+
+melt(DT_swc, id.vars = col_essential)[!is.na(value)][, .N, by = .(variable)]
+```
+
+35 simulationNames in total
+8256 obs in total for soil water
+53 columns have values 
+
+
+```{r}
+
+melt(DT_swc, id.vars = col_essential)[!is.na(value)
+                                      ][, .N, by = .(variable, SimulationName)
+                                        ][]
+```
+
+**There is no layer data for Iversen8 & Iversen12**
+only swc as soil water content in a soil profile? 
+Nekia file contains the ruthergledefoliation layer data. 
+`ObsAll` has 
+nekia
+rutherglede
+hudson 
+griffith
+pergamino
+
+
+_Note:_
+
+1. what is SWCerror? standard error?
+2. total_sw? profile water? can be combined into SWC? 
+3. what is SD in Hudson? 
+
+
+
+after all these checking 
+obsall seems have the most complete data? 
+
+```{r}
+DT_obsall <- l_swc$ObsAll %>% 
+  as.data.table()
+class(DT_obsall)
+DT_obsall %>% dim()
+DT_long  <- melt(DT_obsall, id.vars = col_essential)[!is.na(value)]
+DT_long[, .N, by = .(SimulationName, variable)]
+```
+
+## Is ObsData has all the rest of files 
+
+```{r}
+main_cols <- l_swc$ObsAll$SimulationName %>% unique()
+therest_cols <- lapply(l_swc[-7], function(x) {
+  x$SimulationName %>% unique()
+})
+therest_cols <- unlist(therest_cols) %>% unique()
+length(therest_cols)
+therest_cols[!therest_cols%in% main_cols]
+```
+
+
+the obsData has no Iversen_12 fall domancy expt. 
+
+Iversen_12 has no water relevant bits. 
+
+# so **ObsAll is the one to use**
+
+```{r ObsAll}
+obsall <- read_excel("../Data/Lucerne/ObsAll.xlsx", guess_max = 15000)
+
+obs_DT <- as.data.table(as_tibble(obsall, .name_repair = "unique"))
+
+colnames(obs_DT) # the dash in colnames is a pain in the ***
+obs_DT <- obs_DT[, -c("Clock.Today...8", "SimulationName...129")]
+setnames(obs_DT, colnames(obs_DT), c("SimulationName", "Clock.Today", colnames(obs_DT)[-(1:2)]))
+
+col_essential <- colnames(obs_DT)[1:2]
+obs_DT <- melt(obs_DT, id.vars = col_essential)[, variable := gsub("-","to", variable) # replace the ** dash with to
+                                                ][, value := as.numeric(value)][!is.na(value)]
+obs_DT[is.na(value)]
+metadata <- unique(obs_DT$variable) %>% 
+  enframe() %>% 
+  rename(variables = value) %>% 
+  mutate(description = NA, 
+         units = NA)
+toExcelformat <- dcast(obs_DT, SimulationName + Clock.Today ~ ...)
+library(openxlsx)
+write.xlsx(toExcelformat, file = "../Data/Lucerne/20191018_ObsAll_Frank.xlsx", sheetName = "Observed")
+```
+
+are those 0s in the data are turely 0s? 
+
+
+```{r}
+con <- dbConnect(SQLite(), "../Data/Lucerne/ObsAll.sqlite3")
+DBI::dbListTables(con)
+# The sowing date tab first
+dbWriteTable(con, name = "metadata", metadata)
+
+dbWriteTable(con, name = "ObsData", toExcelformat)
+
+DBI::dbDisconnect(con)
+```
+
+
+# to do 
+combine the richard one with obs all
