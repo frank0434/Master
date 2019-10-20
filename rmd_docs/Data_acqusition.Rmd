@@ -488,7 +488,7 @@ quite a few variables have large chunck missing values
 
 ```{r starts with sw}
 
-col_essential <- colnames(DT)[1:2]
+col_essential <- colnames(DT)[1:3]
 
 col_swc <- c(col_essential, grep("sw", colnames(DT), ignore.case = TRUE, value = TRUE))
 
@@ -556,8 +556,11 @@ after all these checking
 obsall seems have the most complete data? 
 
 ```{r}
+
 DT_obsall <- l_swc$ObsAll %>% 
   as.data.table()
+
+col_essential <- colnames(DT_obsall)[1:2]
 class(DT_obsall)
 DT_obsall %>% dim()
 DT_long  <- melt(DT_obsall, id.vars = col_essential)[!is.na(value)]
@@ -602,20 +605,23 @@ metadata <- unique(obs_DT$variable) %>%
   mutate(description = NA, 
          units = NA)
 toExcelformat <- dcast(obs_DT, SimulationName + Clock.Today ~ ...)
-library(openxlsx)
-write.xlsx(toExcelformat, file = "../Data/Lucerne/20191018_ObsAll_Frank.xlsx", sheetName = "Observed")
+# library(openxlsx)
+# write.xlsx(toExcelformat, file = "../Data/Lucerne/20191018_ObsAll_Frank.xlsx", sheetName = "Observed")
 ```
 
 are those 0s in the data are turely 0s? 
 
 
 ```{r}
-con <- dbConnect(SQLite(), "../Data/Lucerne/ObsAll.sqlite3")
+con <- dbConnect(SQLite(), "../Data/ObsAll.sqlite3")
 DBI::dbListTables(con)
 # The sowing date tab first
-dbWriteTable(con, name = "metadata", metadata)
-
-dbWriteTable(con, name = "ObsData", toExcelformat)
+# dbWriteTable(con, name = "metadata", metadata)
+# 
+# dbWriteTable(con, 
+#              name = "ObsData", 
+#              toExcelformat[, Clock.Today := as.character(Clock.Today)][],
+#              overwrite = TRUE)
 
 DBI::dbDisconnect(con)
 ```
@@ -623,3 +629,105 @@ DBI::dbDisconnect(con)
 
 # to do 
 combine the richard one with obs all
+
+
+```{r read from sqlite}
+con_richard <- dbConnect(SQLite(), "../Data/Richard.sqlite3")
+con_all <- dbConnect(SQLite(),"../Data/ObsAll.sqlite3")
+tabs <- con_richard %>% 
+  dbListTables()
+
+tabs
+tabs_l <- lapply(tabs, function(x){
+  con_richard %>% 
+    dbReadTable(x)
+})
+tabs_l[[1]]$Date %>% 
+  dmy()
+obsData <- con_all %>% 
+  dbReadTable("ObsData")
+
+```
+
+
+```{r inspect }
+names(tabs_l) <- tabs
+tabs_sub <- lapply(tabs_l[-c(4, 6:7)], function(x){
+  dt <- as.data.table(x)
+  dt$Date <- lubridate::dmy(dt$Date)
+  dt
+})
+DT_richard <- rbindlist(tabs_sub,use.names = TRUE,  fill = TRUE)
+DT_richard
+inspect_cat(DT_richard)
+DT_obsData <- obsData %>% 
+  as.data.table() %>% 
+  .[, Clock.Today := as.Date(Clock.Today)]
+
+ashley <- grepl(pattern = "Ashley", ignore.case = T,x = DT_obsall$SimulationName)
+DT_obsall[ashley,]
+#904 obs for ashley dene
+unique(DT_obsall$SimulationName)
+grepl(pattern = "Iversen_12sowingdate", ignore.case = T,x = DT_obsall$SimulationName) %>% 
+  sum()
+# 1057 for ivernse 12
+
+```
+
+
+# how many form richard excel if summarised by treatment 
+
+```{r}
+
+  
+ashley <- melt(DT_richard[Site == "AshleyDene" & Sowing.Date != "Fallow"
+                ][, ':='(SimulationName = paste0(Site,"SowingDate", Sowing.Date),
+                         Clock.Today = Date)
+                  ], id.vars = c("SimulationName", "Clock.Today", "Rep"))[, value := as.numeric(value)
+                                                                          ][!is.na(value) & !variable %in% c("Date","DAS", "Plot")
+                                                                            ][, .(value_mean = mean(value, na.rm = T)), by = .(SimulationName, Clock.Today, variable)][!is.na(value_mean)] %>% 
+  dcast(SimulationName + Clock.Today ~ ...) %>% 
+  unique(.)
+# 928 obs in richard
+iv12 <- melt(DT_richard[Site != "AshleyDene" & Sowing.Date != "Fallow"
+                ][, ':='(SimulationName = paste0(Site,"SowingDate", Sowing.Date),
+                         Clock.Today = Date)
+                  ], id.vars = c("SimulationName", "Clock.Today", "Rep"))[, value := as.numeric(value)
+                                                                          ][!is.na(value) & !variable %in% c("Date","DAS", "Plot")
+                                                                            ][, .(value_mean = mean(value, na.rm = T)), by = .(SimulationName, Clock.Today, variable)][!is.na(value_mean)] %>% 
+  dcast(SimulationName + Clock.Today ~ ...) %>% 
+  unique(.)
+# 1076 in richard
+
+```
+ 
+
+```{r}
+
+ashley_obsData <- DT_obsData[grep(pattern = "Ashley", ignore.case = T,x = DT_obsData$SimulationName)]
+
+ashley_diff <- inspect_cat(ashley, ashley_obsData) 
+ashley_diff %>% 
+  show_plot()
+date <- ashley_obsData$Clock.Today[!ashley_obsData$Clock.Today %in%  ashley$Clock.Today]
+ashley_obsData[Clock.Today%in% date]
+inspect_num(ashley, ashley_obsData) 
+glimpse(ashley)
+glimpse(ashley_obsData)
+
+ashley_obsData <- DT_obsData[grep(pattern = "Iversen_12sowingdate", ignore.case = T,x = DT_obsData$SimulationName)]
+
+ashley_diff <- inspect_cat(iv12, ashley_obsData) 
+ashley_diff %>% 
+  show_plot()
+date <- ashley_obsData$Clock.Today[!ashley_obsData$Clock.Today %in%  ashley$Clock.Today]
+ashley_obsData[Clock.Today%in% date]
+inspect_num(ashley, ashley_obsData) 
+glimpse(iv12)
+
+glimpse(ashley_obsData)
+```
+
+# DO i need to consider plant number stem/leaf ratio stuff? 
+or mainly focus on soil water and yield? 
+
