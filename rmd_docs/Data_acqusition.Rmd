@@ -618,8 +618,8 @@ DBI::dbListTables(con)
 # The sowing date tab first
 # dbWriteTable(con, name = "metadata", metadata)
 # 
-# dbWriteTable(con, 
-#              name = "ObsData", 
+# dbWriteTable(con,
+#              name = "ObsData",
 #              toExcelformat[, Clock.Today := as.character(Clock.Today)][],
 #              overwrite = TRUE)
 
@@ -711,7 +711,7 @@ ashley_diff %>%
   show_plot()
 date <- ashley_obsData$Clock.Today[!ashley_obsData$Clock.Today %in%  ashley$Clock.Today]
 ashley_obsData[Clock.Today%in% date]
-inspect_num(ashley, ashley_obsData) 
+# inspect_num(ashley, ashley_obsData) 
 glimpse(ashley)
 glimpse(ashley_obsData)
 
@@ -722,7 +722,7 @@ ashley_diff %>%
   show_plot()
 date <- ashley_obsData$Clock.Today[!ashley_obsData$Clock.Today %in%  ashley$Clock.Today]
 ashley_obsData[Clock.Today%in% date]
-inspect_num(ashley, ashley_obsData) 
+# inspect_num(ashley, ashley_obsData) 
 glimpse(iv12)
 
 glimpse(ashley_obsData)
