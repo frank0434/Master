@@ -1,0 +1,239 @@
+---
+title: "Data_EDA"
+author: "jian (AKA Frank) liu"
+date: "04/10/2019"
+output:
+  html_document: 
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+---
+
+### Expt details 
+
+a. **2** years expt.
+b. **2** sites
+   a. Lincoln Uni
+   b. Ashely Dene
+c. **10** sowing date in both sites. 
+   a. five sowing date in the first year
+   b. five sowing date in second year
+   
+|Year 1 (Seedling crop) | Year 2 (Seedling & Regrowth)|
+|--------| ------------|
+|SD1, SD2, SD3, SD4, SD5| The first five sowing date Regrowth|
+||SD6, SD7, SD8, SD9, SD10|
+_Note:_ The setup helps to compare the seedling and regrowth in the same conditions in Year 2. 
+
+d. **1** cultivar.
+e. **4** reps each site. 
+f. **2** soil types
+   a. stone free - plant available water capaciy (PAWC) 360mm/2.3m
+   b. ~~stony - PAWC 240/2.3m~~ This type is for a grazing trial. probably not a good idea for a starting?
+   c. very stony 130mm/2.3m 
+g. **22** layers of soil water measurements - 10 cm interval below top 20 cm
+   a. top 20 cm was measured by TDR. 
+   c. remaining 21 layers was meastured by Neutron probe
+h. **1** follow treat in both sites - absolute soil evaporation 
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+source("../R/packages.R")
+source("../R/functions.R")
+```
+
+
+### Import data from sqlite
+
+```{r import sqlite}
+con <- dbConnect(SQLite(), "../Data/Richard.sqlite3")
+soilwater <- dbReadTable(con, "SoilWater")
+biomass <- dbReadTable(con, "biomass")
+root <- dbReadTable(con, "root")
+ES <- dbReadTable(con, "ES")
+dbDisconnect(con)
+
+#fix date
+
+soilwater <- fix_date(soilwater)
+biomass <- fix_date(biomass)
+root <- fix_date(root)
+ES <- fix_date(ES)
+```
+
+
+### Soil Water Overview 
+
+_Note:_
+
+`SWC.2.3.m..mm.` is the profile water for each ob?
+Need to fix the layer names
+
+**The soil water has `r dim(soilwater)[1]` obs. **
+
+
+```{r Plot, fig.height=15, fig.width=10,dpi=300}
+vars <- colnames(soilwater)[c(1:9,33)]
+soilwater_melted <- soilwater %>% 
+  melt(.,id.vars = vars, variable.factor = FALSE) %>% 
+  .[, variable := as.integer(gsub("SWC.0.", "", variable))]
+soilwater_melted[, Sowing.Date := fct_relevel(as.factor(Sowing.Date), levels = c(paste0("SD",1:10)))] %>% 
+  
+  ggplot(aes(Date, value, color = as.factor(variable))) + 
+  geom_point() +
+  facet_grid(Sowing.Date ~ Site ) +
+  theme_water() +
+  scale_color_viridis_d()
+soilwater_melted[Sowing.Date %in% paste0("SD", 1:5)] %>% 
+  ggplot(aes(Date, value, color = Sowing.Date)) + 
+  geom_point() +
+  facet_grid(variable ~ Site ) +
+  theme_water() +
+  ggtitle("First 5 sowing date")
+```
+
+
+```{r profile water}
+soilwater[,.(Date, Site,Sowing.Date,SWC.2.3.m..mm.) ]%>% 
+  ggplot(aes(Date, SWC.2.3.m..mm., color = Sowing.Date)) + 
+  geom_point() +
+  facet_grid( ~ Site ) +
+  theme_water() +
+  ggtitle("Profile water")
+```
+
+
+
+```{r soilwater hist each layer, fig.height=12, fig.width=12, message=FALSE,warning=FALSE,dpi=300}
+
+nums <- inspect_num(soilwater[Site == "AshleyDene"])
+show_plot(nums)
+print("SWC distribution in each layer in AshleyDene")
+
+nums <- inspect_num(soilwater[Site != "AshleyDene"])
+show_plot(nums)
+print("SWC distribution in each layer in Lincoln Uni")
+```
+
+```{r hist}
+soilwater_melted %>% 
+  ggplot(aes(value))+
+  geom_histogram() +
+  facet_grid( ~ Site) +
+  theme_water()
+
+
+
+```
+
+### Evapotranspiration surface
+
+This is for calibrate the model for Potential Ep since there is no crop growing on this area?
+
+
+```{r ES, fig.height=14, fig.width=14, dpi=300}
+
+vars <- colnames(ES)[c(1:6,31)]
+ES_melted <- ES %>% 
+  melt(.,id.vars = vars, variable.factor = FALSE) %>% 
+  .[, variable := as.integer(gsub("SWC.0\\.", "", variable))]
+ES_melted[, variable:= ifelse(is.na(variable), 24, variable)] %>% 
+  ggplot(aes(Date, value)) + 
+  geom_point() +
+  facet_grid(variable ~ Site ) +
+  theme_water()
+
+```
+
+### Biomass Overview 
+
+
+
+**The Biomass has `r dim(biomass)[1]` obs for two sites. **
+
+
+
+
+```{r biomass, fig.height=12, fig.width=12, message=FALSE,warning=FALSE,dpi=300}
+
+nums <- inspect_num(biomass)
+show_plot(nums)
+inspect_cat(biomass) %>% 
+  show_plot()
+```
+
+```{r}
+# GGally::ggpairs(biomass[,.(Site, Sowing.Date, Date, FW..g.,DW..g.)],aes(colour = Site, alpha = 0.4))
+colnames(biomass)
+biomass_sub <- biomass[,.(Site, Date, Sowing.Date, DAS,  Shoot.No., Shoots.m2, FW..g., DW..g., Leaf.Area..cm.,LAImod)]
+```
+
+_Note:_
+
+Too many vars, take long time to generate the pairplot. 
+R is a bit slow to plot big correlation plots 
+Try seaborn in python. still slow. 
+consider to set up `Draker` plan. 
+
+
+
+![Biomass random plotting](biomass_cor.png)
+**Maybe leave the biomass data at last to touch. **
+```{python}
+# import seaborn as sns
+# import matplotlib.pyplot as plt
+# 
+# sns.pairplot(r.biomass_sub, hue="Sowing.Date")
+# plt.show()
+# plt.savefig("biomass_cor.png", dpi = 300)
+```
+
+
+
+### Root Overview 
+
+
+**The Root tab has `r dim(root)[1]` obs. **
+
+
+```{r root, fig.height=12, fig.width=12,dpi=300}
+
+nums <- inspect_num(root)
+show_plot(nums)
+```
+
+
+### Basic equations
+
+Potential Evapotranspiration from weather station, calculated by Peman evapotranspiration potential (**EP**).
+
+Potential soil water deficit (**PSMD**)
+
+$$PSMD_i = PSMD_{i-1} + EP_i - rainfall_i$$
+
+Vapour pressure deficit (**VDP**)
+
+Soil water content (**SWC**) 
+
+$$SWC = \sum_{bot}^{top} θ * d$$
+
+Where θ is the volumetric water content (VWC) of individual layers as measured in Section 6.2.1.2, d is the depth of the layer, top is the 0 to 0.2 m 
+layer and bot is the 2.2 to 2.3 m layer.
+
+water use (**WU**, mm per period)
+
+$$WU = P_R – (SWC_E – SWC_S)$$
+
+Where PR is the sum of rainfall for the same period, SWCS and SWCE represent the actual soil water content of the profile as measured (Section 6.2.1.2) for the start and end of the period, respectively. This equation assumes no rainfall is lost as drainage or runoff.
+
+
+Daily water use ($WU_{daily}$)
+
+$$WU_{daily} = (WU/EP) * EP_{daily}$$
+
+
+Soil water deficit (**SWD**)
+
+$$SWD = SWD_i + WU_{daily} - R$$
+
