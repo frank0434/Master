@@ -49,7 +49,8 @@ choose_cols <- function(dt){
 
 theme_water <- function(){
   theme_classic() + 
-    theme(panel.border = element_rect(fill = "NA"))
+    theme(panel.border = element_rect(fill = "NA"),
+          text = element_text(size = 14))
 }
 
 

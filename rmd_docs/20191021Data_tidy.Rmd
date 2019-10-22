@@ -9,7 +9,7 @@ output: github_document
 2. combin `ObsAll` with Richard data
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.width = 10, fig.height = 8, dpi = 300)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.width = 11, fig.height = 7, dpi = 300)
 source("../R/packages.R")
 source("../R/functions.R")
 ```
@@ -83,11 +83,17 @@ dt_profile %>%
   ggplot(aes(Clock.Today, SWC, color = Site)) +
   geom_point() + 
   theme_water()
-dt_profile[Site != "Gatton"  & SWC > 10] %>% 
-  ggplot(aes(Clock.Today, SWC, color = Site)) +
-  geom_point(size = 2) + 
+dt_profile[Site != "Gatton"  & SWC > 10 & SWC!=0] %>% 
+  ggplot(aes(Clock.Today, SWC, color = Site, shape = Site)) +
+  geom_point(size = 2.5) + 
   theme_water() + 
-  scale_color_viridis_d()
+  scale_color_viridis_d(option = "D") +
+  scale_x_datetime(date_breaks = "2 year", date_labels = "%Y", name = "") +
+  theme( legend.position = c(.90, .72)) +
+  scale_shape_manual(values=c(20:9)) +
+  ggtitle("Soil water content in the PROFILE for all dataset")
+ggsave("../imgs/SWC_in_profile_mm.png", height = 7, width = 11)
+# dt_profile[Clock.Today > "2005-01-01" & Clock.Today < "2010-10-31"]
 
 ```
 
