@@ -586,6 +586,9 @@ Iversen_12 has no water relevant bits.
 
 # so **ObsAll is the one to use**
 
+`ObsAll` has no Iversen_12 fall domancy expt 
+`ObsAllData` has no Iversen_12 water and dry expt 
+
 ```{r ObsAll}
 obsall <- read_excel("../Data/Lucerne/ObsAll.xlsx", guess_max = 15000)
 
