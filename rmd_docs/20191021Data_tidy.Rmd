@@ -3,30 +3,141 @@ title: "Data_tidy"
 output: github_document
 ---
 
+## Aim 
+
+1. improve the variable names to the same logic
+2. combin `ObsAll` with Richard data
+
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.width = 10, fig.height = 8, dpi = 300)
 source("../R/packages.R")
 source("../R/functions.R")
 ```
 
-## GitHub Documents
+## Exam all variable names
 
-This is an R Markdown format used for publishing markdown documents to GitHub. When you click the **Knit** button all R code chunks are run and a markdown file (.md) suitable for publishing to GitHub is generated.
+```{r read in data}
+obsall <- read_excel("../Data/Lucerne/ObsAll.xlsx", guess_max = 15000)  %>% # enlarge number of guess format of the variable type 
+  as_tibble( .name_repair = "unique") %>%  # fix the name 
+  as.data.table() # change to data.table format 
+col_xiumei <- colnames(read_excel("../Data/Lucerne/ObsAllData.xlsx", n_max = 1)) # similar names?
 
-## Including Code
+not_in_xiumei <- setdiff(colnames(obsall), col_xiumei)
 
-You can include R code in the document as follows:
-
-```{r cars}
-summary(cars)
+obsall[, c("SimulationName...1", not_in_xiumei), with =FALSE][!is.na(SW11)]$SimulationName...1 %>% 
+  unique()
 ```
 
-## Including Plots
+The dataset `ObsAllData` xiumei using has no 
+Nekia/Iversen_12(dry/irri)
 
-You can also embed plots, for example:
+`NekiaDefoliation`:
+1. Soil moisture measurement intervals?
+2. measured volumetric soil water content? 
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+others are mm? 
+
+
+`Elliot dry/irri` have only shootbiomass?! 
+`GattonDefoliation` has only biomass data - no water
+
+`AshlydeenDefoliation`  has SWC and Height/shootbiomass 
+
+```{r}
+
+colnames(obsall) # the dash in colnames is a pain in the ***
+obsall <- obsall[, -c("Clock.Today...8", "SimulationName...129")] # duplicated cols
+setnames(obsall, colnames(obsall), c("SimulationName", "Clock.Today", colnames(obsall)[-(1:2)]))
+
+col_essential <- colnames(obsall)[1:2] # SimulationName and Clock.Today are consistent across all 
+col_swc <-  grep("sw", colnames(obsall), ignore.case = TRUE, value = TRUE)
+
+cols <- c(col_essential, "Shootbiomass", col_swc) # only extract the biomass and swc relevant
+
+DT_Biomass_swc <- melt(obsall[,..cols], id.vars = col_essential)[!is.na(value) & value != 0 # get rid of NAs
+                                               ][, variable := gsub("-","to", variable) # get rid of dashes
+                                                 ]
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r LIGHT VISU}
+DT_Biomass_swc[!variable %in% c("SWCerror", "Shootbiomass")]  %>% 
+  ggplot(aes(Clock.Today, value, color = variable)) +
+  geom_point() + 
+  theme_water()
+
+DT_Biomass_swc[variable == "SWCerror"]$SimulationName %>% unique()
+
+dt <- DT_Biomass_swc[!variable %in% c("SWCerror") & value != 0, .(mean = mean(value, na.rm = T)), by = .(SimulationName, Clock.Today, variable)]%>% 
+  dcast(., SimulationName + Clock.Today ~ ...)
+colnames(dt)
+col_rowsum <- colnames(dt)[-c(1:2, length(dt))]
+dt[is.na(SWC)]
+dt[!is.na(SW10)]
+
+dt_profile <- dt[, SWC := ifelse(is.na(SWC), rowSums(.SD, na.rm = T), SWC), .SDcols = col_rowsum # calculate the profile water
+   ][, SimulationName := ifelse(SimulationName == "AshlydeenDefoliation", "AshleyDeneDefoliation", SimulationName) # fix typo
+     ][, Site := gsub("SowingDate.+|Defoliation|Water.+", "", SimulationName) # add a new variable Site
+       ]
+dt_profile %>% 
+  ggplot(aes(Clock.Today, SWC, color = Site)) +
+  geom_point() + 
+  theme_water()
+dt_profile[Site != "Gatton"  & SWC > 10] %>% 
+  ggplot(aes(Clock.Today, SWC, color = Site)) +
+  geom_point(size = 2) + 
+  theme_water() + 
+  scale_color_viridis_d()
+
+```
+
+no need for swcerror
+~summarised all layers to SWC?~ Done
+`SWCerror` is from Iversen_12/Iversen_9/AshleyDene
+
+One value from Nekia has no SWC profile value
+and don't know what is the interval for the measurement to convernt % to mm
+
+
+```{r bring in the richard water}
+con_richard <- dbConnect(SQLite(), "../Data/Richard.sqlite3")
+
+tabs <- con_richard %>% 
+  dbListTables()
+
+obs_richard <- dbReadTable(con_richard, "SoilWater") %>% 
+  mutate(Date = lubridate::dmy(Date))
+obs_richard %>% 
+   ggplot(aes(Date, SWC.2.3.m..mm., color = Site, shape = Rep)) +
+  geom_point() + 
+  theme_water()
+```
+
+
+## There is no need to combine richard data set at this stage into the `ObsAll`
+
+Biomass is a poor variable across all dataset
+
+`Shootbiomass` is more consistent 
+
+```{r subset only biomass and SWC}
+
+dt_profile[,.(SimulationName, Clock.Today, Site,SWC, Shootbiomass )
+           ][, (c("SWC", "Shootbiomass")):= lapply(.SD, function(x){
+             x = ifelse(x == 0, NA, x)
+             x
+           }), .SDcols = c("SWC", "Shootbiomass") # replace all the misterous 0s with NAs
+           ][, SimulationName := ifelse(SimulationName == "HudsonDefoliation", 
+                                        "HudsonDefoliationCutting", 
+                                        SimulationName)
+               ] %>% 
+  unique() %>% 
+  write.xlsx("../Data/20191022_aboveground_swc.xlsx", sheetName = "Observed")
+
+```
+
+## run all simulation at the same time 
+
+`Hudson` has no `SWC` obeserved values? 
+becusae the simulation name does not match 
+
