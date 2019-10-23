@@ -1,0 +1,54 @@
+---
+title: "20191023Data_explore"
+output: github_document
+---
+
+## Aim 
+
+1. improve the variable names to the same logic
+2. combin `ObsAll` with Richard data
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.width = 8, fig.height = 6, dpi = 300)
+source("../R/packages.R")
+source("../R/functions.R")
+```
+
+```{r}
+con <- dbConnect(SQLite(), "../Data/Lucerne/20191022_LucerneSWCwith_obs.db")
+dbListTables(con)
+```
+
+```{r}
+tab_compare <- con %>% 
+  tbl( "PredictedObserved") %>% 
+  collect()%>% 
+  mutate(Clock.Today = as.Date(Clock.Today))
+
+tab_compare  %>% 
+  ggplot(aes(Observed.SWC, Predicted.SWC)) +
+  geom_point() +
+  theme_water()
+
+con %>% 
+  tbl("_Simulations") %>% 
+  collect() %>% 
+  right_join(tab_compare, by = c("ID" = "SimulationID" )) %>% 
+  mutate(Site = gsub("SowingDate.+|Defoliation|Water.+", "", Name)) %>% 
+  ggplot(aes(Observed.SWC, Predicted.SWC, color = Site)) +
+  geom_point(size = 2.5) +
+  theme_water() +
+  scale_colour_viridis_d(option = "G")
+
+con %>% 
+  tbl("_Simulations") %>% 
+  collect() %>% 
+  right_join(tab_compare, by = c("ID" = "SimulationID" )) %>% 
+  mutate(Site = gsub("SowingDate.+|Defoliation|Water.+", "", Name)) %>% 
+  ggplot(aes(Clock.Today, 'Pred-Obs.SWC')) +
+  geom_point(size = 2.5) +
+  theme_water() +
+  scale_colour_viridis_d(option = "G")
+
+```
+

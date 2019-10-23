@@ -1,0 +1,969 @@
+---
+jupyter:
+  jupytext:
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.2.4
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+---
+
+```{r}
+library(reticulate)
+```
+
+
+```{python}
+import sqlite3
+import datetime
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import statsmodels.api as sm
+# import MathsUtilities as MUte
+# import matplotlib.patheffects as path_effects
+# import GraphHelpers as GH
+# %matplotlib inline
+```
+
+### Link to APSIM output Data
+
+```{python}
+con = sqlite3.connect('C:/Data/Master/Data/Lucerne/20191022_LucerneSWCwith_obs.db')
+```
+
+```{python}
+def sql_fetch(con):
+ 
+    cursorObj = con.cursor()
+ 
+    cursorObj.execute('SELECT name from sqlite_master where type= "table"')
+ 
+    print(cursorObj.fetchall())
+ 
+sql_fetch(con)
+```
+
+```{r}
+
+```
+
+
+### Read the Simulations table that has SimulationID matched to Simulation Name
+
+```{python}
+Simulations = pd.read_sql("Select * from _Simulations",
+                                con)
+Simulations.set_index('ID',inplace=True)
+```
+
+### Read in the Factor table that links factor names and levels to simulation IDs
+
+```{python}
+Factors = pd.read_sql("Select * from _Factors",
+                        con)
+Factors.set_index('SimulationID',inplace=True)
+Factors
+```
+
+### Read in the Report generated on the Sowing Event
+
+```{python}
+LocList = pd.read_excel(r'C:\Users\cflhxb\Dropbox\APSIMPotato\List of locations.xlsx')
+LocList.set_index('metfile',inplace=True)
+```
+
+```{python}
+import re
+def extractLocation(lcn):
+    lcn = lcn.replace('MET files\\','')
+    lcn = re.sub('\d','',lcn)
+    lcn = lcn.replace('.met','')
+    return lcn
+def extractfileName(fn):
+    fn = fn.replace('MET files\\','')
+    fn = fn.replace('.met','')
+    return fn
+```
+
+```{python}
+Obs = pd.read_sql("Select * from Observed",
+                        con)
+Obs.set_index('SimulationID',inplace=True)
+```
+
+```{python}
+InitialReport = pd.read_sql("Select * from InitialReport",
+                        con)
+InitialReport.loc[:,'SimulationName'] = [Simulations.loc[InitialReport.loc[x,'SimulationID'],'Name'] for x in InitialReport.index]
+InitialReport.drop(['CheckpointID','Zone','Nitrogen','01','1','Field_','_','Water','Radiation','PlantDensity'],axis=1,inplace=True)
+InitialReport.set_index('SimulationID',inplace=True)
+InitialReport.loc[:,'Location'] = [extractLocation(x) for x in InitialReport.loc[:,'Weather.FileName']]
+InitialReport.loc[:,'FileName'] = [extractfileName(InitialReport.loc[x,'Weather.FileName']) for x in InitialReport.index]
+InitialReport.loc[:,'Country'] = [LocList.loc[x,'country'] for x in InitialReport.loc[:,'FileName']]
+InitialReport.loc[:,'Loc'] = [LocList.loc[x,'loc'] for x in InitialReport.loc[:,'FileName']]
+InitialReport.loc[:,'Country Loc'] = [InitialReport.loc[x,'Country'] + ' ' + InitialReport.loc[x,'Loc'] for x in InitialReport.index] 
+```
+
+```{python}
+DailyReport = pd.read_sql("Select * from DailyReport",
+                        con)
+DailyReport.loc[:,'SimulationName'] = [Simulations.loc[DailyReport.loc[x,'SimulationID'],'Name'] for x in DailyReport.index]
+DailyReport.drop(['CheckpointID','Zone','Nitrogen','01','1','Field_','_','Water','Radiation','PlantDensity'],axis=1,inplace=True)
+DailyReport.set_index('SimulationID',inplace=True)
+```
+
+```{python}
+DailyPreObs = pd.read_sql("Select * from TimeSeriesData",
+                        con)
+DailyPreObs.loc[:,'SimulationName'] = [Simulations.loc[DailyPreObs.loc[x,'SimulationID'],'Name'] for x in DailyPreObs.index]
+DailyPreObs.set_index('SimulationID',inplace=True)
+DailyPreObs.drop_duplicates(inplace=True)
+```
+
+```{python}
+HarvestReport = pd.read_sql("Select * from HarvestReport",
+                        con)
+HarvestReport.loc[:,'SimulationName'] = [Simulations.loc[HarvestReport.loc[x,'SimulationID'],'Name'] for x in HarvestReport.index]
+HarvestReport.drop(['CheckpointID','Zone','Nitrogen','01','1','Field_','_','Water','Radiation','PlantDensity'],axis=1,inplace=True)
+HarvestReport.loc[:,'PlantPopn'] = 1/((HarvestReport.loc[:,'RowWidth']/1000)* (HarvestReport.loc[:,'InterRowPlantSpace']/1000))
+HarvestReport.loc[:,'StemPopn'] = HarvestReport.loc[:,'StemPerTuber'] *  HarvestReport.loc[:,'PlantPopn']
+HarvestReport.loc[:,'Location'] = [extractLocation(x) for x in HarvestReport.loc[:,'Weather.FileName']]
+HarvestReport.set_index('SimulationID',inplace=True)
+HarvestReport.loc[:,'FileName'] = [extractfileName(HarvestReport.loc[x,'Weather.FileName']) for x in HarvestReport.index]
+HarvestReport.loc[:,'Country'] = [LocList.loc[x,'country'] for x in HarvestReport.loc[:,'FileName']]
+HarvestReport.loc[:,'Loc'] = [LocList.loc[x,'loc'] for x in HarvestReport.loc[:,'FileName']]
+HarvestReport.loc[:,'Country Loc'] = [HarvestReport.loc[x,'Country'] + ' ' + HarvestReport.loc[x,'Loc'] for x in HarvestReport.index] 
+```
+
+```{python}
+HarvestPreObs = pd.read_sql("Select * from FinalYieldData",
+                        con)
+HarvestPreObs.loc[:,'SimulationName'] = [Simulations.loc[HarvestPreObs.loc[x,'SimulationID'],'Name'] for x in HarvestPreObs.index]
+HarvestPreObs.set_index('SimulationID',inplace=True)
+HarvestPreObs.drop_duplicates(inplace=True)
+```
+
+### List of simulation names that are in observations data set but are not triggering a sowing event
+
+```{python}
+NotPlanted = []
+for x in DailyPreObs.index.get_level_values(0).drop_duplicates():
+    if x not in InitialReport.index:
+        NotPlanted.append(Simulations.loc[x,'Name'])
+NotPlanted
+```
+
+## List of Simulation names that are being planted but are not triggering a harvest event
+
+```{python}
+NotHarvested = []
+for x in InitialReport.index:
+    if x not in HarvestReport.index:
+        NotHarvested.append(Simulations.loc[x,'Name'])
+NotHarvested
+```
+
+```{python}
+Experiments = HarvestReport.Experiment.drop_duplicates().values
+Experiments
+```
+
+```{python}
+Folders = ['New Zealand', 'Australia', 'SubStor','Scotland']
+```
+
+```{python}
+Locations = HarvestReport.loc[:,'Loc'].drop_duplicates().values
+Locations.sort()
+Countries = HarvestReport.loc[:,'Country'].drop_duplicates().values
+Countries.sort()
+CountryLocs = HarvestReport.loc[:,'Country Loc'].drop_duplicates().values
+CountryLocs.sort()
+```
+
+```{python}
+Locations
+```
+
+```{python}
+Countries
+```
+
+```{python}
+CountryLocs
+```
+
+```{python}
+AllColors = ['black',
+ 'grey',
+ 'lightgrey',
+ 'maroon',
+ 'indianred',
+ 'red',
+'salmon',
+ 'darksalmon',
+ 'lightsalmon',
+ 'saddlebrown',
+ 'peru',
+ 'darkorange',
+ 'navajowhite',
+             'wheat',
+ 'goldenrod',
+ 'gold',
+ 'darkkhaki',
+ 'olive',
+ 'yellow',
+ 'yellowgreen',
+ 'darkolivegreen',
+ 'darkseagreen',
+ 'limegreen',
+ 'lime',
+ 'springgreen',
+ 'mediumspringgreen',
+ 'lightseagreen',
+ 'darkslategray',
+ 'darkcyan',
+             'deepskyblue',
+ 'dodgerblue',
+ 'slategray',
+ 'lightsteelblue',
+ 'royalblue',
+ 'navy',
+ 'darkslateblue',
+ 'mediumpurple',
+ 'rebeccapurple',
+ 'darkorchid',
+ 'violet',
+ 'purple',
+             'mediumvioletred',
+ 'crimson',
+ 'pink']
+AllColors.sort()
+```
+
+```{python}
+AllColors
+```
+
+```{python}
+Cultivars = HarvestReport.Cultivar.drop_duplicates().values
+Cultivars.sort()
+Cultivars
+```
+
+```{python}
+CultivarAcronums = ['39','Ac','Ag','Al','Am','As','At','Bi','Co','Dt','De','Di','Fi','Ga','Ho','Ib','Ih','Jb',
+'Ji','Ka','Kr','Ke','Kb','Lt','Lu','Ma','Mp','Ml','Na','Ne','No','Po','Rv','Rl','Re','Ru',
+ 'Rb','Rr','Sa','Se','Sp','Ty','Wa','Zi']
+```
+
+```{python}
+CountryProps = pd.DataFrame(index = Countries,columns=['Color'])
+pos = 0
+for x in CountryProps.index:
+    CountryProps.loc[x,'Color'] = AllColors[pos]
+    pos += 2
+CultivarProps = pd.DataFrame(index = Cultivars, data=CultivarAcronums, columns = ['CultAcro'])
+pos=0
+for x in CultivarProps.index:
+    CultivarProps.loc[x,'Color'] = AllColors[pos]
+    pos+=1
+
+ColProps = pd.DataFrame(index=HarvestReport.index)
+ColProps.loc[:,'Cultivar'] = CultivarProps.loc[[HarvestReport.loc[x,'Cultivar'] for x in ColProps.index],'Color'].values
+ColProps.loc[:,'Country'] = CountryProps.loc[[HarvestReport.loc[x,'Country'] for x in ColProps.index],'Color'].values
+ColProps
+```
+
+```{python}
+['AboveGround N', 'AboveGround Wt',
+       'TotalLive Wt', 'TotalLive N',
+       'AppearedCohortNo', 'CoverGreen',
+       'CoverTotal', 'LAI', 'Leaf Live N',
+       'Leaf Live Wt', 'Leaf Live NConc',
+       'Leaf SpecificArea', 'Stem Live N',
+       'Stem Live NConc', 'Stem Live Wt',
+       'Tuber DM%',
+       'Tuber Live N', 'Tuber Live NConc',
+       'Tuber Live Wt', 'Tuber LiveFWt',
+       'SW(1)',
+       'SW(2)', 'SW(3)',
+       'SW(4)', 'SW(5)',
+       'SW(6)', 'TotalSWC', 'TotalSoilN', 'TotalNO3',
+       'TotalNH4', 'SW(7)']
+
+['$g/m^2$', '$g/m^2$',
+       '$g/m^2$', '$g/m^2$',
+       '$No$', '$0-1$',
+       '$0-1$', '$LAI$', '$g/m^2$',
+       '$g/m^2$', '$g/g$',
+       'mm2/g', '$g/m^2$',
+       '$g/g$', '$g/m^2$',
+       '$g/g$',
+       '$g/m^2$', '$g/g$',
+       '$g/m^2$', '$g/m^2$',
+       'mm/mm',
+       'mm/mm', 'mm/mm',
+       'mm/mm', 'mm/mm',
+       'mm/mm', 'mm', '$kg/ha$', '$kg/ha$',
+       '$kg/ha$', 'mm/mm']
+```
+
+```{python}
+AllVars = HarvestPreObs.loc[:,['Observed' in x for x in HarvestPreObs.columns ]].columns.values
+for i in range(len(AllVars)):
+    AllVars[i] = AllVars[i].replace('Observed.','')
+PlotVariables = AllVars[['CheckpointID' not in x and 'Clock' not in x for x in AllVars]]
+
+AllDailyVars = DailyPreObs.loc[:,['Observed' in x for x in DailyPreObs.columns ]].columns.values
+for i in range(len(AllDailyVars)):
+    AllDailyVars[i] = AllDailyVars[i].replace('Observed.','')
+PlotDailyVariables = AllDailyVars[['CheckpointID' not in x and 'Clock' not in x and 'Script' not in x for x in AllDailyVars]]
+
+#Names = ['Tuber Dry Weight','Tuber Fresh Weight', 'Tuber N','DMC','Total Wt', 'Total N']
+VariablePars = pd.DataFrame(index=PlotDailyVariables)
+VariablePars.loc[:,'Units'] = ['$g/m^2$', '$g/m^2$',
+       '$g/m^2$', '$g/m^2$',
+       '$No$', '$0-1$',
+       '$0-1$', '$LAI$', '$g/m^2$',
+       '$g/m^2$', '$g/g$',
+       'mm2/g', '$g/m^2$',
+       '$g/g$', '$g/m^2$',
+       '$g/g$',
+       '$g/m^2$', '$g/g$',
+       '$g/m^2$', '$g/m^2$',
+       'mm/mm',
+       'mm/mm', 'mm/mm',
+       'mm/mm', 'mm/mm',
+       'mm/mm', 'mm', '$kg/ha$', '$kg/ha$',
+       '$kg/ha$', 'mm/mm']
+VariablePars.loc[:,'Names'] = ['AboveGround N', 'AboveGround Wt',
+       'TotalLive Wt', 'TotalLive N',
+       'AppearedCohortNo', 'CoverGreen',
+       'CoverTotal', 'LAI', 'Leaf Live N',
+       'Leaf Live Wt', 'Leaf Live NConc',
+       'Leaf SpecificArea', 'Stem Live N',
+       'Stem Live NConc', 'Stem Live Wt',
+       'Tuber DM%',
+       'Tuber Live N', 'Tuber Live NConc',
+       'Tuber Live Wt', 'Tuber LiveFWt',
+       'SW(1)',
+       'SW(2)', 'SW(3)',
+       'SW(4)', 'SW(5)',
+       'SW(6)', 'TotalSWC', 'TotalSoilN', 'TotalNO3',
+       'TotalNH4', 'SW(7)']
+VariablePars
+```
+
+```{python}
+def SortedPlot(Var,GroupVar,GroupList,ax):
+    Sorted = HarvestReport.sort_values(GroupVar)
+    Sorted.loc[:,'Linear'] = range(Sorted.index.size)
+    tickPos = []
+    pastx = -10
+    ymin = Sorted.loc[:,Var].min()
+    ymax = Sorted.loc[:,Var].max()
+    DataRange = ymax-ymin
+    Offset = DataRange * 0.01
+    for g in GroupList:
+        ColDF = globals()[GroupVar+'Props']
+        col = ColDF.loc[g,'Color']
+        ffilter = Sorted.loc[:,GroupVar] == g
+        plt.plot(Sorted.loc[ffilter,'Linear'],Sorted.loc[ffilter,Var],
+                 'o',color=col,ms=15)
+        xloc = Sorted.loc[ffilter,'Linear'].mean()#.iloc[0],pastx+5)
+        pastx = xloc
+        yloc = Sorted.loc[ffilter,Var].max() + Offset# + random.randint(-40,40)
+        plt.text(xloc-5,yloc,g,fontsize=16,color=col,rotation=0,
+                 verticalalignment='bottom',horizontalalignment='center')
+    plt.ylabel(Var,fontsize=20)
+    plt.ylim(ymin,ymax*1.1)
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    plt.tick_params(axis='x', which='both', bottom=False,top=False, labelbottom=False,labelsize=10)
+    plt.tick_params(axis='y', which='both', left=True,right=False, labelleft=True,labelsize=16)
+    plt.title(Var,fontsize=30)        
+
+def makeConfigPlots(PlotVars,GroupVar,GroupList):
+    no = len(GroupVar)
+    rows = np.ceil(no/2) + 1
+    pos=1
+    for v in Vars:
+        ax = Graph.add_subplot(rows,2,pos)
+        SortedPlot(v,GroupVar,GroupList,ax)
+        pos+=1
+    
+```
+
+## The following series of Graphs present a series of variables that reflect the configuration of each simulation so these can be sense checked against the rest of the validation set
+
+```{python}
+Graph = plt.figure(figsize=(18,35))
+Vars = ['Weather.Latitude','Weather.Longitude',
+       'RowWidth','StemPerTuber',
+       'InterRowPlantSpace','PlantPopn',
+       'IrrigApplied','NFertApplied',
+       'Weather.CO2', 'PlantingDepth']
+makeConfigPlots(Vars,'Country',Countries)
+```
+
+```{python}
+Graph = plt.figure(figsize=(18,35))
+Vars = ['Weather.Latitude','Weather.Longitude',
+       'RowWidth','StemPerTuber',
+       'InterRowPlantSpace','PlantPopn',
+       'IrrigApplied','NFertApplied',
+       'Weather.CO2', 'PlantingDepth']
+makeConfigPlots(Vars,'Cultivar',Cultivars)
+```
+
+```{python}
+def plotDepthVars(VarName,depthNorm):
+    Thicks = InitialReport.loc[:,[X for X in InitialReport.columns if 'Thickness' in X]]
+    Depths = Thicks.cumsum(axis=1)
+    Vars = InitialReport.loc[:,[X for X in InitialReport.columns if VarName in X]]
+    LayerDB = pd.DataFrame()
+    for x in Depths.index:
+        SimLayerDB = pd.DataFrame(index = pd.MultiIndex.from_product([[x],['LayerBounds','Varval']]))
+        LayerBounds = [0.0]
+        depthNormFact = 1 
+        if depthNorm == True:
+            depthNormFact = Thicks.loc[x,:][0]
+        Varvals = [Vars.loc[x,:][0]/depthNormFact]
+        for l in range(13):
+            try:
+                if depthNorm == True:
+                    depthNormFact = Thicks.loc[x,:][l]
+                LayerBounds.append(float(Depths.loc[x,:][l])*-1)
+                Varvals.append(Vars.loc[x,:][l]/depthNormFact)
+            except:
+                do = 'Nothing'
+        for p in range(len(LayerBounds)):
+            SimLayerDB.loc[(x,'LayerBounds'),p] = LayerBounds[p]
+            SimLayerDB.loc[(x,'Varval'),p] = Varvals[p]
+        LayerDB = pd.concat([LayerDB,SimLayerDB])
+        LayerDB.index = LayerDB.index.swaplevel()
+        LayerBounds = LayerDB.stack().loc['LayerBounds']
+        VarVals = LayerDB.stack().loc['Varval']
+        LayerDB = pd.concat([LayerDB,SimLayerDB])
+    MaxDep = LayerDB.loc[(slice(None),'LayerBounds'),:].min(axis=1).min()
+    MinVar = LayerDB.loc[(slice(None),'Varval'),:].min(axis=1).min()
+    MaxVar = LayerDB.loc[(slice(None),'Varval'),:].max(axis=1).max()    
+    Graph = plt.figure(figsize=(10,20))
+    cols = np.ceil(len(Locations)/5)
+    pos=1
+    for lcn in Locations:
+        ax = Graph.add_subplot(cols,5,pos)
+        #for x in Depths.index:
+        #    plcn = InitialReport.loc[x,'Location']
+        plt.plot(VarVals,LayerBounds,'o',color = 'lightgrey')
+        plt.text(0.03,1.0,lcn,transform=ax.transAxes,fontsize=12)
+        LocalVars = HarvestReport.loc[HarvestReport.loc[:,'Loc']==lcn,:].index
+        for l in LocalVars:
+            plt.plot(LayerDB.loc[(l,'Varval'),:],LayerDB.loc[(l,'LayerBounds'),:],'-o',color = 'red')
+        plt.ylim(MaxDep*1.05,0)
+        plt.xlim(MinVar * 0.8,MaxVar * 1.05)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        if pos in range(1,200,5):
+            plt.tick_params(axis='y', which='both', left=True,right=False, labelleft=True,labelsize=10)
+            plt.ylabel('Depth (cm)',fontsize=12)
+        else:
+            plt.tick_params(axis='y', which='both', left=False,right=False, labelleft=False,labelsize=10)
+        if pos in list(range(len(Locations)-4,len(Locations)+1)):
+            plt.tick_params(axis='x', which='both', bottom=True,top=False, labelbottom=True,labelsize=10)
+            plt.xlabel(VarName,fontsize=12)
+        else:
+            plt.tick_params(axis='x', which='both', bottom=False,top=False, labelbottom=False,labelsize=10)
+        pos += 1
+    plt.tight_layout
+```
+
+## The flowing series of graphs show CropSoil configuration settings for each simulation so they can be sense checked against the rest of the validation set
+
+```{python}
+plotDepthVars('XF',False)
+```
+
+```{python}
+plotDepthVars('LL',False)
+```
+
+```{python}
+plotDepthVars('KL',False)
+```
+
+```{python}
+plotDepthVars('NH4N',False)
+```
+
+```{python}
+plotDepthVars('NO3N',False)
+```
+
+```{python}
+plotDepthVars('SoilCNRatio',False)
+```
+
+```{python}
+plotDepthVars('FOM',False)
+```
+
+```{python}
+def MakeLabel(RegStats):
+    #text = RegStats.Name + '  n = ' + str(RegStats.n)
+    text = '\ny = ' + '%.2f'%RegStats.Intercept + '(se ' + '%.2f'%RegStats.SEintercept + ') + ' + '%.2f'%RegStats.Slope + '(se ' + '%.2f'%RegStats.SEslope + ') x' 
+    text += '\n$r^2$ =' + '%.2f'%RegStats.R2 + ' RMSE = ' + '%.2f'%RegStats.RMSE +' NSE = ' + '%.2f'%RegStats.NSE
+    text += '\nME = ' + '%.2f'%RegStats.ME + ' MAE = ' + '%.2f'%RegStats.MAE
+    text += '\nn = ' + str(RegStats.n)
+    return text
+
+def AddObsPredGraph(Variables,DataTable,GroupVar,GroupList):
+    Pos = 1
+    for Var in Variables:
+        NaNFilter = np.isnan(DataTable.loc[:,'Predicted.'+Var]) | np.isnan(DataTable.loc[:,'Observed.'+Var])
+        IaNFilter = ~NaNFilter
+        Obs = DataTable.loc[:,'Observed.'+Var].loc[IaNFilter].values
+        Pred = DataTable.loc[:,'Predicted.'+Var].loc[IaNFilter].values
+        no = len(Variables)
+        rows = np.ceil(no/3)
+        ax = Graph.add_subplot(rows,3,Pos)
+        ColPos = 0
+        MarPos = 0
+        for g in GroupList:
+            ColDF = globals()[GroupVar+'Props']
+            col = ColDF.loc[g,'Color']
+            SimIDs = HarvestReport.loc[HarvestReport.loc[:,GroupVar] == g].index.values
+            ExpObs = DataTable.loc[SimIDs,'Observed.'+Var]
+            ExpPred = DataTable.loc[SimIDs,'Predicted.'+Var]
+            plt.plot(ExpObs,ExpPred,'o',color = col,label=g)
+            ColPos +=1
+            if ColPos == 30:
+                ColPos = 1
+                MarPos +=1
+        uplim = max(Obs.max(),Pred.max())*1.1
+        lowlim = min(Obs.min(),Pred.min())*0.95
+        plt.text(0.02,0.94,VariablePars.loc[Var,'Names'],transform=ax.transAxes,fontsize=20)
+        plt.ylim(0,uplim)
+        plt.xlim(0,uplim)
+        plt.plot([lowlim,uplim*.95],[lowlim,uplim*.95],'-',color='k')
+        RegStats = MUte.MathUtilities.CalcRegressionStats(Var,Pred,Obs)
+        LabelText = MakeLabel(RegStats)
+        #plt.text(uplim*0.05,uplim*.78,LabelText)
+        #Fit linear regression to current series and store slope and intercept in dataframe
+        ModFit = sm.regression.linear_model.OLS(Pred,  # Y variable
+                                            sm.add_constant(Obs), # X variable
+                                            missing='drop',                                     # ignor and data where one value is missing
+                                            hasconst=False) 
+        RegFit = ModFit.fit();  # fit models parameters
+        Slope = RegFit.params[1] 
+        Intercept = RegFit.params[0]
+        Xs = [lowlim,uplim*.95]
+        Ys = [Intercept + Xs[0]*Slope,Intercept + Xs[1]*Slope]
+        plt.plot(Xs,Ys,'--',color='r')
+        plt.ylabel('Pred ' + VariablePars.loc[Var,'Names'] + ' ('  + VariablePars.loc[Var,'Units'] + ')')
+        plt.xlabel('Obs ' + VariablePars.loc[Var,'Names'] + ' ('  + VariablePars.loc[Var,'Units'] + ')')
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        plt.tick_params(axis='x', which='both', bottom=True,top=False, labelbottom=True)
+        plt.tick_params(axis='y', which='both', left=True,right=False, labelbottom=True)
+        if Pos == 1:
+            GH.AddLegend(LegLoc = (0,1.1),labelsize=16,Title='',NCol=5,MScale=2)
+        Pos +=1
+```
+
+## Standard Obs vs Pred graph for Harvest
+
+```{python}
+Graph = plt.figure(figsize=(15,20))
+AddObsPredGraph(PlotVariables,HarvestPreObs,'Country',Countries)
+```
+
+## Standard Obs vs Pre graph for time series data
+
+```{python}
+Graph = plt.figure(figsize=(15,40))
+AddObsPredGraph(PlotDailyVariables,DailyPreObs,'Country',Countries)
+```
+
+```{python}
+HarvestResiduals = HarvestPreObs.loc[:,[X for X in HarvestPreObs.columns if 'Pred-Obs' in X]].copy()
+```
+
+```{python}
+def GroupResidulesGraph(Variables,ResidulesTable,GroupList,GroupVar):
+    panpos = 1
+    rows = len(Variables)
+    for Var in Variables:
+        ax = Graph.add_subplot(rows,1,panpos)
+        startx = 0
+        tickPoss = []
+        tickLabs = []
+        colpos = 1
+        upper = ResidulesTable.loc[:,'Pred-Obs.' + Var].max() * 1.1
+        lower = ResidulesTable.loc[:,'Pred-Obs.' + Var].min() * 1.1
+        MeanResidual = ResidulesTable.loc[:,'Pred-Obs.' + Var].mean()
+        TextPos = 'Lower'
+        for group in GroupList:
+            ColDF = globals()[GroupVar+'Props']
+            col = ColDF.loc[group,'Color']
+            SimIDs = HarvestReport.loc[HarvestReport.loc[:,GroupVar]==group,:].index.values
+            xvals = range(startx,startx+len(SimIDs))
+            plt.plot(xvals,ResidulesTable.reindex(SimIDs,axis=0).loc[:,'Pred-Obs.' + Var],
+                     '-o',color=col)
+            #tickPoss.append(startx+len(SimIDs)/2)
+            tickLabs.append(group)
+            if TextPos=='Lower':
+                plt.text(startx+len(SimIDs)/2,lower,group,fontsize=16,
+                         color=col,rotation=-45,verticalalignment='bottom',horizontalalignment='center')
+                TextPos = 'Upper'
+            else:
+                plt.text(startx+len(SimIDs)/2,upper,group,fontsize=16,
+                         color=col,rotation=-45,verticalalignment='top',horizontalalignment='center')
+                TextPos = 'Lower'
+            startx += len(SimIDs)
+            if colpos == 30:
+                colpos = 0
+            colpos+=1
+        ax.xaxis.set_major_locator(plt.FixedLocator(tickPoss))
+        ax.set_xticklabels(tickLabs)
+        plt.tick_params(rotation=90)
+        plt.plot([0,startx],[MeanResidual,MeanResidual],'-',lw=3,color='k')
+        plt.plot([0,startx],[0,0],'--',lw=3,color='k')
+        plt.ylim(lower,upper)
+        plt.title(Var,fontsize=25)
+        plt.ylabel('Pred-Obs')
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        plt.tick_params(axis='x', which='both', bottom=True,top=False, labelbottom=True)
+        plt.tick_params(axis='y', which='both', left=True,right=False, labelbottom=True)
+        panpos+=1
+```
+
+## Graph residuals for key variables grouped by cultivar
+
+```{python}
+Graph = plt.figure(figsize=(15,60))
+GroupResidulesGraph(PlotVariables,HarvestResiduals,Cultivars,'Cultivar')
+```
+
+## Graph residuals for key variables grouped by location
+
+```{python}
+Graph = plt.figure(figsize=(15,60))
+GroupResidulesGraph(PlotVariables,HarvestResiduals,Countries,'Country')
+```
+
+## Make graphs of residuals vs simulation configuration variables
+
+```{python}
+def ResidulesVsVariable(ResidulesTable,Variable,GroupList,GroupVar,XVariables):
+    pos = 1
+    for vsVariable in XVariables:
+        ax = Graph.add_subplot(4,2,pos)
+        for group in GroupList:
+            ColDF = globals()[GroupVar+'Props']
+            col = ColDF.loc[group,'Color']
+            SimIDs = HarvestReport.loc[HarvestReport.loc[:,GroupVar]==group,:].index.values
+            yvals = ResidulesTable.reindex(SimIDs,axis=0).loc[:,'Pred-Obs.Potato.'+Variable]
+            xvals = HarvestReport.reindex(SimIDs,axis=0).loc[:,vsVariable]
+            plt.plot(xvals,yvals,'o',color=col,label=group)
+            upper = HarvestReport.loc[:,vsVariable].max() * 1.1
+            lower = HarvestReport.loc[:,vsVariable].min() * 0.8
+            MeanResidual = ResidulesTable.loc[:,'Pred-Obs.Potato.' + Variable].mean()
+            plt.plot([lower,upper],[MeanResidual,MeanResidual],'-',lw=3,color='k')
+            plt.plot([lower,upper],[0,0],'--',lw=3,color='k')
+            plt.title('Pred-Obs ' + Variable + ' vs ' + vsVariable)
+            plt.ylabel('Pred-Obs ' + Variable)
+            plt.xlabel(vsVariable)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        plt.tick_params(axis='x', which='both', bottom=True,top=False, labelbottom=True)
+        plt.tick_params(axis='y', which='both', left=True,right=False, labelbottom=True)
+        if pos == 1:
+            GH.AddLegend(LegLoc = (0,1.1),labelsize=16,Title='',NCol=5,MScale=2)
+        pos+=1
+```
+
+```{python}
+Graph = plt.figure(figsize=(15,20))
+XVariables = ['IrrigApplied','NFertApplied','Weather.Latitude',
+'Weather.Longitude','PlantPopn','StemPopn','Weather.CO2','PlantingDepth']
+ResidulesVsVariable(HarvestResiduals,'Tuber.Live.Wt',Cultivars,'Cultivar',XVariables)
+```
+
+```{python}
+Graph = plt.figure(figsize=(15,20))
+XVariables = ['IrrigApplied','NFertApplied','Weather.Latitude',
+'Weather.Longitude','PlantPopn','StemPopn','Weather.CO2','PlantingDepth']
+ResidulesVsVariable(HarvestResiduals,'Tuber.Live.Wt',Countries,'Country',XVariables)
+```
+
+```{python}
+def simsWithTimeCoarseData(Var):
+    SimsWithTimeCoarseData = []
+    for sim in DailyPreObs.index.drop_duplicates():
+        try:
+            obsNo = len(DailyPreObs.loc[sim,'Pred-Obs.Potato.'+Var].dropna().values)
+            if obsNo>1:
+                SimsWithTimeCoarseData.append(sim)
+        except:
+            do = 'Nothing'
+    return SimsWithTimeCoarseData
+
+def ResidulesVsTtSow(Variable,GroupLabel,colourLabel):
+    SimsWithTimeDataForVar = simsWithTimeCoarseData(Variable)
+    WithTimeCoarseData = HarvestReport.reindex(SimsWithTimeDataForVar,axis=0).loc[:,GroupLabel].dropna().drop_duplicates().values
+    Grouping = WithTimeCoarseData
+    Grouping.sort()
+    cols = np.ceil(len(Grouping)/5)
+    pos=1
+    upper = DailyPreObs.loc[:,'Pred-Obs.Potato.'+Variable].max() * 1.1
+    lower = DailyPreObs.loc[:,'Pred-Obs.Potato.'+Variable].min() * 0.8
+    MeanResidual = DailyPreObs.loc[:,'Pred-Obs.Potato.'+Variable].mean()
+    DailyObsPredSims = DailyPreObs.index.drop_duplicates()
+    for group in Grouping:
+        ax = Graph.add_subplot(cols,5,pos)
+        simsInGroup = HarvestReport.loc[HarvestReport.loc[:,GroupLabel]==group].index
+        GroupSimsWithTimeCoarseData = list(set(HarvestReport.loc[HarvestReport.loc[:,GroupLabel]==group].index) & set(SimsWithTimeDataForVar))
+        for sim in GroupSimsWithTimeCoarseData:
+            col = ColProps.loc[sim,colourLabel]
+            residuals = DailyPreObs.loc[sim,'Pred-Obs.Potato.'+Variable]
+            DatesWithObs = DailyReport.loc[:,'Clock.Today'].isin(DailyPreObs.loc[sim,'Clock.Today'])
+            TtSow = DailyReport.loc[DatesWithObs,:].loc[sim,'Potato.Phenology.AccumulatedEmergedTT'].values
+            try:
+                plt.plot(TtSow,residuals,'o-',color=col,label=group)
+            except:
+                print(DailyReport.loc[sim,'SimulationName'].drop_duplicates())
+        plt.text(0.03,1.0,group,transform=ax.transAxes,fontsize=12)
+        plt.ylim(lower,upper)
+        plt.plot([0,2300],[MeanResidual,MeanResidual],'-',lw=3,color='k')
+        plt.plot([0,2300],[0,0],'--',lw=3,color='k')
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        if pos in range(1,200,5):
+            plt.tick_params(axis='y', which='both', left=True,right=False, labelleft=True,labelsize=10)
+            plt.ylabel('Pred-Obs '+Variable,fontsize=12)
+        else:
+            plt.tick_params(axis='y', which='both', left=False,right=False, labelleft=False,labelsize=10)
+        if pos in list(range(len(Grouping)-4,len(Grouping)+1)):
+            plt.tick_params(axis='x', which='both', bottom=True,top=False, labelbottom=True,labelsize=10)
+            plt.xlabel('TtAccumSow',fontsize=12)
+        else:
+            plt.tick_params(axis='x', which='both', bottom=False,top=False, labelbottom=False,labelsize=10)
+        pos+=1
+    plt.tight_layout
+```
+
+## Make Graphs of tuber live Wt residuals for each location plotted against thermal time since sowing
+
+```{python}
+Graph = plt.figure(figsize=(15,10))
+PlotVar = 'Tuber.Live.Wt'
+SortVar = 'Country'
+ColorVar = 'Cultivar'
+ResidulesVsTtSow(PlotVar,SortVar,ColorVar)
+```
+
+## Make Graphs of tuber live Wt residuals for each Cultivar plotted against thermal time since sowing
+
+```{python}
+Graph = plt.figure(figsize=(15,20))
+PlotVar = 'Tuber.Live.Wt'
+SortVar = 'Cultivar'
+ColorVar = 'Country'
+ResidulesVsTtSow(PlotVar,SortVar,ColorVar)
+```
+
+## Make Graphs of LAI residuals for each cultivar plotted against thermal time since sowing
+
+```{python}
+Graph = plt.figure(figsize=(15,10))
+PlotVar = 'Leaf.LAI'
+SortVar = 'Cultivar'
+ColorVar = 'Country'
+ResidulesVsTtSow(PlotVar,SortVar,ColorVar)
+```
+
+```{python}
+Graph = plt.figure(figsize=(15,10))
+PlotVar = 'Leaf.Live.NConc'
+SortVar = 'Cultivar'
+ColorVar = 'Country'
+ResidulesVsTtSow(PlotVar,SortVar,ColorVar)
+```
+
+```{python}
+Graph = plt.figure(figsize=(15,20))
+PlotVar = 'Leaf.Live.Wt'
+SortVar = 'Cultivar'
+ColorVar = 'Country'
+ResidulesVsTtSow(PlotVar,SortVar,ColorVar)
+```
+
+```{python}
+Graph = plt.figure(figsize=(15,20))
+PlotVar = 'Stem.Live.Wt'
+SortVar = 'Cultivar'
+ColorVar = 'Country'
+ResidulesVsTtSow(PlotVar,SortVar,ColorVar)
+```
+
+```{python}
+Graph = plt.figure(figsize=(15,20))
+PlotVar = 'Stem.Live.Wt'
+SortVar = 'Cultivar'
+ColorVar = 'Country'
+ResidulesVsTtSow(PlotVar,SortVar,ColorVar)
+```
+
+```{python}
+Graph = plt.figure(figsize=(15,10))
+ResidulesVsTtSow('Leaf.LAI','Cultivar','Country')
+```
+
+```{python}
+CultByCountry = HarvestReport.reindex(['Country','Cultivar'],axis=1).drop_duplicates()
+for CbC in CultByCountry.index:
+    CultCountryFilter = (HarvestReport.loc[:,'Country'] == CultByCountry.loc[CbC,'Country']) & \
+                        (HarvestReport.loc[:,'Cultivar'] == CultByCountry.loc[CbC,'Cultivar'])
+    CultByCountry.loc[CbC,'Count'] = HarvestReport.loc[CultCountryFilter,:].index.size
+
+Graph = plt.figure(figsize=(12,10))
+MaxSize = CultByCountry.loc[:,'Count'].max() * 1.5
+for CbC in CultByCountry.index:
+    col = ColProps.loc[CbC,'Cultivar']
+    size = CultByCountry.loc[CbC,'Count']
+    Alpha = (MaxSize-size)/MaxSize
+    plt.plot(CultByCountry.loc[CbC,'Country'],CultByCountry.loc[CbC,'Cultivar'],'o',color=col,ms=size,alpha=Alpha)
+plt.xticks(rotation=45)
+CountryCounts = CultByCountry.groupby('Country').sum().sort_values('Count',ascending=False)
+CultivarCounts = CultByCountry.groupby('Cultivar').sum().sort_values('Count',ascending=False)
+for c in CountryCounts.index:
+    plt.text(c,-1.5,int(CountryCounts.loc[c,'Count']),verticalalignment='bottom',horizontalalignment='center')
+for c in CultivarCounts.index:
+    plt.text(-1.5,c,int(CultivarCounts.loc[c,'Count']),verticalalignment='center',horizontalalignment='left')
+plt.xlim(-2,20)
+```
+
+```{python}
+def WeatherVsDAS(Variable,GroupLabel,colourLabel):
+    Grouping = HarvestReport.loc[:,GroupLabel].dropna().drop_duplicates().values
+    cols = np.ceil(len(Grouping)/3)
+    pos=1
+    upper = DailyReport.loc[:,'Weather.'+Variable].max() * 1.1
+    lower = DailyReport.loc[:,'Weather.'+Variable].min() * 0.8
+    for group in Grouping:
+        ax = Graph.add_subplot(cols,3,pos)
+        simsInGroup = HarvestReport.loc[HarvestReport.loc[:,GroupLabel]==group].index
+        GroupSims = HarvestReport.loc[HarvestReport.loc[:,GroupLabel]==group].index
+        for sim in GroupSims:
+            col = ColProps.loc[sim,colourLabel]
+            DAS = DailyReport.loc[sim,'Potato.Phenology.DaysAfterSowing']
+            NonZeros = DAS>0
+            DAS = DAS.loc[NonZeros]
+            absolutes = DailyReport.loc[sim,'Weather.'+Variable].loc[NonZeros]
+            try:
+                plt.plot(DAS,absolutes,'o-',color=col,label=group)
+                if Variable == 'Radn':
+                    qmax = DailyReport.loc[sim,'Weather.Qmax'].loc[NonZeros]
+                    plt.plot(DAS,qmax,'o-',color='gold',label='qmax')
+                if Variable == 'MaxT':
+                    MinT = DailyReport.loc[sim,'Weather.MinT'].loc[NonZeros]
+                    plt.plot(DAS,MinT,'o-',color=col,label=group,alpha=0.5,mfc='white')
+            except:
+                print(DailyReport.loc[sim,'SimulationName'].drop_duplicates())
+        plt.text(0.03,1.0,group + ', ' + HarvestReport.loc[sim,'Country'] + \
+                 ' (' +  str(HarvestReport.loc[sim,'Weather.Latitude']) + ' deg)',
+                 transform=ax.transAxes,fontsize=12)
+        plt.ylim(lower,upper)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        if pos in range(1,200,3):
+            plt.tick_params(axis='y', which='both', left=True,right=False, labelleft=True,labelsize=10)
+            plt.ylabel(Variable,fontsize=12)
+        else:
+            plt.tick_params(axis='y', which='both', left=False,right=False, labelleft=False,labelsize=10)
+        if pos in list(range(len(Grouping)-4,len(Grouping)+1)):
+            plt.tick_params(axis='x', which='both', bottom=True,top=False, labelbottom=True,labelsize=10)
+            plt.xlabel('DAS',fontsize=12)
+        else:
+            plt.tick_params(axis='x', which='both', bottom=False,top=False, labelbottom=False,labelsize=10)
+        pos+=1
+    plt.tight_layout
+```
+
+```{python}
+Graph = plt.figure(figsize=(15,40))
+WeatherVsDAS('Radn','Loc','Country')
+```
+
+```{python}
+Graph = plt.figure(figsize=(15,40))
+WeatherVsDAS('MaxT','Loc','Country')
+```
+
+```{python}
+Graph = plt.figure(figsize=(15,40))
+WeatherVsDAS('Wind','Loc','Country')
+```
+
+```{python}
+Graph = plt.figure(figsize=(15,40))
+WeatherVsDAS('VPD','Loc','Country')
+```
+
+```{python}
+Graph = plt.figure(figsize=(15,40))
+WeatherVsDAS('Rain','Loc','Country')
+```
+
+```{python}
+DailyReport.loc[:,'RadResid'] = DailyReport.loc[:,'Weather.Qmax'] - DailyReport.loc[:,'Weather.Radn'] 
+```
+
+```{python}
+Graph = plt.figure(figsize=(15,40))
+GroupLabel='Loc'
+Grouping = HarvestReport.loc[:,GroupLabel].dropna().drop_duplicates().values
+cols = np.ceil(len(Grouping)/3)
+pos=1
+upper = DailyReport.loc[:,'RadResid'].max() * 1.1
+lower = DailyReport.loc[:,'RadResid'].min() * 0.8
+for group in Grouping:
+    ax = Graph.add_subplot(cols,3,pos)
+    simsInGroup = HarvestReport.loc[HarvestReport.loc[:,GroupLabel]==group].index
+    GroupSims = HarvestReport.loc[HarvestReport.loc[:,GroupLabel]==group].index
+    for sim in GroupSims:
+        col = ColProps.loc[sim,'Country']
+        Rain = DailyReport.loc[sim,'Weather.Rain']
+        ResRad = DailyReport.loc[sim,'RadResid']
+        try:
+            plt.plot(Rain,ResRad,'o',color=col,label=group)
+        except:
+            print(DailyReport.loc[sim,'SimulationName'].drop_duplicates())
+    plt.text(0.03,1.0,group + ', ' + HarvestReport.loc[sim,'Country'] + \
+             ' (' +  str(HarvestReport.loc[sim,'Weather.Latitude']) + ' deg)',
+             transform=ax.transAxes,fontsize=12)
+    plt.ylim(lower,upper)
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    if pos in range(1,200,3):
+        plt.tick_params(axis='y', which='both', left=True,right=False, labelleft=True,labelsize=10)
+        plt.ylabel('Residual Radn',fontsize=12)
+    else:
+        plt.tick_params(axis='y', which='both', left=False,right=False, labelleft=False,labelsize=10)
+    if pos in list(range(len(Grouping)-4,len(Grouping)+1)):
+        plt.tick_params(axis='x', which='both', bottom=True,top=False, labelbottom=True,labelsize=10)
+        plt.xlabel('DAS',fontsize=12)
+    else:
+        plt.tick_params(axis='x', which='both', bottom=False,top=False, labelbottom=False,labelsize=10)
+    pos+=1
+plt.tight_layout
+```
