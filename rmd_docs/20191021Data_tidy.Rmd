@@ -146,4 +146,22 @@ dt_profile[,.(SimulationName, Clock.Today, Site,SWC, Shootbiomass )
 
 `Hudson` has no `SWC` obeserved values? 
 becusae the simulation name does not match 
+**Same as the rest of Oz and argentina data set**
+
+## fix the simulation names 
+
+```{r}
+simNames <- dt_profile$SimulationName %>% unique() %>% grep("Defoliation$", x = . , value = TRUE)
+
+dt_profile <- dt_profile[,.(SimulationName, Clock.Today, Site,SWC, Shootbiomass )
+           ][, (c("SWC", "Shootbiomass")):= lapply(.SD, function(x){
+             x = ifelse(x == 0, NA, x)
+             x
+           }), .SDcols = c("SWC", "Shootbiomass") # replace all the misterous 0s with NAs
+           ][, SimulationName := ifelse(SimulationName %in% simNames, paste0(SimulationName, "Cutting"),
+                                                    SimulationName)]
+# dt_profile$SimulationName %>% unique()
+dt_profile %>% 
+  write.xlsx("../Data/20191031_aboveground_swc.xlsx", sheetName = "Observed")
+```
 
