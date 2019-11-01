@@ -13,8 +13,8 @@ jupyter:
     name: python3
 ---
 
-```{r}
-library(reticulate)
+```{python}
+
 ```
 
 
@@ -34,7 +34,7 @@ import statsmodels.api as sm
 ### Link to APSIM output Data
 
 ```{python}
-con = sqlite3.connect('C:/Data/Master/Data/Lucerne/20191022_LucerneSWCwith_obs.db')
+con = sqlite3.connect('../Data/Lucerne/20191101_test.db')
 ```
 
 ```{python}
@@ -48,11 +48,6 @@ def sql_fetch(con):
  
 sql_fetch(con)
 ```
-
-```{r}
-
-```
-
 
 ### Read the Simulations table that has SimulationID matched to Simulation Name
 
@@ -68,33 +63,34 @@ Simulations.set_index('ID',inplace=True)
 Factors = pd.read_sql("Select * from _Factors",
                         con)
 Factors.set_index('SimulationID',inplace=True)
-Factors
+Factors.head()
 ```
 
 ### Read in the Report generated on the Sowing Event
 
 ```{python}
-LocList = pd.read_excel(r'C:\Users\cflhxb\Dropbox\APSIMPotato\List of locations.xlsx')
-LocList.set_index('metfile',inplace=True)
+# LocList = pd.read_excel(r'C:\Users\cflhxb\Dropbox\APSIMPotato\List of locations.xlsx')
+# LocList.set_index('metfile',inplace=True)
 ```
 
 ```{python}
-import re
-def extractLocation(lcn):
-    lcn = lcn.replace('MET files\\','')
-    lcn = re.sub('\d','',lcn)
-    lcn = lcn.replace('.met','')
-    return lcn
-def extractfileName(fn):
-    fn = fn.replace('MET files\\','')
-    fn = fn.replace('.met','')
-    return fn
+# import re
+# def extractLocation(lcn):
+#     lcn = lcn.replace('MET files\\','')
+#     lcn = re.sub('\d','',lcn)
+#     lcn = lcn.replace('.met','')
+#     return lcn
+# def extractfileName(fn):
+#     fn = fn.replace('MET files\\','')
+#     fn = fn.replace('.met','')
+#     return fn
 ```
 
 ```{python}
 Obs = pd.read_sql("Select * from Observed",
                         con)
 Obs.set_index('SimulationID',inplace=True)
+
 ```
 
 ```{python}
@@ -111,15 +107,19 @@ InitialReport.loc[:,'Country Loc'] = [InitialReport.loc[x,'Country'] + ' ' + Ini
 ```
 
 ```{python}
-DailyReport = pd.read_sql("Select * from DailyReport",
+DailyReport = pd.read_sql("Select * from Report",
                         con)
 DailyReport.loc[:,'SimulationName'] = [Simulations.loc[DailyReport.loc[x,'SimulationID'],'Name'] for x in DailyReport.index]
-DailyReport.drop(['CheckpointID','Zone','Nitrogen','01','1','Field_','_','Water','Radiation','PlantDensity'],axis=1,inplace=True)
+DailyReport.drop(['CheckpointID','Zone'],axis=1,inplace=True)
 DailyReport.set_index('SimulationID',inplace=True)
 ```
 
 ```{python}
-DailyPreObs = pd.read_sql("Select * from TimeSeriesData",
+DailyReport.head()
+```
+
+```{python}
+DailyPreObs = pd.read_sql("Select * from PredictedObserved",
                         con)
 DailyPreObs.loc[:,'SimulationName'] = [Simulations.loc[DailyPreObs.loc[x,'SimulationID'],'Name'] for x in DailyPreObs.index]
 DailyPreObs.set_index('SimulationID',inplace=True)
@@ -127,76 +127,86 @@ DailyPreObs.drop_duplicates(inplace=True)
 ```
 
 ```{python}
-HarvestReport = pd.read_sql("Select * from HarvestReport",
-                        con)
-HarvestReport.loc[:,'SimulationName'] = [Simulations.loc[HarvestReport.loc[x,'SimulationID'],'Name'] for x in HarvestReport.index]
-HarvestReport.drop(['CheckpointID','Zone','Nitrogen','01','1','Field_','_','Water','Radiation','PlantDensity'],axis=1,inplace=True)
-HarvestReport.loc[:,'PlantPopn'] = 1/((HarvestReport.loc[:,'RowWidth']/1000)* (HarvestReport.loc[:,'InterRowPlantSpace']/1000))
-HarvestReport.loc[:,'StemPopn'] = HarvestReport.loc[:,'StemPerTuber'] *  HarvestReport.loc[:,'PlantPopn']
-HarvestReport.loc[:,'Location'] = [extractLocation(x) for x in HarvestReport.loc[:,'Weather.FileName']]
-HarvestReport.set_index('SimulationID',inplace=True)
-HarvestReport.loc[:,'FileName'] = [extractfileName(HarvestReport.loc[x,'Weather.FileName']) for x in HarvestReport.index]
-HarvestReport.loc[:,'Country'] = [LocList.loc[x,'country'] for x in HarvestReport.loc[:,'FileName']]
-HarvestReport.loc[:,'Loc'] = [LocList.loc[x,'loc'] for x in HarvestReport.loc[:,'FileName']]
-HarvestReport.loc[:,'Country Loc'] = [HarvestReport.loc[x,'Country'] + ' ' + HarvestReport.loc[x,'Loc'] for x in HarvestReport.index] 
+# HarvestReport = pd.read_sql("Select * from HarvestReport",
+#                         con)
+# HarvestReport.loc[:,'SimulationName'] = [Simulations.loc[HarvestReport.loc[x,'SimulationID'],'Name'] for x in HarvestReport.index]
+# HarvestReport.drop(['CheckpointID','Zone','Nitrogen','01','1','Field_','_','Water','Radiation','PlantDensity'],axis=1,inplace=True)
+# HarvestReport.loc[:,'PlantPopn'] = 1/((HarvestReport.loc[:,'RowWidth']/1000)* (HarvestReport.loc[:,'InterRowPlantSpace']/1000))
+# HarvestReport.loc[:,'StemPopn'] = HarvestReport.loc[:,'StemPerTuber'] *  HarvestReport.loc[:,'PlantPopn']
+# HarvestReport.loc[:,'Location'] = [extractLocation(x) for x in HarvestReport.loc[:,'Weather.FileName']]
+# HarvestReport.set_index('SimulationID',inplace=True)
+# HarvestReport.loc[:,'FileName'] = [extractfileName(HarvestReport.loc[x,'Weather.FileName']) for x in HarvestReport.index]
+# HarvestReport.loc[:,'Country'] = [LocList.loc[x,'country'] for x in HarvestReport.loc[:,'FileName']]
+# HarvestReport.loc[:,'Loc'] = [LocList.loc[x,'loc'] for x in HarvestReport.loc[:,'FileName']]
+# HarvestReport.loc[:,'Country Loc'] = [HarvestReport.loc[x,'Country'] + ' ' + HarvestReport.loc[x,'Loc'] for x in HarvestReport.index] 
 ```
 
 ```{python}
-HarvestPreObs = pd.read_sql("Select * from FinalYieldData",
-                        con)
-HarvestPreObs.loc[:,'SimulationName'] = [Simulations.loc[HarvestPreObs.loc[x,'SimulationID'],'Name'] for x in HarvestPreObs.index]
-HarvestPreObs.set_index('SimulationID',inplace=True)
-HarvestPreObs.drop_duplicates(inplace=True)
+# HarvestPreObs = pd.read_sql("Select * from FinalYieldData",
+#                         con)
+# HarvestPreObs.loc[:,'SimulationName'] = [Simulations.loc[HarvestPreObs.loc[x,'SimulationID'],'Name'] for x in HarvestPreObs.index]
+# HarvestPreObs.set_index('SimulationID',inplace=True)
+# HarvestPreObs.drop_duplicates(inplace=True)
 ```
 
 ### List of simulation names that are in observations data set but are not triggering a sowing event
 
 ```{python}
-NotPlanted = []
-for x in DailyPreObs.index.get_level_values(0).drop_duplicates():
-    if x not in InitialReport.index:
-        NotPlanted.append(Simulations.loc[x,'Name'])
-NotPlanted
+# NotPlanted = []
+# for x in DailyPreObs.index.get_level_values(0).drop_duplicates():
+#     if x not in InitialReport.index:
+#         NotPlanted.append(Simulations.loc[x,'Name'])
+# NotPlanted
 ```
 
 ## List of Simulation names that are being planted but are not triggering a harvest event
 
 ```{python}
-NotHarvested = []
-for x in InitialReport.index:
-    if x not in HarvestReport.index:
-        NotHarvested.append(Simulations.loc[x,'Name'])
-NotHarvested
+# NotHarvested = []
+# for x in InitialReport.index:
+#     if x not in HarvestReport.index:
+#         NotHarvested.append(Simulations.loc[x,'Name'])
+# NotHarvested
 ```
 
 ```{python}
-Experiments = HarvestReport.Experiment.drop_duplicates().values
-Experiments
+# Experiments = HarvestReport.Experiment.drop_duplicates().values
+# Experiments
 ```
 
 ```{python}
-Folders = ['New Zealand', 'Australia', 'SubStor','Scotland']
+# Folders = ['New Zealand', 'Australia', 'SubStor','Scotland']
 ```
 
 ```{python}
-Locations = HarvestReport.loc[:,'Loc'].drop_duplicates().values
+# Locations = HarvestReport.loc[:,'Loc'].drop_duplicates().values
+# Locations.sort()
+# Countries = HarvestReport.loc[:,'Country'].drop_duplicates().values
+# Countries.sort()
+# CountryLocs = HarvestReport.loc[:,'Country Loc'].drop_duplicates().values
+# CountryLocs.sort()
+Locations = Obs.loc[:,'Site'].drop_duplicates().values
 Locations.sort()
-Countries = HarvestReport.loc[:,'Country'].drop_duplicates().values
-Countries.sort()
-CountryLocs = HarvestReport.loc[:,'Country Loc'].drop_duplicates().values
-CountryLocs.sort()
-```
-
-```{python}
 Locations
+ExptInReport = DailyReport.loc[:, 'Experiment'].drop_duplicates().values
+ExptInReport.sort()
+ExptInReport
 ```
 
 ```{python}
-Countries
+ExptInReport %in% Locations
 ```
 
 ```{python}
-CountryLocs
+# Locations
+```
+
+```{python}
+# Countries
+```
+
+```{python}
+# CountryLocs
 ```
 
 ```{python}
@@ -245,40 +255,72 @@ AllColors = ['black',
  'crimson',
  'pink']
 AllColors.sort()
+AllColors.head()
 ```
 
 ```{python}
-AllColors
+# Cultivars = HarvestReport.Cultivar.drop_duplicates().values
+# Cultivars.sort()
+# Cultivars
 ```
 
 ```{python}
-Cultivars = HarvestReport.Cultivar.drop_duplicates().values
-Cultivars.sort()
-Cultivars
+# CultivarAcronums = ['39','Ac','Ag','Al','Am','As','At','Bi','Co','Dt','De','Di','Fi','Ga','Ho','Ib','Ih','Jb',
+# 'Ji','Ka','Kr','Ke','Kb','Lt','Lu','Ma','Mp','Ml','Na','Ne','No','Po','Rv','Rl','Re','Ru',
+#  'Rb','Rr','Sa','Se','Sp','Ty','Wa','Zi']
 ```
 
 ```{python}
-CultivarAcronums = ['39','Ac','Ag','Al','Am','As','At','Bi','Co','Dt','De','Di','Fi','Ga','Ho','Ib','Ih','Jb',
-'Ji','Ka','Kr','Ke','Kb','Lt','Lu','Ma','Mp','Ml','Na','Ne','No','Po','Rv','Rl','Re','Ru',
- 'Rb','Rr','Sa','Se','Sp','Ty','Wa','Zi']
+# CountryProps = pd.DataFrame(index = Countries,columns=['Color'])
+# pos = 0
+# for x in CountryProps.index:
+#     CountryProps.loc[x,'Color'] = AllColors[pos]
+#     pos += 2
+# CultivarProps = pd.DataFrame(index = Cultivars, data=CultivarAcronums, columns = ['CultAcro'])
+# pos=0
+# for x in CultivarProps.index:
+#     CultivarProps.loc[x,'Color'] = AllColors[pos]
+#     pos+=1
+
+# ColProps = pd.DataFrame(index=HarvestReport.index)
+# ColProps.loc[:,'Cultivar'] = CultivarProps.loc[[HarvestReport.loc[x,'Cultivar'] for x in ColProps.index],'Color'].values
+# ColProps.loc[:,'Country'] = CountryProps.loc[[HarvestReport.loc[x,'Country'] for x in ColProps.index],'Color'].values
+# ColProps
 ```
 
 ```{python}
-CountryProps = pd.DataFrame(index = Countries,columns=['Color'])
-pos = 0
-for x in CountryProps.index:
-    CountryProps.loc[x,'Color'] = AllColors[pos]
-    pos += 2
-CultivarProps = pd.DataFrame(index = Cultivars, data=CultivarAcronums, columns = ['CultAcro'])
-pos=0
-for x in CultivarProps.index:
-    CultivarProps.loc[x,'Color'] = AllColors[pos]
-    pos+=1
+# ['AboveGround N', 'AboveGround Wt',
+#        'TotalLive Wt', 'TotalLive N',
+#        'AppearedCohortNo', 'CoverGreen',
+#        'CoverTotal', 'LAI', 'Leaf Live N',
+#        'Leaf Live Wt', 'Leaf Live NConc',
+#        'Leaf SpecificArea', 'Stem Live N',
+#        'Stem Live NConc', 'Stem Live Wt',
+#        'Tuber DM%',
+#        'Tuber Live N', 'Tuber Live NConc',
+#        'Tuber Live Wt', 'Tuber LiveFWt',
+#        'SW(1)',
+#        'SW(2)', 'SW(3)',
+#        'SW(4)', 'SW(5)',
+#        'SW(6)', 'TotalSWC', 'TotalSoilN', 'TotalNO3',
+#        'TotalNH4', 'SW(7)']
 
-ColProps = pd.DataFrame(index=HarvestReport.index)
-ColProps.loc[:,'Cultivar'] = CultivarProps.loc[[HarvestReport.loc[x,'Cultivar'] for x in ColProps.index],'Color'].values
-ColProps.loc[:,'Country'] = CountryProps.loc[[HarvestReport.loc[x,'Country'] for x in ColProps.index],'Color'].values
-ColProps
+# ['$g/m^2$', '$g/m^2$',
+#        '$g/m^2$', '$g/m^2$',
+#        '$No$', '$0-1$',
+#        '$0-1$', '$LAI$', '$g/m^2$',
+#        '$g/m^2$', '$g/g$',
+#        'mm2/g', '$g/m^2$',
+#        '$g/g$', '$g/m^2$',
+#        '$g/g$',
+#        '$g/m^2$', '$g/g$',
+#        '$g/m^2$', '$g/m^2$',
+#        'mm/mm',
+#        'mm/mm', 'mm/mm',
+#        'mm/mm', 'mm/mm',
+#        'mm/mm', 'mm', '$kg/ha$', '$kg/ha$',
+#        '$kg/ha$', 'mm/mm']
+
 ```
 
 ```{python}

@@ -153,7 +153,7 @@ becusae the simulation name does not match
 ```{r}
 simNames <- dt_profile$SimulationName %>% unique() %>% grep("Defoliation$", x = . , value = TRUE)
 
-dt_profile <- dt_profile[,.(SimulationName, Clock.Today, Site,SWC, Shootbiomass )
+dt_profile <- dt_profile[,.(SimulationName, Clock.Today, Site,SWC, Shootbiomass)
            ][, (c("SWC", "Shootbiomass")):= lapply(.SD, function(x){
              x = ifelse(x == 0, NA, x)
              x
