@@ -6,3 +6,10 @@
 
 #less desired files
 *.html
+*.db-shm
+*.db-wal
+*.bak
+*.xlsx
+
+#notebook checkout points 
+.ipynb_check*
