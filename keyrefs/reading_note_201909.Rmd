@@ -3,6 +3,47 @@ title: "R Notebook"
 output: html_notebook
 ---
 
+
+
+#20190822
+
+## To read:
+Quantifying variability of soil physical properties within soil series to address modern land-use issues on the Canterbury Plains
+
+Yield and water use of temperate pastures in summer dry environments.
+
+
+EP calculation  - French, B. K. and Legg, B. J. 1979. Rothamsted irrigation 1964-76. Journal of Agricultural Science, U.K., 92, 15-37.
+
+_Vapour pressure deficit (VPD)_  Jenson, M. E., Burman, R. D. and Allen, R. G. eds). 1990. Evapotranspiration and irrigation requirements: a manual. New York, U.S.A: American Society of Civil Engineers, pp. 332.
+
+
+_Thermal time_ 
+Jones, C. A. and Kiniry, J. R. 1986. CERES-Maize: a simulation model of maize growth and development.College Station: Texas A&M University Press. 194 pp.
+
+
+## To clarify
+
+**the development stage of the crop**
+trifoliate??
+why post-grazing cuts?
+
+1. no relationship between days to 50% seedling emergence or rate of emergence and soil tmep. this indicates that the conditions were not non-limiting. other variables to consider 
+
+## Equations
+
+PSMD = PSMDi-1 + EPi – rainfalli
+
+## Yield difference driver
+
+1. Moot, D. J., Brown, H. E., Pollock, K. and Mills, A. 2008. Yield and water use of
+temperate pastures in summer dry environments. Proceedings of the New
+Zealand Grassland Association, 70, 51-57.
+
+
+
+
+
 #20190904
 
 _Note_
@@ -128,6 +169,8 @@ Measurements were made over a 5-year period from 18 August
 1997 to 30 June 2002
 
 SWC was measured the same way as Richard's
+
+
 [fig6 is a must](../imgs/water_stressVS_EP.png)
 
 
@@ -199,4 +242,66 @@ information related to management practices such as planting, fertilization, irr
 
 **is aspimx adapted from agmip for the json format file?**
 
+
+
+# 20191025
+
+Gunarathna mhjp 2019 sugar cane sensitivity analysis via R and GEM-SA
+
+manual choose the parameters 
+13 paras over 4 traits (biomass, fresh cane yield, sucrose weight, commercial cane sugar yield)
+2 water trts
+2 locations
+
+# 20191031
+A clear indicator that a soil has not been wet to depth is when the DUL graph line at depth does not meet the crop lower limit line (that is the bucket does not join at depth). 
+
++XF Root exploration factor
+
+XF = 0 no extration 
+XF = 1  Where CLL is measured and water extraction is observed set XF=1
+
+
+# apsim understanding 
+
+https://www.sciencedirect.com/science/article/abs/pii/S1161030118300406?via%3Dihub
+
+
+# 20191004
+
+First attempt to integrate the data sets together from github. 
+There are 12 `Excel` files. 
+Some of them are duplicated. 
+Some of them have insufficient information about the variables and expt locations.
+All lack of metadata. 
+
+**To do**
+
+1. Ask if xiumei knows the story behind the data sets.
+2. Use only Richard data as a starting point. 
+
+# 20191012
+
+
+
+# 20191029
+
+apsimx trials
+
+adjust `FW` in the photosynothesis part does not seem to affect the `swc`
+
+**double check the cutting date!!**
+
+# 20191103
+
+
+
+# Potential reference papers
+
+1. Dolling PJ et al 2005 Soil water extration and biomass production by lucerne in the south of Western Australia
+
+   At least two sites in the paper: 
+
+	i. Moora
+	ii. Quairading
 
