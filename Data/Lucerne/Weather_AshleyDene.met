@@ -1,5 +1,6 @@
 [weather.met.weather]
 Latitude = -43.38
+Longitude=172.466
 tav = 11.5 (oC) !annual average ambient temperature
 amp = 10.1 (oC) !annual amplitude in mean monthly temperature
 
