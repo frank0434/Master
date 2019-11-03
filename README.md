@@ -59,3 +59,26 @@ All lack of metadata.
 2. Use only Richard data as a starting point. 
 
 # 20191012
+
+
+
+# 20191029
+
+apsimx trials
+
+adjust `FW` in the photosynothesis part does not seem to affect the `swc`
+
+**double check the cutting date!!**
+
+# 20191103
+
+
+
+# Potential reference papers
+
+1. Dolling PJ et al 2005 Soil water extration and biomass production by lucerne in the south of Western Australia
+
+   At least two sites in the paper: 
+
+	i. Moora
+	ii. Quairading
