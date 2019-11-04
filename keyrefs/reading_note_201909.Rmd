@@ -305,3 +305,22 @@ adjust `FW` in the photosynothesis part does not seem to affect the `swc`
 	i. Moora
 	ii. Quairading
 
+
+# 20191104
+
+Suggestions from Rog:
+1. the tipping point for two sets of soil paras: a, thermal time; b, root reserves (**need to locate some good reference papers**) 
+2. 
+
+----
+
+  **Learning PEST**
+  
+  - APSIM FILE AND `tpl` must have the same structure and content _try a working one first and then save is as tpl
+  - 
+  
+  
+# 20191105
+
+call apsimx via command line, use `model.exe` rather than `apsimNG.exe` which is for the UI
+
