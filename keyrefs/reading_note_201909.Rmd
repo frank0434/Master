@@ -324,3 +324,12 @@ Suggestions from Rog:
 
 call apsimx via command line, use `model.exe` rather than `apsimNG.exe` which is for the UI
 
+# 20191111
+di he et al 2017
+
+model calibaration usually means estimation of the key model parameters by fitting the overall model to observed data
+this is necessary because not all the model parameters can be directly measured. 
+
+**How to decide what are the key paremeters?**
+
+equifinality - multiple combinations of model paremeters can be derived which lead to similar model performance to match the limited data 
