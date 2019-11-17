@@ -13,9 +13,26 @@ jupyter:
     name: python3
 ---
 
-```{python}
+# Aim
 
-```
+Mimic Hamish's note book for potato
+
+Progressing:
+
+    1. modified report script to have 3 reports: initial, daily and harvest.
+        Issue: predict vs observed table has no values produced. 
+    2. version cotrol the test apsimx file 
+    3. add longt to the met file 
+ 
+ 
+To do: 
+
+    1. copy and paste the node to individual expt 
+    2. run all sims
+    3. run hamish's code 
+    
+
+
 
 
 ```{python}
@@ -55,6 +72,7 @@ sql_fetch(con)
 Simulations = pd.read_sql("Select * from _Simulations",
                                 con)
 Simulations.set_index('ID',inplace=True)
+Simulations.head()
 ```
 
 ### Read in the Factor table that links factor names and levels to simulation IDs
@@ -66,24 +84,29 @@ Factors.set_index('SimulationID',inplace=True)
 Factors.head()
 ```
 
+```{python}
+# Factors tab have no name information for the 
+```
+
 ### Read in the Report generated on the Sowing Event
 
 ```{python}
-# LocList = pd.read_excel(r'C:\Users\cflhxb\Dropbox\APSIMPotato\List of locations.xlsx')
+# LocList = pd.read_excel('../Data/List of locations.xlsx')
 # LocList.set_index('metfile',inplace=True)
+
 ```
 
 ```{python}
-# import re
-# def extractLocation(lcn):
-#     lcn = lcn.replace('MET files\\','')
-#     lcn = re.sub('\d','',lcn)
-#     lcn = lcn.replace('.met','')
-#     return lcn
-# def extractfileName(fn):
-#     fn = fn.replace('MET files\\','')
-#     fn = fn.replace('.met','')
-#     return fn
+import re
+def extractLocation(lcn):
+    lcn = lcn.replace('MET files\\','')
+    lcn = re.sub('\d','',lcn)
+    lcn = lcn.replace('.met','')
+    return lcn
+def extractfileName(fn):
+    fn = fn.replace('MET files\\','')
+    fn = fn.replace('.met','')
+    return fn
 ```
 
 ```{python}
@@ -94,20 +117,30 @@ Obs.set_index('SimulationID',inplace=True)
 ```
 
 ```{python}
-InitialReport = pd.read_sql("Select * from InitialReport",
-                        con)
-InitialReport.loc[:,'SimulationName'] = [Simulations.loc[InitialReport.loc[x,'SimulationID'],'Name'] for x in InitialReport.index]
-InitialReport.drop(['CheckpointID','Zone','Nitrogen','01','1','Field_','_','Water','Radiation','PlantDensity'],axis=1,inplace=True)
-InitialReport.set_index('SimulationID',inplace=True)
-InitialReport.loc[:,'Location'] = [extractLocation(x) for x in InitialReport.loc[:,'Weather.FileName']]
-InitialReport.loc[:,'FileName'] = [extractfileName(InitialReport.loc[x,'Weather.FileName']) for x in InitialReport.index]
-InitialReport.loc[:,'Country'] = [LocList.loc[x,'country'] for x in InitialReport.loc[:,'FileName']]
-InitialReport.loc[:,'Loc'] = [LocList.loc[x,'loc'] for x in InitialReport.loc[:,'FileName']]
-InitialReport.loc[:,'Country Loc'] = [InitialReport.loc[x,'Country'] + ' ' + InitialReport.loc[x,'Loc'] for x in InitialReport.index] 
+Obs.describe()
 ```
 
 ```{python}
-DailyReport = pd.read_sql("Select * from Report",
+InitialReport = pd.read_sql("Select * from InitialReport",
+                        con)
+InitialReport.loc[:,'SimulationName'] = [Simulations.loc[InitialReport.loc[x,'SimulationID'],'Name'] for x in InitialReport.index]
+InitialReport.drop(['CheckpointID','Zone'],axis=1,inplace=True)
+InitialReport.set_index('SimulationID',inplace=True)
+InitialReport.loc[:,'Location'] = [extractLocation(x) for x in InitialReport.loc[:,'Weather.FileName']]
+InitialReport.loc[:,'FileName'] = [extractfileName(InitialReport.loc[x,'Weather.FileName']) for x in InitialReport.index]
+#rename 'FolderName' to 'Country'
+InitialReport.rename(columns = {'FolderName' : 'Country'}, inplace = True)
+# InitialReport.loc[:,'Country'] = [LocList.loc[x,'country'] for x in InitialReport.loc[:,'FileName']]
+# InitialReport.loc[:,'Loc'] = [LocList.loc[x,'loc'] for x in InitialReport.loc[:,'FileName']]
+InitialReport.loc[:,'Country Loc'] = [InitialReport.loc[x,'Country'] + ' ' + InitialReport.loc[x,'Location'] for x in InitialReport.index] 
+```
+
+```{python}
+InitialReport.head()
+```
+
+```{python}
+DailyReport = pd.read_sql("Select * from DailyReport",
                         con)
 DailyReport.loc[:,'SimulationName'] = [Simulations.loc[DailyReport.loc[x,'SimulationID'],'Name'] for x in DailyReport.index]
 DailyReport.drop(['CheckpointID','Zone'],axis=1,inplace=True)
@@ -124,6 +157,10 @@ DailyPreObs = pd.read_sql("Select * from PredictedObserved",
 DailyPreObs.loc[:,'SimulationName'] = [Simulations.loc[DailyPreObs.loc[x,'SimulationID'],'Name'] for x in DailyPreObs.index]
 DailyPreObs.set_index('SimulationID',inplace=True)
 DailyPreObs.drop_duplicates(inplace=True)
+```
+
+```{python}
+
 ```
 
 ```{python}
