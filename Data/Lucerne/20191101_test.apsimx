@@ -31,7 +31,35 @@
           "FieldName2UsedForMatch": "",
           "FieldName3UsedForMatch": null,
           "Name": "PredictedObserved",
-          "Children": [],
+          "Children": [
+            {
+              "$type": "Models.Tests, Models",
+              "AcceptedStats": [
+                {
+                  "$type": "APSIM.Shared.Utilities.MathUtilities+RegrStats, APSIM.Shared",
+                  "Name": "SWC",
+                  "n": 629,
+                  "Slope": 1.0223864183351179,
+                  "Intercept": 20.851681490495253,
+                  "SEslope": 0.0170619578090594,
+                  "SEintercept": 9.8676791190231441,
+                  "R2": 0.85133882392549509,
+                  "RMSE": 68.846161265738274,
+                  "NSE": 0.76059286823728878,
+                  "ME": 33.409716172105362,
+                  "MAE": 51.58428892068634,
+                  "RSR": 0.4889033813453435
+                }
+              ],
+              "AcceptedStatsName": "Name n Slope Intercept SEslope SEintercept R2 RMSE NSE ME MAE RSR",
+              "POName": "PredictedObserved",
+              "Name": "Tests",
+              "Children": [],
+              "IncludeInDocumentation": true,
+              "Enabled": true,
+              "ReadOnly": false
+            }
+          ],
           "IncludeInDocumentation": true,
           "Enabled": true,
           "ReadOnly": false
@@ -7110,7 +7138,7 @@
             "[Soil].SoilWater.Es",
             "[Soil].SoilWater.SWmm as SW",
             "[Soil].SoilWater.WaterTable",
-            "SUM([Soil].SoilWater.SWmm) as TotalSWC",
+            "SUM([Soil].SoilWater.SWmm) as SWC",
             "[DiagnosticsVariables].Script.SWC",
             "[Weather].Rain",
             "[Weather].MinT",
@@ -15192,7 +15220,7 @@
                     {
                       "$type": "Models.Manager, Models",
                       "Code": "\r\nusing System;\r\nusing System.Collections.Generic;\r\nusing Models.Core;\r\nusing Models.PMF;\r\nusing Models.PMF.Interfaces;\r\nusing System.Xml.Serialization;\r\n\r\nnamespace Models\r\n{\r\n    [Serializable] \r\n    [System.Xml.Serialization.XmlInclude(typeof(Model))]\r\n    public class Script : Model\r\n    {\r\n        [Link] Plant Lucerne;\r\n        \r\n        [XmlIgnore] private RemovalFractions Remove { get; set; }\r\n        \r\n        [EventSubscribe(\"Commencing\")]\r\n        private void OnSimulationCommencing(object sender, EventArgs e)\r\n        {\r\n            Remove = new RemovalFractions();\r\n        }\r\n        \r\n        public void Cut()\r\n        {\r\n            Remove.SetPhenologyStage = 4;\r\n            Lucerne.RemoveBiomass(\"Cut\", Remove);\r\n        }\r\n    }\r\n}\r\n            \r\n                \r\n",
-                      "Parameters": null,
+                      "Parameters": [],
                       "Name": "Mower",
                       "IncludeInDocumentation": true,
                       "Enabled": true,
