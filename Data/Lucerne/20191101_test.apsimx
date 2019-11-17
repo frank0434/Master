@@ -9381,7 +9381,7 @@
                           "Line": 0,
                           "LineThickness": 0,
                           "Checkpoint": "Current",
-                          "TableName": "Report",
+                          "TableName": "DailyReport",
                           "XFieldName": "Clock.Today",
                           "YFieldName": "SWC",
                           "X2FieldName": null,
@@ -9527,7 +9527,18 @@
         },
         {
           "$type": "Models.Factorial.Experiment, Models",
-          "DisabledSimNames": [],
+          "DisabledSimNames": [
+            "Iversen_9SowingDateSD7Waterirr",
+            "Iversen_9SowingDateSD6Waterirr",
+            "Iversen_9SowingDateSD4Waterirr",
+            "Iversen_9SowingDateSD3Waterirr",
+            "Iversen_9SowingDateSD2Waterirr",
+            "Iversen_9SowingDateSD7Waterdry",
+            "Iversen_9SowingDateSD6Waterdry",
+            "Iversen_9SowingDateSD4Waterdry",
+            "Iversen_9SowingDateSD3Waterdry",
+            "Iversen_9SowingDateSD2Waterdry"
+          ],
           "Name": "Iversen_9",
           "Children": [
             {
@@ -12052,7 +12063,7 @@
                           "CrossesAtZero": false
                         }
                       ],
-                      "LegendPosition": 0,
+                      "LegendPosition": 2,
                       "DisabledSeries": [],
                       "Name": "SWC",
                       "Children": [
@@ -12064,13 +12075,13 @@
                           "ColourArgb": -16777216,
                           "FactorToVaryColours": "SimulationName",
                           "FactorToVaryMarkers": null,
-                          "FactorToVaryLines": "Water",
+                          "FactorToVaryLines": null,
                           "Marker": 11,
                           "MarkerSize": 0,
-                          "Line": 1,
+                          "Line": 0,
                           "LineThickness": 0,
                           "Checkpoint": "Current",
-                          "TableName": "Report",
+                          "TableName": "DailyReport",
                           "XFieldName": "Clock.Today",
                           "YFieldName": "SWC",
                           "X2FieldName": null,
@@ -14544,6 +14555,84 @@
               "IncludeInDocumentation": true,
               "Enabled": true,
               "ReadOnly": false
+            },
+            {
+              "$type": "Models.Graph.Graph, Models",
+              "Caption": null,
+              "Axis": [
+                {
+                  "$type": "Models.Graph.Axis, Models",
+                  "Type": 3,
+                  "Title": null,
+                  "Inverted": false,
+                  "Minimum": "NaN",
+                  "Maximum": "NaN",
+                  "Interval": "NaN",
+                  "DateTimeAxis": false,
+                  "CrossesAtZero": false
+                },
+                {
+                  "$type": "Models.Graph.Axis, Models",
+                  "Type": 0,
+                  "Title": null,
+                  "Inverted": false,
+                  "Minimum": "NaN",
+                  "Maximum": "NaN",
+                  "Interval": "NaN",
+                  "DateTimeAxis": false,
+                  "CrossesAtZero": false
+                }
+              ],
+              "LegendPosition": 3,
+              "DisabledSeries": [],
+              "Name": "SoilWaterContent1",
+              "Children": [
+                {
+                  "$type": "Models.Graph.Series, Models",
+                  "Type": 1,
+                  "XAxis": 3,
+                  "YAxis": 0,
+                  "ColourArgb": -16777216,
+                  "FactorToVaryColours": "SimulationName",
+                  "FactorToVaryMarkers": null,
+                  "FactorToVaryLines": null,
+                  "Marker": 0,
+                  "MarkerSize": 0,
+                  "Line": 4,
+                  "LineThickness": 0,
+                  "Checkpoint": "Current",
+                  "TableName": "PredictedObserved",
+                  "XFieldName": "Observed.SWC",
+                  "YFieldName": "Predicted.SWC",
+                  "X2FieldName": null,
+                  "Y2FieldName": null,
+                  "ShowInLegend": true,
+                  "IncludeSeriesNameInLegend": false,
+                  "Cumulative": false,
+                  "CumulativeX": false,
+                  "Filter": null,
+                  "Name": "Predicted",
+                  "Children": [
+                    {
+                      "$type": "Models.Graph.Regression, Models",
+                      "ForEachSeries": false,
+                      "showOneToOne": true,
+                      "showEquation": true,
+                      "Name": "Regression",
+                      "Children": [],
+                      "IncludeInDocumentation": true,
+                      "Enabled": true,
+                      "ReadOnly": false
+                    }
+                  ],
+                  "IncludeInDocumentation": true,
+                  "Enabled": true,
+                  "ReadOnly": false
+                }
+              ],
+              "IncludeInDocumentation": false,
+              "Enabled": true,
+              "ReadOnly": false
             }
           ],
           "IncludeInDocumentation": true,
@@ -16901,7 +16990,7 @@
                           "Checkpoint": "Current",
                           "TableName": "DailyReport",
                           "XFieldName": "Clock.Today",
-                          "YFieldName": "TotalSWC",
+                          "YFieldName": "SWC",
                           "X2FieldName": null,
                           "Y2FieldName": null,
                           "ShowInLegend": false,
@@ -16982,7 +17071,7 @@
                               "XAxis": 3,
                               "YAxis": 0,
                               "ColourArgb": -16777216,
-                              "FactorToVaryColours": "Experiment",
+                              "FactorToVaryColours": "SowingDate",
                               "FactorToVaryMarkers": null,
                               "FactorToVaryLines": null,
                               "Marker": 0,
