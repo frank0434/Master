@@ -1,0 +1,293 @@
+---
+title: "test3d"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+con <- DBI::dbConnect(SQLite(), "../Data/Richard.sqlite3")
+soilwater <- dbReadTable(con, "SoilWater")
+soilwater <- fix_date(soilwater)
+vars <- colnames(soilwater)[c(1:9,33)]
+soilwater_melted <- soilwater %>% 
+  melt(.,id.vars = vars, variable.factor = FALSE) %>% 
+  .[, variable := as.integer(gsub("SWC.0.", "", variable))]
+DBI::dbDisconnect(con)
+use_python("C:/Users/Administrator/Anaconda3/python.exe")
+```
+
+
+[the help](https://matplotlib.org/mpl_toolkits/mplot3d/tutorial.html#scatter-plots)
+```{python}
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+import numpy as np
+import sqlite3
+
+# # Get the data (csv file is hosted on the web)
+# url = 'https://python-graph-gallery.com/wp-content/uploads/volcano.csv'
+# data = pd.read_csv(url)
+#  
+# # Transform it to a long format
+# df=data.unstack().reset_index()
+# df.columns=["X","Y","Z"]
+#  
+# # And transform the old column name in something numeric
+# df['X']=pd.Categorical(df['X'])
+# df['X']=df['X'].cat.codes
+#  
+# # Make the plot
+# fig = plt.figure()
+# ax = fig.gca(projection='3d')
+# ax.plot_trisurf(df['Y'], df['X'], df['Z'], cmap=plt.cm.viridis, linewidth=0.2)
+# plt.show()
+#  
+# # to Add a color bar which maps values to colors.
+# surf=ax.plot_trisurf(df['Y'], df['X'], df['Z'], cmap=plt.cm.viridis, linewidth=0.2)
+# fig.colorbar( surf, shrink=0.5, aspect=5)
+# plt.show()
+#  
+# # Rotate it
+# ax.view_init(30, 45)
+# plt.show()
+#  
+# # Other palette
+# ax.plot_trisurf(df['Y'], df['X'], df['Z'], cmap=plt.cm.jet, linewidth=0.01)
+# plt.show()
+
+```
+
+# constrcut an object from r BY DAS 
+
+```{r}
+SD1 <- soilwater_melted[Sowing.Date == "SD1"& Site == "AshleyDene" & Rep == 1] # FROM THE Data_EDA file
+cols <- colnames(SD1)[-c(1:8, 10)]
+SD1 <- SD1[, ..cols]
+SD2 <- soilwater_melted[Sowing.Date == "SD2"& Site == "AshleyDene" & Rep == 1] # FROM THE Data_EDA file
+cols <- colnames(SD1)[-c(1:8, 10)]
+SD2 <- SD2[, ..cols]
+for (i in seq(1, 10)){
+  for (j in seq(1, 4)) {
+    dt <- soilwater_melted[Sowing.Date == paste0("SD", i) & Site == "AshleyDene" & Rep == j]
+    cols <- colnames(dt)[-c(1:8, 10)]
+    dt <- dt[, ..cols]
+    assign(paste0("SD_", i,"_", j), value = dt)
+  }
+}
+l <- ls(pattern = "SD_") %>% 
+  paste0("r.", .)
+SD_1_1
+```
+
+```{python}
+def surface3d(dt):
+    
+    df = dt
+    
+    df.columns=["DAS","Depth","SWC"]
+     
+    # And transform the old column name in something numeric
+    df['DAS']=pd.Categorical(df['DAS'])
+    # df['DAS']=df['DAS'].cat.codes
+     
+     
+    # x = df['DAS']
+    # z = df['SWC']
+    # y = df['Depth']
+    
+    # Make the plot
+    fig = plt.figure(figsize=(12,10)) # set up the size of the fig
+    ax = fig.gca(projection='3d')
+    # scatter=ax.scatter3D(y, x, z, c = z, marker='o', cmap='hsv')
+    
+    ax.set_ylabel('DAS')
+    ax.set_xlabel('Depth (10 cm interval)')
+    ax.set_zlabel('SWC (mm)',rotation = 90 )
+    ax.tick_params(axis='x', length=6, width=2, colors='r', which='minor')
+    # Rotate it
+    # ax.view_init(30, 45)
+    # plt.show()
+    #  
+     
+    surf = ax.plot_trisurf(df['Depth', df['DAS'], df['SWC'],  cmap='hsv', linewidth=0.2)
+    fig.colorbar( surf, shrink=0.5, aspect=5)
+    # Rotate it
+    ax.view_init(30, 45)
+    plt.show()
+
+  
+df = r.SD_1_1
+df.columns=["DAS","Depth","SWC"]
+
+#  
+# # And transform the old column name in something numeric
+df['DAS']=pd.Categorical(df['DAS'])
+# df['DAS']=df['DAS'].cat.codes
+# df
+```
+
+```{python}
+l = [r.SD_1_1,  r.SD_10_2]
+# r.SD_1_3,  r.SD_1_4,r.SD_2_1,  r.SD_2_2,r.SD_2_3,  r.SD_2_4,r.SD_3_1,  r.SD_3_2,r.SD_3_3,  r.SD_3_4,r.SD_4_1,  r.SD_4_2,r.SD_4_3,  r.SD_4_4,r.SD_5_1,  r.SD_5_2,r.SD_5_3,  r.SD_5_4,r.SD_6_1,  r.SD_6_2,r.SD_6_3,  r.SD_6_4,r.SD_7_1,  r.SD_7_2,r.SD_7_3,  r.SD_7_4,r.SD_8_1,  r.SD_8_2,r.SD_8_3,  r.SD_8_4,r.SD_9_1,  r.SD_9_2,r.SD_9_3,  r.SD_9_4,r.SD_10_1, r.SD_10_2,r.SD_10_3, r.SD_10_4]
+# for i in l:
+#    surface3d(i)
+no = len(l)
+rows = np.ceil(no/2) + 1
+pos=1
+
+# for v in l:
+#     Graph = plt.figure(figsize=(18,35))
+#     ax = Graph.add_subplot(rows,2,pos)
+#     surface3d(v)
+#     pos+=1
+# plt.show()
+plt.subplot(2, 1, 1)
+fig = plt.figure(figsize=(12,10))
+ax = fig.gca(projection='3d')
+
+ax.plot_trisurf(df['DAS'], df['SWC'],df['Depth'], cmap='hsv', linewidth=0.2)
+plt.show()
+```
+https://matplotlib.org/devdocs/tutorials/intermediate/gridspec.html#sphx-glr-tutorials-intermediate-gridspec-py
+
+```{python}
+# fig1, f1_axes = plt.subplots(ncols=2, nrows=2, constrained_layout=True)
+# plt.show()
+df['DAS']=pd.Categorical(df['DAS'])
+df['DAS']=df['DAS'].cat.codes
+fig = plt.figure(figsize=plt.figaspect(0.5))
+x =df['DAS']
+z =df['SWC']
+y =df['Depth']
+#===============
+#  First subplot
+#===============
+# set up the axes for the first plot
+ax = fig.add_subplot(1, 2, 1, projection='3d')
+ax.scatter3D(x,z,y,c = z, marker='o', cmap='hsv')
+#===============
+# Second subplot
+#===============
+# set up the axes for the second plot
+ax = fig.add_subplot(1, 2, 2, projection='3d')
+
+ax.plot_trisurf(x,z,y, cmap='hsv', linewidth=0.2)
+
+# ax.axes.set_xlim3d(left=0.000001, right=9.9999999)
+plt.show()
+```
+
+```{python}
+# # data
+# df=r.SD1
+# df.columns=["DAS","Depth","SWC"]
+#  
+# # And transform the old column name in something numeric
+# df['DAS']=pd.Categorical(df['DAS'])
+# df['DAS']=df['DAS'].cat.codes
+#  
+#  
+# x =df['DAS']
+# z =df['SWC']
+# y =df['Depth']
+# 
+# # Make the plot
+# fig = plt.figure(figsize=(12,10)) # set up the size of the fig
+# ax = fig.gca(projection='3d')
+# scatter=ax.scatter3D(y, x, z, c = z, marker='o', cmap='hsv')
+# fig.colorbar( scatter, shrink=0.5, aspect=5)
+# ax.set_ylabel('DAS')
+# ax.set_xlabel('Depth (10 cm interval)')
+# ax.set_zlabel('SWC (mm)',rotation = 90 )
+# ax.tick_params(axis='x', length=6, width=2, colors='r', which='minor')
+# # Rotate it
+# ax.view_init(30, 45)
+# plt.show()
+#  
+#  
+# ax.plot_trisurf(y, x, z,  cmap='hsv', linewidth=0.2)
+# 
+# # Rotate it
+# ax.view_init(30, 45)
+# plt.show()
+#  
+# # to Add a color bar which maps values to colors.
+# # surf=ax.plot_trisurf(df['DAS'], df['SWC'],df['Depth'],  cmap=plt.cm.viridis, linewidth=0.2)
+# # fig.colorbar( surf, shrink=0.5, aspect=5)
+# 
+# 
+# 
+# ```
+# ```{python}
+# # data
+# df=r.SD2
+# df.columns=["DAS","Depth","SWC"]
+#  
+# # And transform the old column name in something numeric
+# df['DAS']=pd.Categorical(df['DAS'])
+# df['DAS']=df['DAS'].cat.codes
+#  
+#  
+# x =df['DAS']
+# z =df['SWC']
+# y =df['Depth']
+# 
+# # Make the plot
+# fig = plt.figure(figsize=(12,10)) # set up the size of the fig
+# ax = fig.gca(projection='3d')
+# scatter=ax.scatter3D(y, x, z, c = z, marker='o', cmap='hsv')
+# fig.colorbar( scatter, shrink=0.5, aspect=5)
+# ax.set_ylabel('DAS')
+# ax.set_xlabel('Depth (10 cm interval)')
+# ax.set_zlabel('SWC (mm)',rotation = 90 )
+# ax.tick_params(axis='x', length=6, width=2, colors='r', which='minor')
+# # Rotate it
+# ax.view_init(30, 45)
+# plt.show()
+#  
+#  
+# ax.plot_trisurf(y, x, z,  cmap='hsv', linewidth=0.2)
+# 
+# # Rotate it
+# ax.view_init(30, 45)
+# plt.show()
+#  
+# # to Add a color bar which maps values to colors.
+# # surf=ax.plot_trisurf(df['DAS'], df['SWC'],df['Depth'],  cmap=plt.cm.viridis, linewidth=0.2)
+# # fig.colorbar( surf, shrink=0.5, aspect=5)
+
+
+
+```
+**I need labels **
+[rotating labels](https://stackoverflow.com/questions/21918380/rotating-axes-label-text-in-3d-matplotlib)
+
+```{python}
+# 
+# from mpl_toolkits.mplot3d import Axes3D
+# import matplotlib.pyplot as plt
+# 
+# 
+# 
+# fig = plt.figure()
+# ax = fig.add_subplot(projection='3d')
+# 
+# x =df['DAS']
+# y =df['SWC']
+# z =df['Depth']
+# 
+# # ax.plot3D(x, y, z, 'gray')
+# # ax.scatter3D(x, y, z, c = z, marker='o', cmap='hsv')
+# ax.plot_trisurf(x, y, z, cmap=plt.cm.jet, linewidth=0.01)
+# ax.set_xlabel('X Label')
+# ax.set_ylabel('Y Label')
+# ax.set_zlabel('Z Label')
+# # Rotate it
+# ax.view_init(30, 45)
+# plt.show()
+# 
+
+```
+
