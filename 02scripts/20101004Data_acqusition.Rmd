@@ -11,8 +11,8 @@ output:
 
 ```{r setup, include=FALSE,warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
-source("../R/packages.R")
-source("../R/functions.R")
+source("R/packages.R")
+source("R/functions.R")
 ```
 
 
@@ -39,7 +39,9 @@ source("../R/functions.R")
 ### Browser the data folder
 
 ```{r browser the data folder}
-path_apX <- "../Data/Lucerne/"
+?here::here
+path_apX <- "G:/APSIM2019.10.10/Prototypes/Lucerne/"
+
 xlsxs <- list.files(path_apX, pattern = "^\\w.+\\.xlsx")
 xlsxs
 ```
