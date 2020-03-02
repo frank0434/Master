@@ -333,3 +333,29 @@ this is necessary because not all the model parameters can be directly measured.
 **How to decide what are the key paremeters?**
 
 equifinality - multiple combinations of model paremeters can be derived which lead to similar model performance to match the limited data 
+
+
+# 20191118
+
+error when using slurp to re-run land and pasture expt. 
+
+```
+System.Exception: ERROR in file: C:\Data\Lucerne-and-Pasture\ModelOptimisation\LandPoptimisation.apsimx
+Simulation name: LnPIrrNonCroLuc
+System.ArgumentException: Property set method not found.
+   at System.Reflection.RuntimePropertyInfo.SetValue(Object obj, Object value, BindingFlags invokeAttr, Binder binder, Object[] index, CultureInfo culture)
+   at System.Reflection.RuntimePropertyInfo.SetValue(Object obj, Object value, Object[] index)
+   at Models.Script.OnDoManagement(Object sender, EventArgs e) in c:\Users\cflfcl\AppData\Local\Temp\ApsimXManager45f055fd-3ca0-4095-97d3-85732c7fe6ef.cs:line 78
+   at System.EventHandler.Invoke(Object sender, EventArgs e)
+   at Models.Clock.OnDoCommence(Object sender, CommenceArgs e)
+   at Models.Core.Simulation.Run(CancellationTokenSource cancelToken) ---> System.ArgumentException: Property set method not found.
+   at System.Reflection.RuntimePropertyInfo.SetValue(Object obj, Object value, BindingFlags invokeAttr, Binder binder, Object[] index, CultureInfo culture)
+   at System.Reflection.RuntimePropertyInfo.SetValue(Object obj, Object value, Object[] index)
+   at Models.Script.OnDoManagement(Object sender, EventArgs e) in c:\Users\cflfcl\AppData\Local\Temp\ApsimXManager45f055fd-3ca0-4095-97d3-85732c7fe6ef.cs:line 78
+   at System.EventHandler.Invoke(Object sender, EventArgs e)
+   at Models.Clock.OnDoCommence(Object sender, CommenceArgs e)
+   at Models.Core.Simulation.Run(CancellationTokenSource cancelToken)
+   --- End of inner exception stack trace ---
+   at Models.Core.Simulation.Run(CancellationTokenSource cancelToken)
+   at APSIM.Shared.JobRunning.JobRunner.RunActualJob(IRunnable job, IJobManager jobManager)
+```
