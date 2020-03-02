@@ -10,6 +10,7 @@
 *.db-wal
 *.bak
 *.xlsx
+*.db
 
 #notebook checkout points 
 .ipynb_check*

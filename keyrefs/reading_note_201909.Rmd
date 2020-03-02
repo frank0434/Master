@@ -334,6 +334,7 @@ this is necessary because not all the model parameters can be directly measured.
 
 equifinality - multiple combinations of model paremeters can be derived which lead to similar model performance to match the limited data 
 
+<<<<<<< HEAD
 
 # 20191118
 
@@ -359,3 +360,84 @@ System.ArgumentException: Property set method not found.
    at Models.Core.Simulation.Run(CancellationTokenSource cancelToken)
    at APSIM.Shared.JobRunning.JobRunner.RunActualJob(IRunnable job, IJobManager jobManager)
 ```
+=======
+# 20191118
+
+the `PredictedObserved` tab
+
+
+# 20191126
+
+**autocorrelation book**
+Bowerman & O’Connell 1990,
+Neter et al. 1996
+
+autocorrelation can be temporal and spatial
+
+Diggle (1990), the latter with a biological
+emphasis.
+
+# 20191211
+
+steps of stats
+
+1. plot out the overall info
+2. identify key factors 
+3. isolate/combine the factors and plotting out 
+4. choose a model: linear/ ploynomial?
+5. run model for stats results to decide which model is better based on stats results 
+
+
+Rog's help to add the mofidier
+
+the steps:
+1. figure out which part of the model wanted to change. e.g, phenology/root/other parts?
+2. which variable want to change 
+3. A `VariableReference` to have the access to the variable 
+4. A `Target` to have the value changed 
+
+Note, **Progression** is sum of previous values 
+the submodel is isolated to each other, only move to next stage if the target has been 
+meet in the curret stage 
+
+
+##### A plan 
+
+Two approaches: 
+
+1. manual setup (not good - why)
+
+  a. background:
+  
+  there are two different stages for lucerne: seedling and established. 
+  Two sets of soil characteristic values are therefore avaiable from Richard's work. 
+  how can i implement the seedling stage when the root of the crop still growing in apsimx 
+  
+  b. juvenile stage can be treated as seedling
+  BUT, the seedling stage is not a real `phenological stage` since the crop still have the full
+  life cycle from vegetative to reproductive stages 
+  
+  c. can i add a additional model to handle this? 
+  d. even though i can add an additional model to do this process. 
+  there is still issues like equifinality or strongly affect other parameters
+  
+  something to validate thoughts:
+
+  - comparing with the original setup 
+  - stats (Eg. nse) gets worse then show it is no good  
+
+
+
+2. slurp exercise (better - how)
+
+  a. finish the execise of the L & P
+  b. standarise the process 
+  c. implement the process to Richard's data set:
+    i. all aboveground data as input configuration files
+    ii. tidy format of richard data
+  
+
+
+
+
+>>>>>>> 5b9429dec95c9348dc3107743d2093c3acc30fac
