@@ -156,22 +156,20 @@ There is no Iversen_12 for Richard 10 sowing date expt?
 ## Richard data set
 
 ```{r richard}
-path_richard = "../Data/APSIM_Sim_allobs.txt"
-# file_richard = read_excel(path_richard,
-#                           skip = 9, 
-#                           col_types = c("text","text","date","text","text",
-#                                         rep("numeric", 117)))
+path_richard = "c:/Users/Administrator/Dropbox/Data/APSIM_Sim.xlsx"
+file_richard = read_excel(path_richard,
+                          skip = 9)
 
-dt <- fread(path_richard, skip = 9, na.strings = c("","NA"), select = 1:118)
-dt <- dt[-nrow(dt), ]#excluded the * 
+# dt <- fread(path_richard, skip = 9, na.strings = c("","NA"), select = 1:118)
+# dt <- dt[-nrow(dt), ]#excluded the * 
 # dt <- dt[, Date := dmy(Date)] # keep data as chr since sqlite does not support ISO date
-dt <- dt %>% 
+dt <- file_richard %>% 
   as_tibble(.name_repair = "universal") %>% # use tibble format to fix the names 
   as.data.table() # change it back to data.table
 
 
-dt_SD_lookup <- fread(path_richard, skip = 9, na.strings = c("","NA"), select = 120:122)
-dt_SD_lookup <- dt_SD_lookup[!is.na(AD)]
+# dt_SD_lookup <- fread(path_richard, skip = 9, na.strings = c("","NA"), select = 120:122)
+# dt_SD_lookup <- dt_SD_lookup[!is.na(AD)]
 ```
 
 what **S AND E** MEANS? SOWING AND EMERGE?
@@ -196,6 +194,13 @@ colnames(dt)
 tbl <- inspect_cat(dt) %>% 
   arrange(desc(cnt)) 
 head(tbl)
+col_type <- biomass %>% 
+  inspect_types()
+
+# data and time cols
+col_date <- col_type$col_name[[3]]
+# change to NZ time zone 
+dt[, (col_date) := lapply(.SD, function(x) as.Date(x, tz = "Pacific/Auckland")), .SDcol = col_date]
 
 ```
 
@@ -240,6 +245,21 @@ col_good <- choose_cols(biomass) # identify the right cols
 
 biomass <- biomass[,..col_good] # subset the right cols 
 
+
+# drop the extra cols in place 
+biomass[, c("...120", "AD", "I12") := NULL]
+
+biomass %>% 
+  inspect_na() %>% 
+  show_plot()
+
+```
+
+#### the ad and i12 represent sowing dates in two sites
+
+```{r sowing dates}
+sowingDate <- dt[,...120 : I12][!is.na(...120)]
+setnames(sowingDate, "...120", "ID", skip_absent = TRUE)
 ```
 
 

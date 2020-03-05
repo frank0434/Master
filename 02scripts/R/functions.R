@@ -27,6 +27,7 @@ exam_xlsxs <- function(path_apX, filename){
 # fun2 --------------------------------------------------------------------
 
 #' choose_cols
+#' @description calculate the number of NAs and nrows, select only the unequal numbers 
 #'
 #' @param dt a data.table or data.frame
 #'
