@@ -16,6 +16,284 @@ source("R/functions.R")
 ```
 
 
+
+
+## Richard data set
+
+```{r richard}
+path_richard = "c:/Users/Administrator/Dropbox/Data/APSIM_Sim.xlsx"
+file_richard = read_excel(path_richard, guess_max = 10300,
+                          skip = 9)
+
+# dt <- fread(path_richard, skip = 9, na.strings = c("","NA"), select = 1:118)
+# dt <- dt[-nrow(dt), ]#excluded the * 
+# dt <- dt[, Date := dmy(Date)] # keep data as chr since sqlite does not support ISO date
+dt <- file_richard %>% 
+  as_tibble(.name_repair = "universal") %>% # use tibble format to fix the names 
+  as.data.table() # change it back to data.table
+
+
+# dt_SD_lookup <- fread(path_richard, skip = 9, na.strings = c("","NA"), select = 120:122)
+# dt_SD_lookup <- dt_SD_lookup[!is.na(AD)]
+```
+
+what **S AND E** MEANS? SOWING AND EMERGE?
+Alpha|	Growth Stage|		No.
+ ---|---|---
+S|	Sowing	|	1
+E	|Emergence	|	3
+J	|Juvenile	|	4
+Fi|	Visible Bud	|	5
+Fl | Flower Open	|	6
+
+
+_Note_
+Richard excel file has mix variable types. `read_excel` has trouble to deal with it. try python's pandas
+_Solution_ manually save it to `.txt`, `fread` can handle the type of variables 
+
+
+### inspect the data
+
+```{r main table}
+colnames(dt)
+inspect_na(dt)
+dt[, ...119 := NULL]
+
+tbl <- inspect_cat(dt) %>% 
+  arrange(desc(cnt)) 
+head(tbl)
+
+# inspect the type of cols
+col_type <- dt %>% 
+  inspect_types()
+
+# data and time cols
+col_date <- col_type$col_name[[3]]
+# change to NZ time zone and change to character 
+# becuase sqlite not support Date in yyyymmdd
+dt[, (col_date) := lapply(.SD, function(x) as.character(as.Date(x,  tz = "Pacific/Auckland"))), .SDcol = col_date]
+
+```
+
+_couldn't use `inspect_cat` because of duplicated colnames?_ Fixed by using `.name_repair` in `as_tibble`
+
+There are two `Plant No.` variables.
+One is the harvest area plant number and the other one is the plant number per $m^2$
+
+_Note:_
+
+1. the number of obs for Total.DM is larger than the obs for Total FW?
+   **not really - there are missing values have been coded as 0**
+
+2. there are multiply tables in one sheet. need to separate into different tables 
+
+
+
+```{r main table col}
+sapply(dt[,1:2], unique)
+```
+
+
+_Note_ 
+1. Need to figure out what `ES` and `*` stands for.
+**ES** should be evapotranspiration surface SWC 0-0.2m
+
+2. same for the `Site` col.
+3. same for the `Date` col, and the `Date` col need to be converted.
+4. all the rest of cols have this `*`.
+
+
+**The `*`** means the end of the main table. 
+
+### chop the main table to separate tables 
+
+need a function to figure out which col is not necessary 
+
+```{r Biomass tab}
+biomass <- dt[Data == "Biomass"]
+
+col_good <- choose_cols(biomass) # identify the right cols 
+
+biomass <- biomass[,..col_good] # subset the right cols 
+
+
+# drop the extra cols in place 
+biomass[, c("...120", "AD", "I12") := NULL]
+
+biomass %>% 
+  inspect_na() %>% 
+  show_plot()
+
+```
+
+_Note_
+
+Protein and MJME might be worth to be in a single table?
+
+#### the ad and i12 represent sowing dates in two sites
+
+```{r sowing dates tab}
+sowingDate <- dt[,...120 : I12][!is.na(...120)]
+setnames(sowingDate, "...120", "ID", skip_absent = TRUE)
+```
+
+
+```{r Root tab}
+
+root <- dt[Data == "Root"]
+
+col_good <- choose_cols(root) # identify the right cols 
+
+root <- root[,..col_good]
+
+inspect_na(root) %>% 
+  show_plot()
+```
+
+
+```{r Phenology tab}
+
+Phenology <- dt[Data == "Phenology"]
+
+col_good <- choose_cols(Phenology) # identify the right cols 
+
+Phenology <- Phenology[,..col_good]
+```
+
+
+```{r Soil water tab}
+
+SoilWater <- dt[Data == "Soil water"]
+
+col_good <- choose_cols(SoilWater) # identify the right cols 
+
+SoilWater <- SoilWater[,..col_good]
+```
+
+
+```{r ES tab}
+
+ES <- dt[Data == "ES"]
+
+col_good <- choose_cols(ES) # identify the right cols 
+
+ES <- ES[,..col_good]
+```
+
+
+### Check again before lock into sqlite
+
+```{r inspect types}
+l <- list(biomass, root, Phenology, SoilWater, ES) # put into a list for quick inspection
+l %>% 
+  lapply(inspect_types)
+l %>%
+  lapply(colnames)
+```
+
+_Note:_
+
+1. variable types are not right
+2. `Plant.No....40` is the plant number in the harvest area.
+3. `Plant.No....48` is the plant number per $m^2$
+4. Phenology tab has biomass cols because missing values as 0s. 
+5. The first 11 cols are the factors.
+6. Variables in Phenology tab should not be change to numeric. 
+
+
+```{r fix Phenology tab}
+cols_11 <- colnames(dt)[1:11] # the master cols
+cols_both <- colnames(Phenology)[colnames(Phenology) %in% colnames(biomass)] # the cols in both tabs
+cols_inPheno <- colnames(Phenology)[cols_both %in% cols_11]
+Phenology <- Phenology[,..cols_inPheno]
+colnames(Phenology)
+```
+
+
+```{r fix the types}
+
+#biomass tab
+
+cols <- colnames(biomass)[!colnames(biomass) %in% cols_11] # the cols need to be converted 
+biomass <- biomass[, (cols) := lapply(.SD, as.numeric), .SDcols = cols]
+#root tab 
+
+cols <- colnames(root)[!colnames(root) %in% cols_11] # the cols need to be converted 
+root <- root[, (cols) := lapply(.SD, as.numeric), .SDcols = cols]
+#soilwater tab
+
+cols <- colnames(SoilWater)[!colnames(SoilWater) %in% cols_11] # the cols need to be converted 
+SoilWater <- SoilWater[, (cols) := lapply(.SD, as.numeric), .SDcols = cols]
+#es tab
+
+cols <- colnames(ES)[!colnames(ES) %in% cols_11] # the cols need to be converted 
+ES <- ES[, (cols) := lapply(.SD, as.numeric), .SDcols = cols]
+
+```
+
+_Note:_ 
+There two cols has values been converted to NA by coercion. cautions going forward!!!
+
+
+**Rerun** the chunck `inspect types`. everything seems awesome 
+
+
+### Weather data 
+
+What are the key dates to source the right climate data?
+
+Dates|Event
+----|----
+21-Oct-10 | Sowing Date 1 in AD
+
+
+MORE DATES IN THE `sqlite` file. 
+
+There are quite a few `.met` files. 
+
+
+```{r read mets}
+climate_units <- read_met_col("../01raw-data/ClimateAndObserved/lincoln.met", skip = 6)
+Iversen12 <- read_met("../01raw-data/ClimateAndObserved/lincoln.met", skip_unit =  7, skip_meta = 6)
+head(Iversen12)
+
+AshleyDene <- read_met("../01raw-data/ClimateAndObserved/Weather_AshleyDene.met", skip_unit = 10, skip_meta = 8)
+
+
+```
+
+
+### Lock tabs into sqlite 
+
+```{r sqlite}
+
+con <- dbConnect(SQLite(), "../03processed-data/Richard.sqlite3")
+DBI::dbListTables(con)
+# The sowing date tab first
+
+colnames(dt_SD_lookup)
+# dbExecute(con," CREATE TABLE `SowingDate` (
+#   `V120` TEXT NOT NULL,
+#   `AD` TEXT NOT NULL,
+#   `I12` TEXT NOT NULL,
+#   PRIMARY KEY (V120)
+# );
+# ")
+
+# dbWriteTable(con, "SowingDate", dt_SD_lookup, append = TRUE)# comment out once appended
+
+# the rest 
+# sqlite does not support ISO date. it will be julian date. 
+
+# ls()
+tab_names <- c("biomass",  "root", "Phenology","SoilWater","ES") 
+purrr::map2(list(biomass, root, Phenology, SoilWater, ES), tab_names, ~ dbWriteTable(con, .y, .x, overwrite = TRUE))
+dbWriteTable(con, "met_Iversen12", Iversen12, overwrite = TRUE)
+dbWriteTable(con, "met_AshleyDene", AshleyDene, overwrite = TRUE)
+
+DBI::dbDisconnect(con)
+```
+
 ## Import data from apsimx
 
 * All phenotype data are stored in `Excel` files on [the apsimx github account](https://github.com/APSIMInitiative/ApsimX/tree/master/Prototypes/Lucerne).
@@ -152,273 +430,6 @@ potentials
 **total number of obs is `r sum(potentials$cnt)`**
 There is no Iversen_12 for Richard 10 sowing date expt? 
 
-
-## Richard data set
-
-```{r richard}
-path_richard = "c:/Users/Administrator/Dropbox/Data/APSIM_Sim.xlsx"
-file_richard = read_excel(path_richard,
-                          skip = 9)
-
-# dt <- fread(path_richard, skip = 9, na.strings = c("","NA"), select = 1:118)
-# dt <- dt[-nrow(dt), ]#excluded the * 
-# dt <- dt[, Date := dmy(Date)] # keep data as chr since sqlite does not support ISO date
-dt <- file_richard %>% 
-  as_tibble(.name_repair = "universal") %>% # use tibble format to fix the names 
-  as.data.table() # change it back to data.table
-
-
-# dt_SD_lookup <- fread(path_richard, skip = 9, na.strings = c("","NA"), select = 120:122)
-# dt_SD_lookup <- dt_SD_lookup[!is.na(AD)]
-```
-
-what **S AND E** MEANS? SOWING AND EMERGE?
-Alpha|	Growth Stage|		No.
- ---|---|---
-S|	Sowing	|	1
-E	|Emergence	|	3
-J	|Juvenile	|	4
-Fi|	Visible Bud	|	5
-Fl | Flower Open	|	6
-
-
-_Note_
-Richard excel file has mix variable types. `read_excel` has trouble to deal with it. try python's pandas
-_Solution_ manually save it to `.txt`, `fread` can handle the type of variables 
-
-
-### inspect the data
-
-```{r main table}
-colnames(dt)
-tbl <- inspect_cat(dt) %>% 
-  arrange(desc(cnt)) 
-head(tbl)
-col_type <- biomass %>% 
-  inspect_types()
-
-# data and time cols
-col_date <- col_type$col_name[[3]]
-# change to NZ time zone 
-dt[, (col_date) := lapply(.SD, function(x) as.Date(x, tz = "Pacific/Auckland")), .SDcol = col_date]
-
-```
-
-_couldn't use `inspect_cat` because of duplicated colnames?_ Fixed by using `.name_repair` in `as_tibble`
-
-There are two `Plant No.` variables.
-One is the harvest area plant number and the other one is the plant number per $m^2$
-
-_Note:_
-
-1. the number of obs for Total.DM is larger than the obs for Total FW?
-   **not really - there are missing values have been coded as 0**
-
-2. there are multiply tables in one sheet. need to separate into different tables 
-
-
-
-```{r main table col}
-sapply(dt[,1:2], unique)
-```
-
-
-_Note_ 
-1. Need to figure out what `ES` and `*` stands for.
-**ES** should be evapotranspiration surface SWC 0-0.2m
-
-2. same for the `Site` col.
-3. same for the `Date` col, and the `Date` col need to be converted.
-4. all the rest of cols have this `*`.
-
-
-**The `*`** means the end of the main table. 
-
-### chop the main table to separate tables 
-
-need a function to figure out which col is not necessary 
-
-```{r Biomass tab}
-biomass <- dt[Data == "Biomass"]
-
-col_good <- choose_cols(biomass) # identify the right cols 
-
-biomass <- biomass[,..col_good] # subset the right cols 
-
-
-# drop the extra cols in place 
-biomass[, c("...120", "AD", "I12") := NULL]
-
-biomass %>% 
-  inspect_na() %>% 
-  show_plot()
-
-```
-
-#### the ad and i12 represent sowing dates in two sites
-
-```{r sowing dates}
-sowingDate <- dt[,...120 : I12][!is.na(...120)]
-setnames(sowingDate, "...120", "ID", skip_absent = TRUE)
-```
-
-
-```{r Root tab}
-
-root <- dt[Data == "Root"]
-
-col_good <- choose_cols(root) # identify the right cols 
-
-root <- root[,..col_good]
-```
-
-
-```{r Phenology tab}
-
-Phenology <- dt[Data == "Phenology"]
-
-col_good <- choose_cols(Phenology) # identify the right cols 
-
-Phenology <- Phenology[,..col_good]
-```
-
-
-```{r Soil water tab}
-
-SoilWater <- dt[Data == "Soil water"]
-
-col_good <- choose_cols(SoilWater) # identify the right cols 
-
-SoilWater <- SoilWater[,..col_good]
-```
-
-
-```{r ES tab}
-
-ES <- dt[Data == "ES"]
-
-col_good <- choose_cols(ES) # identify the right cols 
-
-ES <- ES[,..col_good]
-```
-
-
-### Check again before lock into sqlite
-
-```{r inspect types}
-l <- list(biomass, root, Phenology, SoilWater, ES) # put into a list for quick inspection
-l %>% 
-  lapply(inspect_types)
-l %>%
-  lapply(colnames)
-```
-
-_Note:_
-
-1. variable types are not right
-2. `Plant.No....40` is the plant number in the harvest area.
-3. `Plant.No....48` is the plant number per $m^2$
-4. Phenology tab has biomass cols because missing values as 0s. 
-5. The first 11 cols are the factors.
-6. Variables in Phenology tab should not be change to numeric. 
-
-
-```{r fix Phenology tab}
-cols_11 <- colnames(dt)[1:11] # the master cols
-cols_both <- colnames(Phenology)[colnames(Phenology) %in% colnames(biomass)] # the cols in both tabs
-cols_inPheno <- colnames(Phenology)[cols_both %in% cols_11]
-Phenology <- Phenology[,..cols_inPheno]
-colnames(Phenology)
-```
-
-
-```{r fix the types}
-
-#biomass tab
-
-cols <- colnames(biomass)[!colnames(biomass) %in% cols_11] # the cols need to be converted 
-biomass <- biomass[, (cols) := lapply(.SD, as.numeric), .SDcols = cols]
-#root tab 
-
-cols <- colnames(root)[!colnames(root) %in% cols_11] # the cols need to be converted 
-root <- root[, (cols) := lapply(.SD, as.numeric), .SDcols = cols]
-#soilwater tab
-
-cols <- colnames(SoilWater)[!colnames(SoilWater) %in% cols_11] # the cols need to be converted 
-SoilWater <- SoilWater[, (cols) := lapply(.SD, as.numeric), .SDcols = cols]
-#es tab
-
-cols <- colnames(ES)[!colnames(ES) %in% cols_11] # the cols need to be converted 
-ES <- ES[, (cols) := lapply(.SD, as.numeric), .SDcols = cols]
-
-```
-
-_Note:_ 
-There two cols has values been converted to NA by coercion. cautions going forward!!!
-
-
-**Rerun** the chunck `inspect types`. everything seems awesome 
-
-
-### Weather data 
-
-What are the key dates to source the right climate data?
-
-Dates|Event
-----|----
-21-Oct-10 | Sowing Date 1 in AD
-
-
-MORE DATES IN THE `sqlite` file. 
-
-There are quite a few `.met` files. 
-
-
-```{r read mets}
-
-Iversen12 <- fread("../Data/Lucerne/lincoln.met", skip = 8)
-Iversen12_col <- fread("../Data/Lucerne/lincoln.met", skip = 6, nrows = 1)
-colnames(Iversen12) <- colnames(Iversen12_col)
-head(Iversen12)
-
-AshleyDene <- fread("../Data/Lucerne/Weather_AshleyDene.met", skip = 10)
-AshleyDene_col <- fread("../Data/Lucerne/Weather_AshleyDene.met", skip = 8, nrows = 1)
-colnames(AshleyDene) <- colnames(AshleyDene_col)
-
-
-```
-
-
-### Lock tabs into sqlite 
-
-```{r sqlite}
-
-con <- dbConnect(SQLite(), "../Data/Richard.sqlite3")
-DBI::dbListTables(con)
-# The sowing date tab first
-
-colnames(dt_SD_lookup)
-# dbExecute(con," CREATE TABLE `SowingDate` (
-#   `V120` TEXT NOT NULL,
-#   `AD` TEXT NOT NULL,
-#   `I12` TEXT NOT NULL,
-#   PRIMARY KEY (V120)
-# );
-# ")
-
-# dbWriteTable(con, "SowingDate", dt_SD_lookup, append = TRUE)# comment out once appended
-
-# the rest 
-# sqlite does not support ISO date. it will be julian date. 
-
-# ls()
-tab_names <- c("biomass",  "root", "Phenology","SoilWater","ES") 
-# purrr::map2(list(biomass, root, Phenology, SoilWater, ES), tab_names, ~ dbWriteTable(con, .y, .x))
-# dbWriteTable(con, "met_Iversen12", Iversen12)
-# dbWriteTable(con, "met_AshleyDene", AshleyDene)
-
-DBI::dbDisconnect(con)
-```
 
 
 
