@@ -2,4 +2,4 @@
 .Simulations.Replacements.Lucerne.Leaf.Photosynthesis.FW.XYPairs.X = 2,3,4,5
 .Simulations.New Zealand.Iversen_12.Simulation3.clock.Start=1970-02-03T00:00:00
 .Simulations.New Zealand.Iversen_12.Simulation3.clock.End =1980-02-03T00:00:00
-.Simulations.New Zealand.Iversen_12.Simulation3.Weather.FileName = C:\Data\Master\01raw-data\ClimateAndObserved\lincoln
+.Simulations.New Zealand.Iversen_12.Simulation3.Weather.FileName = C:\Data\Master\01raw-data\ClimateAndObserved\lincoln.met
