@@ -1,0 +1,5 @@
+.Simulations.New Zealand.Iversen_12.Simulation3.Weather = C:\Data\Master\01raw-data\ClimateAndObserved\lincoln.met
+.Simulations.New Zealand.Iversen_12.Simulation3.paddock.Soil.Physical.LucerneSoil.KL = 1,2,3,4,5,6,7,8,9,0
+.Simulations.Replacements.Lucerne.Leaf.Photosynthesis.FW.XYPairs.X = 2,3,4,5
+.Simulations.New Zealand.Iversen_12.Simulation3.clock.Start=1970-02-03T00:00:00
+.Simulations.New Zealand.Iversen_12.Simulation3.clock.End =1980-02-03T00:00:00
