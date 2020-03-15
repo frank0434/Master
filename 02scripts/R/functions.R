@@ -100,8 +100,6 @@ theme_water <- function(){
 
 fix_date <- function(df){
   
-  dt <- as.data.table(df)
-  dt <- dt[, Date := lubridate::dmy(Date)]
-  
-  dt
+  df$Date = as.Date(df$Date)
+  dt = data.table::as.data.table(df)
 }

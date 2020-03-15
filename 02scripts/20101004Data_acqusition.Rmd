@@ -269,7 +269,8 @@ AshleyDene <- read_met("../01raw-data/ClimateAndObserved/Weather_AshleyDene.met"
 
 con <- dbConnect(SQLite(), "../03processed-data/Richard.sqlite3")
 DBI::dbListTables(con)
-# The sowing date tab first
+# The sowing date tab f
+irst
 
 # colnames(dt_SD_lookup)
 # dbExecute(con," CREATE TABLE `SowingDate` (
