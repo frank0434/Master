@@ -39,31 +39,27 @@ h. **1** follow treat in both sites - absolute soil evaporation
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
-source("R/packages.R")
-source("R/functions.R")
+source("/R/packages.R")
+source("../R/functions.R")
 ```
 
 
 ### Import data from sqlite
 
 ```{r import sqlite}
-con <- dbConnect(SQLite(), "../03processed-data/Richard.sqlite3")
+con <- dbConnect(SQLite(), "../Data/Richard.sqlite3")
 soilwater <- dbReadTable(con, "SoilWater")
 biomass <- dbReadTable(con, "biomass")
-# root <- dbReadTable(con, "root")
-# ES <- dbReadTable(con, "ES")
-met_ad <- dbReadTable(con, "met_AshleyDene")
-db_list_tables(con)
-met_iv <- dbReadTable(con, "met_Iversen12")
-
+root <- dbReadTable(con, "root")
+ES <- dbReadTable(con, "ES")
 dbDisconnect(con)
 
-#fix date and set to data.table
+#fix date
 
 soilwater <- fix_date(soilwater)
 biomass <- fix_date(biomass)
-# root <- fix_date(root)
-# ES <- fix_date(ES)
+root <- fix_date(root)
+ES <- fix_date(ES)
 ```
 
 
@@ -97,18 +93,10 @@ soilwater_melted[Sowing.Date %in% paste0("SD", 1:5)] %>%
   ggtitle("First 5 sowing date")
 ```
 
-```{r}
-soilwater[Sowing.Date == "SD1",.(Date, Site,Sowing.Date,SWC.2.3.m..mm.)
-          ][, max(SWC.2.3.m..mm.), by = .(Date, Site)] 
-```
 
 ```{r profile water}
-
-# Subset it to only one sowing date
-soilwater[Sowing.Date == "SD1",.(Date, Site,Sowing.Date,SWC.2.3.m..mm.)
-          ][, .("SWC.2.3.m..mm." = mean(SWC.2.3.m..mm.)), by = .(Site, Date)
-            ] %>% 
-  ggplot(aes(Date, SWC.2.3.m..mm.)) + 
+soilwater[,.(Date, Site,Sowing.Date,SWC.2.3.m..mm.) ]%>% 
+  ggplot(aes(Date, SWC.2.3.m..mm., color = Sowing.Date)) + 
   geom_point() +
   facet_grid( ~ Site ) +
   theme_water() +
@@ -116,6 +104,47 @@ soilwater[Sowing.Date == "SD1",.(Date, Site,Sowing.Date,SWC.2.3.m..mm.)
 ```
 
 
+
+```{r soilwater hist each layer, fig.height=12, fig.width=12, message=FALSE,warning=FALSE,dpi=300}
+
+nums <- inspect_num(soilwater[Site == "AshleyDene"])
+show_plot(nums)
+print("SWC distribution in each layer in AshleyDene")
+
+nums <- inspect_num(soilwater[Site != "AshleyDene"])
+show_plot(nums)
+print("SWC distribution in each layer in Lincoln Uni")
+```
+
+```{r hist}
+soilwater_melted %>% 
+  ggplot(aes(value))+
+  geom_histogram() +
+  facet_grid( ~ Site) +
+  theme_water()
+
+
+
+```
+
+### Evapotranspiration surface
+
+This is for calibrate the model for Potential Ep since there is no crop growing on this area?
+
+
+```{r ES, fig.height=14, fig.width=14, dpi=300}
+
+vars <- colnames(ES)[c(1:6,31)]
+ES_melted <- ES %>% 
+  melt(.,id.vars = vars, variable.factor = FALSE) %>% 
+  .[, variable := as.integer(gsub("SWC.0\\.", "", variable))]
+ES_melted[, variable:= ifelse(is.na(variable), 24, variable)] %>% 
+  ggplot(aes(Date, value)) + 
+  geom_point() +
+  facet_grid(variable ~ Site ) +
+  theme_water()
+
+```
 
 ### Biomass Overview 
 
@@ -138,70 +167,7 @@ inspect_cat(biomass) %>%
 # GGally::ggpairs(biomass[,.(Site, Sowing.Date, Date, FW..g.,DW..g.)],aes(colour = Site, alpha = 0.4))
 colnames(biomass)
 biomass_sub <- biomass[,.(Site, Date, Sowing.Date, DAS,  Shoot.No., Shoots.m2, FW..g., DW..g., Leaf.Area..cm.,LAImod)]
-biomass$Sowing.Date %>% unique()
 ```
-
-
-```{r fw biomass}
-biomass[Sowing.Date == "SD1"
-        ][, .("Total.FW..g." = mean(Total.FW..g.)), by = .(Site, Date)
-          ] %>% 
-  ggplot(aes(Date, Total.FW..g.)) +
-  geom_point() +
-  facet_grid( ~ Site ) +
-  theme_water() +
-  ggtitle("Biomass")
-  
-```
-
-### Combine the biomass and water?
-
-```{r}
-
-sum_biomass = biomass[Sowing.Date == "SD1"
-                      ][, .("Total.FW..g." = mean(Total.FW..g.)), by = .(Site, Date, Harvest.No., Rotation.No., Season)
-                        ][!Harvest.No. %in% c("0", "Post") ]
-setorder(sum_biomass, Site, Date)
-
-sum_water = soilwater[Sowing.Date == "SD1",.(Date, Site,Sowing.Date,SWC.2.3.m..mm.)
-                      ][, .("SWC.2.3.m..mm." = mean(SWC.2.3.m..mm.)), by = .(Site, Date)] 
-
-
-sum_biomass [!is.na(Total.FW..g.) & Total.FW..g. != 0]%>% 
-  ggplot(aes(Date, Total.FW..g.)) +
-  geom_point() +
-  
-  # geom_line()+
-  facet_grid( ~ Site ) +
-  theme_water()
-
-sum_water%>% 
-  ggplot(aes(Date, SWC.2.3.m..mm.)) + 
-  geom_point() +
-  facet_grid( ~ Site ) +
-  theme_water() +
-  ggtitle("Profile water")
-```
-
-
-
-### NEED the deficit value to draw the graph 
-$WU = P_R – (SWC_E – SWC_S)$
-
-P_r is the sum of the rainfall for the same period
-SWC_E and SWC_S are SWC values at the end and start of the period 
-
-
-
-```{r}
-rotation_period = sum_biomass[, .SD[c(1,.N)], by = .(Site, Rotation.No., Season)][,.(Site, Date)]
-
-sum_water[rotation_period, on = c("Site","Date"), roll = "nearest"]
-
-```
-
-
-
 
 _Note:_
 
@@ -223,28 +189,6 @@ consider to set up `Draker` plan.
 # plt.savefig("biomass_cor.png", dpi = 300)
 ```
 
-
-
-
-
-### Evapotranspiration surface
-
-This is for calibrate the model for Potential Ep since there is no crop growing on this area?
-
-
-```{r ES, fig.height=14, fig.width=14, dpi=300}
-
-vars <- colnames(ES)[c(1:6,31)]
-ES_melted <- ES %>% 
-  melt(.,id.vars = vars, variable.factor = FALSE) %>% 
-  .[, variable := as.integer(gsub("SWC.0\\.", "", variable))]
-ES_melted[, variable:= ifelse(is.na(variable), 24, variable)] %>% 
-  ggplot(aes(Date, value)) + 
-  geom_point() +
-  facet_grid(variable ~ Site ) +
-  theme_water()
-
-```
 
 
 ### Root Overview 
