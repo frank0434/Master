@@ -82,19 +82,19 @@ vars <- colnames(soilwater)[c(1:9,33)]
 soilwater_melted <- soilwater %>% 
   melt(.,id.vars = vars, variable.factor = FALSE) %>% 
   .[, variable := as.integer(gsub("SWC.0.", "", variable))]
-soilwater_melted[, Sowing.Date := fct_relevel(as.factor(Sowing.Date), levels = c(paste0("SD",1:10)))] %>% 
-  
-  ggplot(aes(Date, value, color = as.factor(variable))) + 
-  geom_point() +
-  facet_grid(Sowing.Date ~ Site ) +
-  theme_water() +
-  scale_color_viridis_d()
-soilwater_melted[Sowing.Date %in% paste0("SD", 1:5)] %>% 
-  ggplot(aes(Date, value, color = Sowing.Date)) + 
-  geom_point() +
-  facet_grid(variable ~ Site ) +
-  theme_water() +
-  ggtitle("First 5 sowing date")
+# soilwater_melted[, Sowing.Date := fct_relevel(as.factor(Sowing.Date), levels = c(paste0("SD",1:10)))] %>% 
+#   
+#   ggplot(aes(Date, value, color = as.factor(variable))) + 
+#   geom_point() +
+#   facet_grid(Sowing.Date ~ Site ) +
+#   theme_water() +
+#   scale_color_viridis_d()
+# soilwater_melted[Sowing.Date %in% paste0("SD", 1:5)] %>% 
+#   ggplot(aes(Date, value, color = Sowing.Date)) + 
+#   geom_point() +
+#   facet_grid(variable ~ Site ) +
+#   theme_water() +
+#   ggtitle("First 5 sowing date")
 
 layers_shallow = soilwater_melted[Sowing.Date == "SD1" & Season == "2010/11" & Site == "AshleyDene"& variable %in% c(1:6)
                           ][, .(VWC = mean(value, na.rm = TRUE)), by = .(Site, Date, variable)
@@ -109,6 +109,7 @@ p1 = layers_shallow %>%
   geom_point() +
   geom_line()+
   facet_grid( variable ~ .)+
+  ylab(expression(paste("Volumetric water content ( ", mm^3,"/",mm^3,")")))+
   theme_water() + 
   theme(line = element_blank(),
         legend.position = "none",
@@ -117,7 +118,7 @@ p1 = layers_shallow %>%
         strip.background = element_blank(),
         axis.text.x = element_blank()) +
   scale_x_date(date_breaks = "6 week", date_labels = "%b %Y", name = "")
-
+y = get_plot_component(p1, pattern = "y")
 p2 = layers_deep %>% 
   ggplot(aes(Date, VWC, color = as.factor(variable))) + 
   geom_point() +
@@ -131,8 +132,8 @@ p2 = layers_deep %>%
         strip.background = element_blank()) +
   ylab("")+
   scale_x_date(date_breaks = "6 week", date_labels = "%b %Y", name = "")
-
-cowplot::plot_grid(p1, p2, ncol = 1, rel_heights = c(2,1)) %>% 
+p3 = plot_grid(p1 + ylab(""), p2, ncol = 1, rel_heights = c(2,1)) 
+cowplot::plot_grid(y,NULL, p3 , nrow = 1, rel_widths = c(0.1, -0.03 ,2)) %>% 
   ggsave(filename = "./swc.png",plot = .,device = "png")
 ```
 
@@ -214,7 +215,9 @@ p1 = sum_biomass [!is.na(Total.FW..g.) & Total.FW..g. != 0]%>%
   facet_grid( ~ Site ) +
   theme_water() +
   theme(axis.title.x = element_blank(),
-        axis.text.x = element_blank(), legend.position = "none")
+        axis.text.x = element_blank(), legend.position = "none") +
+  ylab(expression(paste("Total Fresh Weight g/ ", m^2))) +
+  ggtitle("Biomass and soil profile water in Season 2010/11")
 # period = range(sum_biomass$Date)
 
 p2 = sum_water %>% 
@@ -223,11 +226,12 @@ p2 = sum_water %>%
   facet_grid( ~ Site ) +
   theme_water() +
   theme(strip.background = element_blank(),
-        strip.text = element_blank())
+        strip.text = element_blank()) +
+  ylab("Soil Profile Water to 2.3 m")
 
 
 cowplot::plot_grid(p1, NULL, p2, ncol = 1, align = "v", rel_heights = c(1, -0.05, 1)) %>% 
-   ggsave(filename = "./swc.png",plot = .,device = "png", dpi = 300, width = 10, height = 7)
+   ggsave(filename = "./biomass_water.png",plot = .,device = "png", dpi = 300, width = 10, height = 7)
 
 
 ```

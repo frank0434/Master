@@ -18,5 +18,5 @@ library(shinyjs)
 library(usethis)
 library(devtools)
 library(testthat)
-
+library(cowplot)
 
