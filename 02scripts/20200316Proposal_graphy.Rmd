@@ -77,7 +77,7 @@ Need to fix the layer names
 **The soil water has `r dim(soilwater)[1]` obs. **
 
 
-```{r Plot, fig.height=14 fig.width=7,dpi=300}
+```{r Plot, fig.height=7, fig.width=7,dpi=300}
 vars <- colnames(soilwater)[c(1:9,33)]
 soilwater_melted <- soilwater %>% 
   melt(.,id.vars = vars, variable.factor = FALSE) %>% 
@@ -103,11 +103,12 @@ layers_deep = soilwater_melted[Sowing.Date == "SD1" & Season == "2010/11" & Site
                           ][, .(VWC = mean(value, na.rm = TRUE)), by = .(Site, Date, variable)
                             ][, variable := paste0(variable, "0 cm")] 
 
-
+linesize = 1
+pointsize = 3
 p1 = layers_shallow %>% 
   ggplot(aes(Date, VWC, color = as.factor(variable))) + 
-  geom_point() +
-  geom_line()+
+  geom_point(size = pointsize) +
+  geom_line(size = linesize)+
   facet_grid( variable ~ .)+
   ylab(expression(paste("Volumetric water content ( ", mm^3,"/",mm^3,")")))+
   theme_water() + 
@@ -121,8 +122,8 @@ p1 = layers_shallow %>%
 y = get_plot_component(p1, pattern = "y")
 p2 = layers_deep %>% 
   ggplot(aes(Date, VWC, color = as.factor(variable))) + 
-  geom_point() +
-  geom_line()+
+  geom_point(size = pointsize) +
+  geom_line(size = linesize)+
   facet_grid( variable~ .)+
   theme_water() + 
   theme(line = element_blank(),
@@ -168,7 +169,7 @@ soilwater[Sowing.Date == "SD1"& Season == "2010/11",.(Date, Site,Sowing.Date,SWC
 
 ```{r biomass, fig.height=12, fig.width=12, message=FALSE,warning=FALSE,dpi=300}
 
-nums <- inspect_num(biomass)
+nums <- inspect_num(biomass[Sowing.Date == "SD1"])
 show_plot(nums)
 inspect_cat(biomass) %>% 
   show_plot()
