@@ -53,7 +53,7 @@ biomass <- dbReadTable(con, "biomass")
 # root <- dbReadTable(con, "root")
 # ES <- dbReadTable(con, "ES")
 met_ad <- dbReadTable(con, "met_AshleyDene")
-db_list_tables(con)
+dbListTables(con)
 met_iv <- dbReadTable(con, "met_Iversen12")
 
 dbDisconnect(con)
@@ -208,15 +208,21 @@ sum_water = soilwater[Sowing.Date == "SD1" & Season == "2010/11",.(Date, Site,So
                       ][, .("SWC.2.3.m..mm." = mean(SWC.2.3.m..mm.)), by = .(Site, Date)] 
 
 
-p1 = sum_biomass [!is.na(Total.FW..g.) & Total.FW..g. != 0]%>% 
+p1 = sum_biomass [!is.na(Total.FW..g.) & Total.FW..g. != 0
+                  ][,
+                    Site := ifelse(Site == "Iversen12", 
+                                   paste(Site, "(Stone free)"), 
+                                   paste(Site, "(Very Stony)"))]%>% 
   ggplot(aes(Date, Total.FW..g.,color = as.character(Rotation.No.))) +
   geom_point(size = 3) +
-  
-  # geom_line()+
-  facet_grid( ~ Site ) +
+  geom_line()+
+  facet_grid( ~ Site) +
   theme_water() +
   theme(axis.title.x = element_blank(),
-        axis.text.x = element_blank(), legend.position = "none") +
+        axis.text.x = element_blank(),
+        legend.position = c(.1,.75), 
+        legend.background = element_rect(fill = "transparent")) +
+  scale_color_discrete(name = "Rotation Number")+
   ylab(expression(paste("Total Fresh Weight g/ ", m^2))) +
   ggtitle("Biomass and soil profile water in Season 2010/11")
 # period = range(sum_biomass$Date)
@@ -228,7 +234,7 @@ p2 = sum_water %>%
   theme_water() +
   theme(strip.background = element_blank(),
         strip.text = element_blank()) +
-  ylab("Soil Profile Water to 2.3 m")
+  ylab("Soil Profile Water to 2.3 meters (mm)")
 
 
 cowplot::plot_grid(p1, NULL, p2, ncol = 1, align = "v", rel_heights = c(1, -0.05, 1)) %>% 
