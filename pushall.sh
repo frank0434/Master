@@ -1,7 +1,5 @@
 #!/bin/sh
 
-cd public/
-
 msg="updateing site $(date)"
 
 git add . 
