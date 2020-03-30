@@ -30,7 +30,7 @@
           "PredictedTableName": "Report",
           "ObservedTableName": "Observed",
           "FieldNameUsedForMatch": "Clock.Today",
-          "FieldName2UsedForMatch": "",
+          "FieldName2UsedForMatch": null,
           "FieldName3UsedForMatch": null,
           "Name": "PredictedObserved",
           "Children": [
@@ -2214,13 +2214,17 @@
                           "$type": "Models.Functions.XYPairs, Models",
                           "X": [
                             0.0,
+                            0.4,
+                            0.75,
                             1.0,
-                            1.5
+                            1.1
                           ],
                           "Y": [
-                            1.0,
-                            1.0,
-                            1.0
+                            0.0,
+                            0.15,
+                            0.75,
+                            0.9,
+                            0.9
                           ],
                           "Name": "XYPairs",
                           "Children": [],
@@ -3444,6 +3448,14 @@
                           "ReadOnly": false
                         }
                       ],
+                      "IncludeInDocumentation": true,
+                      "Enabled": true,
+                      "ReadOnly": false
+                    },
+                    {
+                      "$type": "Models.Functions.MultiplyFunction, Models",
+                      "Name": "WaterStress",
+                      "Children": [],
                       "IncludeInDocumentation": true,
                       "Enabled": true,
                       "ReadOnly": false
@@ -7482,56 +7494,6 @@
           "ReadOnly": false
         },
         {
-          "$type": "Models.Manager, Models",
-          "Code": "\r\nusing APSIM.Shared.Utilities;\r\nusing System.Xml.Serialization;\r\nusing Models.PMF.Interfaces;\r\nusing Models.PMF;\r\nusing Models.Core;\r\nusing System.Collections.Generic;\r\nusing System;\r\n\r\nnamespace Models\r\n{\r\n    [Serializable] \r\n    [System.Xml.Serialization.XmlInclude(typeof(Model))]\r\n    public class Script : Model\r\n    {\r\n        [Link] Plant Lucerne;\r\n        [Link] Clock clock;\r\n        [Link] Zone zone;\r\n        [XmlIgnore] private RemovalFractions Remove { get; set; }\r\n    public double Year { get;set;}\r\n    public double Rotation { get;set;}\r\n    bool YearPassed { get;set;}\r\n    public bool HarvestFlag { get;set;}\r\n    [Description(\"Change to the next growth year\")]\r\n    public string YearTransation { get;set;}\r\n    public double BudsDays { get;set;}\r\n    public double FloDays { get;set;}\r\n        [EventSubscribe(\"StartOfSimulation\")]\r\n        private void OnSimulationCommencing(object sender, EventArgs e)\r\n        {   Year = 1;\r\n            Rotation =1;\r\n            HarvestFlag=false;\r\n            YearPassed= false;\r\n            Remove = new RemovalFractions();\r\n        }\r\n        [EventSubscribe(\"EndOfDay\")]\r\n        private void OnEndOfDay(object sender, EventArgs e)\r\n        {\r\n        if (DateUtilities.WithinDates(YearTransation, clock.Today, YearTransation))\r\n         YearPassed= true;\r\n         HarvestFlag= false;\r\n         BudsDays= (double)zone.Get(\"Lucerne.Phenology.BudsVisableDaysAfterCutting.Value()\");\r\n         FloDays= (double)zone.Get(\"Lucerne.Phenology.FloweringDaysAfterCutting.Value()\");\r\n        }\r\n        public void Cut()\r\n        {   /*double TtFlo=(double)zone.Get(\"Lucerne.Phenology.ThermalTimeAfterFlowering.Value()\");\r\n            double LeafWt= (double)zone.Get(\"Lucerne.Leaf.Wt\");\r\n            double NewLeaf= Math.Min(5,TtFlo*0.025);\r\n            double LeafRemove= (LeafWt-NewLeaf)/LeafWt;\r\n            double StemWt= (double)zone.Get(\"Lucerne.Stem.Wt\");\r\n            double NewStem= Math.Min(3,TtFlo*0.015);\r\n            double StemRemove= (StemWt-NewStem)/StemWt;\r\n            Remove.SetFractionToRemove(\"Leaf\",LeafRemove*0.9);\r\n            Remove.SetFractionToResidue(\"Leaf\", LeafRemove*0.1);\r\n            Remove.SetFractionToRemove(\"Stem\", StemRemove*0.5);\r\n            Remove.SetFractionToResidue(\"Stem\",StemRemove*0.5);\r\n            object LAIRemove= 1-Math.Min(0.1,TtFlo*0.0005);\r\n            zone.Set(\"Lucerne.Leaf.Area.FractionRemovedOnCut\",LAIRemove);*/\r\n            Remove.SetPhenologyStage = 4;  \r\n            Lucerne.RemoveBiomass(\"Cut\", Remove);\r\n            Rotation+=1;\r\n            HarvestFlag= true;\r\n            if (YearPassed)\r\n            {Year+=1;\r\n            Rotation=1;\r\n            YearPassed=false;}\r\n\r\n        }\r\n    }\r\n}\r\n            \r\n                \r\n",
-          "Parameters": [
-            {
-              "Key": "Year",
-              "Value": "0"
-            },
-            {
-              "Key": "Rotation",
-              "Value": "0"
-            },
-            {
-              "Key": "HarvestFlag",
-              "Value": "False"
-            },
-            {
-              "Key": "YearTransation",
-              "Value": "1-Jun"
-            },
-            {
-              "Key": "BudsDays",
-              "Value": "0"
-            },
-            {
-              "Key": "FloDays",
-              "Value": "0"
-            }
-          ],
-          "Name": "Mower",
-          "Children": [
-            {
-              "$type": "Models.Script, ApsimXManager4a1e38f0-46a3-41b5-a605-f948d0e4cce6",
-              "Year": 0.0,
-              "Rotation": 0.0,
-              "HarvestFlag": false,
-              "YearTransation": "1-Jun",
-              "BudsDays": 0.0,
-              "FloDays": 0.0,
-              "Name": "Script",
-              "Children": [],
-              "IncludeInDocumentation": true,
-              "Enabled": true,
-              "ReadOnly": false
-            }
-          ],
-          "IncludeInDocumentation": true,
-          "Enabled": true,
-          "ReadOnly": false
-        },
-        {
           "$type": "Models.Report, Models",
           "VariableNames": [
             "([Lucerne].Leaf.Transpiration + [Soil].SoilWater.Es) as ET",
@@ -7540,10 +7502,10 @@
             "[Lucerne].AboveGround.Wt",
             "[Lucerne].AboveGround.Wt *10 as ShootWt",
             "[Lucerne].Grain.Live.N",
+            "",
             "[Lucerne].Grain.Live.Wt",
             "[Lucerne].Leaf.CoverDead",
             "[Lucerne].Leaf.CoverTotal",
-            "",
             "[Lucerne].Leaf.Fn",
             "[Lucerne].Leaf.Fw",
             "[Lucerne].Leaf.Height as Height",
@@ -7552,8 +7514,8 @@
             "[Lucerne].Leaf.Live.NConc*100 as LeafN",
             "[Lucerne].Leaf.Live.Wt *10 as LeafWt",
             "[Lucerne].Leaf.NodeNumber as NodeNumber",
-            "",
             "[Lucerne].Leaf.WaterDemand",
+            "",
             "[Lucerne].Phenology.CurrentPhaseName",
             "[Lucerne].Phenology.CurrentStageName",
             "[Lucerne].Phenology.DaysAfterCutting",
@@ -7587,11 +7549,6 @@
             "[Lucerne].TapRoot.StructuralFraction.FixedValue",
             "[Lucerne].TapRoot.Total.Wt*10 as RootTotal",
             "[Lucerne].TapRoot.Wt*10 as TapRoot",
-            "[Mower].Script.BudsDays as BudsDays",
-            "[Mower].Script.FloDays as FloDays",
-            "[Mower].Script.HarvestFlag",
-            "[Mower].Script.Rotation as Rotation",
-            "[Mower].Script.Year as GrowthSeason",
             "",
             "[Soil].SoilWater.Eo",
             "[Soil].SoilWater.Es",
@@ -9417,11 +9374,11 @@
                           "MarkerSize": 0,
                           "Line": 4,
                           "LineThickness": 0,
-                          "TableName": "ObsAllData",
+                          "TableName": "Observed",
                           "XFieldName": "Clock.Today",
                           "YFieldName": "node_no",
-                          "X2FieldName": "",
-                          "Y2FieldName": "",
+                          "X2FieldName": null,
+                          "Y2FieldName": null,
                           "ShowInLegend": true,
                           "IncludeSeriesNameInLegend": false,
                           "Cumulative": false,
@@ -9881,24 +9838,24 @@
                           "XAxis": 3,
                           "YAxis": 0,
                           "ColourArgb": -16777216,
-                          "FactorToVaryColours": "SimulationName",
+                          "FactorToVaryColours": "SowingDate",
                           "FactorToVaryMarkers": null,
-                          "FactorToVaryLines": null,
-                          "Marker": 0,
+                          "FactorToVaryLines": "SowingDate",
+                          "Marker": 11,
                           "MarkerSize": 0,
-                          "Line": 4,
+                          "Line": 0,
                           "LineThickness": 0,
-                          "TableName": "Observed",
+                          "TableName": "Report",
                           "XFieldName": "Clock.Today",
-                          "YFieldName": "Total.DM",
-                          "X2FieldName": null,
-                          "Y2FieldName": null,
-                          "ShowInLegend": true,
+                          "YFieldName": "ShootWt",
+                          "X2FieldName": "",
+                          "Y2FieldName": "",
+                          "ShowInLegend": false,
                           "IncludeSeriesNameInLegend": false,
                           "Cumulative": false,
                           "CumulativeX": false,
                           "Filter": null,
-                          "Name": "Observed",
+                          "Name": "Predicted",
                           "Children": [],
                           "IncludeInDocumentation": true,
                           "Enabled": true,
@@ -9910,24 +9867,24 @@
                           "XAxis": 3,
                           "YAxis": 0,
                           "ColourArgb": -16777216,
-                          "FactorToVaryColours": "SowingDate",
+                          "FactorToVaryColours": "SimulationName",
                           "FactorToVaryMarkers": null,
-                          "FactorToVaryLines": "SowingDate",
-                          "Marker": 11,
+                          "FactorToVaryLines": null,
+                          "Marker": 0,
                           "MarkerSize": 0,
-                          "Line": 0,
+                          "Line": 4,
                           "LineThickness": 0,
-                          "TableName": "Report",
+                          "TableName": "Observed",
                           "XFieldName": "Clock.Today",
-                          "YFieldName": "Lucerne.AboveGround.Wt",
-                          "X2FieldName": "",
-                          "Y2FieldName": "",
-                          "ShowInLegend": false,
+                          "YFieldName": "ShootWt",
+                          "X2FieldName": null,
+                          "Y2FieldName": null,
+                          "ShowInLegend": true,
                           "IncludeSeriesNameInLegend": false,
                           "Cumulative": false,
                           "CumulativeX": false,
                           "Filter": null,
-                          "Name": "Predicted",
+                          "Name": "Observed",
                           "Children": [],
                           "IncludeInDocumentation": true,
                           "Enabled": true,
@@ -10228,7 +10185,7 @@
                           "LineThickness": 0,
                           "TableName": "Observed",
                           "XFieldName": "Clock.Today",
-                          "YFieldName": "SWC.2.3.m..mm.",
+                          "YFieldName": "SWC",
                           "X2FieldName": null,
                           "Y2FieldName": null,
                           "ShowInLegend": true,
@@ -10239,6 +10196,85 @@
                           "Name": "Observed",
                           "Children": [],
                           "IncludeInDocumentation": true,
+                          "Enabled": true,
+                          "ReadOnly": false
+                        },
+                        {
+                          "$type": "Models.Graph, Models",
+                          "Caption": null,
+                          "Axis": [
+                            {
+                              "$type": "Models.Axis, Models",
+                              "Type": 3,
+                              "Title": null,
+                              "Inverted": false,
+                              "Minimum": "NaN",
+                              "Maximum": "NaN",
+                              "Interval": "NaN",
+                              "DateTimeAxis": false,
+                              "CrossesAtZero": false
+                            },
+                            {
+                              "$type": "Models.Axis, Models",
+                              "Type": 0,
+                              "Title": null,
+                              "Inverted": false,
+                              "Minimum": "NaN",
+                              "Maximum": "NaN",
+                              "Interval": "NaN",
+                              "DateTimeAxis": false,
+                              "CrossesAtZero": false
+                            }
+                          ],
+                          "LegendPosition": 0,
+                          "LegendOrientation": 0,
+                          "DisabledSeries": [],
+                          "LegendOutsideGraph": false,
+                          "Name": "SoilWaterContent",
+                          "Children": [
+                            {
+                              "$type": "Models.Series, Models",
+                              "Type": 1,
+                              "XAxis": 3,
+                              "YAxis": 0,
+                              "ColourArgb": -2793984,
+                              "FactorToVaryColours": "SimulationName",
+                              "FactorToVaryMarkers": null,
+                              "FactorToVaryLines": null,
+                              "Marker": 0,
+                              "MarkerSize": 0,
+                              "Line": 4,
+                              "LineThickness": 0,
+                              "TableName": "PredictedObserved",
+                              "XFieldName": "Observed.SWC",
+                              "YFieldName": "Predicted.SWC",
+                              "X2FieldName": null,
+                              "Y2FieldName": null,
+                              "ShowInLegend": false,
+                              "IncludeSeriesNameInLegend": false,
+                              "Cumulative": false,
+                              "CumulativeX": false,
+                              "Filter": null,
+                              "Name": "Observed",
+                              "Children": [
+                                {
+                                  "$type": "Models.Regression, Models",
+                                  "ForEachSeries": true,
+                                  "showOneToOne": true,
+                                  "showEquation": true,
+                                  "Name": "Regression",
+                                  "Children": [],
+                                  "IncludeInDocumentation": true,
+                                  "Enabled": true,
+                                  "ReadOnly": false
+                                }
+                              ],
+                              "IncludeInDocumentation": true,
+                              "Enabled": true,
+                              "ReadOnly": false
+                            }
+                          ],
+                          "IncludeInDocumentation": false,
                           "Enabled": true,
                           "ReadOnly": false
                         }

@@ -96,7 +96,7 @@ joined <- joined[, Date := as.Date(Date)
                          x # necessary one to keep all other type of columns
                          }
                      })]
-setnames(joined, "Date","Clock.Today")
+setnames(joined, c("Date","Total.DM", "SWC.2.3.m..mm."),c("Clock.Today","Lucerne.AboveGround.Wt", "SWC"))
 joined[, ':=' (Site = NULL,
                Sowing.Date = NULL,
                Season = NULL)]
