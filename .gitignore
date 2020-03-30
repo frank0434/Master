@@ -14,3 +14,8 @@
 
 #notebook checkout points 
 .ipynb_check*
+
+
+
+#dir
+Data/

@@ -10,9 +10,16 @@ output: github_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.width = 11, fig.height = 7, dpi = 300)
-source("../R/packages.R")
-source("../R/functions.R")
+source("R/packages.R")
+source("R/functions.R")
 ```
+
+
+
+```{r}
+
+```
+
 
 ## Exam all variable names
 

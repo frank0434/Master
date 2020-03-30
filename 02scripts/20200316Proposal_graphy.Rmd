@@ -160,12 +160,7 @@ soilwater[Sowing.Date == "SD1"& Season == "2010/11",.(Date, Site,Sowing.Date,SWC
 
 ### Biomass Overview 
 
-
-
 **The Biomass has `r dim(biomass)[1]` obs for two sites. **
-
-
-
 
 ```{r biomass, fig.height=12, fig.width=12, message=FALSE,warning=FALSE,dpi=300}
 

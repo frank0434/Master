@@ -11,10 +11,10 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
-source("../R/packages.R")
-source("../R/functions.R")
+source("R/packages.R")
+source("R/functions.R")
 
-path_apX <- "../Data/Lucerne/"
+path_apX <- "../01raw-data/ClimateAndObserved/Lucerne/"
 xlsxs <- list.files(path_apX, pattern = "^\\w.+\\.xlsx")
 xlsxs
 ```

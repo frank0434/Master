@@ -16,13 +16,73 @@ source("R/functions.R")
 ```
 
 
+## 20200330 Grab above ground component and soil water 
+
+Unit conversion for visulising the graph in apsimx UI.   
+
+```{r}
+path_richard = "c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
+con <- dbConnect(SQLite(), "../03processed-data/Richard.sqlite3")
+dbListTables(con)
+biomass <- dbReadTable(con, "biomass") %>% 
+  as.data.table()
+water <- dbReadTable(con, "SoilWater") %>% 
+  as.data.table()
+dbDisconnect(con)
+
+# Bring in the meta data for calculation 
+meta_data <- read_excel(path_richard)
+# Dry matter value to evaluate the apsimx predict value 
+# Need to be in g/m2 unit
+DM_obs <- meta_data %>% 
+  filter(!is.na(Equations)) %>% 
+  mutate(Equations = gsub("\\s|\\(|\\)",".", Equations))
+```
+```{r}
+# Select the key vars, the position selection is probably not realiable
+key_vars <- colnames(biomass)[c(2:7, 24:26)]
+group_vars <- c("Site", "Date", "Season", "Sowing.Date")
+# Convert the units to g/m2
+total_dm <- copy(biomass)[, ..key_vars # select the necessary vars
+                          ][, lapply(.SD, function(x) mean(x, na.rm = TRUE)), # calculate the mean 
+                              .SD = key_vars[7:9], by = group_vars][Total.DM != 0]
+
+# biomass[, eval(DM_obs$Variable) := lapply(seq_len(length(DM_obs$Variable)), function(x){
+#   eval(parse(DM_obs$Variable[x], "=", DM_obs$Equations[x]))
+#   }), by = .(Site, Date,  Rotation.No., Season)][]
+
+# Get colnames 
+value_vars <- grep("SWC", colnames(water), value = TRUE)
+water_sum <- water[, Data:=NULL
+                   ][, lapply(.SD, function(x) mean(x, na.rm = TRUE)), # calculate the mean 
+                     .SD = value_vars, by = group_vars]
+
+joined <- total_dm[ water_sum, on = group_vars
+                    ][Sowing.Date %in% c("SD1","SD2")
+                      ][, Date := as.Date(Date)][, SimulationName := paste0(Site, "SowingDate",Sowing.Date)]
+setnames(joined, "Date","Clock.Today")
+joined[, ':=' (Site = NULL,
+               Sowing.Date = NULL,
+               Season = NULL)]
+setcolorder(joined, "SimulationName")
+```
 
 
-## Richard data set
+**The harvest date and soil moisture measurement dates do not match, which is probably the reason that all observed data stack on top of each other that way**
+
+
+```{r}
+joined %>% 
+  write.xlsx("../03processed-data/20200330_DM_SWC_sum.xlsx", sheetName = "Observed")
+```
+
+
+
+## Richard data set into sqlite?
 
 ```{r richard}
-path_richard = "c:/Users/Administrator/Dropbox/Data/APSIM_Sim.xlsx"
-file_richard = read_excel(path_richard, guess_max = 10300,
+path_richard = "c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
+file_richard = read_excel(path_richard, guess_max = 10300, sheet = 2,
                           skip = 9)
 
 # dt <- fread(path_richard, skip = 9, na.strings = c("","NA"), select = 1:118)
