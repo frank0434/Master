@@ -81,13 +81,19 @@ total_dm <- copy(biomass)[, ..key_vars # select the necessary vars
 # Get colnames 
 value_vars <- grep("SWC", colnames(water), value = TRUE)
 # Calculate the mean over replicates 
-water_sum <- water[, Data:=NULL
-                   ][, lapply(.SD, function(x) mean(x, na.rm = TRUE)), # calculate the mean 
-                     .SD = value_vars, by = group_vars]
+water_sum <- copy(water)[, Data:=NULL
+                         ][, SWC.0.1:= SWC.0.1 + SWC.0.2
+                           ][, lapply(.SD, function(x) mean(x, na.rm = TRUE)), # calculate the mean 
+                             .SD = value_vars, by = group_vars]
+# Rename the layers 
+water_sum[, SWC.0.2 := NULL]
+swc_vars <- grep("SWC", colnames(water_sum), value = TRUE)
+
+setnames(water_sum, swc_vars[-length(swc_vars)], paste0("SWC.", seq(0.1, 2.2, 0.1)))
 # Stack two together
 joined <- rbindlist(list(total_dm,water_sum), fill = TRUE)
 # Modify in place. Type correction, SimName construction, 0 replace by NAs
-joined <- joined[, Date := as.Date(Date)
+joined <- joined[Sowing.Date %in% paste0("SD", 1:2)][, Date := as.Date(Date)
                  ][, SimulationName := paste0(Site, "SowingDate",Sowing.Date)
                    ][, lapply(.SD, function(x){
                      if(is.numeric(x)){
@@ -96,7 +102,7 @@ joined <- joined[, Date := as.Date(Date)
                          x # necessary one to keep all other type of columns
                          }
                      })]
-setnames(joined, c("Date","Total.DM", "SWC.2.3.m..mm."),c("Clock.Today","Lucerne.AboveGround.Wt", "SWC"))
+setnames(joined, c("Date","Total.DM", "SWC.2.3.m..mm."),c("Clock.Today","ShootWt", "SWC"))
 joined[, ':=' (Site = NULL,
                Sowing.Date = NULL,
                Season = NULL)]
