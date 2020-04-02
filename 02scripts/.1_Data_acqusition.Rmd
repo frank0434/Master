@@ -15,111 +15,6 @@ source("R/packages.R")
 source("R/functions.R")
 ```
 
-
-## 20200330 Grab above ground component and soil water 
-
-Unit conversion for visulising the graph in apsimx UI.   
-
-```{r}
-path_richard = "c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
-con <- dbConnect(SQLite(), "../03processed-data/Richard.sqlite3")
-dbListTables(con)
-biomass <- dbReadTable(con, "biomass") %>% 
-  as.data.table()
-water <- dbReadTable(con, "SoilWater") %>% 
-  as.data.table()
-dbDisconnect(con)
-
-# Bring in the meta data for calculation 
-meta_data <- read_excel(path_richard)
-# Dry matter value to evaluate the apsimx predict value 
-# Need to be in g/m2 unit
-DM_obs <- meta_data %>% 
-  filter(!is.na(Equations)) %>% 
-  mutate(Equations = gsub("\\s|\\(|\\)",".", Equations))
-```
-```{r fialed attemp}
-# Select the key vars, the position selection is probably not realiable
-# key_vars <- colnames(biomass)[c(2:7, 24:26)]
-# group_vars <- c("Site", "Date", "Season", "Sowing.Date")
-# # Convert the units to g/m2
-# total_dm <- copy(biomass)[, ..key_vars # select the necessary vars
-#                           ][, lapply(.SD, function(x) mean(x, na.rm = TRUE)), # calculate the mean 
-#                               .SD = key_vars[7:9], by = group_vars][Total.DM != 0]
-# 
-# # biomass[, eval(DM_obs$Variable) := lapply(seq_len(length(DM_obs$Variable)), function(x){
-# #   eval(parse(DM_obs$Variable[x], "=", DM_obs$Equations[x]))
-# #   }), by = .(Site, Date,  Rotation.No., Season)][]
-# 
-# # Get colnames 
-# value_vars <- grep("SWC", colnames(water), value = TRUE)
-# water_sum <- water[, Data:=NULL
-#                    ][, lapply(.SD, function(x) mean(x, na.rm = TRUE)), # calculate the mean 
-#                      .SD = value_vars, by = group_vars]
-# 
-# joined <- total_dm[ water_sum, on = group_vars
-#                     ][Sowing.Date %in% c("SD1","SD2")
-#                       ][, Date := as.Date(Date)][, SimulationName := paste0(Site, "SowingDate",Sowing.Date)]
-# setnames(joined, "Date","Clock.Today")
-# joined[, ':=' (Site = NULL,
-#                Sowing.Date = NULL,
-#                Season = NULL)]
-# setcolorder(joined, "SimulationName")
-```
-
-```{r second attempt}
-key_vars <- colnames(biomass)[c(2:7, 24:26)]
-group_vars <- c("Site", "Date", "Season", "Sowing.Date")
-
-# No need to convert unit. All DM in apsimNG are kg DM/ha
-total_dm <- copy(biomass)[, ..key_vars # select the necessary vars
-                          ][, lapply(.SD, function(x) mean(x, na.rm = TRUE)), # calculate the mean
-                            .SD = key_vars[7:9],
-                            by = group_vars
-                            ][Total.DM != 0]
-
-# Get colnames 
-value_vars <- grep("SWC", colnames(water), value = TRUE)
-# Calculate the mean over replicates 
-water_sum <- copy(water)[, Data:=NULL
-                         ][, SWC.0.1:= SWC.0.1 + SWC.0.2
-                           ][, lapply(.SD, function(x) mean(x, na.rm = TRUE)), # calculate the mean 
-                             .SD = value_vars, by = group_vars]
-# Rename the layers 
-water_sum[, SWC.0.2 := NULL]
-swc_vars <- grep("SWC", colnames(water_sum), value = TRUE)
-
-setnames(water_sum, swc_vars[-length(swc_vars)], paste0("SWC.", seq(0.1, 2.2, 0.1)))
-# Stack two together
-joined <- rbindlist(list(total_dm,water_sum), fill = TRUE)
-# Modify in place. Type correction, SimName construction, 0 replace by NAs
-joined <- joined[Sowing.Date %in% paste0("SD", 1:2)][, Date := as.Date(Date)
-                 ][, SimulationName := paste0(Site, "SowingDate",Sowing.Date)
-                   ][, lapply(.SD, function(x){
-                     if(is.numeric(x)){
-                       x = ifelse(x == 0, NA, x) # if numeric then replace 0 by NA
-                       } else {
-                         x # necessary one to keep all other type of columns
-                         }
-                     })]
-setnames(joined, c("Date","Total.DM", "SWC.2.3.m..mm."),c("Clock.Today","ShootWt", "SWC"))
-joined[, ':=' (Site = NULL,
-               Sowing.Date = NULL,
-               Season = NULL)]
-setcolorder(joined, "SimulationName")
-
-```
-
-**The harvest date and soil moisture measurement dates do not match, which is probably the reason that all observed data stack on top of each other that way**
-
-
-```{r}
-joined %>% 
-  write.xlsx("../03processed-data/20200330_DM_SWC_sum.xlsx", sheetName = "Observed")
-```
-
-
-
 ## Richard data set into sqlite?
 
 ```{r richard}
@@ -216,15 +111,14 @@ biomass <- dt[Data == "Biomass"]
 
 col_good <- choose_cols(biomass) # identify the right cols 
 
-biomass <- biomass[,..col_good] # subset the right cols 
-
+biomass <- biomass[,..col_good] # subset the right cols
 
 # drop the extra cols in place 
 biomass[, c("...120", "AD", "I12") := NULL]
 
-biomass %>% 
-  inspect_na() %>% 
-  show_plot()
+# biomass %>% 
+#   inspect_na() %>% 
+#   show_plot()
 
 ```
 
@@ -247,9 +141,9 @@ root <- dt[Data == "Root"]
 col_good <- choose_cols(root) # identify the right cols 
 
 root <- root[,..col_good]
-
-inspect_na(root) %>% 
-  show_plot()
+# 
+# inspect_na(root) %>% 
+#   show_plot()
 ```
 
 
@@ -270,6 +164,19 @@ SoilWater <- dt[Data == "Soil water"]
 col_good <- choose_cols(SoilWater) # identify the right cols 
 
 SoilWater <- SoilWater[,..col_good]
+# Fix the colnames here 
+# Fix the layer 
+
+SoilWater[, Data:=NULL
+      ][, SWC.0.1:= SWC.0.1 + SWC.0.2 # Add up the first two layers together to match APSIM soil 
+        ][, SWC.0.2 := NULL] # Drop the second layer
+
+# Fix the name to match APSIM soil
+
+swc_vars <- grep("SWC", colnames(SoilWater), value = TRUE)
+setnames(SoilWater, swc_vars[-length(swc_vars)], paste0("SW(", seq(1, 22, 1), ")"))
+setnames(SoilWater, "SWC.2.3.m..mm.", "SWC")
+
 ```
 
 
@@ -371,8 +278,7 @@ AshleyDene <- read_met("../01raw-data/ClimateAndObserved/Weather_AshleyDene.met"
 
 con <- dbConnect(SQLite(), "../03processed-data/Richard.sqlite3")
 DBI::dbListTables(con)
-# The sowing date tab f
-irst
+# The sowing date tab first
 
 # colnames(dt_SD_lookup)
 # dbExecute(con," CREATE TABLE `SowingDate` (
