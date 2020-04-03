@@ -60,8 +60,8 @@ water <- dbReadTable(con, "SoilWater", check.names = FALSE) %>%
 dbDisconnect(con)
 
 # Fix the date 
-biomass[, Date := as.Date(Date)]
-water[, Date := as.Date(Date)]
+biomass[, Clock.Today := as.Date(Clock.Today)]
+water[, Clock.Today := as.Date(Clock.Today)]
 
 
 # Bring in the meta data for calculation 
@@ -72,41 +72,13 @@ DM_obs <- meta_data %>%
   filter(!is.na(Equations)) %>% 
   mutate(Equations = gsub("\\s|\\(|\\)",".", Equations))
 ```
-```{r fialed attemp}
-# Select the key vars, the position selection is probably not realiable
-# key_vars <- colnames(biomass)[c(2:7, 24:26)]
-# group_vars <- c("Site", "Date", "Season", "Sowing.Date")
-# # Convert the units to g/m2
-# total_dm <- copy(biomass)[, ..key_vars # select the necessary vars
-#                           ][, lapply(.SD, function(x) mean(x, na.rm = TRUE)), # calculate the mean 
-#                               .SD = key_vars[7:9], by = group_vars][Total.DM != 0]
-# 
-# # biomass[, eval(DM_obs$Variable) := lapply(seq_len(length(DM_obs$Variable)), function(x){
-# #   eval(parse(DM_obs$Variable[x], "=", DM_obs$Equations[x]))
-# #   }), by = .(Site, Date,  Rotation.No., Season)][]
-# 
-# # Get colnames 
-# value_vars <- grep("SWC", colnames(water), value = TRUE)
-# water_sum <- water[, Data:=NULL
-#                    ][, lapply(.SD, function(x) mean(x, na.rm = TRUE)), # calculate the mean 
-#                      .SD = value_vars, by = group_vars]
-# 
-# joined <- total_dm[ water_sum, on = group_vars
-#                     ][Sowing.Date %in% c("SD1","SD2")
-#                       ][, Date := as.Date(Date)][, SimulationName := paste0(Site, "SowingDate",Sowing.Date)]
-# setnames(joined, "Date","Clock.Today")
-# joined[, ':=' (Site = NULL,
-#                Sowing.Date = NULL,
-#                Season = NULL)]
-# setcolorder(joined, "SimulationName")
-```
 
 #### Look at the plot level - EDA
 
 ```{r fig.height=22, fig.width=10}
 AD <- water[Site == "AshleyDene"]
-AD[, SWC.2.3.m..mm. := NULL] # drop it for now
-setorder(AD, "Plot") # Sort it by Plot
+AD[, SWC := NULL] # drop it for now
+setorder(AD, "Sowing.Date","Plot") # Sort it by Plot
 
 # Grab the key vars for melting down to long format
 id_vars <- colnames(AD)[!colnames(AD) %in% grep("SW", colnames(AD), value = TRUE)]
@@ -118,10 +90,80 @@ AD[Sowing.Date == "SD5" ] %>%
   geom_point() +
   facet_grid(variable ~ Plot)
 
-# 
+# Iterate all sowing date to output the graph
+var_sd <-  AD$Sowing.Date %>% unique()
+dir <-  "SoilWater"
+dir_EDA <- file.path("..", "05figures", paste0(dir,"EDA"))
+dir_exits <- dir.exists(dir_EDA)
+if(!dir_exits){
+  dir.create(dir_EDA)
+}
+# Depth ~ Plot in Sowing Date 
+lapply(var_sd, function(x){
+  p <- AD[Sowing.Date == x ] %>% 
+    melt(., id.vars = id_vars) %>% 
+    ggplot(aes(Date, value)) + 
+    geom_point() +
+    facet_grid(variable ~ Rep, scales = "free_y") +
+    ggtitle(x)
+    
+  
+  ggsave(filename = paste0(dir_EDA, "/",x, ".pdf"), plot = p, device = "pdf", width = 10, height = 22, dpi = 300)
+
+})
+
+# Sowing date 1 to 5, investigate variations among reps
+p <- AD[Sowing.Date %in% paste0("SD", 1:5)] %>% 
+  melt(., id.vars = id_vars) %>% 
+  ggplot(aes(Date, value, color = as.factor(Rep))) + 
+  geom_point() +
+  facet_grid(variable ~ Sowing.Date, scales = "free_y") 
+
+
+ggsave(filename = paste0(dir_EDA, "/SD1To5.pdf"), plot = p, device = "pdf", width = 10, height = 44, dpi = 300)
+
+p <- AD[Sowing.Date %in% paste0("SD", 6:10)] %>% 
+  melt(., id.vars = id_vars) %>% 
+  ggplot(aes(Date, value, color = as.factor(Rep))) + 
+  geom_point() +
+  facet_grid(variable ~ Sowing.Date, scales = "free_y") 
+
+
+ggsave(filename = paste0(dir_EDA, "/SD6To10.pdf"), plot = p, device = "pdf", width = 10, height = 44, dpi = 300)
 
 ```
 
+
+#### Read sql from replicates prediction
+
+```{r}
+con <- dbConnect(SQLite(), "../01raw-data/ApsimxFiles/PlotByPlot.db")
+dbListTables(con)
+Report <- dbReadTable(con, "Report", check.names = FALSE) %>% 
+  as.data.table()
+Report[, Clock.Today := as.Date(Clock.Today)]
+dbDisconnect(con)
+```
+Probably not very useful since all the Rep will use the same set of soil parameters 
+
+
+```{r}
+dim(Report)
+
+id_vars <- colnames(Report)[1:4]
+value_vars <- colnames(Report)[colnames(Report) %in% grep("SW", colnames(Report), value = TRUE)]
+new_cols <- c(id_vars,value_vars)
+p <- Report[,..new_cols][, SWC := NULL][SowingDate %in% paste0("SD", 1:5)] %>% 
+  melt(., id.vars = id_vars) %>% 
+  .[, value := round(as.numeric(value))] %>% 
+  ggplot(aes(Clock.Today, value, color = as.factor(Zone))) + 
+  geom_point() +
+  facet_grid(variable ~ SowingDate) 
+
+
+ggsave(filename = paste0(dir_EDA, "/PredictSD1To5.pdf"), plot = p, device = "pdf", width = 10, height = 44, dpi = 300)
+
+```
 
 
 

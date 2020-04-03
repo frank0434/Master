@@ -29,7 +29,7 @@ dt <- file_richard %>%
   as_tibble(.name_repair = "universal") %>% # use tibble format to fix the names 
   as.data.table() # change it back to data.table
 
-
+setnames(dt, c("Site", "Date", "Sowing.Date"), c("Experiment", "Clock.Today", "SowingDate"))
 # dt_SD_lookup <- fread(path_richard, skip = 9, na.strings = c("","NA"), select = 120:122)
 # dt_SD_lookup <- dt_SD_lookup[!is.na(AD)]
 ```

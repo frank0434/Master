@@ -11,7 +11,7 @@
 *.bak
 *.xlsx
 *.db
-
+*.sqlite3
 #notebook checkout points 
 .ipynb_check*
 
@@ -19,3 +19,4 @@
 
 #dir
 Data/
+05figures/
