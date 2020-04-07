@@ -44,6 +44,35 @@ source("R/functions.R")
 ```
 
 
+### Method part 
+
+```{r tidy up the met files}
+mets <- list.files("../01raw-data/ClimateAndObserved/", pattern = ".met", full.names = T)
+
+l_meta <- lapply(mets,function(x) readLines(x, n = 10))
+
+l_meta
+```
+```{r}
+Location <- c("Ruthergl"
+,"Balcarce","Gatton"
+,"Grant","GRIFFITH "
+,"Hudson","Moora"
+,"Nekia","Quairading"
+,"Rafaela","Roseworthy"
+,"Pergamino","Tamworth"
+,"Taylor","TrenqueLauquen"
+,"Warra")
+
+df = data.frame(City = tolower(Location), stringsAsFactors = FALSE)
+library(ggmap)
+register_google(key = "AIzaSyDvrfk7mHdkVi8ILyCf9vpebr8-3jgnI44")
+
+mutate_geocode(data = df, location = City)
+# Need a billed account. can't be bothered. 
+```
+
+
 ### Import data from sqlite
 
 ```{r import sqlite}

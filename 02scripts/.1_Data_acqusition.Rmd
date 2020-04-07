@@ -176,6 +176,9 @@ SoilWater[, Data:=NULL
 swc_vars <- grep("SWC", colnames(SoilWater), value = TRUE)
 setnames(SoilWater, swc_vars[-length(swc_vars)], paste0("SW(", seq(1, 22, 1), ")"))
 setnames(SoilWater, "SWC.2.3.m..mm.", "SWC")
+SoilWater[Experiment == "AshleyDene"]$Clock.Today %>% unique() %>% length()
+SoilWater[Experiment != "AshleyDene"]$Clock.Today %>% unique() %>% length()
+SoilWater[Experiment == "AshleyDene"][, mean(Rep), by = .(Clock.Today)]
 
 ```
 
@@ -327,7 +330,7 @@ DBI::dbDisconnect(con)
 
 ```{r browser the data folder}
 ?here::here
-path_apX <- "G:/APSIM2019.10.10/Prototypes/Lucerne/"
+path_apX <- "C:/Data/ApsimxLatest/ApsimX/Prototypes/Lucerne/"
 
 xlsxs <- list.files(path_apX, pattern = "^\\w.+\\.xlsx")
 xlsxs
@@ -337,8 +340,19 @@ _Note_
 
 Need to explore what data inside these `Excel` files
 
+```{r put it into a named list}
+names(xlsxs) <- xlsxs
+map2(path_apX, xlsxs, ~ exam_xlsxs(.x, .y))
+```
+
+```{r}
+read_excel(file.path(path_apX,xlsxs[10]))
+```
+
+"Lucerne_All_Obs.xlsx" actually only have ashley dene summaries data ready for apsim classic. 
 
 ```{r try out new pkg and exam file 1}
+
 exam_xlsxs(path_apX, xlsxs[1])
 ```
 
@@ -346,6 +360,14 @@ File `r file.path(path_apX, xlsxs[1])` has the expts done in Lincoln.
 
 
 ```{r exam file 2}
+df = read_excel(file.path(path_apX, xlsxs[2])) %>% 
+    inspect_cat(.) %>% 
+  select()
+  
+    filter(col_name == "SimulationName") %>% 
+    select(levels) %>% 
+    unnest() 
+df
 exam_xlsxs(path_apX, xlsxs[2])
 ```
 

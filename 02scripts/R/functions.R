@@ -1,5 +1,6 @@
 
 
+
 #' read_met_col
 #'
 #' @description read met col names only
@@ -48,10 +49,9 @@ read_met <- function(path = path_met, skip_unit = 9, skip_meta = 7){
 exam_xlsxs <- function(path_apX, filename){
   df = read_excel(file.path(path_apX, filename)) %>% 
     inspect_cat(.) %>% 
-    filter(col_name == "SimulationName") %>% 
+    filter(col_name %in% c("Name", "SimulationName")) %>% 
     select(levels) %>% 
-    unnest() %>% 
-    select(-prop) 
+    unnest()
   df
 }
 
