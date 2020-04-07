@@ -66,7 +66,7 @@ Location <- c("Ruthergl"
 
 df = data.frame(City = tolower(Location), stringsAsFactors = FALSE)
 library(ggmap)
-register_google(key = "AIzaSyDvrfk7mHdkVi8ILyCf9vpebr8-3jgnI44")
+register_google(key =)
 
 mutate_geocode(data = df, location = City)
 # Need a billed account. can't be bothered. 
