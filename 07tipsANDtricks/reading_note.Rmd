@@ -360,7 +360,7 @@ System.ArgumentException: Property set method not found.
    at Models.Core.Simulation.Run(CancellationTokenSource cancelToken)
    at APSIM.Shared.JobRunning.JobRunner.RunActualJob(IRunnable job, IJobManager jobManager)
 ```
-=======
+
 # 20191118
 
 the `PredictedObserved` tab
@@ -439,5 +439,7 @@ Two approaches:
 
 
 
+#### 20200414
+Repeated measures: There's added value in modelling over time.
 
->>>>>>> 5b9429dec95c9348dc3107743d2093c3acc30fac
+what is the experimenta units -- Plot? 

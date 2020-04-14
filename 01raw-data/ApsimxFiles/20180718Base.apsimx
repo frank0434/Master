@@ -9,34 +9,7 @@
       "useFirebird": false,
       "CustomFileName": null,
       "Name": "Database",
-      "Children": [
-        {
-          "$type": "Models.PostSimulationTools.ExcelInput, Models",
-          "FileName": "ObsAllData.xlsx",
-          "FileNameMetadata": null,
-          "SheetNames": [
-            "ObsAllData"
-          ],
-          "Name": "ObsAllData",
-          "Children": [],
-          "IncludeInDocumentation": true,
-          "Enabled": true,
-          "ReadOnly": false
-        },
-        {
-          "$type": "Models.PostSimulationTools.PredictedObserved, Models",
-          "PredictedTableName": "Report",
-          "ObservedTableName": "ObsAllData",
-          "FieldNameUsedForMatch": "Clock.Today",
-          "FieldName2UsedForMatch": "",
-          "FieldName3UsedForMatch": null,
-          "Name": "PredictedObserved",
-          "Children": [],
-          "IncludeInDocumentation": true,
-          "Enabled": true,
-          "ReadOnly": false
-        }
-      ],
+      "Children": [],
       "IncludeInDocumentation": true,
       "Enabled": true,
       "ReadOnly": false
@@ -7044,124 +7017,6 @@
           "IncludeInDocumentation": true,
           "Enabled": true,
           "ReadOnly": false
-        },
-        {
-          "$type": "Models.Manager, Models",
-          "Code": "\r\nusing System;\r\nusing System.Collections.Generic;\r\nusing Models.Core;\r\nusing Models.PMF;\r\nusing Models.PMF.Interfaces;\r\nusing System.Xml.Serialization;\r\nusing APSIM.Shared.Utilities;\r\n\r\nnamespace Models\r\n{\r\n    [Serializable] \r\n    [System.Xml.Serialization.XmlInclude(typeof(Model))]\r\n    public class Script : Model\r\n    {\r\n        [Link] Plant Lucerne;\r\n        [Link] Clock clock;\r\n        [Link] Zone zone;\r\n        [XmlIgnore] private RemovalFractions Remove { get; set; }\r\n    public double Year { get;set;}\r\n    public double Rotation { get;set;}\r\n    bool YearPassed { get;set;}\r\n    public bool HarvestFlag { get;set;}\r\n    [Description(\"Change to the next growth year\")]\r\n    public string YearTransation { get;set;}\r\n    public double BudsDays { get;set;}\r\n    public double FloDays { get;set;}\r\n        [EventSubscribe(\"Commencing\")]\r\n        private void OnSimulationCommencing(object sender, EventArgs e)\r\n        {   Year = 1;\r\n            Rotation =1;\r\n            HarvestFlag=false;\r\n            YearPassed= false;\r\n            Remove = new RemovalFractions();\r\n        }\r\n        [EventSubscribe(\"EndOfDay\")]\r\n        private void OnEndOfDay(object sender, EventArgs e)\r\n        {\r\n        if (DateUtilities.WithinDates(YearTransation, clock.Today, YearTransation))\r\n         YearPassed= true;\r\n         HarvestFlag= false;\r\n         BudsDays= (double)zone.Get(\"Lucerne.Phenology.BudsVisableDaysAfterCutting.Value()\");\r\n         FloDays= (double)zone.Get(\"Lucerne.Phenology.FloweringDaysAfterCutting.Value()\");\r\n        }\r\n        public void Cut()\r\n        {   /*double TtFlo=(double)zone.Get(\"Lucerne.Phenology.ThermalTimeAfterFlowering.Value()\");\r\n            double LeafWt= (double)zone.Get(\"Lucerne.Leaf.Wt\");\r\n            double NewLeaf= Math.Min(5,TtFlo*0.025);\r\n            double LeafRemove= (LeafWt-NewLeaf)/LeafWt;\r\n            double StemWt= (double)zone.Get(\"Lucerne.Stem.Wt\");\r\n            double NewStem= Math.Min(3,TtFlo*0.015);\r\n            double StemRemove= (StemWt-NewStem)/StemWt;\r\n            Remove.SetFractionToRemove(\"Leaf\",LeafRemove*0.9);\r\n            Remove.SetFractionToResidue(\"Leaf\", LeafRemove*0.1);\r\n            Remove.SetFractionToRemove(\"Stem\", StemRemove*0.5);\r\n            Remove.SetFractionToResidue(\"Stem\",StemRemove*0.5);\r\n            object LAIRemove= 1-Math.Min(0.1,TtFlo*0.0005);\r\n            zone.Set(\"Lucerne.Leaf.LAIFunction.FractionRemovedOnCut\",LAIRemove);*/\r\n            Remove.SetPhenologyStage = 4;  \r\n            Lucerne.RemoveBiomass(\"Cut\", Remove);\r\n            Rotation+=1;\r\n            HarvestFlag= true;\r\n            if (YearPassed)\r\n            {Year+=1;\r\n            Rotation=1;\r\n            YearPassed=false;}\r\n\r\n        }\r\n    }\r\n}\r\n            \r\n                \r\n",
-          "Parameters": [
-            {
-              "Key": "Year",
-              "Value": "0"
-            },
-            {
-              "Key": "Rotation",
-              "Value": "0"
-            },
-            {
-              "Key": "HarvestFlag",
-              "Value": "False"
-            },
-            {
-              "Key": "YearTransation",
-              "Value": "1-Jun"
-            },
-            {
-              "Key": "BudsDays",
-              "Value": "0"
-            },
-            {
-              "Key": "FloDays",
-              "Value": "0"
-            }
-          ],
-          "Name": "Mower",
-          "IncludeInDocumentation": true,
-          "Enabled": true,
-          "ReadOnly": false
-        },
-        {
-          "$type": "Models.Report.Report, Models",
-          "VariableNames": [
-            "([Lucerne].Leaf.Transpiration + [Soil].SoilWater.Es) as ET",
-            "[Clock].Today",
-            "[Lucerne].AboveGround.N",
-            "[Lucerne].AboveGround.Wt",
-            "[Lucerne].AboveGround.Wt *10 as ShootWt",
-            "[Lucerne].Grain.Live.N",
-            "[Lucerne].Grain.Live.Wt",
-            "[Lucerne].Leaf.CoverDead",
-            "[Lucerne].Leaf.CoverTotal",
-            "[Lucerne].Leaf.DeltaPotentialLAI.Value()",
-            "[Lucerne].Leaf.Fn",
-            "[Lucerne].Leaf.Fw",
-            "[Lucerne].Leaf.Height as Height",
-            "[Lucerne].Leaf.HeightFunction.DeltaHeight.Value()",
-            "[Lucerne].Leaf.LAI as LAI",
-            "[Lucerne].Leaf.LAIFunction.Value()",
-            "[Lucerne].Leaf.Live.N ",
-            "[Lucerne].Leaf.Live.NConc*100 as LeafN",
-            "[Lucerne].Leaf.Live.Wt *10 as LeafWt",
-            "[Lucerne].Leaf.NodeNumber.Value() as NodeNumber",
-            "[Lucerne].Leaf.SenLAI.Value()",
-            "[Lucerne].Leaf.WaterDemand",
-            "[Lucerne].Phenology.CurrentPhaseName",
-            "[Lucerne].Phenology.CurrentStageName",
-            "[Lucerne].Phenology.DaysAfterCutting",
-            "[Lucerne].Phenology.DaysAfterCutting.Value()",
-            "[Lucerne].Phenology.Stage",
-            "[Lucerne].Phenology.ThermalTimeAfterCutting",
-            "[Lucerne].Pod.N",
-            "[Lucerne].Pod.Wt",
-            "[Lucerne].Population as PlantPopulation",
-            "[Lucerne].Root.Depth",
-            "[Lucerne].Root.LengthDensity",
-            "[Lucerne].Root.Live.NConc ",
-            "[Lucerne].Root.MaintenanceRespiration",
-            "[Lucerne].Root.NSupply",
-            "[Lucerne].Root.WaterSupply",
-            "[Lucerne].Root.WaterUptake",
-            "[Lucerne].Shell.Live.N",
-            "[Lucerne].Shell.Live.Wt",
-            "[Lucerne].Shell.PodNumber.Value()",
-            "[Lucerne].Stem.Live.N ",
-            "[Lucerne].Stem.Live.NConc*100 as StemN",
-            "[Lucerne].Stem.Live.Wt",
-            "[Lucerne].Stem.Live.Wt *10 as StemWt",
-            "[lucerne].TapRoot.Live.N ",
-            "[Lucerne].TapRoot.Live.NConc*100 as RootN ",
-            "[Lucerne].TapRoot.Live.StorageWt",
-            "[Lucerne].TapRoot.Live.StorageWt *10 as StorageWt",
-            "[Lucerne].TapRoot.Live.StructuralWt",
-            "[Lucerne].TapRoot.Live.StructuralWt *10 as StructuralWt",
-            "[Lucerne].TapRoot.Live.Wt*10 as RootWt",
-            "[Lucerne].TapRoot.MaintenanceRespiration",
-            "[lucerne].TapRoot.Senesced.Wt",
-            "[Lucerne].TapRoot.StructuralFraction.FixedValue",
-            "[Lucerne].TapRoot.Total.Wt*10 as RootTotal",
-            "[Lucerne].TapRoot.Wt*10 as TapRoot",
-            "[Mower].Script.BudsDays as BudsDays",
-            "[Mower].Script.FloDays as FloDays",
-            "[Mower].Script.HarvestFlag",
-            "[Mower].Script.Rotation as Rotation",
-            "[Mower].Script.Year as GrowthSeason",
-            "[Soil].OutputLayers.SW",
-            "[Soil].OutputLayers.SWmm",
-            "[Soil].SoilWater.Eo",
-            "[Soil].SoilWater.Es",
-            "[Soil].SoilWater.SWmm as SWmm",
-            "[Soil].SoilWater.WaterTable",
-            "[Weather].DaysSinceWinterSolstice",
-            "[Phenology].Photoperiod.Value() as Photoperiod",
-            "[Phenology].DeltaPhotoperiod.Value()"
-          ],
-          "EventNames": [
-            "[Clock].DoReport"
-          ],
-          "Name": "Report",
-          "Children": [],
-          "IncludeInDocumentation": true,
-          "Enabled": true,
-          "ReadOnly": false
         }
       ],
       "IncludeInDocumentation": true,
@@ -7179,659 +7034,7 @@
           "Children": [
             {
               "$type": "Models.Factorial.Factor, Models",
-              "Specification": null,
-              "Name": "Defoliation",
-              "Children": [
-                {
-                  "$type": "Models.Factorial.CompositeFactor, Models",
-                  "Specifications": [
-                    "[Cutting]"
-                  ],
-                  "Paths": null,
-                  "Values": null,
-                  "Name": "SS",
-                  "Children": [
-                    {
-                      "$type": "Models.Operations, Models",
-                      "Operation": [
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2015-01-30",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2015-03-01",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2015-03-28",
-                          "Action": " [Mower].Script.Cut();  ",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2015-04-25",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2015-05-21",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2015-07-11",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2015-09-03",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2015-10-06",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2015-11-11",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2015-12-01",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2015-12-29",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2016-01-27",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2016-02-25",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2016-03-26",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2016-04-22",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2016-05-16",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2016-08-10",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2016-09-11",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2016-10-09",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2016-11-09",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2016-12-17",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2017-01-11",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2017-01-26",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2017-02-27",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2017-03-26",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2017-05-09",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2017-07-16",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2017-08-21",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2017-09-20",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2017-10-19",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2017-11-27",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2017-12-23",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2018-01-18",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2018-02-19",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2018-03-20",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2018-04-21",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2018-07-11",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2018-08-15",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2018-09-13",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2018-10-16",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2018-11-15",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2018-12-14",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2019-01-11",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2019-02-11",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2019-03-11",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2019-04-09",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        }
-                      ],
-                      "Name": "Cutting",
-                      "Children": [],
-                      "IncludeInDocumentation": true,
-                      "Enabled": true,
-                      "ReadOnly": false
-                    }
-                  ],
-                  "IncludeInDocumentation": true,
-                  "Enabled": true,
-                  "ReadOnly": false
-                },
-                {
-                  "$type": "Models.Factorial.CompositeFactor, Models",
-                  "Specifications": [
-                    "[Cutting]"
-                  ],
-                  "Paths": null,
-                  "Values": null,
-                  "Name": "LL",
-                  "Children": [
-                    {
-                      "$type": "Models.Operations, Models",
-                      "Operation": [
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2015-01-29",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2015-03-11",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2015-04-26",
-                          "Action": " [Mower].Script.Cut();  ",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2015-06-11",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2015-09-04",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2015-10-21",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2015-12-08",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2016-01-13",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2016-02-25",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2016-04-07",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2016-05-20",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2016-08-26",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2016-10-07",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2016-11-24",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2017-01-25",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2017-03-12",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2017-05-09",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2017-07-16",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2017-09-03",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2017-10-18",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2017-12-02",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2018-01-18",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2018-03-09",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2018-04-21",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2018-07-11",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2018-08-23",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2018-10-16",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2018-11-30",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2019-01-11",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2019-02-23",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2019-04-09",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        }
-                      ],
-                      "Name": "Cutting",
-                      "Children": [],
-                      "IncludeInDocumentation": true,
-                      "Enabled": true,
-                      "ReadOnly": false
-                    }
-                  ],
-                  "IncludeInDocumentation": true,
-                  "Enabled": true,
-                  "ReadOnly": false
-                },
-                {
-                  "$type": "Models.Factorial.CompositeFactor, Models",
-                  "Specifications": [
-                    "[Cutting]"
-                  ],
-                  "Paths": null,
-                  "Values": null,
-                  "Name": "HH",
-                  "Children": [
-                    {
-                      "$type": "Models.Operations, Models",
-                      "Operation": [
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2015-01-30",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2015-04-25",
-                          "Action": " [Mower].Script.Cut();  ",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2015-09-04",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2015-12-03",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2016-02-26",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2016-05-16",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2016-07-12",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2016-10-14",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2017-01-25",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2017-05-10",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2017-07-16",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2017-10-19",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2018-01-16",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2018-04-21",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2018-07-11",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2018-10-16",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2019-01-11",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        },
-                        {
-                          "$type": "Models.Operation, Models",
-                          "Date": "2019-04-09",
-                          "Action": " [Mower].Script.Cut();",
-                          "Enabled": true
-                        }
-                      ],
-                      "Name": "Cutting",
-                      "Children": [],
-                      "IncludeInDocumentation": true,
-                      "Enabled": true,
-                      "ReadOnly": false
-                    }
-                  ],
-                  "IncludeInDocumentation": true,
-                  "Enabled": true,
-                  "ReadOnly": false
-                }
-              ],
-              "IncludeInDocumentation": true,
-              "Enabled": true,
-              "ReadOnly": false
-            },
-            {
-              "$type": "Models.Factorial.Factor, Models",
-              "Specification": null,
+              "Specification": "",
               "Name": "FD",
               "Children": [
                 {
@@ -7877,6 +7080,42 @@
               "IncludeInDocumentation": true,
               "Enabled": true,
               "ReadOnly": false
+            },
+            {
+              "$type": "Models.Factorial.Factor, Models",
+              "Specification": "",
+              "Name": "Defoliation",
+              "Children": [
+                {
+                  "$type": "Models.Factorial.CompositeFactor, Models",
+                  "Specifications": [
+                    "[DefoliationManager].Script.DefoliationDates = 1-Jan,1-Mar,1-May,1-Oct,1-Dec"
+                  ],
+                  "Paths": null,
+                  "Values": null,
+                  "Name": "SS",
+                  "Children": [],
+                  "IncludeInDocumentation": true,
+                  "Enabled": true,
+                  "ReadOnly": false
+                },
+                {
+                  "$type": "Models.Factorial.CompositeFactor, Models",
+                  "Specifications": [
+                    "[DefoliationManager].Script.DefoliationDates = 1-Jan,1-Feb,1-Mar,1-Apr,1-May,1-Jun,1-Oct"
+                  ],
+                  "Paths": null,
+                  "Values": null,
+                  "Name": "LL",
+                  "Children": [],
+                  "IncludeInDocumentation": true,
+                  "Enabled": true,
+                  "ReadOnly": false
+                }
+              ],
+              "IncludeInDocumentation": true,
+              "Enabled": true,
+              "ReadOnly": false
             }
           ],
           "IncludeInDocumentation": true,
@@ -7889,8 +7128,8 @@
           "Children": [
             {
               "$type": "Models.Clock, Models",
-              "StartDate": "2014-10-08T00:00:00",
-              "EndDate": "2019-04-09T00:00:00",
+              "StartDate": "1972-07-01T00:00:00",
+              "EndDate": "1975-04-09T00:00:00",
               "Name": "Clock",
               "Children": [],
               "IncludeInDocumentation": true,
@@ -7910,7 +7149,7 @@
             },
             {
               "$type": "Models.Weather, Models",
-              "FileName": "lincoln.met",
+              "FileName": "31080.met",
               "ExcelWorkSheetName": "",
               "Name": "Weather",
               "Children": [],
@@ -7935,7 +7174,7 @@
                 {
                   "$type": "Models.Core.Folder, Models",
                   "ShowPageOfGraphs": true,
-                  "Name": "Manager folder",
+                  "Name": "ManagerFolder",
                   "Children": [
                     {
                       "$type": "Models.Manager, Models",
@@ -7977,15 +7216,6 @@
                     },
                     {
                       "$type": "Models.Manager, Models",
-                      "Code": "\r\nusing System;\r\nusing System.Collections.Generic;\r\nusing Models.Core;\r\nusing Models.PMF;\r\nusing Models.PMF.Interfaces;\r\nusing System.Xml.Serialization;\r\n\r\nnamespace Models\r\n{\r\n    [Serializable] \r\n    [System.Xml.Serialization.XmlInclude(typeof(Model))]\r\n    public class Script : Model\r\n    {\r\n        [Link] Plant Lucerne;\r\n        \r\n        [XmlIgnore] private RemovalFractions Remove { get; set; }\r\n        \r\n        [EventSubscribe(\"Commencing\")]\r\n        private void OnSimulationCommencing(object sender, EventArgs e)\r\n        {\r\n            Remove = new RemovalFractions();\r\n        }\r\n        \r\n        public void Cut()\r\n        {\r\n            Remove.SetPhenologyStage = 4;\r\n            Lucerne.RemoveBiomass(\"Cut\", Remove);\r\n        }\r\n    }\r\n}\r\n            \r\n                \r\n",
-                      "Parameters": [],
-                      "Name": "Mower",
-                      "IncludeInDocumentation": true,
-                      "Enabled": true,
-                      "ReadOnly": false
-                    },
-                    {
-                      "$type": "Models.Manager, Models",
                       "Code": "using Models.Interfaces;\r\nusing System;\r\nusing Models.Core;\r\nusing System.Collections.Generic;\r\nusing System.Text;\r\nusing Models.Soils;\r\nusing Models.PMF;\r\nusing Models;\r\nusing System.Xml.Serialization;\r\nusing APSIM.Shared.Utilities;\r\nusing Models.Interfaces;\r\nnamespace Models\r\n{\r\n    [Serializable] \r\n    public class Script : Model\r\n    {\r\n        [Link] private Clock Clock;\r\n        [Link] private Weather Met;\r\n        [Link] private Fertiliser Fert;\r\n        [Link] private Irrigation Irrig;\r\n        [Link] private Plant Lucerne;\r\n        [Link] private Zone zone;\r\n        [ScopedLinkByName]\r\n        private ISolute Urea;\r\n        [ScopedLinkByName]\r\n        private ISolute NO3;\r\n        [ScopedLinkByName]\r\n        private ISolute NH4;\r\n        [ScopedLinkByName]\r\n        private SoilNitrogen SoilNitrogen;\r\n        [Link] Soils.Soil Soil;\r\n        [Link] Models.Surface.SurfaceOrganicMatter SOM;\r\n                    \r\n        [XmlIgnore] public bool InitialDay { get; set; }\r\n        \r\n        [XmlIgnore] public double AccumPlantN { get; set; }\r\n        [XmlIgnore] public double AccumMineralisation { get; set; }\r\n        [XmlIgnore] public double AccumDenit { get; set; }\r\n        [XmlIgnore] public double AccumFert { get; set; }\r\n        [XmlIgnore] public double AccumLeach { get; set; }\r\n        [XmlIgnore] public double AccumDetach { get; set; }\r\n        [XmlIgnore] public double DeltaSoilOMN { get; set; }\r\n        [XmlIgnore] public double DeltaSurfaceOMN { get; set; }\r\n        [XmlIgnore] public double DeltaSoilMineralN { get; set; }\r\n        [XmlIgnore] public double SoilNitrogenContent { get; set; }\r\n        \r\n        [XmlIgnore] public double AccumEO { get; set; }\r\n        [XmlIgnore] public double AccumEP { get; set; }\r\n        [XmlIgnore] public double AccumES { get; set; }\r\n        [XmlIgnore] public double AccumDrainage { get; set; }\r\n        [XmlIgnore] public double AccumRunoff { get; set; }\r\n        [XmlIgnore] public double AccumOutflowLat { get; set; }\r\n        [XmlIgnore] public double AccumIrrigation { get; set; }\r\n        [XmlIgnore] public double AccumRainfall { get; set; }\r\n        [XmlIgnore] public double SoilWaterDeficit { get; set; }\r\n    \r\n        [XmlIgnore] public double  InitialSoilOMN { get; set; }\r\n        [XmlIgnore] public double  InitialSurfaceOMN { get; set; }\r\n        [XmlIgnore] public double  InitialMineralN { get; set; }\r\n        \r\n        [XmlIgnore] public double SWC { get; set; }\r\n        [XmlIgnore] public double DUL { get; set; }\r\n        [XmlIgnore] public double OutFlowLat { get; set; }\r\n\r\n        [XmlIgnore] public double FomN { get; set; }\r\n        [XmlIgnore] public double BiomN { get; set; }\r\n        [XmlIgnore] public double HumN { get; set; }\r\n        [XmlIgnore] public double OrganicN { get; set; }\r\n        [XmlIgnore] public double NO3N { get; set; }\r\n        [XmlIgnore] public double NH4N { get; set; }\r\n        [XmlIgnore] public double UreaN { get; set; }\r\n        [XmlIgnore] public double MineralN { get; set; }\r\n        [XmlIgnore] public double DltNMinRes { get; set; }\r\n        [XmlIgnore] public double DltNMinTot { get; set; }\r\n        \r\n        [EventSubscribe(\"Commencing\")]\r\n        private void OnSimulationCommencing(object sender, EventArgs e)\r\n        {\r\n            InitialDay = true;\r\n        }\r\n        \r\n        [EventSubscribe(\"DoManagement\")]\r\n        private void OnDoManagement(object sender, EventArgs e)\r\n        {\r\n            //!!!!!! Nitrogen balance components !!!!!!\r\n            //!!!!!!^^^^^^^^^^^^^^^^^^^^^^^^^^^^^!!!!!!\r\n            FomN = MathUtilities.Sum(SoilNitrogen.FOMN);\r\n            HumN = MathUtilities.Sum(SoilNitrogen.HumicN);\r\n            BiomN = MathUtilities.Sum(SoilNitrogen.MicrobialN);\r\n            OrganicN = FomN + HumN + BiomN;\r\n            NO3N = MathUtilities.Sum(NO3.kgha);\r\n            NH4N = MathUtilities.Sum(NH4.kgha);\r\n            UreaN = MathUtilities.Sum(Urea.kgha);\r\n            MineralN = NO3N + NH4N + UreaN; \r\n            DltNMinRes = MathUtilities.Sum(SoilNitrogen.dlt_n_min_res);\r\n            DltNMinTot = MathUtilities.Sum(SoilNitrogen.MineralisedN);\r\n            int layers = Soil.Thickness.Length;\r\n            if (InitialDay == true)\r\n            {\r\n                InitialSurfaceOMN = SOM.N;\r\n                InitialSoilOMN = OrganicN;\r\n                InitialMineralN = MineralN;\r\n                InitialDay = false;\r\n            }\r\n            AccumFert += Fert.NitrogenApplied;\r\n            DeltaSurfaceOMN = SOM.N - InitialSurfaceOMN;\r\n            AccumLeach = AccumLeach - Soil.SoilWater.LeachNH4 - Soil.SoilWater.LeachNO3 - Soil.SoilWater.LeachUrea; //Fails\r\n            AccumMineralisation += MathUtilities.Sum(SoilNitrogen.MineralisedN);\r\n            AccumDenit -= MathUtilities.Sum(SoilNitrogen.Denitrification);\r\n            AccumPlantN -= (double)zone.Get(\"Lucerne.Root.NUptake\");\r\n            DeltaSoilOMN = OrganicN - InitialSoilOMN;\r\n            DeltaSoilMineralN = MineralN - InitialMineralN;\r\n            SoilNitrogenContent = MineralN;\r\n            \r\n            //!!!!!! Water balance components !!!!!!\r\n            //!!!!!!^^^^^^^^^^^^^^^^^^^^^^^^^^!!!!!!\r\n\r\n            AccumIrrigation += Irrig.IrrigationApplied;\r\n            AccumRainfall += Met.Rain;\r\n            //AccumEP -= (double)zone.Get(\"[Lucerne].Leaf.Transpiration\");\r\n            AccumEP -= (double)zone.Get(\"Lucerne.Root.WaterUptake\");\r\n            SoilWaterDeficit = (SWC - DUL);\r\n            double OutFlowLat = MathUtilities.Sum(Soil.SoilWater.LateralOutflow);\r\n            AccumOutflowLat -= OutFlowLat;\r\n        }\r\n        \r\n        [EventSubscribe(\"DoManagementCalculations\")]\r\n        private void OnDoManagementCalculations(object sender, EventArgs e)\r\n        {\r\n            FomN = MathUtilities.Sum(SoilNitrogen.FOMN);\r\n            HumN = MathUtilities.Sum(SoilNitrogen.HumicN);\r\n            BiomN = MathUtilities.Sum(SoilNitrogen.MicrobialN);\r\n            \r\n            \r\n            AccumEO -= Soil.SoilWater.Eo;\r\n            AccumES -= Soil.SoilWater.Es; \r\n            AccumDrainage -= Soil.SoilWater.Drainage;\r\n            AccumRunoff -= Soil.SoilWater.Runoff;\r\n            SWC = MathUtilities.Sum(Soil.SoilWater.SWmm);\r\n            DUL = MathUtilities.Sum(Soil.DULmm);\r\n        }\r\n    }\r\n}\r\n       \r\n",
                       "Parameters": [],
                       "Name": "DiagnosticsVariables",
@@ -7998,8 +7228,8 @@
                       "Code": "\r\nusing System;\r\nusing Models.Core;\r\nusing Models.PMF;\r\nusing APSIM.Shared.Utilities;\r\n        \r\nnamespace Models\r\n{\r\n    [Serializable] \r\n    [System.Xml.Serialization.XmlInclude(typeof(Model))]\r\n    public class Script : Model\r\n    {\r\n        [Link] Plant Lucerne;\r\n        [Link] Clock Clock;\r\n\r\n        [Description(\"Spacing (mm) between rows\")]\r\n        public double RowSpacing { get; set; }\r\n        [Description(\"Depth (mm) Grains are planted\")]\r\n        public double SowingDepth { get; set; }\r\n        [Description(\"Seeds sown (/m2)\")]\r\n        public double SowingRate { get; set; }\r\n        [Description(\"Cultivar\")]\r\n        [Display(Type=DisplayType.CultivarName)]\r\n        public string CultivarName { get; set; }\r\n        [Description(\"Sowing Date\")]\r\n        public DateTime SowingDate { get; set; }\r\n\r\n        [EventSubscribe(\"DoManagement\")]\r\n        private void OnDoManagement(object sender, EventArgs e)\r\n        {\r\n            if (Clock.Today.Date == SowingDate)\r\n                Lucerne.Sow(population: SowingRate, cultivar: CultivarName, depth: SowingDepth, rowSpacing: RowSpacing, budNumber: 1);\r\n            //Lucerne.Sow(... Contains the following arguements:\r\n            //Population  double  Required  Seeds sowing/m2\r\n            //Cultivar    string  Required  \"NameOfCultivar\"\r\n            //Depth       double  Optional  Depth (mm) seed sown.   Default is 100mm \r\n            //MaxCover    double  Optional  Proportion (0-1) of the ground row crop will cover.   Default is 1.0\r\n            //BudNumber   double  Optional  Number of mainstems per seed sown.  Default is 1.0\r\n            //RowSpacing  double  Optional  Spaceing (mm) between drill rows when crop is sown.  Default is 150mm\r\n            //CropClass   string  Optional  Crop class to instantiate when crop is sown.  Default is \"Plant\"\r\n        }\r\n    }\r\n}\r\n                \r\n",
                       "Parameters": [
                         {
-                          "Key": "SowingDate",
-                          "Value": "2014-10-08"
+                          "Key": "CultivarName",
+                          "Value": "Kaituna"
                         },
                         {
                           "Key": "RowSpacing",
@@ -8014,8 +7244,8 @@
                           "Value": "100"
                         },
                         {
-                          "Key": "CultivarName",
-                          "Value": "Kaituna"
+                          "Key": "SowingDate",
+                          "Value": "1972-10-08"
                         }
                       ],
                       "Name": "LucerneSowingRule",
@@ -8037,6 +7267,92 @@
                         }
                       ],
                       "Name": "PopulationSet",
+                      "IncludeInDocumentation": true,
+                      "Enabled": true,
+                      "ReadOnly": false
+                    },
+                    {
+                      "$type": "Models.Manager, Models",
+                      "Code": "\r\nusing System;\r\nusing System.Collections.Generic;\r\nusing Models.Core;\r\nusing Models.PMF;\r\nusing Models.PMF.Interfaces;\r\nusing System.Xml.Serialization;\r\nusing APSIM.Shared.Utilities;\r\n\r\nnamespace Models\r\n{\r\n    [Serializable] \r\n    [System.Xml.Serialization.XmlInclude(typeof(Model))]\r\n    public class Script : Model\r\n    {\r\n        [Link] Plant Lucerne;\r\n        [Link] Clock clock;\r\n        [Link] Zone zone;\r\n        [XmlIgnore] private RemovalFractions Remove { get; set; }\r\n\r\n\r\n\r\n    public double Year { get;set;}\r\n    public double Rotation { get;set;}\r\n    bool YearPassed { get;set;}\r\n    public bool HarvestFlag { get;set;}\r\n    [Description(\"Change to the next growth year\")]\r\n    public string YearTransation { get;set;}\r\n    public double BudsDays { get;set;}\r\n    public double FloDays { get;set;}\r\n    public string[] DefoliationDates { get;set;}\r\n    //Work with Rog to add this new as an exercise\r\n    public double HarvestWt { get; set; }\r\n\r\n        [EventSubscribe(\"Commencing\")]\r\n        private void OnSimulationCommencing(object sender, EventArgs e)\r\n        {   Year = 1;\r\n            Rotation = 1;\r\n            HarvestFlag=false;\r\n            YearPassed= false;\r\n            Remove = new RemovalFractions();\r\n\r\n        }\r\n        [EventSubscribe(\"EndOfDay\")]\r\n        private void OnEndOfDay(object sender, EventArgs e)\r\n\r\n        {\r\n        if (DateUtilities.WithinDates(YearTransation, clock.Today, YearTransation))\r\n         YearPassed= true;\r\n         HarvestFlag= false;\r\n         BudsDays= (double)zone.Get(\"Lucerne.Phenology.BudsVisableDaysAfterCutting.Value()\");\r\n         FloDays= (double)zone.Get(\"Lucerne.Phenology.FloweringDaysAfterCutting.Value()\");\r\n        }\r\n      \r\n        public void Cut()\r\n        {   /*double TtFlo=(double)zone.Get(\"Lucerne.Phenology.ThermalTimeAfterFlowering.Value()\");\r\n            double LeafWt= (double)zone.Get(\"Lucerne.Leaf.Wt\");\r\n            double NewLeaf= Math.Min(5,TtFlo*0.025);\r\n            double LeafRemove= (LeafWt-NewLeaf)/LeafWt;\r\n            double StemWt= (double)zone.Get(\"Lucerne.Stem.Wt\");\r\n            double NewStem= Math.Min(3,TtFlo*0.015);\r\n            double StemRemove= (StemWt-NewStem)/StemWt;\r\n            Remove.SetFractionToRemove(\"Leaf\",LeafRemove*0.9);\r\n            Remove.SetFractionToResidue(\"Leaf\", LeafRemove*0.1);\r\n            Remove.SetFractionToRemove(\"Stem\", StemRemove*0.5);\r\n            Remove.SetFractionToResidue(\"Stem\",StemRemove*0.5);\r\n            object LAIRemove= 1-Math.Min(0.1,TtFlo*0.0005);\r\n            zone.Set(\"Lucerne.Leaf.Area.FractionRemovedOnCut\",LAIRemove);*/\r\n            Remove.SetPhenologyStage = 4;  \r\n            Lucerne.RemoveBiomass(\"Cut\", Remove);\r\n            Rotation+=1;\r\n            HarvestFlag= true;\r\n            if (YearPassed)\r\n            {Year+=1;\r\n            Rotation=1;\r\n            YearPassed=false;}\r\n\r\n        }\r\n\r\n        // Do defoliation\r\n        [EventSubscribe(\"DoManagement\")]\r\n        private void OnDoManagement(object sender, EventArgs e)\r\n        {\r\n        HarvestWt = 0.0;\t\r\n        // Just an entry point to add another more dynamic trigger of defoliation (FIXME eit)\r\n\t     foreach (string ddMMM in DefoliationDates)\r\n        \t{\r\n    \t\t\tif (DateUtilities.DatesEqual(ddMMM, clock.Today))\r\n        \t\t{\r\n        \t\tdouble preHarvestBiomass = (double) zone.Get(\"Lucerne.Total.Wt\");\r\n        \t\tCut();\r\n        \t\tdouble postHarvestBiomass = (double) zone.Get(\"Lucerne.Total.Wt\");\r\n        \t\tHarvestWt = preHarvestBiomass - postHarvestBiomass;\r\n        \t\t}\r\n        \t}\r\n        }\r\n    }\r\n}\r\n            \r\n                \r\n",
+                      "Parameters": [
+                        {
+                          "Key": "Year",
+                          "Value": "0"
+                        },
+                        {
+                          "Key": "Rotation",
+                          "Value": "0"
+                        },
+                        {
+                          "Key": "HarvestFlag",
+                          "Value": "False"
+                        },
+                        {
+                          "Key": "YearTransation",
+                          "Value": "01-Jun"
+                        },
+                        {
+                          "Key": "BudsDays",
+                          "Value": "0"
+                        },
+                        {
+                          "Key": "FloDays",
+                          "Value": "0"
+                        },
+                        {
+                          "Key": "DefoliationDates",
+                          "Value": ""
+                        },
+                        {
+                          "Key": "HarvestWt",
+                          "Value": "0"
+                        }
+                      ],
+                      "Name": "DefoliationManager",
+                      "IncludeInDocumentation": true,
+                      "Enabled": true,
+                      "ReadOnly": false
+                    },
+                    {
+                      "$type": "Models.Manager, Models",
+                      "Code": "using System;\r\nusing System.Xml.Serialization;\r\nusing Models.Core;\r\nusing Models.Soils;\r\nusing Models.PMF;\r\nusing Models.Interfaces;\r\nusing APSIM.Shared.Utilities;\r\n        \r\nnamespace Models\r\n{\r\n    [Serializable] \r\n    [System.Xml.Serialization.XmlInclude(typeof(Model))]\r\n    public class Script : Model\r\n    {\r\n\t\t//> Links to other Apsim models\r\n        [Link] private Clock clock;\r\n        [Link] private Zone myZone;\r\n        [Link] private Weather weather;\r\n        [Link] private Fertiliser myFertiliser;\r\n        [Link] private Irrigation myIrrigator;\r\n        [Link] private Models.Surface.SurfaceOrganicMatter SurfaceOM;\r\n        [Link] private Soils.Soil Soil;\r\n        [ScopedLinkByName] private SoilNitrogen SoilNitrogen;\r\n        [ScopedLinkByName] private ISolute NO3;\r\n        [ScopedLinkByName] private ISolute NH4;\r\n        [ScopedLinkByName] private ISolute Urea;\r\n        [ScopedLinkByName] Models.Report.Report Output;\r\n        [Link] private ISummary mySummary;\r\n        [Link(IsOptional = true)] private IPlant[] cropsInTheSimulation;\r\n\r\n        //> User inputs from properties tab\r\n\t\t[Separator(\"Auxiliary manager for computing mySummary outputs\")]\r\n        [Description(\" Date to start recording variables: \")]\r\n        public DateTime StartDate { get; set; }\r\n        [Description(\" Date to end recording variables: \")]\r\n        public DateTime EndDate { get; set; }\r\n        [Description(\" Depth of profile being recorded (mm):\")]\r\n        public double DepthForReporting { get; set; }\r\n\r\n        //> Outputs from this manager\r\n        [XmlIgnore] public double AccumRainfall { get; set; }\r\n        [XmlIgnore] public double AccumIrrigation { get; set; }\r\n        [XmlIgnore] public double AccumPET { get; set; }\r\n        [XmlIgnore] public double AccumEvaporation { get; set; }\r\n        [XmlIgnore] public double AccumTranspiration { get; set; }\r\n        [XmlIgnore] public double AccumRunoff { get; set; }\r\n        [XmlIgnore] public double AccumDrainage { get; set; }\r\n        [XmlIgnore] public double AccumWaterFlowAtLayer { get; set; }\r\n        [XmlIgnore] public double SumWaterAmountToLayer { get; set; }\r\n        [XmlIgnore] public double DeltaSoilWaterTotal { get; set; }\r\n        [XmlIgnore] public double DeltaSoilWaterToLayer { get; set; }\r\n        [XmlIgnore] public double AverageMeanTemperature { get; set; }\r\n\r\n        [XmlIgnore] public double AccumSurfaceOMMineralisation { get; set; }\r\n        [XmlIgnore] public double AccumFertiliser { get; set; }\r\n        [XmlIgnore] public double AccumUrine { get; set; }\r\n        [XmlIgnore] public double AccumTotalSoilOMMineralised { get; set; }\r\n        [XmlIgnore] public double AccumTotalDenitrifiedN { get; set; }\r\n        [XmlIgnore] public double AccumTotalLeachedN { get; set; }\r\n        [XmlIgnore] public double AccumUptakeN { get; set; }\r\n        [XmlIgnore] public double AccumDetachedN { get; set; }\r\n\r\n        [XmlIgnore] public double AccumSoilOMMineralisedToLayer { get; set; }\r\n        [XmlIgnore] public double AccumDenitrifiedNToLayer { get; set; }\r\n        [XmlIgnore] public double AccumFlowNAtLayer { get; set; }\r\n        [XmlIgnore] public double SumUreaToLayer { get; set; }\r\n        [XmlIgnore] public double SumNH4ToLayer { get; set; }\r\n        [XmlIgnore] public double SumNO3ToLayer { get; set; }\r\n        [XmlIgnore] public double SumMineralNToLayer { get; set; }\r\n        [XmlIgnore] public double SumFOMNToLayer { get; set; }\r\n        [XmlIgnore] public double SumMicrobialNToLayer { get; set; }\r\n        [XmlIgnore] public double SumHumicNToLayer { get; set; }\r\n        [XmlIgnore] public double SumOrganicNToLayer { get; set; }\r\n        [XmlIgnore] public double SumOrganicCToLayer { get; set; }\r\n\r\n        [XmlIgnore] public double DeltaSurfaceOMN { get; set; }\r\n        [XmlIgnore] public double DeltaSoilFOMNTotal { get; set; }\r\n        [XmlIgnore] public double DeltaSoilMBiomassNTotal { get; set; }\r\n        [XmlIgnore] public double DeltaSoilHumicNTotal { get; set; }\r\n        [XmlIgnore] public double DeltaSoilOrganicNTotal { get; set; }\r\n        [XmlIgnore] public double DeltaSoilMineralNTotal { get; set; }\r\n        [XmlIgnore] public double DeltaSoilOrganicCTotal { get; set; }\r\n\r\n        [XmlIgnore] public double DeltaSoilFOMNToLayer { get; set; }\r\n        [XmlIgnore] public double DeltaSoilMBiomassNToLayer { get; set; }\r\n        [XmlIgnore] public double DeltaSoilHumicNToLayer { get; set; }\r\n        [XmlIgnore] public double DeltaSoilOrganicNToLayer { get; set; }\r\n        [XmlIgnore] public double DeltaSoilMineralNToLayer { get; set; }\r\n        [XmlIgnore] public double DeltaSoilOrganicCToLayer { get; set; }\r\n\r\n        [XmlIgnore] public double CropAboveGroundBiomassWt { get; set; }\r\n        [XmlIgnore] public double CropAboveGroundBiomassN { get; set; }\r\n        [XmlIgnore] public double CropAboveGroundBiomassNConc { get; set; }\r\n        [XmlIgnore] public double CropBelowGroundBiomassWt { get; set; }\r\n        [XmlIgnore] public double CropBelowGroundBiomassN { get; set; }\r\n        [XmlIgnore] public double CropBelowGroundBiomassNConc { get; set; }\r\n        [XmlIgnore] public double CropTotalBiomassWt { get; set; }\r\n        [XmlIgnore] public double CropTotalBiomassN { get; set; }\r\n        [XmlIgnore] public double CropTotalBiomassNConc { get; set; }\r\n        [XmlIgnore] public double CropWaterDeficitFactor { get; set; }\r\n\r\n        [XmlIgnore] public double TimeRecorded { get; set; }\r\n        [XmlIgnore] public double NumberOfDaysWithWaterStress { get; set; }\r\n\r\n        //> Internal variables\r\n        private string cropSown { get; set; }\r\n        private bool harvestHasHappened {get; set;}\r\n        private string cropHarvested { get; set; }\r\n        private string currentCrop = \"none\";\r\n        private double numberDaysRecording {get; set;}\r\n        private int reportingLayer;\r\n        private string simulationYearStartDate;\r\n\r\n        private double initialWaterContentTotal { get; set; }\r\n        private double initialSurfaceOMN { get; set; }\r\n        private double initialSoilFOMNTotal { get; set; }\r\n        private double initialSoilBiomNTotal { get; set; }\r\n        private double initialSoilHumNTotal { get; set; }\r\n        private double initialSoilUreaTotal { get; set; }\r\n        private double initialSoilNH4Total { get; set; }\r\n        private double initialSoilNO3Total { get; set; }\r\n        private double initialSoilOrgCTotal { get; set; }\r\n\r\n        private double initialWaterContentToLayer { get; set; }\r\n        private double initialSoilFOMNToLayer { get; set; }\r\n        private double initialSoilBiomNToLayer { get; set; }\r\n        private double initialSoilHumNToLayer { get; set; }\r\n        private double initialSoilUreaToLayer { get; set; }\r\n        private double initialSoilNH4ToLayer { get; set; }\r\n        private double initialSoilNO3ToLayer { get; set; }\r\n        private double initialSoilOrgCToLayer { get; set; }\r\n\r\n        private double meanTemperatureSum {get; set;}\r\n\r\n        [EventSubscribe(\"Commencing\")]\r\n        private void OnSimulationCommencing(object sender, EventArgs e)\r\n        {\r\n            mySummary.WriteMessage(this,\" ExtraVariables manager initialisation\");\r\n\r\n            // store the simulation start date, used to reset summaries\r\n\t\t\tsimulationYearStartDate = clock.Today.ToString(\"dd-MMM\");\r\n\r\n            // get the index of layer down to which summaries will be calculated\r\n            reportingLayer = -1;\r\n            double depthFromSurface = 0.0;\r\n            for (int z = 0; z < Soil.Thickness.Length; z++)\r\n            {\r\n                depthFromSurface += Soil.Thickness[z];\r\n                if ((depthFromSurface - DepthForReporting) < 0.000000001)\r\n                    reportingLayer = z;\r\n            }\r\n\r\n            // The harvest flag initialise\r\n            harvestHasHappened = false;\r\n\r\n\r\n\r\n            // write summary\r\n\r\n\t        mySummary.WriteMessage(this,\"     Summaries are provided for the whole soil and for the top-soil down to the given depth of \" + DepthForReporting.ToString(\"#0.0\") + \" mm\");\r\n        }\r\n\r\n        [EventSubscribe(\"DoManagement\")]\r\n        private void OnDoManagement(object sender, EventArgs e)\r\n        {\r\n            // reset variables if crop has changed, or if today's date is the same as start of simulation\r\n            harvestHasHappened = (bool)myZone.Get(\"[DefoliationManager].Script.HarvestFlag\");\r\n            if (harvestHasHappened)\r\n            {\r\n            \tOutput.DoOutput();\r\n                ZeroVars();\r\n            }\r\n           \r\n        }\r\n\r\n        [EventSubscribe(\"DoManagementCalculations\")]\r\n        private void OnDoManagementCalculations(object sender, EventArgs e)\r\n        {\r\n            // summarise a series of variables\r\n            if ((clock.Today.Date >= StartDate.Date) && (clock.Today.Date <= EndDate.Date))\r\n            {\r\n                SummariseVars();\r\n            }\r\n        }\r\n\r\n        private void ZeroVars()\r\n        {\r\n            // zero accumulating variables\r\n            numberDaysRecording = 0.0;\r\n            meanTemperatureSum = 0.0;\r\n            AccumRainfall = 0.0;\r\n            AccumIrrigation = 0.0;\r\n            AccumPET = 0.0;\r\n            AccumTranspiration = 0.0;\r\n            AccumEvaporation = 0.0;\r\n            AccumRunoff = 0.0;\r\n            AccumDrainage = 0.0;\r\n            AccumWaterFlowAtLayer = 0.0;\r\n\r\n            AccumSurfaceOMMineralisation = 0.0;\r\n            AccumFertiliser = 0.0;\r\n            AccumUrine = 0.0;\r\n            AccumTotalSoilOMMineralised = 0.0;\r\n            AccumTotalDenitrifiedN = 0.0;\r\n            AccumTotalLeachedN = 0.0;\r\n            AccumUptakeN = 0.0;\r\n            AccumDetachedN = 0.0;\r\n\r\n            AccumSoilOMMineralisedToLayer = 0.0;\r\n            AccumDenitrifiedNToLayer = 0.0;\r\n            AccumFlowNAtLayer = 0.0;\r\n            SumUreaToLayer = 0.0;\r\n            SumNH4ToLayer = 0.0;\r\n            SumNO3ToLayer = 0.0;\r\n            SumMineralNToLayer = 0.0;\r\n            SumFOMNToLayer = 0.0;\r\n            SumMicrobialNToLayer = 0.0;\r\n            SumHumicNToLayer = 0.0;\r\n            SumOrganicNToLayer = 0.0;\r\n            SumOrganicCToLayer = 0.0;\r\n\r\n            // get initial values\r\n            initialSurfaceOMN = SurfaceOM.N;\r\n            initialWaterContentTotal = MathUtilities.Sum(Soil.SoilWater.SWmm);\r\n            initialSoilUreaTotal = MathUtilities.Sum(Urea.kgha);\r\n            initialSoilNH4Total = MathUtilities.Sum(NH4.kgha);\r\n            initialSoilNO3Total = MathUtilities.Sum(NO3.kgha);\r\n            initialSoilFOMNTotal = MathUtilities.Sum(SoilNitrogen.FOMN);\r\n            initialSoilBiomNTotal = MathUtilities.Sum(SoilNitrogen.MicrobialN);\r\n            initialSoilHumNTotal = MathUtilities.Sum(SoilNitrogen.HumicN);\r\n            initialSoilOrgCTotal = MathUtilities.Sum(SoilNitrogen.FOMC)\r\n                                 + MathUtilities.Sum(SoilNitrogen.MicrobialC)\r\n                                 + MathUtilities.Sum(SoilNitrogen.HumicC);\r\n\r\n            initialWaterContentToLayer = MathUtilities.Sum(Soil.SoilWater.SWmm, 0, reportingLayer);\r\n            initialSoilUreaToLayer = MathUtilities.Sum(Urea.kgha, 0, reportingLayer);\r\n            initialSoilNH4ToLayer = MathUtilities.Sum(NH4.kgha, 0, reportingLayer);\r\n            initialSoilNO3ToLayer = MathUtilities.Sum(NO3.kgha, 0, reportingLayer);\r\n            initialSoilFOMNToLayer = MathUtilities.Sum(SoilNitrogen.FOMN, 0, reportingLayer);\r\n            initialSoilBiomNToLayer = MathUtilities.Sum(SoilNitrogen.MicrobialN, 0, reportingLayer);\r\n            initialSoilHumNToLayer = MathUtilities.Sum(SoilNitrogen.HumicN, 0, reportingLayer);\r\n            initialSoilOrgCToLayer = MathUtilities.Sum(SoilNitrogen.FOMC, 0, reportingLayer)\r\n                                   + MathUtilities.Sum(SoilNitrogen.MicrobialC, 0, reportingLayer)\r\n                                   + MathUtilities.Sum(SoilNitrogen.HumicC, 0, reportingLayer);\r\n\r\n            // crop outputs\r\n\t\t\tCropAboveGroundBiomassWt = 0.0;\r\n\t\t\tCropAboveGroundBiomassN = 0.0;\r\n\t\t\tCropAboveGroundBiomassNConc = 0.0;\r\n\t\t\tCropBelowGroundBiomassWt = 0.0;\r\n\t\t\tCropBelowGroundBiomassN = 0.0;\r\n\t\t\tCropBelowGroundBiomassNConc = 0.0;\r\n\t\t\tCropTotalBiomassWt = 0.0;\r\n\t\t\tCropTotalBiomassN = 0.0;\r\n\t\t\tCropTotalBiomassNConc = 0.0;\r\n\t\t\tCropWaterDeficitFactor = 0.0;\r\n\t\t\tNumberOfDaysWithWaterStress = 0.0;\r\n        }\r\n\r\n        private void SummariseVars()\r\n        {\r\n            numberDaysRecording += 1.0;\r\n            TimeRecorded = numberDaysRecording;\r\n\r\n            // get the water balance components\r\n            AccumRainfall += weather.Rain;\r\n            AccumIrrigation += myIrrigator.IrrigationApplied;\r\n            AccumPET += Soil.SoilWater.Eo;\r\n            foreach(IPlant crop in cropsInTheSimulation)\r\n            {\r\n            \tAccumTranspiration += (crop as Plant).Root.WaterUptake;\r\n            }\r\n            AccumEvaporation += Soil.SoilWater.Es;\r\n            AccumRunoff += Soil.SoilWater.Runoff;\r\n            AccumDrainage += Soil.SoilWater.Drainage;\r\n            AccumWaterFlowAtLayer += Soil.SoilWater.Flux[reportingLayer] - Soil.SoilWater.Flow[reportingLayer];\r\n            SumWaterAmountToLayer = MathUtilities.Sum(Soil.SoilWater.SWmm, 0, reportingLayer);\r\n            DeltaSoilWaterTotal = MathUtilities.Sum(Soil.SoilWater.SWmm) - initialWaterContentTotal;\r\n            DeltaSoilWaterToLayer = MathUtilities.Sum(Soil.SoilWater.SWmm,0,1) - initialWaterContentToLayer;\r\n            meanTemperatureSum += weather.MeanT;\r\n            AverageMeanTemperature = meanTemperatureSum/TimeRecorded;\r\n\r\n            // get the nitrogen balance components\r\n            AccumSurfaceOMMineralisation += MathUtilities.Sum(SoilNitrogen.dlt_n_min_res);\r\n            AccumFertiliser += myFertiliser.NitrogenApplied;\r\n            //AccumUrine += (double)myZone.Get(\"[ReturnN].Script.AmountReturnedN\");\r\n            AccumTotalSoilOMMineralised += MathUtilities.Sum(SoilNitrogen.MineralisedN);\r\n            AccumTotalDenitrifiedN += MathUtilities.Sum(SoilNitrogen.Denitrification);\r\n            AccumTotalLeachedN += Soil.SoilWater.LeachNH4 + Soil.SoilWater.LeachNO3;\r\n            foreach(IPlant crop in cropsInTheSimulation)\r\n            {\r\n            \tAccumUptakeN -= (crop as Plant).Root.NUptake;\r\n            \tforeach(PMF.Interfaces.IOrgan organ in (crop as Plant).Organs)\r\n            \t{\r\n            \t\tstring cropOrgan = (crop as Plant).Name + \".\" + organ.Name;\r\n            \t\tAccumDetachedN += (double)myZone.Get(cropOrgan + \".Detached.N\");\r\n            \t}\r\n            }\r\n            AccumSoilOMMineralisedToLayer += MathUtilities.Sum(SoilNitrogen.MineralisedN, 0, reportingLayer);\r\n            AccumDenitrifiedNToLayer += MathUtilities.Sum(SoilNitrogen.Denitrification, 0, reportingLayer);\r\n            AccumFlowNAtLayer += Soil.SoilWater.FlowNH4[reportingLayer] + Soil.SoilWater.FlowNO3[reportingLayer];\r\n\r\n            SumUreaToLayer = MathUtilities.Sum(Urea.kgha, 0, reportingLayer);\r\n            SumNH4ToLayer = MathUtilities.Sum(NH4.kgha, 0, reportingLayer);\r\n            SumNO3ToLayer = MathUtilities.Sum(NO3.kgha, 0, reportingLayer);\r\n            SumMineralNToLayer = SumUreaToLayer + SumNH4ToLayer + SumNO3ToLayer;\r\n\r\n            SumFOMNToLayer = MathUtilities.Sum(SoilNitrogen.FOMN, 0, reportingLayer);\r\n            SumMicrobialNToLayer = MathUtilities.Sum(SoilNitrogen.MicrobialN, 0, reportingLayer);\r\n            SumHumicNToLayer = MathUtilities.Sum(SoilNitrogen.HumicN, 0, reportingLayer);\r\n            SumOrganicNToLayer = SumFOMNToLayer + SumMicrobialNToLayer + SumHumicNToLayer;\r\n            SumOrganicCToLayer = MathUtilities.Sum(SoilNitrogen.FOMC, 0, reportingLayer)\r\n                               + MathUtilities.Sum(SoilNitrogen.MicrobialC, 0, reportingLayer)\r\n                               + MathUtilities.Sum(SoilNitrogen.HumicC, 0, reportingLayer);\r\n\r\n            DeltaSurfaceOMN = SurfaceOM.N - initialSurfaceOMN;\r\n            DeltaSoilFOMNTotal = MathUtilities.Sum(SoilNitrogen.FOMN) - initialSoilFOMNTotal;\r\n            DeltaSoilMBiomassNTotal = MathUtilities.Sum(SoilNitrogen.MicrobialN) - initialSoilBiomNTotal;\r\n            DeltaSoilHumicNTotal = MathUtilities.Sum(SoilNitrogen.HumicN) - initialSoilHumNTotal;\r\n            DeltaSoilOrganicNTotal = (MathUtilities.Sum(SoilNitrogen.FOMN)\r\n                                   + MathUtilities.Sum(SoilNitrogen.MicrobialN)\r\n                                   + MathUtilities.Sum(SoilNitrogen.HumicN))\r\n                                   - (initialSoilFOMNTotal + initialSoilBiomNTotal + initialSoilHumNTotal);\r\n            DeltaSoilMineralNTotal = (MathUtilities.Sum(Urea.kgha)+MathUtilities.Sum(NH4.kgha)+MathUtilities.Sum(NO3.kgha))\r\n                                   - (initialSoilUreaTotal + initialSoilNH4Total + initialSoilNO3Total);\r\n\r\n            DeltaSoilOrganicCTotal = (MathUtilities.Sum(SoilNitrogen.FOMC)\r\n                                   + MathUtilities.Sum(SoilNitrogen.MicrobialC)\r\n                                   + MathUtilities.Sum(SoilNitrogen.HumicC))\r\n                                   - initialSoilOrgCTotal;\r\n\r\n            DeltaSoilFOMNToLayer = MathUtilities.Sum(SoilNitrogen.FOMN, 0, reportingLayer) - initialSoilFOMNToLayer;\r\n            DeltaSoilMBiomassNToLayer = MathUtilities.Sum(SoilNitrogen.MicrobialN, 0, reportingLayer) - initialSoilBiomNToLayer;\r\n            DeltaSoilHumicNToLayer = MathUtilities.Sum(SoilNitrogen.HumicN, 0, reportingLayer) - initialSoilHumNToLayer;\r\n            DeltaSoilOrganicNToLayer = (MathUtilities.Sum(SoilNitrogen.FOMN, 0, reportingLayer)\r\n                                     + MathUtilities.Sum(SoilNitrogen.MicrobialN, 0, reportingLayer)\r\n                                     + MathUtilities.Sum(SoilNitrogen.HumicN, 0, reportingLayer))\r\n                                     - (initialSoilFOMNToLayer + initialSoilBiomNToLayer + initialSoilHumNToLayer);\r\n            DeltaSoilMineralNToLayer = (MathUtilities.Sum(Urea.kgha)+MathUtilities.Sum(NH4.kgha)+MathUtilities.Sum(NO3.kgha))\r\n                                     - (initialSoilUreaToLayer + initialSoilNH4ToLayer + initialSoilNO3ToLayer);\r\n\r\n            DeltaSoilOrganicCToLayer = (MathUtilities.Sum(SoilNitrogen.FOMC, 0, reportingLayer)\r\n                                     + MathUtilities.Sum(SoilNitrogen.MicrobialC, 0, reportingLayer)\r\n                                     + MathUtilities.Sum(SoilNitrogen.HumicC, 0, reportingLayer))\r\n                                     - initialSoilOrgCToLayer;\r\n\r\n\t\t\t// get the plant outputs\r\n\t\t\tif(!harvestHasHappened)\r\n\t\t\t{ // skip recording on harvest day to avoid zeroing the outputs\r\n\t\t\t\tCropAboveGroundBiomassWt = 0.0;\r\n\t\t\t\tCropAboveGroundBiomassN = 0.0;\r\n\t\t\t\tCropAboveGroundBiomassNConc = 0.0;\r\n\t\t\t\tCropBelowGroundBiomassWt = 0.0;\r\n\t\t\t\tCropBelowGroundBiomassN = 0.0;\r\n\t\t\t\tCropBelowGroundBiomassNConc = 0.0;\r\n\t\t\t\tCropTotalBiomassWt = 0.0;\r\n\t\t\t\tCropTotalBiomassN = 0.0;\r\n\t\t\t\tCropTotalBiomassNConc = 0.0;\r\n\t\t\t\tdouble totalWaterDemand = 0.0;\r\n\t\t\t\tdouble totalWaterAllocation = 0.0;\r\n\t            foreach(IPlant crop in cropsInTheSimulation)\r\n\t            {\r\n\t            \tstring cropName = (crop as Plant).Name;\r\n\t            \tCropAboveGroundBiomassWt += (double)myZone.Get(cropName + \".AboveGround.Wt\") * 10.0;\r\n\t            \tCropAboveGroundBiomassN += (double)myZone.Get(cropName + \".AboveGround.N\") * 10.0;\r\n\t            \tCropAboveGroundBiomassNConc += (double)myZone.Get(cropName + \".AboveGround.NConc\") * 100.0;\r\n\t            \tCropBelowGroundBiomassWt += (double)myZone.Get(cropName + \".BelowGround.Wt\") * 10.0;\r\n\t            \tCropBelowGroundBiomassN += (double)myZone.Get(cropName + \".BelowGround.N\") * 10.0;\r\n\t            \tCropBelowGroundBiomassNConc += (double)myZone.Get(cropName + \".BelowGround.NConc\") * 100.0;\r\n\t            \tCropTotalBiomassWt += (double)myZone.Get(cropName + \".Total.Wt\") * 10.0;\r\n\t            \tCropTotalBiomassN += (double)myZone.Get(cropName + \".Total.N\") * 10.0;\r\n\t            \tCropTotalBiomassNConc += (double)myZone.Get(cropName + \".Total.NConc\") * 100.0;\r\n\t            \ttotalWaterDemand += (double)myZone.Get(cropName + \".Leaf.WaterDemand\");\r\n\t            \ttotalWaterAllocation += (double)myZone.Get(cropName + \".Leaf.WaterAllocation\");\r\n\t            }\r\n\r\n\t            CropWaterDeficitFactor = MathUtilities.Divide(totalWaterDemand, totalWaterAllocation, 0.0);\r\n\t            if(CropWaterDeficitFactor < 0.999999999)\r\n\t            {\r\n\t            \tNumberOfDaysWithWaterStress += 1.0;\r\n\t            }\r\n            }\r\n        }\r\n    }\r\n}\r\n",
+                      "Parameters": [
+                        {
+                          "Key": "StartDate",
+                          "Value": "1900-01-01"
+                        },
+                        {
+                          "Key": "EndDate",
+                          "Value": "2100-12-31"
+                        },
+                        {
+                          "Key": "DepthForReporting",
+                          "Value": "2300"
+                        }
+                      ],
+                      "Name": "ExtraVariables",
+                      "IncludeInDocumentation": true,
+                      "Enabled": true,
+                      "ReadOnly": false
+                    },
+                    {
+                      "$type": "Models.Manager, Models",
+                      "Code": "using System;\r\nusing System.Xml.Serialization;\r\nusing Models.Core;\r\nusing Models.Soils;\r\nusing Models.PMF;\r\nusing Models.Interfaces;\r\nusing APSIM.Shared.Utilities;\r\n        \r\nnamespace Models\r\n{\r\n    [Serializable] \r\n    [System.Xml.Serialization.XmlInclude(typeof(Model))]\r\n    public class Script : Model\r\n    {\r\n\t\t//> Links to other Apsim models\r\n        [Link] private Clock clock;\r\n        [Link] private Zone myZone;\r\n        [Link] private Weather weather;\r\n        [Link] private Fertiliser myFertiliser;\r\n        [Link] private Irrigation myIrrigator;\r\n        [Link] private Models.Surface.SurfaceOrganicMatter SurfaceOM;\r\n        [Link] private Soils.Soil Soil;\r\n        [ScopedLinkByName] private SoilNitrogen SoilNitrogen;\r\n        [ScopedLinkByName] private ISolute NO3;\r\n        [ScopedLinkByName] private ISolute NH4;\r\n        [ScopedLinkByName] private ISolute Urea;\r\n        [ScopedLinkByName] Models.Report.Report Output;\r\n        [Link] private ISummary mySummary;\r\n        [Link(IsOptional = true)] private IPlant[] cropsInTheSimulation;\r\n\r\n        //> User inputs from properties tab\r\n\t\t[Separator(\"Auxiliary manager for computing mySummary outputs\")]\r\n        [Description(\" Date to start recording variables: \")]\r\n        public DateTime StartDate { get; set; }\r\n        [Description(\" Date to end recording variables: \")]\r\n        public DateTime EndDate { get; set; }\r\n        [Description(\" Depth of profile being recorded (mm):\")]\r\n        public double DepthForReporting { get; set; }\r\n\r\n        //> Outputs from this manager\r\n        [XmlIgnore] public double AccumRainfall { get; set; }\r\n        [XmlIgnore] public double AccumIrrigation { get; set; }\r\n        [XmlIgnore] public double AccumPET { get; set; }\r\n        [XmlIgnore] public double AccumEvaporation { get; set; }\r\n        [XmlIgnore] public double AccumTranspiration { get; set; }\r\n        [XmlIgnore] public double AccumRunoff { get; set; }\r\n        [XmlIgnore] public double AccumDrainage { get; set; }\r\n        [XmlIgnore] public double AccumWaterFlowAtLayer { get; set; }\r\n        [XmlIgnore] public double SumWaterAmountToLayer { get; set; }\r\n        [XmlIgnore] public double DeltaSoilWaterTotal { get; set; }\r\n        [XmlIgnore] public double DeltaSoilWaterToLayer { get; set; }\r\n        [XmlIgnore] public double AverageMeanTemperature { get; set; }\r\n\r\n        [XmlIgnore] public double AccumSurfaceOMMineralisation { get; set; }\r\n        [XmlIgnore] public double AccumFertiliser { get; set; }\r\n        [XmlIgnore] public double AccumUrine { get; set; }\r\n        [XmlIgnore] public double AccumTotalSoilOMMineralised { get; set; }\r\n        [XmlIgnore] public double AccumTotalDenitrifiedN { get; set; }\r\n        [XmlIgnore] public double AccumTotalLeachedN { get; set; }\r\n        [XmlIgnore] public double AccumUptakeN { get; set; }\r\n        [XmlIgnore] public double AccumDetachedN { get; set; }\r\n\r\n        [XmlIgnore] public double AccumSoilOMMineralisedToLayer { get; set; }\r\n        [XmlIgnore] public double AccumDenitrifiedNToLayer { get; set; }\r\n        [XmlIgnore] public double AccumFlowNAtLayer { get; set; }\r\n        [XmlIgnore] public double SumUreaToLayer { get; set; }\r\n        [XmlIgnore] public double SumNH4ToLayer { get; set; }\r\n        [XmlIgnore] public double SumNO3ToLayer { get; set; }\r\n        [XmlIgnore] public double SumMineralNToLayer { get; set; }\r\n        [XmlIgnore] public double SumFOMNToLayer { get; set; }\r\n        [XmlIgnore] public double SumMicrobialNToLayer { get; set; }\r\n        [XmlIgnore] public double SumHumicNToLayer { get; set; }\r\n        [XmlIgnore] public double SumOrganicNToLayer { get; set; }\r\n        [XmlIgnore] public double SumOrganicCToLayer { get; set; }\r\n\r\n        [XmlIgnore] public double DeltaSurfaceOMN { get; set; }\r\n        [XmlIgnore] public double DeltaSoilFOMNTotal { get; set; }\r\n        [XmlIgnore] public double DeltaSoilMBiomassNTotal { get; set; }\r\n        [XmlIgnore] public double DeltaSoilHumicNTotal { get; set; }\r\n        [XmlIgnore] public double DeltaSoilOrganicNTotal { get; set; }\r\n        [XmlIgnore] public double DeltaSoilMineralNTotal { get; set; }\r\n        [XmlIgnore] public double DeltaSoilOrganicCTotal { get; set; }\r\n\r\n        [XmlIgnore] public double DeltaSoilFOMNToLayer { get; set; }\r\n        [XmlIgnore] public double DeltaSoilMBiomassNToLayer { get; set; }\r\n        [XmlIgnore] public double DeltaSoilHumicNToLayer { get; set; }\r\n        [XmlIgnore] public double DeltaSoilOrganicNToLayer { get; set; }\r\n        [XmlIgnore] public double DeltaSoilMineralNToLayer { get; set; }\r\n        [XmlIgnore] public double DeltaSoilOrganicCToLayer { get; set; }\r\n\r\n        [XmlIgnore] public double CropAboveGroundBiomassWt { get; set; }\r\n        [XmlIgnore] public double CropAboveGroundBiomassN { get; set; }\r\n        [XmlIgnore] public double CropAboveGroundBiomassNConc { get; set; }\r\n        [XmlIgnore] public double CropBelowGroundBiomassWt { get; set; }\r\n        [XmlIgnore] public double CropBelowGroundBiomassN { get; set; }\r\n        [XmlIgnore] public double CropBelowGroundBiomassNConc { get; set; }\r\n        [XmlIgnore] public double CropTotalBiomassWt { get; set; }\r\n        [XmlIgnore] public double CropTotalBiomassN { get; set; }\r\n        [XmlIgnore] public double CropTotalBiomassNConc { get; set; }\r\n        [XmlIgnore] public double CropWaterDeficitFactor { get; set; }\r\n\r\n        [XmlIgnore] public double TimeRecorded { get; set; }\r\n        [XmlIgnore] public double NumberOfDaysWithWaterStress { get; set; }\r\n        [XmlIgnore] public string RotationSeasonOfYear { get;set;} // Label Rotations with spring/winter/summer/autumn flag\r\n\r\n        //> Internal variables\r\n        private string cropSown { get; set; }\r\n        private bool harvestHasHappened {get; set;}\r\n        private string cropHarvested { get; set; }\r\n        private string currentCrop = \"none\";\r\n        private double numberDaysRecording {get; set;}\r\n        private int reportingLayer;\r\n        private string simulationYearStartDate;\r\n\r\n        private double initialWaterContentTotal { get; set; }\r\n        private double initialSurfaceOMN { get; set; }\r\n        private double initialSoilFOMNTotal { get; set; }\r\n        private double initialSoilBiomNTotal { get; set; }\r\n        private double initialSoilHumNTotal { get; set; }\r\n        private double initialSoilUreaTotal { get; set; }\r\n        private double initialSoilNH4Total { get; set; }\r\n        private double initialSoilNO3Total { get; set; }\r\n        private double initialSoilOrgCTotal { get; set; }\r\n\r\n        private double initialWaterContentToLayer { get; set; }\r\n        private double initialSoilFOMNToLayer { get; set; }\r\n        private double initialSoilBiomNToLayer { get; set; }\r\n        private double initialSoilHumNToLayer { get; set; }\r\n        private double initialSoilUreaToLayer { get; set; }\r\n        private double initialSoilNH4ToLayer { get; set; }\r\n        private double initialSoilNO3ToLayer { get; set; }\r\n        private double initialSoilOrgCToLayer { get; set; }\r\n\r\n        private double meanTemperatureSum {get; set;}\r\n\r\n        [EventSubscribe(\"Commencing\")]\r\n        private void OnSimulationCommencing(object sender, EventArgs e)\r\n        {\r\n            mySummary.WriteMessage(this,\" ExtraVariables manager initialisation\");\r\n\r\n            // store the simulation start date, used to reset summaries\r\n\t\t\tsimulationYearStartDate = clock.Today.ToString(\"dd-MMM\");\r\n\r\n            // get the index of layer down to which summaries will be calculated\r\n            reportingLayer = -1;\r\n            double depthFromSurface = 0.0;\r\n            for (int z = 0; z < Soil.Thickness.Length; z++)\r\n            {\r\n                depthFromSurface += Soil.Thickness[z];\r\n                if ((depthFromSurface - DepthForReporting) < 0.000000001)\r\n                    reportingLayer = z;\r\n            }\r\n\r\n            // The harvest flag initialise\r\n            harvestHasHappened = false;\r\n\r\n\r\n\r\n            // write summary\r\n\r\n\t        mySummary.WriteMessage(this,\"     Summaries are provided for the whole soil and for the top-soil down to the given depth of \" + DepthForReporting.ToString(\"#0.0\") + \" mm\");\r\n        }\r\n\r\n        [EventSubscribe(\"DoManagement\")]\r\n        private void OnDoManagement(object sender, EventArgs e)\r\n        {\r\n         // Use meteorological seasons (FIXME: use more sophisticated option later)\r\n         \tif(DateUtilities.DatesEqual(\"1-Sep\", clock.Today))\r\n         \t{\r\n         \t Output.DoOutput();\r\n             RotationSeasonOfYear= \"Spring\";\r\n             ZeroVars();                \r\n            }\r\n            if (DateUtilities.DatesEqual(\"1-Dec\", clock.Today))\r\n            {\r\n             Output.DoOutput();\r\n             RotationSeasonOfYear= \"Summer\";           \r\n             ZeroVars();\r\n            }\r\n            if (DateUtilities.DatesEqual(\"1-Mar\", clock.Today))\r\n            {\r\n             Output.DoOutput();\r\n             RotationSeasonOfYear= \"Autumn\";           \r\n             ZeroVars();\r\n            }\r\n            if (DateUtilities.DatesEqual(\"1-Jun\", clock.Today))\r\n            {\r\n             Output.DoOutput();\r\n             RotationSeasonOfYear= \"Winter\";           \r\n             ZeroVars();\r\n            }           \r\n        }\r\n\r\n\r\n        [EventSubscribe(\"DoManagementCalculations\")]\r\n        private void OnDoManagementCalculations(object sender, EventArgs e)\r\n        {\r\n            // summarise a series of variables\r\n            if ((clock.Today.Date >= StartDate.Date) && (clock.Today.Date <= EndDate.Date))\r\n            {\r\n                SummariseVars();\r\n            }\r\n        }\r\n\r\n\r\n\r\n        private void ZeroVars()\r\n        {\r\n            // zero accumulating variables\r\n            numberDaysRecording = 0.0;\r\n            meanTemperatureSum = 0.0;\r\n            AccumRainfall = 0.0;\r\n            AccumIrrigation = 0.0;\r\n            AccumPET = 0.0;\r\n            AccumTranspiration = 0.0;\r\n            AccumEvaporation = 0.0;\r\n            AccumRunoff = 0.0;\r\n            AccumDrainage = 0.0;\r\n            AccumWaterFlowAtLayer = 0.0;\r\n\r\n            AccumSurfaceOMMineralisation = 0.0;\r\n            AccumFertiliser = 0.0;\r\n            AccumUrine = 0.0;\r\n            AccumTotalSoilOMMineralised = 0.0;\r\n            AccumTotalDenitrifiedN = 0.0;\r\n            AccumTotalLeachedN = 0.0;\r\n            AccumUptakeN = 0.0;\r\n            AccumDetachedN = 0.0;\r\n\r\n            AccumSoilOMMineralisedToLayer = 0.0;\r\n            AccumDenitrifiedNToLayer = 0.0;\r\n            AccumFlowNAtLayer = 0.0;\r\n            SumUreaToLayer = 0.0;\r\n            SumNH4ToLayer = 0.0;\r\n            SumNO3ToLayer = 0.0;\r\n            SumMineralNToLayer = 0.0;\r\n            SumFOMNToLayer = 0.0;\r\n            SumMicrobialNToLayer = 0.0;\r\n            SumHumicNToLayer = 0.0;\r\n            SumOrganicNToLayer = 0.0;\r\n            SumOrganicCToLayer = 0.0;\r\n\r\n            // get initial values\r\n            initialSurfaceOMN = SurfaceOM.N;\r\n            initialWaterContentTotal = MathUtilities.Sum(Soil.SoilWater.SWmm);\r\n            initialSoilUreaTotal = MathUtilities.Sum(Urea.kgha);\r\n            initialSoilNH4Total = MathUtilities.Sum(NH4.kgha);\r\n            initialSoilNO3Total = MathUtilities.Sum(NO3.kgha);\r\n            initialSoilFOMNTotal = MathUtilities.Sum(SoilNitrogen.FOMN);\r\n            initialSoilBiomNTotal = MathUtilities.Sum(SoilNitrogen.MicrobialN);\r\n            initialSoilHumNTotal = MathUtilities.Sum(SoilNitrogen.HumicN);\r\n            initialSoilOrgCTotal = MathUtilities.Sum(SoilNitrogen.FOMC)\r\n                                 + MathUtilities.Sum(SoilNitrogen.MicrobialC)\r\n                                 + MathUtilities.Sum(SoilNitrogen.HumicC);\r\n\r\n            initialWaterContentToLayer = MathUtilities.Sum(Soil.SoilWater.SWmm, 0, reportingLayer);\r\n            initialSoilUreaToLayer = MathUtilities.Sum(Urea.kgha, 0, reportingLayer);\r\n            initialSoilNH4ToLayer = MathUtilities.Sum(NH4.kgha, 0, reportingLayer);\r\n            initialSoilNO3ToLayer = MathUtilities.Sum(NO3.kgha, 0, reportingLayer);\r\n            initialSoilFOMNToLayer = MathUtilities.Sum(SoilNitrogen.FOMN, 0, reportingLayer);\r\n            initialSoilBiomNToLayer = MathUtilities.Sum(SoilNitrogen.MicrobialN, 0, reportingLayer);\r\n            initialSoilHumNToLayer = MathUtilities.Sum(SoilNitrogen.HumicN, 0, reportingLayer);\r\n            initialSoilOrgCToLayer = MathUtilities.Sum(SoilNitrogen.FOMC, 0, reportingLayer)\r\n                                   + MathUtilities.Sum(SoilNitrogen.MicrobialC, 0, reportingLayer)\r\n                                   + MathUtilities.Sum(SoilNitrogen.HumicC, 0, reportingLayer);\r\n\r\n            // crop outputs\r\n\t\t\tCropAboveGroundBiomassWt = 0.0;\r\n\t\t\tCropAboveGroundBiomassN = 0.0;\r\n\t\t\tCropAboveGroundBiomassNConc = 0.0;\r\n\t\t\tCropBelowGroundBiomassWt = 0.0;\r\n\t\t\tCropBelowGroundBiomassN = 0.0;\r\n\t\t\tCropBelowGroundBiomassNConc = 0.0;\r\n\t\t\tCropTotalBiomassWt = 0.0;\r\n\t\t\tCropTotalBiomassN = 0.0;\r\n\t\t\tCropTotalBiomassNConc = 0.0;\r\n\t\t\tCropWaterDeficitFactor = 0.0;\r\n\t\t\tNumberOfDaysWithWaterStress = 0.0;\r\n        }\r\n\r\n        private void SummariseVars()\r\n        {\r\n            numberDaysRecording += 1.0;\r\n            TimeRecorded = numberDaysRecording;\r\n\r\n            // get the water balance components\r\n            AccumRainfall += weather.Rain;\r\n            AccumIrrigation += myIrrigator.IrrigationApplied;\r\n            AccumPET += Soil.SoilWater.Eo;\r\n            foreach(IPlant crop in cropsInTheSimulation)\r\n            {\r\n            \tAccumTranspiration += (crop as Plant).Root.WaterUptake;\r\n            }\r\n            AccumEvaporation += Soil.SoilWater.Es;\r\n            AccumRunoff += Soil.SoilWater.Runoff;\r\n            AccumDrainage += Soil.SoilWater.Drainage;\r\n            AccumWaterFlowAtLayer += Soil.SoilWater.Flux[reportingLayer] - Soil.SoilWater.Flow[reportingLayer];\r\n            SumWaterAmountToLayer = MathUtilities.Sum(Soil.SoilWater.SWmm, 0, reportingLayer);\r\n            DeltaSoilWaterTotal = MathUtilities.Sum(Soil.SoilWater.SWmm) - initialWaterContentTotal;\r\n            DeltaSoilWaterToLayer = MathUtilities.Sum(Soil.SoilWater.SWmm,0,1) - initialWaterContentToLayer;\r\n            meanTemperatureSum += weather.MeanT;\r\n            AverageMeanTemperature = meanTemperatureSum/TimeRecorded;\r\n\r\n            // get the nitrogen balance components\r\n            AccumSurfaceOMMineralisation += MathUtilities.Sum(SoilNitrogen.dlt_n_min_res);\r\n            AccumFertiliser += myFertiliser.NitrogenApplied;\r\n            //AccumUrine += (double)myZone.Get(\"[ReturnN].Script.AmountReturnedN\");\r\n            AccumTotalSoilOMMineralised += MathUtilities.Sum(SoilNitrogen.MineralisedN);\r\n            AccumTotalDenitrifiedN += MathUtilities.Sum(SoilNitrogen.Denitrification);\r\n            AccumTotalLeachedN += Soil.SoilWater.LeachNH4 + Soil.SoilWater.LeachNO3;\r\n            foreach(IPlant crop in cropsInTheSimulation)\r\n            {\r\n            \tAccumUptakeN -= (crop as Plant).Root.NUptake;\r\n            \tforeach(PMF.Interfaces.IOrgan organ in (crop as Plant).Organs)\r\n            \t{\r\n            \t\tstring cropOrgan = (crop as Plant).Name + \".\" + organ.Name;\r\n            \t\tAccumDetachedN += (double)myZone.Get(cropOrgan + \".Detached.N\");\r\n            \t}\r\n            }\r\n            AccumSoilOMMineralisedToLayer += MathUtilities.Sum(SoilNitrogen.MineralisedN, 0, reportingLayer);\r\n            AccumDenitrifiedNToLayer += MathUtilities.Sum(SoilNitrogen.Denitrification, 0, reportingLayer);\r\n            AccumFlowNAtLayer += Soil.SoilWater.FlowNH4[reportingLayer] + Soil.SoilWater.FlowNO3[reportingLayer];\r\n\r\n            SumUreaToLayer = MathUtilities.Sum(Urea.kgha, 0, reportingLayer);\r\n            SumNH4ToLayer = MathUtilities.Sum(NH4.kgha, 0, reportingLayer);\r\n            SumNO3ToLayer = MathUtilities.Sum(NO3.kgha, 0, reportingLayer);\r\n            SumMineralNToLayer = SumUreaToLayer + SumNH4ToLayer + SumNO3ToLayer;\r\n\r\n            SumFOMNToLayer = MathUtilities.Sum(SoilNitrogen.FOMN, 0, reportingLayer);\r\n            SumMicrobialNToLayer = MathUtilities.Sum(SoilNitrogen.MicrobialN, 0, reportingLayer);\r\n            SumHumicNToLayer = MathUtilities.Sum(SoilNitrogen.HumicN, 0, reportingLayer);\r\n            SumOrganicNToLayer = SumFOMNToLayer + SumMicrobialNToLayer + SumHumicNToLayer;\r\n            SumOrganicCToLayer = MathUtilities.Sum(SoilNitrogen.FOMC, 0, reportingLayer)\r\n                               + MathUtilities.Sum(SoilNitrogen.MicrobialC, 0, reportingLayer)\r\n                               + MathUtilities.Sum(SoilNitrogen.HumicC, 0, reportingLayer);\r\n\r\n            DeltaSurfaceOMN = SurfaceOM.N - initialSurfaceOMN;\r\n            DeltaSoilFOMNTotal = MathUtilities.Sum(SoilNitrogen.FOMN) - initialSoilFOMNTotal;\r\n            DeltaSoilMBiomassNTotal = MathUtilities.Sum(SoilNitrogen.MicrobialN) - initialSoilBiomNTotal;\r\n            DeltaSoilHumicNTotal = MathUtilities.Sum(SoilNitrogen.HumicN) - initialSoilHumNTotal;\r\n            DeltaSoilOrganicNTotal = (MathUtilities.Sum(SoilNitrogen.FOMN)\r\n                                   + MathUtilities.Sum(SoilNitrogen.MicrobialN)\r\n                                   + MathUtilities.Sum(SoilNitrogen.HumicN))\r\n                                   - (initialSoilFOMNTotal + initialSoilBiomNTotal + initialSoilHumNTotal);\r\n            DeltaSoilMineralNTotal = (MathUtilities.Sum(Urea.kgha)+MathUtilities.Sum(NH4.kgha)+MathUtilities.Sum(NO3.kgha))\r\n                                   - (initialSoilUreaTotal + initialSoilNH4Total + initialSoilNO3Total);\r\n\r\n            DeltaSoilOrganicCTotal = (MathUtilities.Sum(SoilNitrogen.FOMC)\r\n                                   + MathUtilities.Sum(SoilNitrogen.MicrobialC)\r\n                                   + MathUtilities.Sum(SoilNitrogen.HumicC))\r\n                                   - initialSoilOrgCTotal;\r\n\r\n            DeltaSoilFOMNToLayer = MathUtilities.Sum(SoilNitrogen.FOMN, 0, reportingLayer) - initialSoilFOMNToLayer;\r\n            DeltaSoilMBiomassNToLayer = MathUtilities.Sum(SoilNitrogen.MicrobialN, 0, reportingLayer) - initialSoilBiomNToLayer;\r\n            DeltaSoilHumicNToLayer = MathUtilities.Sum(SoilNitrogen.HumicN, 0, reportingLayer) - initialSoilHumNToLayer;\r\n            DeltaSoilOrganicNToLayer = (MathUtilities.Sum(SoilNitrogen.FOMN, 0, reportingLayer)\r\n                                     + MathUtilities.Sum(SoilNitrogen.MicrobialN, 0, reportingLayer)\r\n                                     + MathUtilities.Sum(SoilNitrogen.HumicN, 0, reportingLayer))\r\n                                     - (initialSoilFOMNToLayer + initialSoilBiomNToLayer + initialSoilHumNToLayer);\r\n            DeltaSoilMineralNToLayer = (MathUtilities.Sum(Urea.kgha)+MathUtilities.Sum(NH4.kgha)+MathUtilities.Sum(NO3.kgha))\r\n                                     - (initialSoilUreaToLayer + initialSoilNH4ToLayer + initialSoilNO3ToLayer);\r\n\r\n            DeltaSoilOrganicCToLayer = (MathUtilities.Sum(SoilNitrogen.FOMC, 0, reportingLayer)\r\n                                     + MathUtilities.Sum(SoilNitrogen.MicrobialC, 0, reportingLayer)\r\n                                     + MathUtilities.Sum(SoilNitrogen.HumicC, 0, reportingLayer))\r\n                                     - initialSoilOrgCToLayer;\r\n\r\n\t\t\t// get the plant outputs\r\n\t\t\tif(!harvestHasHappened)\r\n\t\t\t{ // skip recording on harvest day to avoid zeroing the outputs\r\n\t\t\t\tCropAboveGroundBiomassWt = 0.0;\r\n\t\t\t\tCropAboveGroundBiomassN = 0.0;\r\n\t\t\t\tCropAboveGroundBiomassNConc = 0.0;\r\n\t\t\t\tCropBelowGroundBiomassWt = 0.0;\r\n\t\t\t\tCropBelowGroundBiomassN = 0.0;\r\n\t\t\t\tCropBelowGroundBiomassNConc = 0.0;\r\n\t\t\t\tCropTotalBiomassWt = 0.0;\r\n\t\t\t\tCropTotalBiomassN = 0.0;\r\n\t\t\t\tCropTotalBiomassNConc = 0.0;\r\n\t\t\t\tdouble totalWaterDemand = 0.0;\r\n\t\t\t\tdouble totalWaterAllocation = 0.0;\r\n\t            foreach(IPlant crop in cropsInTheSimulation)\r\n\t            {\r\n\t            \tstring cropName = (crop as Plant).Name;\r\n\t            \tCropAboveGroundBiomassWt += (double)myZone.Get(cropName + \".AboveGround.Wt\") * 10.0;\r\n\t            \tCropAboveGroundBiomassN += (double)myZone.Get(cropName + \".AboveGround.N\") * 10.0;\r\n\t            \tCropAboveGroundBiomassNConc += (double)myZone.Get(cropName + \".AboveGround.NConc\") * 100.0;\r\n\t            \tCropBelowGroundBiomassWt += (double)myZone.Get(cropName + \".BelowGround.Wt\") * 10.0;\r\n\t            \tCropBelowGroundBiomassN += (double)myZone.Get(cropName + \".BelowGround.N\") * 10.0;\r\n\t            \tCropBelowGroundBiomassNConc += (double)myZone.Get(cropName + \".BelowGround.NConc\") * 100.0;\r\n\t            \tCropTotalBiomassWt += (double)myZone.Get(cropName + \".Total.Wt\") * 10.0;\r\n\t            \tCropTotalBiomassN += (double)myZone.Get(cropName + \".Total.N\") * 10.0;\r\n\t            \tCropTotalBiomassNConc += (double)myZone.Get(cropName + \".Total.NConc\") * 100.0;\r\n\t            \ttotalWaterDemand += (double)myZone.Get(cropName + \".Leaf.WaterDemand\");\r\n\t            \ttotalWaterAllocation += (double)myZone.Get(cropName + \".Leaf.WaterAllocation\");\r\n\t            }\r\n\r\n\t            CropWaterDeficitFactor = MathUtilities.Divide(totalWaterDemand, totalWaterAllocation, 0.0);\r\n\t            if(CropWaterDeficitFactor < 0.999999999)\r\n\t            {\r\n\t            \tNumberOfDaysWithWaterStress += 1.0;\r\n\t            }\r\n            }\r\n        }\r\n    }\r\n}\r\n",
+                      "Parameters": [
+                        {
+                          "Key": "StartDate",
+                          "Value": "1900-01-01"
+                        },
+                        {
+                          "Key": "EndDate",
+                          "Value": "2100-12-31"
+                        },
+                        {
+                          "Key": "DepthForReporting",
+                          "Value": "2300"
+                        }
+                      ],
+                      "Name": "ExtraVariables1",
                       "IncludeInDocumentation": true,
                       "Enabled": true,
                       "ReadOnly": false
@@ -8089,89 +7405,6 @@
                   "FractionFaecesAdded": 0.5,
                   "ResourceName": "SurfaceOrganicMatter",
                   "Name": "surface organic matter",
-                  "IncludeInDocumentation": true,
-                  "Enabled": true,
-                  "ReadOnly": false
-                },
-                {
-                  "$type": "Models.Report.Report, Models",
-                  "VariableNames": [
-                    "[Clock].Today.Year as Year",
-                    "[Clock].Today as ReportDate",
-                    "",
-                    "[DiagnosticsVariables].Script.AccumPlantN",
-                    "[DiagnosticsVariables].Script.AccumMineralisation",
-                    "[DiagnosticsVariables].Script.AccumDenit",
-                    "[DiagnosticsVariables].Script.AccumFert",
-                    "[DiagnosticsVariables].Script.AccumLeach",
-                    "[DiagnosticsVariables].Script.AccumDetach",
-                    "[DiagnosticsVariables].Script.DeltaSoilOMN",
-                    "[DiagnosticsVariables].Script.DeltaSurfaceOMN",
-                    "[DiagnosticsVariables].Script.DeltaSoilMineralN",
-                    "[Lucerne].Root.NSupply",
-                    "[Soil].SoilWater.Eo",
-                    "[Soil].SoilWater.Es",
-                    "[DiagnosticsVariables].Script.SWC",
-                    "[DiagnosticsVariables].Script.DUL",
-                    "[Soil].SoilWater.Drainage",
-                    "[Soil].SoilWater.Runoff",
-                    "[DiagnosticsVariables].Script.OutFlowLat",
-                    "[Soil].SoilWater.pond",
-                    "[DiagnosticsVariables].Script.AccumEO",
-                    "[DiagnosticsVariables].Script.AccumEP",
-                    "[DiagnosticsVariables].Script.AccumES",
-                    "[DiagnosticsVariables].Script.AccumDrainage",
-                    "[DiagnosticsVariables].Script.AccumRunoff",
-                    "[DiagnosticsVariables].Script.AccumRainfall",
-                    "[DiagnosticsVariables].Script.AccumIrrigation",
-                    "[DiagnosticsVariables].Script.AccumOutflowLat",
-                    "[DiagnosticsVariables].Script.SoilWaterDeficit",
-                    "[Lucerne].Grain.Live.Wt",
-                    "[Lucerne].Shell.Live.Wt",
-                    "[Lucerne].Stem.Live.Wt",
-                    "[Lucerne].Stem.Live.Wt",
-                    "[Lucerne].Grain.Live.N",
-                    "[Lucerne].Shell.Live.N",
-                    "[Lucerne].Leaf.Live.Wt",
-                    "[Lucerne].Root.Live.Wt",
-                    "[Lucerne].Leaf.Live.N",
-                    "[Lucerne].Root.Live.N",
-                    "[Lucerne].Leaf.Live.NConc",
-                    "[Lucerne].Root.Live.NConc",
-                    "[Lucerne].Root.WaterSupply",
-                    "[Lucerne].Root.WaterUptake",
-                    "[Lucerne].Leaf.Transpiration",
-                    "[Lucerne].Leaf.WaterDemand",
-                    "[Lucerne].Root.Depth",
-                    "[Lucerne].Leaf.CoverTotal",
-                    "[Lucerne].Leaf.CoverDead",
-                    "[Lucerne].Leaf.LAI",
-                    "[Lucerne].Leaf.Height",
-                    "[Soil].SoilWater.SWmm",
-                    "[Soil].SoilNitrogen.NO3.kgha",
-                    "[DiagnosticsVariables].Script.SoilNitrogenContent",
-                    "[Lucerne].Arbitrator.N.TotalPlantDemand",
-                    "[DiagnosticsVariables].Script.FomN",
-                    "[DiagnosticsVariables].Script.HumN",
-                    "[DiagnosticsVariables].Script.BiomN",
-                    "[DiagnosticsVariables].Script.DltNMinRes",
-                    "[DiagnosticsVariables].Script.DltNMinTot",
-                    "[Lucerne].Leaf.Fw",
-                    "[Lucerne].Leaf.Fn",
-                    "[Lucerne].Phenology.CurrentPhaseName",
-                    "[Lucerne].Phenology.CurrentStageName",
-                    "[Lucerne].Phenology.Stage",
-                    "[Lucerne].Pod.Wt",
-                    "[Lucerne].Pod.N",
-                    "[Lucerne].AboveGround.Wt *10 as shootbiomass",
-                    "[Lucerne].Shell.PodNumber.Value()",
-                    "[Lucerne].Leaf.LAIFunction.Value()"
-                  ],
-                  "EventNames": [
-                    "[Clock].DoReport"
-                  ],
-                  "Name": "Report",
-                  "Children": [],
                   "IncludeInDocumentation": true,
                   "Enabled": true,
                   "ReadOnly": false
@@ -8409,15 +7642,6 @@
                   "DaysAfterEnding": 0,
                   "ResourceName": "Lucerne",
                   "Name": "Lucerne",
-                  "Children": [],
-                  "IncludeInDocumentation": true,
-                  "Enabled": true,
-                  "ReadOnly": false
-                },
-                {
-                  "$type": "Models.Operations, Models",
-                  "Operation": null,
-                  "Name": "Cutting",
                   "Children": [],
                   "IncludeInDocumentation": true,
                   "Enabled": true,
@@ -9014,6 +8238,54 @@
                       "ReadOnly": false
                     }
                   ],
+                  "IncludeInDocumentation": true,
+                  "Enabled": true,
+                  "ReadOnly": false
+                },
+                {
+                  "$type": "Models.Report.Report, Models",
+                  "VariableNames": [
+                    "[Clock].Today as Date",
+                    "[Clock].Today.Year as Year",
+                    "[Clock].Today.DayOfYear as DayOfYear",
+                    "[Clock].Today as ReportDate",
+                    "[ExtraVariables1].Script.RotationSeasonOfYear as RotationSeason",
+                    "",
+                    "[FactorLabels].Script.AGENT_NO as AGENT_NO",
+                    "[FactorLabels].Script.Lat as Lat",
+                    "[FactorLabels].Script.Lon as Lon",
+                    "[FactorLabels].Script.GCM as GCM",
+                    "[FactorLabels].Script.RCP as RCP",
+                    "[FactorLabels].Script.TS as TimeSlice",
+                    "[FactorLabels].Script.SoilStamp as SoilStamp",
+                    "",
+                    "[Lucerne].Population as PlantPopulation",
+                    "[Lucerne].AboveGround.Wt *10 as ShootWt",
+                    "[Lucerne].TapRoot.Wt*10 as TapRoot",
+                    "([Lucerne].Total.Wt)*10 as TotalPlantBiomass",
+                    "",
+                    "[Soil].SoilWater.Drainage as Drainage",
+                    "[Soil].SoilWater.Runoff as Runoff",
+                    "sum([Soil].SoilWater.SWmm) as TotalSWC",
+                    "([Soil].SoilWater.LeachNH4 + [Soil].SoilWater.LeachNO3) as LeachedN",
+                    "",
+                    "([Lucerne].Leaf.Transpiration + [Soil].SoilWater.Es) as ET",
+                    "[Soil].SoilWater.Eo as Eo",
+                    "[Soil].SoilWater.Es as Evaporation",
+                    "",
+                    "[Soil].SoilWater.WaterTable as WaterTable",
+                    "sum([Soil].SoilWater.SWmm) as SoilWater_Total",
+                    "(-[Lucerne].Root.NUptake as UptakeN",
+                    "([Lucerne].Total.N)*10 as TotalPlantN",
+                    "",
+                    "[DefoliationManager].Script.BudsDays as BudsDays",
+                    "[DefoliationManager].Script.FloDays as FloDays"
+                  ],
+                  "EventNames": [
+                    "[Clock].DoReport"
+                  ],
+                  "Name": "Output",
+                  "Children": [],
                   "IncludeInDocumentation": true,
                   "Enabled": true,
                   "ReadOnly": false

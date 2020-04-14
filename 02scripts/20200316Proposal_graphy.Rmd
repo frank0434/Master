@@ -42,6 +42,76 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 source("R/packages.R")
 source("R/functions.R")
 ```
+### Stats part
+
+```{r}
+con <- DBI::dbConnect(SQLite(), "../01raw-data/ApsimxFiles/20200331_LatestCalibration.db")
+dbListTables(con)
+PredObs <- dbReadTable(con, "PredictedObserved") %>% 
+  as.data.table(.) %>% 
+  .[, Clock.Today := as.Date(Clock.Today)]
+predobs_col <- grep("Pred.Obs", colnames(PredObs), value = TRUE)
+key_cols <- c("SimulationID", "Clock.Today")
+
+cols <- c(key_cols, predobs_col)
+
+
+```
+
+```{r checking residuals against predicted}
+PredObs %>% 
+  ggplot(aes( Predicted.SWC, Pred.Obs.SWC)) +
+  geom_point() +
+  theme_water()
+PredObs %>% 
+  ggplot(aes( SimulationID, Pred.Obs.SWC)) +
+  geom_point() +
+  theme_water()
+
+PredObs %>% 
+  ggplot(aes( Clock.Today, Pred.Obs.SWC, colour = as.factor(SimulationID))) +
+  theme_water() +
+  geom_line(na.rm = FALSE)
+
+PredObs %>% 
+  ggplot(aes(Pred.Obs.SWC)) +
+  geom_histogram()
+
+```
+
+```{r loop through things}
+lapply(1:10, function(x) check_resi(dt = PredObs, ID = x, col_target = "Pred.Obs.SWC"))
+
+# created a two layers nested list to store the plots
+l <- rep(list(vector("list", 26)),10)
+inner_ct <- 1 
+dir <-  "SoilWater"
+dir_EDA <- file.path("..", "05figures", paste0(dir,"EDA"))
+dir_exits <- dir.exists(dir_EDA)
+if(!dir_exits){
+  dir.create(dir_EDA)
+}
+
+device <- "png"
+for (i in 1:10) {
+  
+  dt <- PredObs[SimulationID == i]
+  
+  for (j in predobs_col) {
+    
+   p <-  check_resi(dt, ID = i, col_target = j) 
+   ggsave(filename = paste0(dir_EDA, "/", "SD", i, j, ".", device), plot = p, device = device, width = 5, height = 4, dpi = 300)
+  inner_ct <- inner_ct + 1
+  }
+}
+
+# PredObs[, c("SimulationID","Clock.Today", "Pred.Obs.SWC")] %>%
+#   ggplot(aes(Clock.Today, Pred.Obs.SWC, color = SimulationID)) +
+#   geom_point()+
+#   theme_water() 
+```
+
+
 
 
 ### Method part 

@@ -106,8 +106,6 @@ lapply(var_sd, function(x){
     geom_point() +
     facet_grid(variable ~ Rep, scales = "free_y") +
     ggtitle(x)
-    
-  
   ggsave(filename = paste0(dir_EDA, "/",x, ".pdf"), plot = p, device = "pdf", width = 10, height = 22, dpi = 300)
 
 })

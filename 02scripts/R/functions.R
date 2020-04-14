@@ -1,5 +1,35 @@
 
+#' check_resi
+#'
+#' @description check if the residue of the simulated and observed values are randomly placed. 
+#' 
+#' @param df 
+#' @param SimulationID 
+#' @param col_date 
+#' @param col_target 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+check_resi <-  function(dt, ID = 1L,  col_date = "Clock.Today", col_target ){
+  
+  print(ID)
 
+  if(is.data.table(dt)){
+    cols <- c(col_date, col_target)
+    p <- PredObs[SimulationID == as.integer(ID)][, ..cols] %>%
+      ggplot(aes_string(col_date, col_target)) +
+      geom_point() + 
+      theme_water() +
+      ggplot2::geom_hline(yintercept = 0, color = "red")
+    p
+    
+  } else{
+    print("Only works for data.table format!")
+  }
+
+}
 
 #' read_met_col
 #'
