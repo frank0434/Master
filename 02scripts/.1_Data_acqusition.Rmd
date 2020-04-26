@@ -115,7 +115,7 @@ biomass <- biomass[,..col_good] # subset the right cols
 
 # drop the extra cols in place 
 
-SowingDates <- biomass[!is.na(AD)][, .(SD =...120, AD, I12)]
+SowingDates <- biomass[!is.na(AD)][, .(SD =...120, AD = as.character(AD), I12 = as.character(I12))]
 biomass[, c("...120", "AD", "I12") := NULL]
 # biomass %>% 
 #   inspect_na() %>% 
@@ -160,6 +160,7 @@ Phenology <- Phenology[,..col_good]
 
 ```{r Soil water tab}
 
+
 SoilWater <- dt[Data == "Soil water"]
 
 col_good <- choose_cols(SoilWater) # identify the right cols 
@@ -168,14 +169,16 @@ SoilWater <- SoilWater[,..col_good]
 # Fix the colnames here 
 # Fix the layer 
 
-SoilWater[, Data:=NULL
-      ][, SWC.0.1:= SWC.0.1 + SWC.0.2 # Add up the first two layers together to match APSIM soil 
-        ][, SWC.0.2 := NULL] # Drop the second layer
+SoilWater[, Data:=NULL]
+           # [, SWC.0.1:= SWC.0.1 + SWC.0.2 # Add up the first two layers together to match APSIM soil 
+#         ][, SWC.0.2 := NULL] # Drop the second layer
+
+# New model separate the top 20 cm 
 
 # Fix the name to match APSIM soil
 
 swc_vars <- grep("SWC", colnames(SoilWater), value = TRUE)
-setnames(SoilWater, swc_vars[-length(swc_vars)], paste0("SW(", seq(1, 22, 1), ")"))
+setnames(SoilWater, swc_vars[-length(swc_vars)], paste0("SW(", seq(1, 23, 1), ")"))
 setnames(SoilWater, "SWC.2.3.m..mm.", "SWC")
 SoilWater[Experiment == "AshleyDene"]$Clock.Today %>% unique() %>% length()
 SoilWater[Experiment != "AshleyDene"]$Clock.Today %>% unique() %>% length()
