@@ -49,21 +49,6 @@ read_met_col <- function(path = path_met, skip = 7){
 }
 
 
-#' Title
-#'
-#' @param path 
-#' @param skip 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-read_met <- function(path = path_met, skip_unit = 9, skip_meta = 7){
-  met_LN <- data.table::fread(input = path,skip = skip_unit, fill = TRUE)
-  met_col <- read_met_col(path = path, skip = skip_meta)
-  colnames(met_LN) <- colnames(met_col)
-  return(met_LN)
-}
 
 #' exam_xlsxs
 #' 

@@ -41,6 +41,123 @@ h. **1** follow treat in both sites - absolute soil evaporation
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 source("R/packages.R")
 source("R/functions.R")
+con <- dbConnect(SQLite(), "../03processed-data/Richard.sqlite3")
+dbListTables(con)
+SowingDates <- dbReadTable(con, "SowingDates")
+
+```
+
+|		  |AD        | I12|
+|:----|:-----|:------|
+|SD1	|21-Oct-10|	4-Oct-10|
+|SD2	|9-Nov-10|	4-Nov-10|
+|SD3	|8-Dec-10|	2-Dec-10|
+|SD4	|13-Jan-11	|10-Jan-11|
+|SD5	|3-Feb-11|	7-Feb-11|
+|SD6	|10-Oct-11	|10-Oct-11|
+|SD7	|7-Nov-11|	7-Nov-11|
+|SD8	|9-Dec-11|	9-Dec-11|
+|SD9	|10-Jan-12	|10-Jan-12|
+|SD10|	17-Feb-12	|17-Feb-12|
+
+
+## 20200426 Start to figure out the DUL LL and initial water for different SD
+
+Key outcomes:   
+a set of DUL  
+a set of LL  
+Initial soil water content   
+a set of kls   
+
+```{r}
+water <- dbReadTable(con, "SoilWater", check.names = FALSE) %>% 
+  as.data.table()
+
+# Isolate SD 1 in AshleyDene
+water[Experiment == "AshleyDene" & SowingDate == "SD1"] %>% 
+  ggplot(aes(Clock.Today, SWC)) +
+  geom_point()+
+  geom_boxplot()
+
+
+```
+
+**Task1:**  
+Grab DUL from each layer. 
+
+```{r, fig.height=40,fig.width=20}
+swcTovwc <- 100
+ADSD1 <- water[Experiment == "AshleyDene" & SowingDate== "SD1"][,SWC:=NULL]
+ADSD1
+id_vars <- colnames(ADSD1)[!colnames(ADSD1) %in% grep("SW\\(\\d.+", colnames(ADSD1), value = TRUE)]
+value_vars <- colnames(ADSD1)[!colnames(ADSD1) %in% id_vars]
+id_vars
+max_min <- function(x){list(max = max(x, na.rm = TRUE)/swcTovwc,
+                            min = min(x, na.rm = TRUE)/swcTovwc)}
+
+p <- ADSD1 %>% 
+  melt(id_vars, variable.factor = FALSE) %>% 
+  ggplot(aes(Clock.Today, value)) +
+  geom_boxplot() +
+  facet_grid( variable~.)
+ADSD1[, lapply(.SD, mean),
+      by = .(Experiment, Clock.Today, SowingDate), .SDcol = value_vars
+      ][, as.list(unlist(lapply(.SD, max_min))),
+      by = .(Experiment, SowingDate), .SDcol = value_vars]
+
+```
+
+inspect all sowing dates 
+```{r}
+AD_long <- water[,SWC:=NULL] %>% 
+  melt(id_vars)
+# check levels
+levels(AD_long$variable)
+# check if the plot still the same 
+# AD_long[SowingDate == "SD1" & Experiment == "AshleyDene"] %>% 
+#   ggplot(aes(Clock.Today, value)) +
+#   geom_boxplot()  +
+#   facet_grid(variable ~ .)
+# place data into a nested dt 
+nested <- AD_long[, list(dt_list=list(.SD)), by = .(Experiment,SowingDate)]
+
+device = "pdf"
+
+pmap(list(nested$Experiment, nested$SowingDate, nested$dt_list), 
+     
+     ~ggsave(filename = file.path("../05figures/SoilWaterEDA", paste0("SD_water",..1, ..2, ".",device)),
+             plot = ggplot(..3, aes(Clock.Today, value))+
+               geom_boxplot()+
+               ggtitle(paste0(..1, ..2)) +
+               facet_grid( variable~., scales = "free_y"),
+             device = device,dpi = 300, height = 30, width = 15)
+      )
+```
+
+_Note_  
+1. SD2 in AD seems have a consistant outliner rep in the top 40 cm soil.   
+2. SD7 in AD seems have a consistant outliner rep in BETWEEN 40 and 100 cm soil.   
+3. I12 had one rep that had some outliner through the second season in the subsoil between 110 ~ 140 cm.  
+
+_Question_   
+1. How to deal with the outliners? just average them out?  
+2. Identify them?   
+
+
+```{r try average first}
+DT <- nested[, dt_list := lapply(dt_list, function(x){
+  x[,.(value = mean(value, na.rm = TRUE)/100),
+    by = .(Clock.Today, variable)
+    ]
+  })] # average the swc value among reps and change to vwc
+DUL_LL <- copy(DT)[, dt_list := lapply(dt_list, function(x){
+  x[, .(min = min(value, na.rm = TRUE),
+        max = max(value, na.rm = TRUE)),
+    by = .(variable)]
+  }) # figure out the DUL and LL for each layer
+  ][, unlist(dt_list, recursive = FALSE), 
+    by = .(Experiment,SowingDate)] # unnest the data.table
+
 ```
 
 
@@ -76,22 +193,23 @@ DM_obs <- meta_data %>%
 #### Look at the plot level - EDA
 
 ```{r fig.height=22, fig.width=10}
-AD <- water[Site == "AshleyDene"]
-AD[, SWC := NULL] # drop it for now
-setorder(AD, "Sowing.Date","Plot") # Sort it by Plot
+AD <- water[Experiment == "AshleyDene"]
+
+# AD[, SWC := NULL] # drop it for now
+setorder(AD, "SowingDate","Plot") # Sort it by Plot
 
 # Grab the key vars for melting down to long format
 id_vars <- colnames(AD)[!colnames(AD) %in% grep("SW", colnames(AD), value = TRUE)]
 
 # Filter down to only sowing date 5 and do a trial plotting 
-AD[Sowing.Date == "SD5" ] %>% 
+AD[SowingDate == "SD5" ] %>% 
   melt(., id.vars = id_vars) %>% 
-  ggplot(aes(Date, value)) + 
+  ggplot(aes(Clock.Today, value)) + 
   geom_point() +
   facet_grid(variable ~ Plot)
 
 # Iterate all sowing date to output the graph
-var_sd <-  AD$Sowing.Date %>% unique()
+var_sd <-  AD$SowingDate %>% unique()
 dir <-  "SoilWater"
 dir_EDA <- file.path("..", "05figures", paste0(dir,"EDA"))
 dir_exits <- dir.exists(dir_EDA)
@@ -100,34 +218,34 @@ if(!dir_exits){
 }
 # Depth ~ Plot in Sowing Date 
 lapply(var_sd, function(x){
-  p <- AD[Sowing.Date == x ] %>% 
+  p <- AD[SowingDate == x ] %>% 
     melt(., id.vars = id_vars) %>% 
-    ggplot(aes(Date, value)) + 
+    ggplot(aes(Clock.Today, value)) + 
     geom_point() +
     facet_grid(variable ~ Rep, scales = "free_y") +
     ggtitle(x)
-  ggsave(filename = paste0(dir_EDA, "/",x, ".pdf"), plot = p, device = "pdf", width = 10, height = 22, dpi = 300)
+  # ggsave(filename = paste0(dir_EDA, "/",x, ".pdf"), plot = p, device = "pdf", width = 10, height = 22, dpi = 300)
 
 })
 
 # Sowing date 1 to 5, investigate variations among reps
-p <- AD[Sowing.Date %in% paste0("SD", 1:5)] %>% 
+p <- AD[SowingDate %in% paste0("SD", 1:5)] %>% 
   melt(., id.vars = id_vars) %>% 
-  ggplot(aes(Date, value, color = as.factor(Rep))) + 
+  ggplot(aes(Clock.Today, value, color = as.factor(Rep))) + 
   geom_point() +
-  facet_grid(variable ~ Sowing.Date, scales = "free_y") 
+  facet_grid(variable ~ SowingDate, scales = "free_y") 
 
 
-ggsave(filename = paste0(dir_EDA, "/SD1To5.pdf"), plot = p, device = "pdf", width = 10, height = 44, dpi = 300)
+# ggsave(filename = paste0(dir_EDA, "/SD1To5.pdf"), plot = p, device = "pdf", width = 10, height = 44, dpi = 300)
 
-p <- AD[Sowing.Date %in% paste0("SD", 6:10)] %>% 
+p <- AD[SowingDate %in% paste0("SD", 6:10)] %>% 
   melt(., id.vars = id_vars) %>% 
-  ggplot(aes(Date, value, color = as.factor(Rep))) + 
+  ggplot(aes(Clock.Today, value, color = as.factor(Rep))) + 
   geom_point() +
-  facet_grid(variable ~ Sowing.Date, scales = "free_y") 
+  facet_grid(variable ~ SowingDate, scales = "free_y") 
 
 
-ggsave(filename = paste0(dir_EDA, "/SD6To10.pdf"), plot = p, device = "pdf", width = 10, height = 44, dpi = 300)
+# ggsave(filename = paste0(dir_EDA, "/SD6To10.pdf"), plot = p, device = "pdf", width = 10, height = 44, dpi = 300)
 
 ```
 

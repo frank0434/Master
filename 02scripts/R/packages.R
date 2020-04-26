@@ -13,10 +13,11 @@ library(openxlsx)
 # library(checkpoint)
 library(knitr)
 library(pander)
-library(shiny)
-library(shinyjs)
 library(usethis)
 library(devtools)
 library(testthat)
 library(cowplot)
+
+# Customised package
+library(autoapsimx)
 
