@@ -114,8 +114,9 @@ col_good <- choose_cols(biomass) # identify the right cols
 biomass <- biomass[,..col_good] # subset the right cols
 
 # drop the extra cols in place 
-biomass[, c("...120", "AD", "I12") := NULL]
 
+SowingDates <- biomass[!is.na(AD)][, .(SD =...120, AD, I12)]
+biomass[, c("...120", "AD", "I12") := NULL]
 # biomass %>% 
 #   inspect_na() %>% 
 #   show_plot()
@@ -302,7 +303,7 @@ tab_names <- c("biomass",  "root", "Phenology","SoilWater","ES")
 purrr::map2(list(biomass, root, Phenology, SoilWater, ES), tab_names, ~ dbWriteTable(con, .y, .x, overwrite = TRUE))
 dbWriteTable(con, "met_Iversen12", Iversen12, overwrite = TRUE)
 dbWriteTable(con, "met_AshleyDene", AshleyDene, overwrite = TRUE)
-
+dbWriteTable(con, "SowingDates", SowingDates, overwrite = TRUE)
 DBI::dbDisconnect(con)
 ```
 
