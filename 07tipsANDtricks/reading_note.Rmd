@@ -443,3 +443,11 @@ Two approaches:
 Repeated measures: There's added value in modelling over time.
 
 what is the experimenta units -- Plot? 
+
+#### 20200429
+
+Catch up with Harris:  
+design the directory first 
+the workflow will come naturely. 
+
+

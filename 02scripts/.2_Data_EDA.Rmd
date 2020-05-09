@@ -72,10 +72,13 @@ a set of kls
 ```{r}
 water <- dbReadTable(con, "SoilWater", check.names = FALSE) %>% 
   as.data.table()
+water[, ':='(Clock.Today = as.Date(Clock.Today),
+             SowingDate = as.factor(SowingDate))
+      ][, SowingDate := factor(SowingDate, levels(SowingDate)[c(1,3:10, 2)])]
 
 # Isolate SD 1 in AshleyDene
 water[Experiment == "AshleyDene" & SowingDate == "SD1"] %>% 
-  ggplot(aes(Clock.Today, SWC)) +
+  ggplot(aes(Clock.Today, SWC, group = Clock.Today)) +
   geom_point()+
   geom_boxplot()
 
@@ -83,7 +86,7 @@ water[Experiment == "AshleyDene" & SowingDate == "SD1"] %>%
 ```
 
 **Task1:**  
-Grab DUL from each layer. 
+Grab DUL & LL from each layer. 
 
 ```{r, fig.height=40,fig.width=20}
 swcTovwc <- 100
@@ -92,12 +95,13 @@ ADSD1
 id_vars <- colnames(ADSD1)[!colnames(ADSD1) %in% grep("SW\\(\\d.+", colnames(ADSD1), value = TRUE)]
 value_vars <- colnames(ADSD1)[!colnames(ADSD1) %in% id_vars]
 id_vars
-max_min <- function(x){list(max = max(x, na.rm = TRUE)/swcTovwc,
-                            min = min(x, na.rm = TRUE)/swcTovwc)}
+max_min <- function(x){list(DUL = max(x, na.rm = TRUE)/swcTovwc,
+                            LL = min(x, na.rm = TRUE)/swcTovwc)}
 
 p <- ADSD1 %>% 
-  melt(id_vars, variable.factor = FALSE) %>% 
-  ggplot(aes(Clock.Today, value)) +
+  melt(id_vars) %>% 
+  # .[, variable := fct_reorder(variable, paste("SW(",1:23, ")"))] %>% 
+  ggplot(aes(Clock.Today, value, group = Clock.Today)) +
   geom_boxplot() +
   facet_grid( variable~.)
 ADSD1[, lapply(.SD, mean),
@@ -107,7 +111,35 @@ ADSD1[, lapply(.SD, mean),
 
 ```
 
-inspect all sowing dates 
+## 20200509 RESUME the tasks
+
+```{r}
+# set key and make it order by dates and sowing date
+setkey(water, Experiment, SowingDate, Clock.Today)
+water[, SWC:= NULL]
+id_vars <- colnames(water)[!colnames(water) %in% grep("SW\\(\\d.+", colnames(water), value = TRUE)]
+value_vars <- colnames(water)[!colnames(water) %in% id_vars]
+nested_water <- water[, list(SWC_list = list(.SD)), by = .(Experiment, SowingDate)]
+nested_water$SWC_DUL_LL <- lapply(nested_water$SWC_list, function(x){
+  x <- x[, lapply(.SD, mean),
+         by = .(Clock.Today), 
+         .SDcol = value_vars
+         ][, as.list(unlist(lapply(.SD, max_min))),
+           .SDcol = value_vars]
+  x <- melt(x, variable.factor = FALSE)
+  })
+
+DUL_LL <- nested_water[,.(Experiment, SowingDate, SWC_DUL_LL)
+                       ][, unlist(SWC_DUL_LL, recursive = FALSE),
+                         by = .(Experiment, SowingDate)]
+
+
+```
+
+
+## inspect all sowing dates for vwc
+
+
 ```{r}
 AD_long <- water[,SWC:=NULL] %>% 
   melt(id_vars)
