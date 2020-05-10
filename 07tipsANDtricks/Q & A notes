@@ -1,0 +1,18 @@
+20200510
+How to calculate initial soil water and parameterise it? 
+
+Should I use one PAWC_profile for all treatment 
+Experiment  SowingDate PAWC_profile
+AshleyDene	SD1	1.3547361		
+AshleyDene	SD2	1.3929496		
+AshleyDene	SD3	1.3967832		
+AshleyDene	SD4	1.3548853		
+AshleyDene	SD5	1.3266429		
+AshleyDene	SD6	0.8305323		
+AshleyDene	SD7	0.9312899		
+AshleyDene	SD8	0.7833570		
+AshleyDene	SD9	0.7485258		
+AshleyDene	SD10	0.7726116		
+
+ask richard how did he calculate the DUL AND LL AND initial soil water? 
+ask Hamish about the parameterisation? 
