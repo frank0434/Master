@@ -177,35 +177,34 @@ Need to fix the layer names
 
 
 ```{r Plot, fig.height=7, fig.width=7,dpi=300}
-vars <- colnames(soilwater)[c(1:9,33)]
+vars <- colnames(soilwater)[c(1:8)]
 soilwater_melted <- soilwater %>% 
-  melt(.,id.vars = vars, variable.factor = FALSE) %>% 
-  .[, variable := as.integer(gsub("SWC.0.", "", variable))]
-# soilwater_melted[, Sowing.Date := fct_relevel(as.factor(Sowing.Date), levels = c(paste0("SD",1:10)))] %>% 
+  melt(.,id.vars = vars, variable.factor = FALSE)
+# soilwater_melted[, SowingDate := fct_relevel(as.factor(SowingDate), levels = c(paste0("SD",1:10)))] %>% 
 #   
 #   ggplot(aes(Date, value, color = as.factor(variable))) + 
 #   geom_point() +
-#   facet_grid(Sowing.Date ~ Site ) +
+#   facet_grid(SowingDate ~ Site ) +
 #   theme_water() +
 #   scale_color_viridis_d()
-# soilwater_melted[Sowing.Date %in% paste0("SD", 1:5)] %>% 
-#   ggplot(aes(Date, value, color = Sowing.Date)) + 
+# soilwater_melted[SowingDate %in% paste0("SD", 1:5)] %>% 
+#   ggplot(aes(Date, value, color = SowingDate)) + 
 #   geom_point() +
 #   facet_grid(variable ~ Site ) +
 #   theme_water() +
 #   ggtitle("First 5 sowing date")
 
-layers_shallow = soilwater_melted[Sowing.Date == "SD1" & Season == "2010/11" & Site == "AshleyDene"& variable %in% c(1:6)
-                          ][, .(VWC = mean(value, na.rm = TRUE)), by = .(Site, Date, variable)
+layers_shallow = soilwater_melted[SowingDate == "SD1" & Season == "2010/11" & Experiment == "AshleyDene"& variable %in% c(1:6)
+                          ][, .(VWC = mean(value, na.rm = TRUE)), by = .(Experiment, SowingDate, variable)
                             ][, variable := paste0(variable, "0 cm")] 
-layers_deep = soilwater_melted[Sowing.Date == "SD1" & Season == "2010/11" & Site == "AshleyDene"& variable %in% c(21:23)
-                          ][, .(VWC = mean(value, na.rm = TRUE)), by = .(Site, Date, variable)
+layers_deep = soilwater_melted[SowingDate == "SD1" & Season == "2010/11" & Experiment == "AshleyDene"& variable %in% c(21:23)
+                          ][, .(VWC = mean(value, na.rm = TRUE)), by = .(Experiment, SowingDate, variable)
                             ][, variable := paste0(variable, "0 cm")] 
 
 linesize = 1
 pointsize = 3
 p1 = layers_shallow %>% 
-  ggplot(aes(Date, VWC, color = as.factor(variable))) + 
+  ggplot(aes(SowingDate, VWC, color = as.factor(variable))) + 
   geom_point(size = pointsize) +
   geom_line(size = linesize)+
   facet_grid( variable ~ .)+
@@ -220,7 +219,7 @@ p1 = layers_shallow %>%
   scale_x_date(date_breaks = "6 week", date_labels = "%b %Y", name = "")
 y = get_plot_component(p1, pattern = "y")
 p2 = layers_deep %>% 
-  ggplot(aes(Date, VWC, color = as.factor(variable))) + 
+  ggplot(aes(SowingDate, VWC, color = as.factor(variable))) + 
   geom_point(size = pointsize) +
   geom_line(size = linesize)+
   facet_grid( variable~ .)+
@@ -238,19 +237,19 @@ cowplot::plot_grid(y,NULL, p3 , nrow = 1, rel_widths = c(0.1, -0.03 ,2)) %>%
 ```
 
 ```{r}
-soilwater[Sowing.Date == "SD1" & Season == "2010/11",.(Date, Site,Sowing.Date,SWC.2.3.m..mm.)
-          ][, max(SWC.2.3.m..mm.), by = .(Date, Site)] 
+soilwater[SowingDate == "SD1" & Season == "2010/11",.(Clock.Today, Experiment,SowingDate,SWC)
+          ][, max(SWC), by = .(Clock.Today, Experiment)] 
 ```
 
 ```{r profile water}
 
 # Subset it to only one sowing date
-soilwater[Sowing.Date == "SD1"& Season == "2010/11",.(Date, Site,Sowing.Date,SWC.2.3.m..mm.)
-          ][, .("SWC.2.3.m..mm." = mean(SWC.2.3.m..mm.)), by = .(Site, Date)
+soilwater[SowingDate == "SD1"& Season == "2010/11",.(Clock.Today, Experiment,SowingDate,SWC)
+          ][, .("SWC" = mean(SWC)), by = .(Experiment, Clock.Today)
             ] %>% 
-  ggplot(aes(Date, SWC.2.3.m..mm.)) + 
+  ggplot(aes(Clock.Today, SWC)) + 
   geom_point() +
-  facet_grid( ~ Site ) +
+  facet_grid( ~ Experiment ) +
   theme_water() +
   ggtitle("Profile water")
 ```
@@ -263,22 +262,22 @@ soilwater[Sowing.Date == "SD1"& Season == "2010/11",.(Date, Site,Sowing.Date,SWC
 
 ```{r biomass, fig.height=12, fig.width=12, message=FALSE,warning=FALSE,dpi=300}
 
-nums <- inspect_num(biomass[Sowing.Date == "SD1"])
+nums <- inspect_num(biomass[SowingDate == "SD1"])
 show_plot(nums)
 inspect_cat(biomass) %>% 
   show_plot()
 ```
 
 ```{r}
-# GGally::ggpairs(biomass[,.(Site, Sowing.Date, Date, FW..g.,DW..g.)],aes(colour = Site, alpha = 0.4))
+# GGally::ggpairs(biomass[,.(Site, SowingDate, Date, FW..g.,DW..g.)],aes(colour = Site, alpha = 0.4))
 colnames(biomass)
-biomass_sub <- biomass[,.(Site, Date, Sowing.Date, DAS,  Shoot.No., Shoots.m2, FW..g., DW..g., Leaf.Area..cm.,LAImod)]
-biomass$Sowing.Date %>% unique()
+biomass_sub <- biomass[,.(Site, Date, SowingDate, DAS,  Shoot.No., Shoots.m2, FW..g., DW..g., Leaf.Area..cm.,LAImod)]
+biomass$SowingDate %>% unique()
 ```
 
 
 ```{r fw biomass}
-biomass[Sowing.Date == "SD1"
+biomass[SowingDate == "SD1"
         ][, .("Total.FW..g." = mean(Total.FW..g.)), by = .(Site, Date)
           ] %>% 
   ggplot(aes(Date, Total.FW..g.)) +
@@ -293,12 +292,12 @@ biomass[Sowing.Date == "SD1"
 
 ```{r}
 
-sum_biomass = biomass[Sowing.Date == "SD1" & Season == "2010/11"
+sum_biomass = biomass[SowingDate == "SD1" & Season == "2010/11"
                       ][, .("Total.FW..g." = mean(Total.FW..g.)), by = .(Site, Date, Harvest.No., Rotation.No., Season)
                         ][!Harvest.No. %in% c("0", "Post") ]
 setorder(sum_biomass, Site, Date)
 
-sum_water = soilwater[Sowing.Date == "SD1" & Season == "2010/11",.(Date, Site,Sowing.Date,SWC.2.3.m..mm.)
+sum_water = soilwater[SowingDate == "SD1" & Season == "2010/11",.(Date, Site,SowingDate,SWC.2.3.m..mm.)
                       ][, .("SWC.2.3.m..mm." = mean(SWC.2.3.m..mm.)), by = .(Site, Date)] 
 
 
@@ -393,7 +392,7 @@ consider to set up `Draker` plan.
 # import seaborn as sns
 # import matplotlib.pyplot as plt
 # 
-# sns.pairplot(r.biomass_sub, hue="Sowing.Date")
+# sns.pairplot(r.biomass_sub, hue="SowingDate")
 # plt.show()
 # plt.savefig("biomass_cor.png", dpi = 300)
 ```

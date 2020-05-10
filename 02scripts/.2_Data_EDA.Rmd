@@ -43,7 +43,8 @@ source("R/packages.R")
 source("R/functions.R")
 con <- dbConnect(SQLite(), "../03processed-data/Richard.sqlite3")
 dbListTables(con)
-SowingDates <- dbReadTable(con, "SowingDates")
+SowingDates <- dbReadTable(con, "SowingDates") %>% 
+  as.data.table()
 
 ```
 
@@ -90,7 +91,7 @@ Grab DUL & LL from each layer.
 
 ```{r, fig.height=40,fig.width=20}
 swcTovwc <- 100
-ADSD1 <- water[Experiment == "AshleyDene" & SowingDate== "SD1"][,SWC:=NULL]
+ADSD1 <- copy(water)[Experiment == "AshleyDene" & SowingDate== "SD1"][, SWC:=NULL]
 ADSD1
 id_vars <- colnames(ADSD1)[!colnames(ADSD1) %in% grep("SW\\(\\d.+", colnames(ADSD1), value = TRUE)]
 value_vars <- colnames(ADSD1)[!colnames(ADSD1) %in% id_vars]
@@ -113,6 +114,9 @@ ADSD1[, lapply(.SD, mean),
 
 ## 20200509 RESUME the tasks
 
+all DUL_LL for both sites 
+PAWC for different sowing dates 
+
 ```{r}
 # set key and make it order by dates and sowing date
 setkey(water, Experiment, SowingDate, Clock.Today)
@@ -121,10 +125,10 @@ id_vars <- colnames(water)[!colnames(water) %in% grep("SW\\(\\d.+", colnames(wat
 value_vars <- colnames(water)[!colnames(water) %in% id_vars]
 nested_water <- water[, list(SWC_list = list(.SD)), by = .(Experiment, SowingDate)]
 nested_water$SWC_DUL_LL <- lapply(nested_water$SWC_list, function(x){
-  x <- x[, lapply(.SD, mean),
+  x <- x[, lapply(.SD, mean), # average 4 reps for each sowing date
          by = .(Clock.Today), 
          .SDcol = value_vars
-         ][, as.list(unlist(lapply(.SD, max_min))),
+         ][, as.list(unlist(lapply(.SD, max_min))), # grap the max and min over two years 
            .SDcol = value_vars]
   x <- melt(x, variable.factor = FALSE)
   })
@@ -132,9 +136,60 @@ nested_water$SWC_DUL_LL <- lapply(nested_water$SWC_list, function(x){
 DUL_LL <- nested_water[,.(Experiment, SowingDate, SWC_DUL_LL)
                        ][, unlist(SWC_DUL_LL, recursive = FALSE),
                          by = .(Experiment, SowingDate)]
+DUL_LL <- DUL_LL[, (c("Depth", "variables")) := tstrsplit(variable, "\\.")] %>% 
+  dcast(Experiment + SowingDate + Depth ~ variables)
 
+# check if all duls > lls, yes if return 0
+sum(DUL_LL$LL > DUL_LL$DUL)
 
+SD_PAWC <- DUL_LL[, PAWC := DUL - LL][]
+
+SD_PAWC[, list(PAWC_profile = sum(PAWC, na.rm = TRUE)*2.3*100), by = .(Experiment, SowingDate)
+        ][, mean(PAWC_profile) , .(Experiment) ]
+
+SD_PAWC <- DUL_LL %>% 
+  dcast(Experiment + SowingDate  ~ Depth, value.var = "PAWC")
+SD_PAWC[, PAWC := rowSums(.SD, na.rm = T), .SDcols = value_vars][,.(Experiment, SowingDate, PAWC)]
+
+SD_PAWC[, Depth:= fct_relevel(as.factor(Depth), paste0("SW(", 1:23,")"))] %>% 
+  ggplot(aes(x = SowingDates)) +
+    geom_point(aes(y = DUL))+
+  facet_grid(~ Depth)
 ```
+initial soil water = the soil water contents at the sowing date
+need to be percentage of the full PAWC?
+
+```{r, fig.width=8, fig.height=12}
+water <- dbReadTable(con, "SoilWater", check.names = FALSE) %>% 
+  as.data.table()
+water[,  Clock.Today:= as.Date(Clock.Today)]
+SWC_MEAN <- water[,.(Experiment, Clock.Today, SowingDate, SWC)
+      ][, .(mean_swc = mean(SWC, na.rm = TRUE)), by = .(Experiment, SowingDate, Clock.Today)]
+SWC_MEAN[Experiment == "AshleyDene"]%>% 
+  ggplot(aes(Clock.Today, mean_swc)) +
+  geom_point() +
+  facet_grid( SowingDate ~ Experiment,scales = "free_y") +
+  geom_hline(aes(yintercept = min(SWC_MEAN[Experiment == "AshleyDene"]$mean_swc)), color = "red")+
+  geom_hline(aes(yintercept = max(SWC_MEAN[Experiment == "AshleyDene"]$mean_swc)), color = "blue") + 
+  theme(text = element_text(size = 14))
+SD <- SowingDates[, (c("AD", "I12")) := lapply(.SD, as.Date), .SDcols = c("AD", "I12")] %>% 
+  melt(id.vars = "SD", 
+       variable.name = "Experiment", value.name = "Clock.Today",
+       variable.factor = FALSE) 
+SD[, Experiment := ifelse(Experiment == "AD", "AshleyDene",  "Iversen12")]
+water[SD, on = c("Experiment", "SowingDate == SD", "Clock.Today"), roll = "nearest"][Clock.Today == "2010-11-09"]
+```
+
+SD1 in Ashley Dene has no SWC measurements. 
+Use the value from nearest measruement date instead, which was 2010-11-09
+
+[Initial Soil Water](https://www.apsim.info/documentation/model-documentation/soil-modules-documentation/soilwat/)
+
+There are five ways to parameterise initial soil water in SoilWater.  
+These can also be specified in the Manager module sections using the ‘set’ command  
+e.g SoilWater set insoil = 0.5 ()  
+
+
 
 
 ## inspect all sowing dates for vwc
