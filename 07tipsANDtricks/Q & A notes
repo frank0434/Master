@@ -15,4 +15,33 @@ AshleyDene	SD9	0.7485258
 AshleyDene	SD10	0.7726116		
 
 ask richard how did he calculate the DUL AND LL AND initial soil water? 
-ask Hamish about the parameterisation? 
+ask Hamish/Rog about the parameterisation? 
+
+
+DUL and LL should be depend on soil 
+SWD should be refered to DUL 
+
+
+2. Initial Soil Water as a Fraction of Available Soil Water distributed evenly down the profile
+
+Initial soil water can be set to a fraction of the maximum available soil water in each layer.
+Setting the insoil parameter to a fraction (0 = LL15, 1 = DUL) initialises the soil water parameter (initial sw values are ignored) to this fraction for each layer.
+
+ie. If 0.0 <= Insoil <= 1.0, then
+in each layer
+Soil water (sw) = LL15 + ((DUL-LL15) x Insoil)
+5. Initial Soil Water as a depth of wet soil, filled to field capacity.
+
+Initial soil water can be set to a depth of wet soil.
+The profile is filled from the top down until the soil depth is reached.
+Setting the wet_soil_depth parameter to a depth of soil filled to field capacity (DUL) initialises the soil water for layers starting at the top of the profile to DUL, until the soil depth is reached.
+The remaining layers are set to LL15. This parameter is exclusive of the others.
+
+e.g. Using the soil parameters of the previous example and
+wet_soil_depth = 400 mm,
+Then
+The ESW of each layer is set to 33, 33, 21, 0 mm giving
+A total of 87 mm in the profile.
+
+TO set up the initial soil water content for each layer:
+.Simulations.New Zealand.AshleyDene.AshleyDene.paddock.AshleyDene Lismore very stony silt Loam.Initial nitrogen.SW 

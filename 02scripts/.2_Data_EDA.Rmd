@@ -73,6 +73,7 @@ a set of kls
 ```{r}
 water <- dbReadTable(con, "SoilWater", check.names = FALSE) %>% 
   as.data.table()
+
 water[, ':='(Clock.Today = as.Date(Clock.Today),
              SowingDate = as.factor(SowingDate))
       ][, SowingDate := factor(SowingDate, levels(SowingDate)[c(1,3:10, 2)])]
@@ -96,12 +97,12 @@ ADSD1
 id_vars <- colnames(ADSD1)[!colnames(ADSD1) %in% grep("SW\\(\\d.+", colnames(ADSD1), value = TRUE)]
 value_vars <- colnames(ADSD1)[!colnames(ADSD1) %in% id_vars]
 id_vars
-max_min <- function(x){list(DUL = max(x, na.rm = TRUE)/swcTovwc,
-                            LL = min(x, na.rm = TRUE)/swcTovwc)}
+max_min <- function(x){list(DUL = max(x, na.rm = TRUE),
+                            LL = min(x, na.rm = TRUE))}
 
 p <- ADSD1 %>% 
   melt(id_vars) %>% 
-  # .[, variable := fct_reorder(variable, paste("SW(",1:23, ")"))] %>% 
+  .[, variable := fct_relevel(variable, paste0("SW(",1:23, ")"))] %>%
   ggplot(aes(Clock.Today, value, group = Clock.Today)) +
   geom_boxplot() +
   facet_grid( variable~.)
@@ -112,17 +113,86 @@ ADSD1[, lapply(.SD, mean),
 
 ```
 
-## 20200509 RESUME the tasks
+## 20200511 RESUME the tasks
 
 all DUL_LL for both sites 
 PAWC for different sowing dates 
 
 ```{r}
+
+
 # set key and make it order by dates and sowing date
 setkey(water, Experiment, SowingDate, Clock.Today)
-water[, SWC:= NULL]
-id_vars <- colnames(water)[!colnames(water) %in% grep("SW\\(\\d.+", colnames(water), value = TRUE)]
-value_vars <- colnames(water)[!colnames(water) %in% id_vars]
+# water[, SWC:= NULL]
+id_vars <- c("Experiment", "Clock.Today", "SowingDate")
+value_vars <- grep("SW\\(\\d.+", colnames(water), value = TRUE)
+# the range of all valus 
+# 
+allSD_SWC <- water[, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = "SWC" # average 4 reps
+                   ][, unlist(lapply(.SD, max_min), recursive = FALSE),
+                     by = .(Experiment, SowingDate),.SDcols = "SWC"
+                     ][, mean(SWC.DUL) , by = .(Experiment) ]
+```
+all sowing dates averaged: `r allSD_SWC` 
+
+what if for only the first 5
+max SWC and min SWC for the first 5 SD are identical to all SD
+but larger than averaged by SD first and then extract MAX AND MIN. 
+**USE all SD to extract DUL and LL would be appropriate **
+```{r}
+water[, lapply(.SD, mean, na.rm = TRUE), by = .(Experiment, Clock.Today), .SDcols = "SWC" # average 4 reps
+                   ][, unlist(lapply(.SD, max_min), recursive = FALSE), by = .(Experiment), .SDcols = "SWC"
+                     ][, PAWC := SWC.DUL - SWC.LL][]
+
+```
+sampling dates does not effect the PAWC because it calculated from MAX(SWC) - MIN(SWC)
+A slight different results compare to Richard's 
+
+DUL and LL should be consistant for all sowing dates since they are soil parameters 
+Therefore, simply average to have the DUL and LL for each layer will be sufficient at this stage 
+
+```{r}
+DUL_LL <- water[SowingDate %in% paste0("SD", 1:5)
+                ][, lapply(.SD, mean, na.rm = TRUE), by = .(Experiment, Clock.Today), .SDcols = value_vars # average 4 reps
+                  ][, unlist(lapply(.SD, max_min), recursive = FALSE), by = .(Experiment), .SDcols = value_vars]
+
+DUL_LL <- DUL_LL %>% 
+  melt(id.var = "Experiment") %>% 
+  .[, (c("Depth", "variables")) := tstrsplit(variable, "\\.")] %>% 
+  dcast(Experiment +  Depth ~ variables)
+DUL_LL[, sum(DUL), by = .(Experiment)]
+DUL_LL[, ':='(DUL = DUL / 100,
+              LL = LL / 100)][]
+```
+
+
+## 20200509 RESUME the tasks
+
+
+```{r}
+# convert SWC back to VWC
+# Layer 1 SW(1) is 20 cm while other layers are 10 cm 
+VWC_summarised <- water[, (value_vars) := lapply(.SD, function(x) x/100), .SDcols = value_vars
+                        ][, `SW(1)`:= `SW(1)`/2   # top 20 cm is a whole body
+                          ][, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = value_vars # average 4 reps
+                            ][, unlist(lapply(.SD, max_min), recursive = FALSE),
+                              by = .(Experiment, SowingDate),.SDcols = value_vars]
+
+VWC_summarised[order(`SW(1).DUL`)]
+test <- VWC_summarised[, lapply(.SD, mean, na.rm = TRUE), by = .(Experiment), .SDcols = colnames(VWC_summarised)[-(1:2)]]
+# test if the soil profil is right 
+test <- test %>% 
+  melt(id.vars = "Experiment") %>% 
+  .[, (c("Depth", "variables")) := tstrsplit(variable, "\\.")] %>% 
+  dcast(Experiment +  Depth ~ variables) 
+test[, PAWC := DUL - LL][, sum(PAWC)*2.3*100, by = .(Experiment)]
+summary(VWC_summarised[1:10,])
+```
+
+
+
+```{r}
+
 nested_water <- water[, list(SWC_list = list(.SD)), by = .(Experiment, SowingDate)]
 nested_water$SWC_DUL_LL <- lapply(nested_water$SWC_list, function(x){
   x <- x[, lapply(.SD, mean), # average 4 reps for each sowing date
@@ -130,12 +200,13 @@ nested_water$SWC_DUL_LL <- lapply(nested_water$SWC_list, function(x){
          .SDcol = value_vars
          ][, as.list(unlist(lapply(.SD, max_min))), # grap the max and min over two years 
            .SDcol = value_vars]
-  x <- melt(x, variable.factor = FALSE)
+  x <- melt(x, variable.factor = FALSE, measure = patterns("^SW"))
   })
 
 DUL_LL <- nested_water[,.(Experiment, SowingDate, SWC_DUL_LL)
                        ][, unlist(SWC_DUL_LL, recursive = FALSE),
                          by = .(Experiment, SowingDate)]
+range(DUL_LL$DUL)
 DUL_LL <- DUL_LL[, (c("Depth", "variables")) := tstrsplit(variable, "\\.")] %>% 
   dcast(Experiment + SowingDate + Depth ~ variables)
 
@@ -151,7 +222,7 @@ SD_PAWC <- DUL_LL %>%
   dcast(Experiment + SowingDate  ~ Depth, value.var = "PAWC")
 SD_PAWC[, PAWC := rowSums(.SD, na.rm = T), .SDcols = value_vars][,.(Experiment, SowingDate, PAWC)]
 
-SD_PAWC[, Depth:= fct_relevel(as.factor(Depth), paste0("SW(", 1:23,")"))] %>% 
+SD_PAWC[, Depth:= fct_relevel(as.factor(Depth), paste0("SW(", 1:22,")"))] %>% 
   ggplot(aes(x = SowingDates)) +
     geom_point(aes(y = DUL))+
   facet_grid(~ Depth)
@@ -160,18 +231,18 @@ initial soil water = the soil water contents at the sowing date
 need to be percentage of the full PAWC?
 
 ```{r, fig.width=8, fig.height=12}
-water <- dbReadTable(con, "SoilWater", check.names = FALSE) %>% 
-  as.data.table()
-water[,  Clock.Today:= as.Date(Clock.Today)]
+
 SWC_MEAN <- water[,.(Experiment, Clock.Today, SowingDate, SWC)
       ][, .(mean_swc = mean(SWC, na.rm = TRUE)), by = .(Experiment, SowingDate, Clock.Today)]
-SWC_MEAN[Experiment == "AshleyDene"]%>% 
+SWC_MEAN[Experiment == "AshleyDene"
+         ][, SowingDate := fct_relevel(as.factor(SowingDate), paste0("SD", 1:10))]%>% 
   ggplot(aes(Clock.Today, mean_swc)) +
   geom_point() +
   facet_grid( SowingDate ~ Experiment,scales = "free_y") +
   geom_hline(aes(yintercept = min(SWC_MEAN[Experiment == "AshleyDene"]$mean_swc)), color = "red")+
   geom_hline(aes(yintercept = max(SWC_MEAN[Experiment == "AshleyDene"]$mean_swc)), color = "blue") + 
   theme(text = element_text(size = 14))
+ggsave("../05figures/SoilWaterEDA/AverageSWC_AD.pdf", height = 12, width = 8, dpi = 300)
 SD <- SowingDates[, (c("AD", "I12")) := lapply(.SD, as.Date), .SDcols = c("AD", "I12")] %>% 
   melt(id.vars = "SD", 
        variable.name = "Experiment", value.name = "Clock.Today",

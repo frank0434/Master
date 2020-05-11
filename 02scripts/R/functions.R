@@ -113,8 +113,8 @@ theme_water <- function(){
 #' @export
 #' 
 
-fix_date <- function(df){
+fix_date <- function(df, col_Date = "Clock.Today"){
   
-  df$Date = as.Date(df$Date)
+  df[[col_Date]] = as.Date(df[[col_Date]])
   dt = data.table::as.data.table(df)
 }
