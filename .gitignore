@@ -12,6 +12,8 @@
 *.xlsx
 *.db
 *.sqlite3
+temp*
+test*
 #notebook checkout points 
 .ipynb_check*
 
@@ -19,4 +21,5 @@
 
 #dir
 Data/
-05figures/
+05figures/*
+03processed-data/
