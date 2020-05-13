@@ -45,3 +45,8 @@ A total of 87 mm in the profile.
 
 TO set up the initial soil water content for each layer:
 .Simulations.New Zealand.AshleyDene.AshleyDene.paddock.AshleyDene Lismore very stony silt Loam.Initial nitrogen.SW 
+
+20200513
+Hamish
+To use the SW for initial soil water, delete the initial soil water node 
+DUL and LL can be depend on sowing dates since APSIM is a point based model. 
