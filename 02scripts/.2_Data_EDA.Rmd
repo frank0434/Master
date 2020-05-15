@@ -82,7 +82,7 @@ water[Experiment == "AshleyDene" ] %>%
   # geom_point()+
   geom_boxplot(outlier.colour = "#ff0000", outlier.size = 5) +
   geom_text(aes(label = SowingDate), check_overlap = TRUE, size = 3)
-
+dbDisconnect(con)
 
 ```
 
@@ -118,8 +118,6 @@ all DUL_LL for both sites
 PAWC for different sowing dates 
 
 ```{r}
-
-
 # set key and make it order by dates and sowing date
 setkey(water, Experiment, SowingDate, Clock.Today)
 # water[, SWC:= NULL]
@@ -248,10 +246,301 @@ apsimx is not working properly in the bash env.
 ```{r}
 #TESING script list here
 "./R/20200513outputSoilWatParasByEdit.R"
+```
+
+## 20200513 kls
+```{r , fig.height=7, fig.width=10}
+SW_mean <- water[, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = value_vars]
+# melt(SW_mean, id.vars = id_vars, variable.factor = FALSE,
+#      variable.name = "Depth",value.name = "SW")
+SW_mean[SowingDate == "SD9" & Experiment == "AshleyDene"] %>% 
+  ggplot(aes(Clock.Today, `SW(10)`)) +
+  geom_point() +
+  geom_smooth(span = 0.5) +
+  scale_x_date(breaks = "2 weeks") +
+  theme_classic() +
+  geom_text(aes(label = Clock.Today), check_overlap = TRUE) +
+  theme(axis.text.x = element_text(angle = 90))
+
+
+
+```
+**How to deal with outliers!!!**
+
+do i just assume that all the water was sucked up by the
+`Areas within 1m of the neutron probe access tubes were also avoided.`
+no harvest around NP? always full canopy?
+
+https://douglas-watson.github.io/post/2018-09_exponential_curve_fitting/
+
+Eliminate the noise data   
+1. full canopy cover - LAI > 1  
+2. No rainfall during the period. 
+
+```{r}
+dt1 <- SW_mean[SowingDate == "SD1" & Experiment == "AshleyDene" & Clock.Today > "2011-07-27",
+               .(Clock.Today, SW = `SW(1)`)]
+qplot(x = Clock.Today, y = SW, data = dt1)
+# 2011-07-27 Had no rainfall, the SW was the same like the previous measurement. 
+# Therefore, a good starting point. 
+
+```
+sw
+need to ask Hamish about the model-fitting exercises. Brown 2009
+
+
+```{r, fig.width=7, fig.height=7}
+con <- dbConnect(SQLite(), "../03processed-data/Richard.sqlite3")
+biomass <- dbReadTable(con, "biomass") %>% 
+  as.data.table()
+met_AD <- dbReadTable(con, "met_AshleyDene") %>% 
+  as.data.table()
+dbDisconnect(con)
+SD1fullCano <- biomass[,.(Experiment, SowingDate, 
+                          Clock.Today = as.Date(Clock.Today), 
+                          Rotation = as.character(Rotation.No.),Harvest.No., LAI..FW.)
+                       ][Experiment == "AshleyDene"
+                         ][LAI..FW.>1 & LAI..FW. < 1.5
+                           ][, list(LAI_mean = mean(LAI..FW.)), 
+                             by = .(SowingDate, Clock.Today,Rotation,Harvest.No.)]
+SD1fullCano %>% 
+  ggplot(aes(Clock.Today, LAI_mean, color = Rotation, shape = SowingDate))+
+  geom_point()
+# The dates that has full canopy clousre for SD1 
+dates_interested <- unique(SD1fullCano$Clock.Today)
+water_SD1 <- water[Experiment == "AshleyDene"]
+water_mean <- water_SD1[, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = value_vars]
+water_mean <- melt(water_mean, 
+                   id.vars = id_vars)
+# bring in the rainfall 
+met_AD <- met_AD[, day := seq(from = 152, length.out = .N, by = 1)
+                 ][, Clock.Today := as.Date(day, origin = "2010-01-01")
+                   ][, rain := ifelse(rain == 0.0, NA, rain)
+                     ][,.(Clock.Today, rain)]
+
+pallete <- c("#0000ff", "#ff0000", "black")
+names(pallete) <- c("SW", "LAI_mean", "rain")
+datesForCurveFitting <- as.Date(c("2011-10-21", "2012-01-16"))
+p <- water_mean[SowingDate == "SD1" & variable %in% paste0("SW(", 1:3, ")")] %>% 
+  ggplot(aes(x = Clock.Today)) +
+  geom_vline(xintercept = datesForCurveFitting) +
+  geom_point(aes(y = value, color = "SW"))+
+  geom_point(data = SD1fullCano, aes(y = LAI_mean*10, color = "LAI_mean")) +
+  geom_point(data = met_AD[Clock.Today %in% dates_interested],
+             aes(y = rain, color = "rain")) +
+  scale_color_manual(values = pallete) + 
+  facet_grid(variable ~ ., scales = "free_y")
+p
+p + coord_cartesian(xlim = as.Date(c("2011-10-21", "2012-06-16")))
+```
+richard conversion of met file had one day off   
+152th of 2010 should be 2nd of June  2010 
+
+In the thesis,   
+arbitrary dates were selected for extraction initiation and finishing.   
+p147: _Extraction began in the 0.25 m soil layer on the 25 October 2011 at both sites._  
+p150: _The EFV reached the maximum depth of measurement (2.25 m) on 23 December 2011 at Ashley Dene and 11 March 2012 at Iversen 12_
+_Crops at both Ashley Dene and Iversen reached maximum extraction depth in late February 2012._
+Assumption based on the graph below.   
+soil water content was averaged across different sowing dates in the second season. 
+Water extraction was observed to start in early August 2011 for regrowth crops, however a large rainfall event returned SWC to DUL on **21 October 2011**. Models were fitted from this point to maximum SWD which occurred on **16 January 2012 and 25 May 2012** at Ashley Dene and Iversen 12, respectively.
+
+p136   $$SWC_t = LL + PAWC exp(-kl(t-tc)Sc)$$
+
+```{r}
+artificial <- water_mean[variable %in% paste0("SW(", 1,")") 
+                         & SowingDate %in% paste0("SD", 1:5) 
+                         & Clock.Today >= "2011-10-21" 
+                         & Clock.Today <= "2012-03-01"
+                         ][, list(mean_SW = mean(value)),
+                           by = .(Experiment,  Clock.Today)] 
+artificial %>% 
+  ggplot(aes(x = Clock.Today)) +
+  geom_point(aes(y = mean_SW)) +
+  geom_text(aes(y = mean_SW, label = mean_SW))
+artificial[, start := as.Date("2011-10-21")
+           ][, t := as.numeric(difftime(Clock.Today,start, units = "day"))][]
+pawc <- 27
+ll <- 6
+
+fit <- nls(mean_SW ~ SSasymp(t, Asym = pawc, R0 = ll, x), data = artificial)
+
+fit
+library(broom)
+library(dplyr)
+library(tidyr)
+qplot(t, mean_SW, data = broom::augment(fit)) + geom_line(aes(y = .fitted))
+tidy(fit) %>% 
+  dplyr::select(term, estimate) %>% 
+  spread(term, estimate) %>% 
+  mutate(alpha = exp(x))
+
 
 ```
 
-## 2020513 kls
+is this manual curve fitting procedure robust? the rainfall definetly affect the SW in the top soils?  
+how can we ensure that the decay is due to the plant transipiration rather than evaporation?? 
+
+#### 20200515 More fitting trys 
+
+https://rpubs.com/mengxu/exponential-model 
+ $$SWC_t = LL + PAWC * exp(-kl(x)Sc)$$
+ why not $$SWC_t = DUL - PAWC * exp(-kl(t-tc)Sc)$$
+ because the plant take water up rather than storing water. 
+ The SW will need to get smaller over time. 
+ 
+ 
+```{r}
+artificial <- copy(water_mean)[variable %in% paste0("SW(", 10,")") 
+                               & SowingDate %in% paste0("SD", 6:10) 
+                               & Clock.Today >= "2011-10-21" 
+                               & Clock.Today <= "2012-05-15"
+                               ][, list(mean_SW = mean(value)/100),
+                                 by = .(Experiment,  Clock.Today, SowingDate)] 
+artificial %>% 
+  ggplot(aes(x = Clock.Today)) +
+  geom_point(aes(y = mean_SW)) +
+  geom_text(aes(y = mean_SW, label = mean_SW))
+artificial[, start := as.Date("2011-10-21")
+           ][, t := as.numeric(difftime(Clock.Today, start, units = "day"))][]
+# Nested data into a list column
+nested <- artificial[, list(model = list(.SD)), 
+                     by = .(Experiment, SowingDate), .SDcols = c("Clock.Today","mean_SW", "start", "t")]
+# paras_SW <- DUL_LL_SDs[Experiment == "AshleyDene" 
+#                        & SowingDate %in% paste0("SD", 1:5)
+#                        & Depth %in% paste0("SW(", 1,")") ]
+# paras_SW_SD1to5 <- nested[paras_SW, on = c("Experiment", "SowingDate")]
+
+data.df <- nested$model[[1]]
+# Select an approximate $\theta$, since theta must be lower than min(y), and greater than zero
+ll.0 <- min(data.df$mean_SW) * 0.5  
+
+# Estimate the rest parameters using a linear model
+model.0 <- lm(log(mean_SW - ll.0) ~ t, data=data.df)  
+pawc.0 <- exp(coef(model.0)[1])
+kl.0 <- coef(model.0)[2]
+
+# Starting parameters
+start <- list( pawc = pawc.0, kl = kl.0, ll = ll.0)
+
+model <- nls(mean_SW ~ pawc * exp(kl * t) + ll , data = data.df, start = start)
+
+# Plot fitted curve
+# plot(data.df$t, data.df$mean_SW)
+# lines(data.df$t, predict(model, list(x = data.df$t)), col = 'skyblue', lwd = 3)
+qplot(t, mean_SW, data = broom::augment(model)) + geom_line(aes(y = .fitted))
+tidy(model) %>% 
+  dplyr::select(term, estimate) %>% 
+  spread(term, estimate) 
+```
+Seems too much effort to figure out the starting point by oneself.? 
+selfstarting might be the way to go
+
+Asked Rodelyn about the `nls` and `start` point preparation.  
+the online document takes two steps for fitting the curve:  
+1. prepara the `nls` a starting point by transforming it to a linear function.  
+2. apply the origin function in `nls` with the `start` 
+
+```{r}
+water_mean <- water[SowingDate %in% paste0("SD", 1:10) 
+                    ][, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = value_vars]
+water_mean <- melt(water_mean, 
+                   id.vars = id_vars,
+                   variable.factor = FALSE)[, value := value/100]
+# Nested data into a list column
+nested <- water_mean[Clock.Today >= "2011-10-21" 
+                     & Clock.Today <= "2012-05-15"
+                     ][, list(data = list(.SD)), 
+                       by = .(Experiment, SowingDate, variable), 
+                       .SDcols = c("Clock.Today","value")]
+# Relevel the order 
+nested[, ':='(SowingDate=fct_relevel(as.factor(SowingDate), paste0("SD", 1:10)),
+              variable = fct_relevel(as.factor(variable), paste0("SW(", 1:23,")")))]
+
+# Add a t value to represent the days difference
+nested <- nested[, data := lapply(data, function(x){
+  x <- x[, c(unique(.SD))
+         ][, start := as.Date("2011-10-21")
+           ][, t := as.numeric(difftime(Clock.Today, start, units = "day"))]
+  x
+  }
+  )]
+# paras_list <- vector("list", nrow(nested))
+nested[, paras_list:= lapply(data, function(x) {
+  dt = x
+# for(i in seq_len(nrow(nested))){
+  # dt = nested$data[[i]]
+  # name = paste(nested$Experiment[[i]], 
+  #               nested$SowingDate[[i]],
+  #               nested$variable[[i]],sep = "_")
+  # cat(name, "\r\n")
+  # Lower limit starting point 
+  ll.0 =  min(dt$value)/2
+  # Use a simple liner model to get the starting points for the decay rate _kl_
+  # The liner model has to be log transferred first 
+  model.0 = lm(log(value - ll.0) ~ t, data = dt)  
+  pawc.0 = exp(coef(model.0)[1]) # The starting point for interception
+  kl.0 = coef(model.0)[2] # kl starting point
+  #  Starting parameters
+  start = list(PAWC = pawc.0, kl = kl.0, LL = ll.0)
+  model = tryCatch({
+    nls(value ~ PAWC * exp(kl * t) + LL , data = dt, start = start)
+    },
+    error = function(cond){
+      print("Warning!!! nls can't describe part of the data.")
+      return(NA)
+    })
+  # paras_list[[i]] <- as.data.table(broom::tidy(model))
+  return(model)
+
+# } # the end of for loop 
+  })]
+nested$paras_list[[1]] 
+nested[, augment := lapply(paras_list, function(x){
+  x <- tryCatch(augment(x), 
+                error = function(cond){
+                  message(cond)
+                  return(NA)
+                })
+  x
+  })]
+nested[, tidied := lapply(paras_list, tidy)]
+# debug a dataset that failed nls 
+"./R/20200515curveFittingKLs.R"
+```
+
+
+```{r, fig.height=14}
+kl_present <- nested[!is.na(paras_list)]
+unnested_plot <- kl_present[, unlist(augment, recursive = FALSE), 
+                            by = .(Experiment, SowingDate, variable)]
+
+p <- unnested_plot %>%
+  ggplot(aes(t, value)) +
+  geom_point() + 
+  geom_line(aes(y = .fitted), color = "#ff0000")+ 
+  facet_grid(variable ~ Experiment + SowingDate) +
+  ggthemes::theme_few()
+p
+# qplot(t, mean_SW, data = broom::augment(model)) + geom_line(aes(y = .fitted))
+ggsave("../05figures/SoilWaterEDA/kl_curveFitting.pdf", dpi = 300, height = 10,width = 20)
+
+```
+```{r,fig.height=14, fig.width=7,dpi=300}
+nested[SowingDate == "SD8"
+       ][, unlist(data, recursive = FALSE), 
+         by = .(Experiment, SowingDate, variable)] %>% 
+  ggplot(aes(t, value)) +
+  geom_point() + 
+  # geom_line(aes(y = .fitted), color = "#ff0000")+ 
+  facet_grid(variable ~ Experiment + SowingDate) +
+  geom_smooth(color = "#ff0000") +
+  ggthemes::theme_few()
+
+```
+
+# Curve fitting is not going to work 
+
 
 ## 20200509 RESUME the tasks
 
@@ -354,13 +643,14 @@ e.g SoilWater set insoil = 0.5 ()
 
 
 ```{r}
+id_vars <- colnames(water)[!colnames(water)%in%grep("^SW", colnames(water), value = TRUE)]
 AD_long <- water[,SWC:=NULL] %>% 
   melt(id_vars)
 # check levels
 levels(AD_long$variable)
 # check if the plot still the same 
-# AD_long[SowingDate == "SD1" & Experiment == "AshleyDene"] %>% 
-#   ggplot(aes(Clock.Today, value)) +
+# AD_long[SowingDate == "SD1" & Experiment == "AshleyDene"] %>%
+#   ggplot(aes(Clock.Today, value, group = Clock.Today)) +
 #   geom_boxplot()  +
 #   facet_grid(variable ~ .)
 # place data into a nested dt 
@@ -368,11 +658,11 @@ nested <- AD_long[, list(dt_list=list(.SD)), by = .(Experiment,SowingDate)]
 
 device = "pdf"
 
-pmap(list(nested$Experiment, nested$SowingDate, nested$dt_list), 
-     
+purrr::pmap(list(nested$Experiment, nested$SowingDate, nested$dt_list), 
+            
      ~ggsave(filename = file.path("../05figures/SoilWaterEDA", paste0("SD_water",..1, ..2, ".",device)),
-             plot = ggplot(..3, aes(Clock.Today, value))+
-               geom_boxplot()+
+             plot = ggplot(..3, aes(Clock.Today, value,group = Clock.Today))+
+               geom_boxplot(outlier.colour = "#ff0000")+
                ggtitle(paste0(..1, ..2)) +
                facet_grid( variable~., scales = "free_y"),
              device = device,dpi = 300, height = 30, width = 15)
