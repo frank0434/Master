@@ -27,3 +27,4 @@ error = function(cond){
   return(NA)
 })
 broom::tidy(model)
+nested$paras_list[[2]]

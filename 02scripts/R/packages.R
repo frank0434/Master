@@ -20,3 +20,6 @@ library(cowplot)
 # Customised package
 library(autoapsimx)
 
+library(broom)
+library(dplyr)
+library(tidyr)
