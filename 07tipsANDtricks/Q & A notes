@@ -50,3 +50,27 @@ TO set up the initial soil water content for each layer:
 Hamish
 To use the SW for initial soil water, delete the initial soil water node 
 DUL and LL can be depend on sowing dates since APSIM is a point based model. 
+
+Hamish 
+kl should be link to the root turnover?? 
+yes. but it can't be dynamic to reflect the real world stuiation in NZ since the cold temperature could limit the crop water uptake. 
+why we can't make the kl calculated on the fly? 
+monthly value probably the best you could have but suspect that it still won't reflect the real world senarios. 
+
+Slurp is probably the best way to go so far, since it accounts the incomplete canopy and tempareture. 
+curving fitting is not recommended since the assumptions are very easy to be violated in NZ.  
+
+
+Rog:
+elimate the rainfall event for looking the decay of the kls 
+
+swcon is very similar to kls 
+
+filter out the noise to get the 
+filter out the period full canopy cover without rainfall 
+
+questions to Richard: 
+	1. what happen during the winter - crop is full canopy? 
+	2. 
+
+
