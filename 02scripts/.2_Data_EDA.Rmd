@@ -3,15 +3,16 @@ title: "Data_EDA"
 author: "jian (AKA Frank) liu"
 date: "04/10/2019"
 output:
-  html_document: 
-    code_folding: hide
-    toc: true
-    toc_depth: 3
+  bookdown::html_document2:
+              code_folding: hide
+              toc: true
+              toc_depth: 3
+              fig_caption: yes
 ---
 
-### Expt details 
+# Experiment details 
 
-a. **2** years expt.
+a. **2** years experiment.
 b. **2** sites
    a. Lincoln Uni
    b. Ashely Dene
@@ -22,7 +23,7 @@ c. **10** sowing date in both sites.
 |Year 1 (Seedling crop) | Year 2 (Seedling & Regrowth)|
 |--------| ------------|
 |SD1, SD2, SD3, SD4, SD5| The first five sowing date Regrowth|
-||SD6, SD7, SD8, SD9, SD10|
+||SD6, SD7, SD8, SD9, SD10|The second five sowing date seedling|
 _Note:_ The setup helps to compare the seedling and regrowth in the same conditions in Year 2. 
 
 d. **1** cultivar.
@@ -38,7 +39,10 @@ h. **1** follow treat in both sites - absolute soil evaporation
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.align = "center", fig.width = 10, fig.height = 10, dpi = 300)
+#Constants
+outlier.colour = "#ff0000"
 source("R/packages.R")
 source("R/functions.R")
 con <- dbConnect(SQLite(), "../03processed-data/Richard.sqlite3")
@@ -65,12 +69,14 @@ SowingDates <- dbReadTable(con, "SowingDates") %>%
 ## 20200426 Start to figure out the DUL LL and initial water for different SD
 
 Key outcomes:   
-a set of DUL  
-a set of LL  
-Initial soil water content   
-a set of kls   
+a set of DUL[20200511 RESUME the tasks]  
+a set of LL    
+Initial soil water content[20200513 Initial soil water]  
+a set of kls[20200513 kls]  
 
-```{r}
+\@ref(fig:OverallAD) A boxplot shows the range of SWC in AshleyDene over 2 years. 
+
+```{r OverallAD, fig.cap='(fig:OverallAD)'}
 water <- dbReadTable(con, "SoilWater", check.names = FALSE) %>% 
   as.data.table()
 
@@ -80,7 +86,7 @@ water[, ':='(Clock.Today = as.Date(Clock.Today))]
 water[Experiment == "AshleyDene" ] %>% 
   ggplot(aes(Clock.Today, SWC, group = Clock.Today)) +
   # geom_point()+
-  geom_boxplot(outlier.colour = "#ff0000", outlier.size = 5) +
+  geom_boxplot(outlier.colour = outlier.colour, outlier.size = 5) +
   geom_text(aes(label = SowingDate), check_overlap = TRUE, size = 3)
 dbDisconnect(con)
 
@@ -89,7 +95,7 @@ dbDisconnect(con)
 **Task1:**  
 Grab DUL & LL from each layer. 
 
-```{r, fig.height=40,fig.width=20}
+```{r, fig.height=15,fig.width=10}
 swcTovwc <- 100
 ADSD1 <- copy(water)[Experiment == "AshleyDene" & SowingDate== "SD1"][, SWC:=NULL]
 ADSD1
@@ -103,8 +109,9 @@ p <- ADSD1 %>%
   melt(id_vars) %>% 
   .[, variable := fct_relevel(variable, paste0("SW(",1:23, ")"))] %>%
   ggplot(aes(Clock.Today, value, group = Clock.Today)) +
-  geom_boxplot() +
+  geom_boxplot(outlier.colour = outlier.colour) +
   facet_grid( variable~.)
+p
 ADSD1[, lapply(.SD, mean),
       by = .(Experiment, Clock.Today, SowingDate), .SDcol = value_vars
       ][, as.list(unlist(lapply(.SD, max_min))),
@@ -130,7 +137,10 @@ allSD_SWC <- water[, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = "S
                      by = .(Experiment, SowingDate),.SDcols = "SWC"
                      ][, mean(SWC.DUL) , by = .(Experiment) ]
 ```
-all sowing dates averaged: `r allSD_SWC` 
+
+```{r} 
+kable(allSD_SWC, caption = "All sowing dates averaged soil water content")
+```
 
 what if for only the first 5
 max SWC and min SWC for the first 5 SD are identical to all SD
@@ -162,18 +172,21 @@ DUL_LL <- DUL_LL %>%
   dcast(Experiment +  Depth ~ variables)
 
 
-DUL_LL[, ':='(DUL = DUL,
-              LL = LL )
-       ][, PAWC := DUL - LL][]
+kable(DUL_LL[, ':='(DUL = DUL,
+                    LL = LL )
+             ][, PAWC := DUL - LL][])%>%
+  kable_styling() %>%
+  scroll_box(width = "100%", height = "200px")
 # Recheck the PAWC 
-DUL_LL[, sum(PAWC), by = .(Experiment)]
+kable(DUL_LL[, sum(PAWC), by = .(Experiment)], align = "l")
 ```
+
 DUL for AD at layer 1 seems always higher than the apsim current value. 
 Did a manual check on the rainfall and swc (File is in R/20200512), there are two 60mm rainfall events. 
 SD4 in AD always provide high values 
 try to take it out 
 
-#20200513 Initial soil water 
+## 20200513 Initial soil water 
 
 ```{r}
 SD <- SowingDates[, (c("AD", "I12")) := lapply(.SD, as.Date), .SDcols = c("AD", "I12")] %>% 
@@ -189,6 +202,10 @@ SW_initials <- melt(SW_initials,
                     variable.name = "Depth", value.name = "SW"
                     )[, ':='(SW = round(SW / 100, digits = 3))
                       ]
+
+kable(SW_initials, caption = "Initial soil water content in each layer in 10 sowing dates")%>%
+  kable_styling() %>%
+  scroll_box(width = "100%", height = "200px")
 # Output the SW for different SDs
 sites <- unique(SW_initials$Experiment)
 
@@ -237,11 +254,13 @@ SW_DUL_LL[, ':='(Depth = as.integer(gsub("\\D", "", Depth)),
                  SowingDate = fct_relevel(as.factor(SowingDate), paste0("SD", 1:10)))]
 # order the order - CRITICAL 
 setkey(SW_DUL_LL, Experiment, SowingDate, Depth)
-
+kable(SW_DUL_LL, caption = "Initial soil parameters for 22 layers in 10 different sowing dates.")%>%
+  kable_styling() %>%
+  scroll_box(width = "100%", height = "500px")
 ```
 
 try to modify apsimx file in place. **Edit** feature. 
-apsimx is not working properly in the bash env.  
+_Note_: apsimx is not working properly in the bash env.  
 
 ```{r}
 #TESING script list here
@@ -249,12 +268,17 @@ apsimx is not working properly in the bash env.
 ```
 
 ## 20200513 kls
-```{r , fig.height=7, fig.width=10}
+
+Visulise the data to have a feel.
+
+```{r , fig.height=7, fig.width=10, fig.cap='(ref:Selected SW in selected SD in Selected site)'}
 SW_mean <- water[, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = value_vars]
 # melt(SW_mean, id.vars = id_vars, variable.factor = FALSE,
 #      variable.name = "Depth",value.name = "SW")
-SW_mean[SowingDate == "SD9" & Experiment == "AshleyDene"] %>% 
-  ggplot(aes(Clock.Today, `SW(10)`)) +
+SD <- "SD5"
+Site <- "AshleyDene"
+SW_mean[SowingDate == SD & Experiment == Site] %>% 
+  ggplot(aes(Clock.Today, `SW(1)`)) +
   geom_point() +
   geom_smooth(span = 0.5) +
   scale_x_date(breaks = "2 weeks") +
@@ -289,7 +313,7 @@ sw
 need to ask Hamish about the model-fitting exercises. Brown 2009
 
 
-```{r, fig.width=7, fig.height=7}
+```{r, fig.width=10, fig.height=7}
 con <- dbConnect(SQLite(), "../03processed-data/Richard.sqlite3")
 biomass <- dbReadTable(con, "biomass") %>% 
   as.data.table()
@@ -366,9 +390,6 @@ ll <- 6
 fit <- nls(mean_SW ~ SSasymp(t, Asym = pawc, R0 = ll, x), data = artificial)
 
 fit
-library(broom)
-library(dplyr)
-library(tidyr)
 qplot(t, mean_SW, data = broom::augment(fit)) + geom_line(aes(y = .fitted))
 tidy(fit) %>% 
   dplyr::select(term, estimate) %>% 
@@ -381,7 +402,7 @@ tidy(fit) %>%
 is this manual curve fitting procedure robust? the rainfall definetly affect the SW in the top soils?  
 how can we ensure that the decay is due to the plant transipiration rather than evaporation?? 
 
-#### 20200515 More fitting trys 
+## 20200515 More fitting trys 
 
 https://rpubs.com/mengxu/exponential-model 
  $$SWC_t = LL + PAWC * exp(-kl(x)Sc)$$
@@ -391,8 +412,8 @@ https://rpubs.com/mengxu/exponential-model
  
  
 ```{r}
-artificial <- copy(water_mean)[variable %in% paste0("SW(", 10,")") 
-                               & SowingDate %in% paste0("SD", 6:10) 
+artificial <- copy(water_mean)[variable %in% paste0("SW(", 1,")") 
+                               & SowingDate %in% paste0("SD", 1:5) 
                                & Clock.Today >= "2011-10-21" 
                                & Clock.Today <= "2012-05-15"
                                ][, list(mean_SW = mean(value)/100),
@@ -441,7 +462,7 @@ the online document takes two steps for fitting the curve:
 1. prepara the `nls` a starting point by transforming it to a linear function.  
 2. apply the origin function in `nls` with the `start` 
 
-```{r}
+```{r, echo=FALSE, include=FALSE}
 water_mean <- water[SowingDate %in% paste0("SD", 1:10) 
                     ][, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = value_vars]
 water_mean <- melt(water_mean, 
@@ -495,6 +516,9 @@ nested[, paras_list:= lapply(data, function(x) {
 
 # } # the end of for loop 
   })]
+```
+
+```{r}
 nested$paras_list[[1]] 
 nested[, augment := lapply(paras_list, function(x){
   x <- tryCatch(augment(x), 
@@ -510,7 +534,7 @@ nested[, tidied := lapply(paras_list, tidy)]
 ```
 
 
-```{r, fig.height=14}
+```{r, fig.height=14, fig.width=14}
 kl_present <- nested[!is.na(paras_list)]
 unnested_plot <- kl_present[, unlist(augment, recursive = FALSE), 
                             by = .(Experiment, SowingDate, variable)]
@@ -523,7 +547,7 @@ p <- unnested_plot %>%
   ggthemes::theme_few()
 p
 # qplot(t, mean_SW, data = broom::augment(model)) + geom_line(aes(y = .fitted))
-ggsave("../05figures/SoilWaterEDA/kl_curveFitting.pdf", dpi = 300, height = 10,width = 20)
+# ggsave("../05figures/SoilWaterEDA/kl_curveFitting.pdf", dpi = 300, height = 10,width = 20)
 
 ```
 ```{r,fig.height=14, fig.width=7,dpi=300}
@@ -542,7 +566,7 @@ nested[SowingDate == "SD8"
 # Curve fitting is not going to work 
 
 
-## 20200509 RESUME the tasks
+#### 20200509 RESUME the tasks
 
 
 ```{r}
@@ -598,10 +622,7 @@ SD_PAWC <- DUL_LL %>%
   dcast(Experiment + SowingDate  ~ Depth, value.var = "PAWC")
 SD_PAWC[, PAWC := rowSums(.SD, na.rm = T), .SDcols = value_vars][,.(Experiment, SowingDate, PAWC)]
 
-SD_PAWC[, Depth:= fct_relevel(as.factor(Depth), paste0("SW(", 1:22,")"))] %>% 
-  ggplot(aes(x = SowingDates)) +
-    geom_point(aes(y = DUL))+
-  facet_grid(~ Depth)
+
 ```
 initial soil water = the soil water contents at the sowing date
 need to be percentage of the full PAWC?
@@ -618,7 +639,7 @@ SWC_MEAN[Experiment == "AshleyDene"
   geom_hline(aes(yintercept = min(SWC_MEAN[Experiment == "AshleyDene"]$mean_swc)), color = "red")+
   geom_hline(aes(yintercept = max(SWC_MEAN[Experiment == "AshleyDene"]$mean_swc)), color = "blue") + 
   theme(text = element_text(size = 14))
-ggsave("../05figures/SoilWaterEDA/AverageSWC_AD.pdf", height = 12, width = 8, dpi = 300)
+# ggsave("../05figures/SoilWaterEDA/AverageSWC_AD.pdf", height = 12, width = 8, dpi = 300)
 SD <- SowingDates[, (c("AD", "I12")) := lapply(.SD, as.Date), .SDcols = c("AD", "I12")] %>% 
   melt(id.vars = "SD", 
        variable.name = "Experiment", value.name = "Clock.Today",
@@ -639,7 +660,7 @@ e.g SoilWater set insoil = 0.5 ()
 
 
 
-## inspect all sowing dates for vwc
+#### inspect all sowing dates for vwc
 
 
 ```{r}
@@ -658,15 +679,15 @@ nested <- AD_long[, list(dt_list=list(.SD)), by = .(Experiment,SowingDate)]
 
 device = "pdf"
 
-purrr::pmap(list(nested$Experiment, nested$SowingDate, nested$dt_list), 
-            
-     ~ggsave(filename = file.path("../05figures/SoilWaterEDA", paste0("SD_water",..1, ..2, ".",device)),
-             plot = ggplot(..3, aes(Clock.Today, value,group = Clock.Today))+
-               geom_boxplot(outlier.colour = "#ff0000")+
-               ggtitle(paste0(..1, ..2)) +
-               facet_grid( variable~., scales = "free_y"),
-             device = device,dpi = 300, height = 30, width = 15)
-      )
+# purrr::pmap(list(nested$Experiment, nested$SowingDate, nested$dt_list), 
+#             
+#      ~ggsave(filename = file.path("../05figures/SoilWaterEDA", paste0("SD_water",..1, ..2, ".",device)),
+#              plot = ggplot(..3, aes(Clock.Today, value,group = Clock.Today))+
+#                geom_boxplot(outlier.colour = outlier.colour)+
+#                ggtitle(paste0(..1, ..2)) +
+#                facet_grid( variable~., scales = "free_y"),
+#              device = device,dpi = 300, height = 30, width = 15)
+#       )
 ```
 
 _Note_  
@@ -697,7 +718,7 @@ DUL_LL <- copy(DT)[, dt_list := lapply(dt_list, function(x){
 
 
 
-## 20200330 Grab above ground component and soil water 
+#### 20200330 Grab above ground component and soil water 
 
 Unit conversion for visulising the graph in apsimx UI.   
 
@@ -752,16 +773,16 @@ if(!dir_exits){
   dir.create(dir_EDA)
 }
 # Depth ~ Plot in Sowing Date 
-lapply(var_sd, function(x){
-  p <- AD[SowingDate == x ] %>% 
-    melt(., id.vars = id_vars) %>% 
-    ggplot(aes(Clock.Today, value)) + 
-    geom_point() +
-    facet_grid(variable ~ Rep, scales = "free_y") +
-    ggtitle(x)
+# lapply(var_sd, function(x){
+#   p <- AD[SowingDate == x ] %>% 
+#     melt(., id.vars = id_vars) %>% 
+#     ggplot(aes(Clock.Today, value)) + 
+#     geom_point() +
+#     facet_grid(variable ~ Rep, scales = "free_y") +
+#     ggtitle(x)
   # ggsave(filename = paste0(dir_EDA, "/",x, ".pdf"), plot = p, device = "pdf", width = 10, height = 22, dpi = 300)
 
-})
+# })
 
 # Sowing date 1 to 5, investigate variations among reps
 p <- AD[SowingDate %in% paste0("SD", 1:5)] %>% 
@@ -787,42 +808,45 @@ p <- AD[SowingDate %in% paste0("SD", 6:10)] %>%
 
 #### Read sql from replicates prediction
 
-```{r}
-con <- dbConnect(SQLite(), "../01raw-data/ApsimxFiles/PlotByPlot.db")
-dbListTables(con)
-Report <- dbReadTable(con, "Report", check.names = FALSE) %>% 
-  as.data.table()
-Report[, Clock.Today := as.Date(Clock.Today)]
-dbDisconnect(con)
+
+```{r , echo=FALSE}
+#Disabled since the db is out of date 
+# con <- dbConnect(SQLite(), "../01raw-data/ApsimxFiles/PlotByPlot.db")
+# dbListTables(con)
+# Report <- dbReadTable(con, "Report", check.names = FALSE) %>% 
+#   as.data.table()
+# Report[, Clock.Today := as.Date(Clock.Today)]
+# dbDisconnect(con)
 ```
 Probably not very useful since all the Rep will use the same set of soil parameters 
 
 
-```{r}
-dim(Report)
+```{r , echo=FALSE}
+# dim(Report)
+# 
+# id_vars <- colnames(Report)[1:4]
+# value_vars <- colnames(Report)[colnames(Report) %in% grep("SW", colnames(Report), value = TRUE)]
+# new_cols <- c(id_vars,value_vars)
+# p <- Report[,..new_cols][, SWC := NULL][SowingDate %in% paste0("SD", 1:5)] %>% 
+#   melt(., id.vars = id_vars) %>% 
+#   .[, value := round(as.numeric(value))] %>% 
+#   ggplot(aes(Clock.Today, value, color = as.factor(Zone))) + 
+#   geom_point() +
+#   facet_grid(variable ~ SowingDate) 
 
-id_vars <- colnames(Report)[1:4]
-value_vars <- colnames(Report)[colnames(Report) %in% grep("SW", colnames(Report), value = TRUE)]
-new_cols <- c(id_vars,value_vars)
-p <- Report[,..new_cols][, SWC := NULL][SowingDate %in% paste0("SD", 1:5)] %>% 
-  melt(., id.vars = id_vars) %>% 
-  .[, value := round(as.numeric(value))] %>% 
-  ggplot(aes(Clock.Today, value, color = as.factor(Zone))) + 
-  geom_point() +
-  facet_grid(variable ~ SowingDate) 
-
-
-ggsave(filename = paste0(dir_EDA, "/PredictSD1To5.pdf"), plot = p, device = "pdf", width = 10, height = 44, dpi = 300)
+# 
+# ggsave(filename = paste0(dir_EDA, "/PredictSD1To5.pdf"), plot = p, device = "pdf", width = 10, height = 44, dpi = 300)
 
 ```
 
 
 
 
-### Import data from sqlite
+#### Import data from sqlite - very first EDA - Retired
 
-```{r import sqlite}
-con <- dbConnect(SQLite(), "../Data/Richard.sqlite3")
+```{r import sqlite, echo=FALSE}
+con <- dbConnect(SQLite(), "../03processed-data/Richard.sqlite3")
+# dbListTables(con)
 soilwater <- dbReadTable(con, "SoilWater")
 biomass <- dbReadTable(con, "biomass")
 root <- dbReadTable(con, "root")
@@ -838,7 +862,7 @@ ES <- fix_date(ES)
 ```
 
 
-### Soil Water Overview 
+#### Soil Water Overview 
 
 _Note:_
 
@@ -848,7 +872,7 @@ Need to fix the layer names
 **The soil water has `r dim(soilwater)[1]` obs. **
 
 
-```{r Plot, fig.height=15, fig.width=10,dpi=300}
+```{r Plot, fig.height=15, fig.width=10,dpi=300, echo=FALSE, eval=FALSE}
 vars <- colnames(soilwater)[c(1:9,33)]
 soilwater_melted <- soilwater %>% 
   melt(.,id.vars = vars, variable.factor = FALSE) %>% 
@@ -869,7 +893,7 @@ soilwater_melted[Sowing.Date %in% paste0("SD", 1:5)] %>%
 ```
 
 
-```{r profile water}
+```{r profile water, echo=FALSE, eval=FALSE}
 soilwater[,.(Date, Site,Sowing.Date,SWC.2.3.m..mm.) ]%>% 
   ggplot(aes(Date, SWC.2.3.m..mm., color = Sowing.Date)) + 
   geom_point() +
@@ -880,7 +904,7 @@ soilwater[,.(Date, Site,Sowing.Date,SWC.2.3.m..mm.) ]%>%
 
 
 
-```{r soilwater hist each layer, fig.height=12, fig.width=12, message=FALSE,warning=FALSE,dpi=300}
+```{r soilwater hist each layer, fig.height=12, fig.width=12, message=FALSE,warning=FALSE,dpi=300, echo=FALSE, eval=FALSE}
 
 nums <- inspect_num(soilwater[Site == "AshleyDene"])
 show_plot(nums)
@@ -891,7 +915,7 @@ show_plot(nums)
 print("SWC distribution in each layer in Lincoln Uni")
 ```
 
-```{r hist}
+```{r hist, echo=FALSE, eval=FALSE}
 soilwater_melted %>% 
   ggplot(aes(value))+
   geom_histogram() +
@@ -902,26 +926,26 @@ soilwater_melted %>%
 
 ```
 
-### Evapotranspiration surface
+# Evapotranspiration surface
 
 This is for calibrate the model for Potential Ep since there is no crop growing on this area?
 
 
-```{r ES, fig.height=14, fig.width=14, dpi=300}
+```{r ES, fig.height=7, fig.width=7, dpi=300}
 
-vars <- colnames(ES)[c(1:6,31)]
+vars <- colnames(ES[, Data:= NULL])[c(1:6)]
 ES_melted <- ES %>% 
   melt(.,id.vars = vars, variable.factor = FALSE) %>% 
   .[, variable := as.integer(gsub("SWC.0\\.", "", variable))]
-ES_melted[, variable:= ifelse(is.na(variable), 24, variable)] %>% 
-  ggplot(aes(Date, value)) + 
+ES %>% 
+  ggplot(aes(Clock.Today, SWCES_0.0.2)) + 
   geom_point() +
-  facet_grid(variable ~ Site ) +
+  facet_grid(  Experiment ~ .) +
   theme_water()
 
 ```
 
-### Biomass Overview 
+# Biomass Overview 
 
 
 
@@ -941,7 +965,7 @@ inspect_cat(biomass) %>%
 ```{r}
 # GGally::ggpairs(biomass[,.(Site, Sowing.Date, Date, FW..g.,DW..g.)],aes(colour = Site, alpha = 0.4))
 colnames(biomass)
-biomass_sub <- biomass[,.(Site, Date, Sowing.Date, DAS,  Shoot.No., Shoots.m2, FW..g., DW..g., Leaf.Area..cm.,LAImod)]
+biomass_sub <- biomass[,.(Experiment, Clock.Today, SowingDate, DAS,  Shoot.No., Shoots.m2, FW..g., DW..g., Leaf.Area..cm.,LAImod)]
 ```
 
 _Note:_
@@ -953,9 +977,9 @@ consider to set up `Draker` plan.
 
 
 
-![Biomass random plotting](biomass_cor.png)
+![Biomass random plotting](../05figures/References/biomass_cor.png)
 **Maybe leave the biomass data at last to touch. **
-```{python}
+```
 # import seaborn as sns
 # import matplotlib.pyplot as plt
 # 
@@ -966,7 +990,7 @@ consider to set up `Draker` plan.
 
 
 
-### Root Overview 
+# Root Overview 
 
 
 **The Root tab has `r dim(root)[1]` obs. **
