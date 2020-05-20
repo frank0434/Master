@@ -21,7 +21,7 @@ output:
     - A set of LL[DUL AND LL]
 - Calculation and summarising  
 - Joining[Combine Soil Paras]
-- Set up directory strcuture   
+- Set up directory structure   
 - Invoke **Edit**  
 
 
@@ -123,9 +123,88 @@ kable(SW_DUL_LL, caption = "Initial soil parameters for 22 layers in 10 differen
   scroll_box(width = "100%", height = "500px")
 ```
 
+# Set directory structure
 
 ```{r}
-#TESING script list here
-"./R/20200513outputSoilWatParasByEdit.R"
+t1 <- Sys.time()
+#path to apsimx 
+apsimx <- "C:/Data/ApsimxLatest/ApsimX/Bin/Models.exe"
+apsimx_flag <- "/Edit"
+apsimx_file <- "C:/Data/Master/01raw-data/ApsimxFiles/20200520Demo.apsimx"
+apsimx_sims_temp <- "C:/Data/Master/03processed-data/apsimxFiles/temp.apsimx"
+apsimx_sims_dir <- "C:/Data/Master/03processed-data/apsimxFiles/"
+apsimx_config <- "C:/Data/Master/03processed-data/configSoilWat"
+
+# Node Path - copied from ApsimX UI
+
+initialSW <- ".Simulations.New Zealand.AshleyDene.Factors.SowingDate.SD.ADsoils.InitialConditions.SW = "
+DUL <- ".Simulations.New Zealand.AshleyDene.Factors.SowingDate.SD.ADsoils.Physical.DUL = "
+LL <- ".Simulations.New Zealand.AshleyDene.Factors.SowingDate.SD.ADsoils.Physical.LucerneSoil.LL = "
+LL15 <- ".Simulations.New Zealand.AshleyDene.Factors.SowingDate.SD.ADsoils.Physical.LL15 = "
+# PAWC <- ".Simulations.New Zealand.AshleyDene.Factors.SowingDate.SD.ADsoils.Physical.PAWC = "
+SAT <- ".Simulations.New Zealand.AshleyDene.Factors.SowingDate.SD.ADsoils.Physical.SAT = "
+# Keys
+sites <- unique(SW_DUL_LL$Experiment)
+SDs <- paste0("SD", 1:10)
+
+# Vectorise the values 
+for(j in sites){
+  for(i in SDs){
+    # Filter the right values 
+    SDsw <- SW_DUL_LL[SowingDate == i & Experiment == j]$SW
+    SDDUL <- SW_DUL_LL[SowingDate == i & Experiment == j]$DUL
+    SDLL <- SW_DUL_LL[SowingDate == i & Experiment == j]$LL
+    apsimx_sw <- paste0(initialSW,
+                        paste(SDsw,collapse = ","))
+    apsimx_DUL <- paste0(DUL,
+                         paste(SDDUL,collapse = ","))
+    apsimx_LL <- paste0(LL,
+                        paste(SDLL,collapse = ","))
+    apsimx_LL15 <- paste0(LL15,
+                          paste(SDLL,collapse = ","))
+    apsimx_SAT <- paste0(SAT,
+                         paste(SDDUL,collapse = ","))
+    # Open a text file
+    f <- file(paste0(apsimx_config, j, i, ".txt"), "w")
+    # Write values into the file 
+    cat(apsimx_sw,
+        apsimx_DUL,
+        apsimx_LL,
+        apsimx_LL15,
+        apsimx_SAT,"\r",
+        sep = "\r", 
+        file = f, 
+        append = TRUE)
+    # Close the file and clean it from memory 
+    close(f)
+    rm(f)
+    gc()
+  }
+
+}
+
+t2 <- Sys.time()
+t2 - t1
+```
+
+# Invoke Apsimx
+
+```{r}
+t1 <- Sys.time()
+for(j in sites){
+   for(i in SDs){
+     # Edit the base apsimx file and save it to a new name
+    ## copy file into a new dir and rename it temp 
+    system(paste("cp", apsimx_file, apsimx_sims_temp))
+    ## modify the apsimx file 
+    system(paste(apsimx, apsimx_sims_temp, apsimx_flag, paste0(apsimx_config, j, i,".txt")))
+    ## rename the modified one
+    system(paste("mv", apsimx_sims_temp, paste0(apsimx_sims_dir, "Modified", j, i, ".apsimx")))
+    ## delete the temp apsimx 
+    system(paste("rm", paste0(apsimx_sims_dir, "temp*")))
+   }
+}
+t2 <- Sys.time()
+t2 - t1
 ```
 
