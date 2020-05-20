@@ -1,0 +1,131 @@
+---
+title: "Data_EDA"
+author: "jian (AKA Frank) liu"
+date: "04/10/2019"
+output:
+  bookdown::html_document2:
+              code_folding: hide
+              toc: true
+              toc_depth: 3
+              fig_caption: yes
+---
+
+# Protocol
+
+- Load data from sqlite  
+- Set constants. e.g. colours and keys  
+- Set target  
+    Key outcomes:   
+    - Initial soil water content[Initial soil water]    
+    - A set of DUL[DUL AND LL]
+    - A set of LL[DUL AND LL]
+- Calculation and summarising  
+- Joining[Combine Soil Paras]
+- Set up directory strcuture   
+- Invoke **Edit**  
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.align = "center", fig.width = 10, fig.height = 7, dpi = 300)
+#Constants
+outlier.colour = "#ff0000"
+source("R/packages.R")
+source("R/functions.R")
+con <- dbConnect(SQLite(), "../03processed-data/Richard.sqlite3")
+dbListTables(con)
+SowingDates <- dbReadTable(con, "SowingDates") %>% 
+  as.data.table()
+
+```
+
+
+```{r OverallAD, fig.cap='A boxplot shows the range of SWC in AshleyDene over 2 years.'}
+water <- dbReadTable(con, "SoilWater", check.names = FALSE) %>% 
+  as.data.table()
+
+water[, ':='(Clock.Today = as.Date(Clock.Today))]
+# [, SowingDate := factor(SowingDate, levels(SowingDate)[c(1,3:10, 2)])]
+# Isolate SD 1 in AshleyDene
+dbDisconnect(con)
+# set key and make it order by dates and sowing date
+setkey(water, Experiment, SowingDate, Clock.Today)
+# water[, SWC:= NULL]
+id_vars <- key(water)
+value_vars <- grep("SW\\(\\d.+", colnames(water), value = TRUE)
+
+```
+
+
+# Initial soil water 
+
+```{r}
+SD <- SowingDates[, (c("AD", "I12")) := lapply(.SD, as.Date), .SDcols = c("AD", "I12")] %>% 
+  melt(id.vars = "SD", 
+       variable.name = "Experiment", value.name = "Clock.Today",
+       variable.factor = FALSE) 
+SD[, Experiment := ifelse(Experiment == "AD", "AshleyDene",  "Iversen12")]
+
+SW_mean <- water[, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = value_vars]
+SW_initials <- SW_mean[SD, on = c("Experiment", "SowingDate == SD", "Clock.Today"), roll = "nearest"]
+SW_initials <- melt(SW_initials, 
+                    id.vars = id_vars, variable.factor = FALSE,
+                    variable.name = "Depth", value.name = "SW"
+                    )[, ':='(SW = round(SW / 100, digits = 3))
+                      ]
+
+kable(SW_initials, caption = "Initial soil water content in each layer in 10 sowing dates")%>%
+  kable_styling() %>%
+  scroll_box(width = "100%", height = "500px")
+# Output the SW for different SDs
+sites <- unique(SW_initials$Experiment)
+
+```
+
+
+# DUL AND LL
+
+```{r}
+# [SowingDate %in% paste0("SD", 1:5)]
+DUL_LL <- water[, lapply(.SD, mean, na.rm = TRUE), 
+                by = id_vars, .SDcols = value_vars # average 4 reps
+                  ][, unlist(lapply(.SD, max_min), recursive = FALSE), 
+                    by = .(Experiment, SowingDate), .SDcols = value_vars]
+
+melted_DUL_LL <- melt(DUL_LL, 
+                      id.var = c("Experiment","SowingDate"), 
+                      variable.factor = FALSE) 
+DUL_LL_SDs <- melted_DUL_LL[, (c("Depth", "variable")) := tstrsplit(variable, "\\.")] %>% 
+  dcast(Experiment +  SowingDate + Depth ~ variable)
+
+DUL_LL_SDsVWC <- DUL_LL_SDs[, ':='(DUL = round(DUL/100, digits = 3),
+                                   LL = round(LL/100, digits = 3))
+                            ][, PAWC := DUL - LL]
+```
+
+
+# Combine Soil Paras
+
+```{r}
+SW_DUL_LL <- SW_initials[DUL_LL_SDsVWC, on = c("Experiment", "SowingDate", "Depth")][Depth != "SW(2)"]
+
+# Check if anything unusual 
+SW_DUL_LL[DUL<SW]
+SW_DUL_LL[LL>SW]
+
+# Order the layers
+SW_DUL_LL[, ':='(Depth = as.integer(gsub("\\D", "", Depth)),
+                 SowingDate = fct_relevel(as.factor(SowingDate), paste0("SD", 1:10)))]
+# order the order - CRITICAL 
+setkey(SW_DUL_LL, Experiment, SowingDate, Depth)
+kable(SW_DUL_LL, caption = "Initial soil parameters for 22 layers in 10 different sowing dates.")%>%
+  kable_styling() %>%
+  scroll_box(width = "100%", height = "500px")
+```
+
+
+```{r}
+#TESING script list here
+"./R/20200513outputSoilWatParasByEdit.R"
+```
+
