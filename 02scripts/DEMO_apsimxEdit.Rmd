@@ -1,28 +1,23 @@
 ---
 title: "Data_EDA"
 author: "jian (AKA Frank) liu"
-date: "04/10/2019"
-output:
-  bookdown::html_document2:
-              code_folding: hide
-              toc: true
-              toc_depth: 3
-              fig_caption: yes
+date: "`r Sys.Date()`"
+output: html_document
 ---
 
 # Protocol
 
-- Load data from sqlite  
+- Load data from sqlite   
 - Set constants. e.g. colours and keys  
 - Set target  
     Key outcomes:   
-    - Initial soil water content[Initial soil water]    
-    - A set of DUL[DUL AND LL]
-    - A set of LL[DUL AND LL]
+    - Initial soil water content[Initial soil water]      
+    - A set of DUL[DUL AND LL]  
+    - A set of LL[DUL AND LL]  
 - Calculation and summarising  
-- Joining[Combine Soil Paras]
-- Set up directory structure   
-- Invoke **Edit**  
+- Joining[Combine Soil Paras]  
+- Set up directory structure[Set directory structure]  
+- Invoke **Edit**  [Invoke Apsimx]  
 
 
 ```{r setup, include=FALSE}
@@ -189,10 +184,10 @@ t2 - t1
 
 # Invoke Apsimx
 
-```{r}
+```{r, eval=FALSE}
 t1 <- Sys.time()
-for(j in sites){
-   for(i in SDs){
+for(j in sites[1]){
+   for(i in SDs[1]){
      # Edit the base apsimx file and save it to a new name
     ## copy file into a new dir and rename it temp 
     system(paste("cp", apsimx_file, apsimx_sims_temp))
@@ -201,10 +196,19 @@ for(j in sites){
     ## rename the modified one
     system(paste("mv", apsimx_sims_temp, paste0(apsimx_sims_dir, "Modified", j, i, ".apsimx")))
     ## delete the temp apsimx 
-    system(paste("rm", paste0(apsimx_sims_dir, "temp*")))
+    # system(paste("rm", paste0(apsimx_sims_dir, "temp*")))
    }
 }
 t2 <- Sys.time()
 t2 - t1
 ```
 
+```{r}
+# system(apsimx)
+t1 <- Sys.time()
+# system(paste(apsimx, paste0(apsimx_sims_dir,"*.apsimx"), "/NumberOfProcessors:8"))
+t2 <- Sys.time()
+t2 - t1
+```
+
+It only takes 6 seconds for the apsimx ui to run 10 simulations. 

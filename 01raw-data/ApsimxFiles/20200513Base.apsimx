@@ -7655,17 +7655,7 @@
       "Children": [
         {
           "$type": "Models.Factorial.Experiment, Models",
-          "DisabledSimNames": [
-            "AshleyDeneSowingDateSD10",
-            "AshleyDeneSowingDateSD9",
-            "AshleyDeneSowingDateSD8",
-            "AshleyDeneSowingDateSD7",
-            "AshleyDeneSowingDateSD6",
-            "AshleyDeneSowingDateSD5",
-            "AshleyDeneSowingDateSD4",
-            "AshleyDeneSowingDateSD2",
-            "AshleyDeneSowingDateSD1"
-          ],
+          "DisabledSimNames": [],
           "Name": "AshleyDene",
           "Children": [
             {
