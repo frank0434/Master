@@ -40,7 +40,7 @@ h. **1** follow treat in both sites - absolute soil evaporation
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
-                      fig.align = "center", fig.width = 10, fig.height = 10, dpi = 300)
+                      fig.align = "center", fig.width = 10, fig.height = 7, dpi = 300)
 #Constants
 outlier.colour = "#ff0000"
 source("R/packages.R")
@@ -69,14 +69,14 @@ SowingDates <- dbReadTable(con, "SowingDates") %>%
 ## 20200426 Start to figure out the DUL LL and initial water for different SD
 
 Key outcomes:   
-a set of DUL[20200511 RESUME the tasks]  
-a set of LL    
-Initial soil water content[20200513 Initial soil water]  
-a set of kls[20200513 kls]  
+- a set of DUL[20200511 RESUME the tasks]    
+- a set of LL[20200511 RESUME the tasks]      
+- Initial soil water content[20200513 Initial soil water]  
+- a set of kls[20200513 kls]  
 
-\@ref(fig:OverallAD) A boxplot shows the range of SWC in AshleyDene over 2 years. 
+Figure \@ref(fig:OverallAD) A boxplot shows the range of SWC in AshleyDene over 2 years. 
 
-```{r OverallAD, fig.cap='(fig:OverallAD)'}
+```{r OverallAD, fig.cap='A boxplot shows the range of SWC in AshleyDene over 2 years.'}
 water <- dbReadTable(con, "SoilWater", check.names = FALSE) %>% 
   as.data.table()
 
@@ -102,8 +102,7 @@ ADSD1
 id_vars <- colnames(ADSD1)[!colnames(ADSD1) %in% grep("SW\\(\\d.+", colnames(ADSD1), value = TRUE)]
 value_vars <- colnames(ADSD1)[!colnames(ADSD1) %in% id_vars]
 id_vars
-max_min <- function(x){list(DUL = max(x, na.rm = TRUE),
-                            LL = min(x, na.rm = TRUE))}
+
 
 p <- ADSD1 %>% 
   melt(id_vars) %>% 
@@ -564,6 +563,15 @@ nested[SowingDate == "SD8"
 ```
 
 # Curve fitting is not going to work 
+
+kl should be link to the root turnover?? **YES**  
+But it can't be dynamic to reflect the real world stuiation in NZ since the cold temperature could limit the crop water uptake.  
+
+why we can't make the kl calculated on the fly? 
+monthly value probably the best you could have but suspect that it still won't reflect the real world senarios. again, temperature and open canopy.  
+
+Slurp is probably the best way to go so far, since it accounts the incomplete canopy and tempareture. 
+curving fitting is not recommended since the assumptions are very easy to be violated in NZ.  
 
 
 #### 20200509 RESUME the tasks
