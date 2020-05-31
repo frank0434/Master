@@ -184,21 +184,19 @@ t2 - t1
 
 # Invoke Apsimx
 
-```{r, eval=FALSE}
+```{r}
 t1 <- Sys.time()
-for(j in sites[1]){
-   for(i in SDs[1]){
+for(j in sites){
+   for(i in SDs){
      # Edit the base apsimx file and save it to a new name
-    ## copy file into a new dir and rename it temp 
-    system(paste("cp", apsimx_file, apsimx_sims_temp))
-    ## modify the apsimx file 
-    system(paste(apsimx, apsimx_sims_temp, apsimx_flag, paste0(apsimx_config, j, i,".txt")))
-    ## rename the modified one
-    system(paste("mv", apsimx_sims_temp, paste0(apsimx_sims_dir, "Modified", j, i, ".apsimx")))
-    ## delete the temp apsimx 
-    # system(paste("rm", paste0(apsimx_sims_dir, "temp*")))
+     ## modify the apsimx file 
+     system(paste(apsimx, apsimx_file, apsimx_flag, paste0(apsimx_config, j, i,".txt")))
+     ## rename the modified one
+     system(paste("cp", apsimx_file, paste0(apsimx_sims_dir, "Modified", j, i, ".apsimx")))
+     ## delete the temp apsimx 
+     # system(paste("rm", paste0(apsimx_sims_dir, "temp*")))
    }
-}
+  }
 t2 <- Sys.time()
 t2 - t1
 ```

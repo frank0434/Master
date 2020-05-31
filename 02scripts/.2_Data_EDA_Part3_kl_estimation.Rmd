@@ -1,0 +1,199 @@
+---
+title: "kl estimation "
+author: "jian (AKA Frank) liu"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# Protocol
+
+- Input data ready: met, cover and slurp `.apsimx`  
+- Parameter ready: 
+|Parameters|Units |Parameter levels tested |Description|
+|:----|:----|:----|:----|
+|RFV| mm/day| 10, 15, 20, 25, 30 and 35 |Maximum rate of root extension at 25 °C|
+| $kl_{0}$|/day| 0.01, 0.03, 0.05, 0.07,0.09 and 0.11|Maximum kl value at surface layer(s)|
+|$\lambda_{kl}$| dimensionless | −0.0005, −0.001,−0.002, −0.003,−0.005 and −0.01 | Exponential decay of kl0 with soil depth|  
+
+- Set constant of key and values 
+
+- Invoke **Edit**  [Invoke Apsimx]  
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.align = "center", fig.width = 10, fig.height = 7, dpi = 300)
+#Constants
+outlier.colour = "#ff0000"
+source("R/packages.R")
+source("R/functions.R")
+con <- dbConnect(SQLite(), "../03processed-data/Richard.sqlite3")
+dbListTables(con)
+SowingDates <- dbReadTable(con, "SowingDates") %>% 
+  as.data.table()
+
+```
+
+
+```{r subset}
+biomass <- dbReadTable(con, "biomass", check.names = FALSE) %>% 
+  as.data.table()
+biomass[, ':='(Clock.Today = as.Date(Clock.Today))]
+dbDisconnect(con)
+# set key and make it order by dates and sowing date
+setkey(biomass, Experiment, SowingDate, Clock.Today)
+id_vars <- key(biomass)
+
+LAI <- biomass[, .(LAImod), by = key(biomass)]
+```
+
+
+# Overview of the LAI
+P88 in the thesis, 
+LAI was calculated from $Specfic Leaf Area(SLA) \times TotalFW_{HarvestArea} \div 2000 $ 
+```{r glimpse}
+
+kable(LAI[1:50, ], caption = "Initial soil biomass content in each layer in 10 sowing dates")%>%
+  kable_styling() %>%
+  scroll_box(width = "100%", height = "500px")
+
+```
+
+
+
+
+```{r graphLAI, fig.height=10}
+LAI[, SowingDate := fct_relevel(as.factor(SowingDate), paste0("SD", 1:10))] %>% 
+  ggplot(aes(Clock.Today, LAImod, color = SowingDate)) +
+  geom_point() +
+  geom_hline(yintercept = 1, colour = "#ff0000") +
+  facet_grid(SowingDate~ Experiment) +
+  theme_water()
+
+LAI_summaried <- LAI[, LAImod := ifelse(LAImod == 0, NA, LAImod) # Some values are 0 which should be NAs
+                     ][, list(mean = mean(LAImod, na.rm = TRUE)), by = id_vars
+                       ][!is.na(mean)]
+
+LAI_summaried %>% 
+  ggplot(aes(Clock.Today, mean, color = SowingDate)) +
+  geom_point() +
+  geom_hline(yintercept = 1, colour = "#ff0000") +
+  facet_grid(SowingDate~ Experiment) +
+  theme_water()
+# Output the SW for different SDs
+sites <- unique(SW_initials$Experiment)
+
+```
+
+
+# Combine Soil Paras
+
+```{r}
+SW_DUL_LL <- SW_initials[DUL_LL_SDsVWC, on = c("Experiment", "SowingDate", "Depth")][Depth != "SW(2)"]
+
+# Check if anything unusual 
+SW_DUL_LL[DUL<SW]
+SW_DUL_LL[LL>SW]
+
+# Order the layers
+SW_DUL_LL[, ':='(Depth = as.integer(gsub("\\D", "", Depth)),
+                 SowingDate = fct_relevel(as.factor(SowingDate), paste0("SD", 1:10)))]
+# order the order - CRITICAL 
+setkey(SW_DUL_LL, Experiment, SowingDate, Depth)
+kable(SW_DUL_LL, caption = "Initial soil parameters for 22 layers in 10 different sowing dates.")%>%
+  kable_styling() %>%
+  scroll_box(width = "100%", height = "500px")
+```
+
+# Set directory structure
+
+```{r}
+t1 <- Sys.time()
+#path to apsimx 
+apsimx <- "C:/Data/ApsimxLatest/ApsimX/Bin/Models.exe"
+apsimx_flag <- "/Edit"
+apsimx_file <- "C:/Data/Master/01raw-data/ApsimxFiles/20200520Demo.apsimx"
+apsimx_sims_temp <- "C:/Data/Master/03processed-data/apsimxFiles/temp.apsimx"
+apsimx_sims_dir <- "C:/Data/Master/03processed-data/apsimxFiles/"
+apsimx_config <- "C:/Data/Master/03processed-data/configSoilWat"
+
+# Node Path - copied from ApsimX UI
+
+initialSW <- ".Simulations.New Zealand.AshleyDene.Factors.SowingDate.SD.ADsoils.InitialConditions.SW = "
+DUL <- ".Simulations.New Zealand.AshleyDene.Factors.SowingDate.SD.ADsoils.Physical.DUL = "
+LL <- ".Simulations.New Zealand.AshleyDene.Factors.SowingDate.SD.ADsoils.Physical.LucerneSoil.LL = "
+LL15 <- ".Simulations.New Zealand.AshleyDene.Factors.SowingDate.SD.ADsoils.Physical.LL15 = "
+# PAWC <- ".Simulations.New Zealand.AshleyDene.Factors.SowingDate.SD.ADsoils.Physical.PAWC = "
+SAT <- ".Simulations.New Zealand.AshleyDene.Factors.SowingDate.SD.ADsoils.Physical.SAT = "
+# Keys
+sites <- unique(SW_DUL_LL$Experiment)
+SDs <- paste0("SD", 1:10)
+
+# Vectorise the values 
+for(j in sites){
+  for(i in SDs){
+    # Filter the right values 
+    SDsw <- SW_DUL_LL[SowingDate == i & Experiment == j]$SW
+    SDDUL <- SW_DUL_LL[SowingDate == i & Experiment == j]$DUL
+    SDLL <- SW_DUL_LL[SowingDate == i & Experiment == j]$LL
+    apsimx_sw <- paste0(initialSW,
+                        paste(SDsw,collapse = ","))
+    apsimx_DUL <- paste0(DUL,
+                         paste(SDDUL,collapse = ","))
+    apsimx_LL <- paste0(LL,
+                        paste(SDLL,collapse = ","))
+    apsimx_LL15 <- paste0(LL15,
+                          paste(SDLL,collapse = ","))
+    apsimx_SAT <- paste0(SAT,
+                         paste(SDDUL,collapse = ","))
+    # Open a text file
+    f <- file(paste0(apsimx_config, j, i, ".txt"), "w")
+    # Write values into the file 
+    cat(apsimx_sw,
+        apsimx_DUL,
+        apsimx_LL,
+        apsimx_LL15,
+        apsimx_SAT,"\r",
+        sep = "\r", 
+        file = f, 
+        append = TRUE)
+    # Close the file and clean it from memory 
+    close(f)
+    rm(f)
+    gc()
+  }
+
+}
+
+t2 <- Sys.time()
+t2 - t1
+```
+
+# Invoke Apsimx
+
+```{r}
+t1 <- Sys.time()
+for(j in sites){
+   for(i in SDs){
+     # Edit the base apsimx file and save it to a new name
+     ## modify the apsimx file 
+     system(paste(apsimx, apsimx_file, apsimx_flag, paste0(apsimx_config, j, i,".txt")))
+     ## rename the modified one
+     system(paste("cp", apsimx_file, paste0(apsimx_sims_dir, "Modified", j, i, ".apsimx")))
+     ## delete the temp apsimx 
+     # system(paste("rm", paste0(apsimx_sims_dir, "temp*")))
+   }
+  }
+t2 <- Sys.time()
+t2 - t1
+```
+
+```{r}
+# system(apsimx)
+t1 <- Sys.time()
+# system(paste(apsimx, paste0(apsimx_sims_dir,"*.apsimx"), "/NumberOfProcessors:8"))
+t2 <- Sys.time()
+t2 - t1
+```
+
+It only takes 6 seconds for the apsimx ui to run 10 simulations. 
