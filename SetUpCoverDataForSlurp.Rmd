@@ -288,10 +288,6 @@ ThermalTimeAccum = met.loc[:, 'mean'].cumsum()
 ThermalTimeAccum.index = pd.to_datetime(ThermalTimeAccum.index)
 ```
 
-```{python}
-
-```
-
 ## Combine thermal time with cover data
 
 ```{python}
@@ -326,7 +322,11 @@ Ashley Dene first
 
 ```{python}
 LIAD = LI.filter(regex = 'Ashley')
-LIDailyAD = LI.reindex(TTAccumAD.index)
+#Reindex coverdata frame to daily values
+TTAccumAD = met.loc[met['Experiment'] == 'AshleyDene', 'mean'].cumsum()
+TTAccumAD.index = pd.to_datetime(TTAccumAD.index)
+
+LIDailyAD = LIAD.reindex(TTAccumAD.index)
 LIDailyAD.loc[:, 'AccumTT'] = TTAccumAD
 
 ```
@@ -336,20 +336,7 @@ LIDailyAD
 ```
 
 ```{python}
-TTAccumAD = met.loc[met['Experiment'] == 'AshleyDene', 'mean'].cumsum()
-TTAccumAD.index = pd.to_datetime(TTAccumAD.index)
-TTAccumAD.index = TTAccumAD.index.normalize()
-```
-
-```{python}
-TTAccumAD
-```
-
-```{python}
-LIDailyAD
-```
-
-```{python}
+## Disabled because not making sense to have a starting LI 0.3 over
 # for p in LIDailyAD.columns:
 #     Obs = LIDailyAD.loc[:,p].dropna()
 #     LIDailyAD.loc[:,p] = np.interp(LIDailyAD.AccumTT,
@@ -382,11 +369,12 @@ MAYBE the starting point need to be forced to be 0
 
 ```{python}
 LII12 = LI.filter(regex = 'Ive')
-LIDailyI12 = LIDaily.filter(regex = 'Ive')
+
 TTAccumI12 = met.loc[met['Experiment'] == 'Iversen12', 'mean'].cumsum()
 TTAccumI12.index = pd.to_datetime(TTAccumI12.index)
 LIDailyI12 = LII12.reindex(TTAccumI12.index)  #Reindex coverdata frame to daily values
 LIDailyI12.loc[:,'AccumTT'] = TTAccumI12
+# Disabled as well 
 for p in LIDailyI12.columns:
     Obs = LIDailyI12.loc[:,p].dropna()
     LIDailyI12.loc[:,p] = np.interp(LIDailyI12.AccumTT,
@@ -428,41 +416,33 @@ LIDailyAD.axes
 ```
 
 ```{python}
-for col in LIDailyAD.columns:
-    print(col)
+LIAD = LI.filter(regex = 'Ashley')
+#Reindex coverdata frame to daily values
+TTAccumAD = met.loc[met['Experiment'] == 'AshleyDene', 'mean'].cumsum()
+TTAccumAD.index = pd.to_datetime(TTAccumAD.index)
+
+LIDailyAD = LIAD.reindex(TTAccumAD.index)
+LIDailyAD.loc[:, 'AccumTT'] = TTAccumAD
 ```
 
 ```{python}
 idx = pd.IndexSlice
-LIDaily.loc[LIDaily.index == '2012-06-02', idx[:,'SD1']]
+LIDailyAD.loc[LIDailyAD.index == '2012-06-02', idx[:,'SD1']]
 ```
 
 ```{python}
 for sd in sowingdates.index:
+    # Select the date for correpond sowing date
     date0 = sowingdates.at[sd, 'AshleyDene']
+    # A slicer
     idx = pd.IndexSlice
+    # Replace the row values with 0s
+    LIDailyAD.loc[LIDailyAD.index <= date0, idx[:,sd]] = float(0.001)
+    # Verification 
     df = LIDailyAD.loc[LIDailyAD.index == date0, idx[:,sd]]
-    print(date0) 
-    
+    print('\r')
+    print(date0)     
     print(df)
-        
-#     print(sowingdates[sowingdates.index == sd])
-#     print(LIDailyAD.loc[:, idx[:, sd]])
-
-#         print(LIAD.loc[LIAD['Clock.Today'] == sd,col])
-```
-
-```{python}
-LIDailyAD.loc[LIDailyAD.index == '2010-11-12', idx[:, 'SD1']]
-```
-
-```{python}
-LIDailyAD.filter(regex = 'SD5')
-
-```
-
-```{python}
-LIDaily.index.unique()
 ```
 
 #### Note   
@@ -472,5 +452,174 @@ The harvest.no **post** did not contribute to LAI. so should taken out.
 The Thermaltime df has duplicated the index.
 
 ```{python}
-sowingdates.loc[sowingdates.index == 'SD1','AshleyDene']
+LIDailyAD
+```
+
+```{python}
+for p in LIDailyAD.columns:
+    Obs = LIDailyAD.loc[:,p].dropna()
+    LIDailyAD.loc[:,p] = np.interp(LIDailyAD.AccumTT,
+                                   LIDailyAD.loc[Obs.index,'AccumTT'],Obs)
+```
+
+```{python}
+LIGroupedMeanADForced = LIDailyAD.groupby(axis=1, level=['Experiment', 'SowingDate']).mean()
+# Graph to check the data 
+LIGroupedMeanADForced.loc[:,
+                          [X for X in LIGroupedMeanADForced.columns if X != (   'AccumTT',     '')]].plot(figsize=(10, 6),style='o-')
+
+plt.savefig('./05figures/StartJune_AD.png', dpi = 300, bbox_inches = 'tight')
+```
+
+#### Repeat for I12
+
+
+```{python}
+LII12 = LI.filter(regex = 'Ive')
+
+TTAccumI12 = met.loc[met['Experiment'] == 'Iversen12', 'mean'].cumsum()
+TTAccumI12.index = pd.to_datetime(TTAccumI12.index)
+LIDailyI12 = LII12.reindex(TTAccumI12.index)  #Reindex coverdata frame to daily values
+LIDailyI12.loc[:,'AccumTT'] = TTAccumI12
+
+```
+
+```{python}
+LIDailyI12
+```
+
+```{python}
+for sd in sowingdates.index:
+    # Select the date for correpond sowing date
+    date0 = sowingdates.at[sd, 'Iversen12']
+    # A slicer
+    idx = pd.IndexSlice
+    # Replace the row values with 0s
+    LIDailyI12.loc[LIDailyI12.index <= date0, idx[:,sd]] = float(0.001)
+    # Verification 
+    df = LIDailyI12.loc[LIDailyI12.index == date0, idx[:,sd]]
+    print('\r')
+    print(date0)     
+    print(df)
+```
+
+```{python}
+# Interpolate LI daily value by thermal time 
+for p in LIDailyI12.columns:
+    Obs = LIDailyI12.loc[:,p].dropna()
+    LIDailyI12.loc[:,p] = np.interp(LIDailyI12.AccumTT,
+                                   LIDailyI12.loc[Obs.index,'AccumTT'],Obs)
+
+```
+
+```{python}
+LIGroupedMeanI12Forced = LIDailyI12.groupby(axis=1, level=['Experiment', 'SowingDate']).mean()
+```
+
+```{python}
+# Graph to check the data 
+LIGroupedMeanI12Forced.loc[:,
+                           [X for X in LIGroupedMeanI12Forced.columns if X != (   'AccumTT',     '')]].plot(figsize=(10, 6),style='o-')
+```
+
+```{python}
+LIGroupedMeanI12Forced
+```
+
+```{python}
+LIGroupedMeanADForced
+```
+
+# Does it make difference by changing the period of met data?
+
+```{python}
+sowingdates
+```
+
+```{python}
+LIAD = LI.filter(regex = 'Ashley')
+#Reindex coverdata frame to daily values
+TTAccumAD = met.loc[(met['Experiment'] == 'AshleyDene')
+                    & (met.index > '2010-10-20'), 'mean'].cumsum()
+TTAccumAD.index = pd.to_datetime(TTAccumAD.index)
+
+LIDailyAD = LIAD.reindex(TTAccumAD.index)
+LIDailyAD.loc[:, 'AccumTT'] = TTAccumAD
+
+```
+
+```{python}
+for sd in sowingdates.index:
+    # Select the date for correpond sowing date
+    date0 = sowingdates.at[sd, 'AshleyDene']
+    # A slicer
+    idx = pd.IndexSlice
+    # Replace the row values with 0s
+    LIDailyAD.loc[LIDailyAD.index <= date0, idx[:,sd]] = float(0.001)
+    # Verification 
+    df = LIDailyAD.loc[LIDailyAD.index == date0, idx[:,sd]]
+for p in LIDailyAD.columns:
+    Obs = LIDailyAD.loc[:,p].dropna()
+    LIDailyAD.loc[:,p] = np.interp(LIDailyAD.AccumTT,
+                                   LIDailyAD.loc[Obs.index,'AccumTT'],Obs)
+```
+
+```{python}
+LIGroupedMeanADForced = LIDailyAD.groupby(axis=1, level=['Experiment', 'SowingDate']).mean()
+# Graph to check the data 
+LIGroupedMeanADForced.loc[:,
+                              [X for X in LIGroupedMeanADForced.columns if X != (   'AccumTT',     '')]].plot(figsize=(10, 6),style='o-')
+plt.savefig('./05figures/StartSD1_AD.png', dpi = 300, bbox_inches = 'tight')
+```
+
+#### Seems no difference
+
+
+
+# Output the LI DAILY
+
+```{python}
+# Reset the index back to a column
+LIGroupedMeanADForced.columns
+```
+
+```{python}
+CoverDF = LIGroupedMeanADForced.drop('AccumTT', axis=1, level=0).stack([0,1]).reset_index()
+```
+
+```{python}
+CoverDF.columns = ['Clock.Today', 'Experiment', 'SowingDate', 'SD']
+CoverDF
+```
+
+```{python}
+# Test
+CoverDF.loc[CoverDF.SowingDate == 'SD1', ['Clock.Today', 'SD']].to_csv('./03processed-data/CoverDataSD1.csv',index = False)
+```
+
+```{python}
+SDs = ['SD' + str(SD) for SD in range(1, 11)]
+SDs
+for i in SDs:
+    CoverDF.loc[CoverDF.SowingDate == i,
+                ['Clock.Today', 'SD']].to_csv('./03processed-data/CoverDataAshleyDene' + i + '.csv',index = False)
+```
+
+```{python}
+# Iversen12
+# The sowing dates needs to be cut off to the right one 
+```
+
+```{python}
+CoverDFI12 = LIGroupedMeanI12Forced.drop('AccumTT', axis=1, level=0).stack([0,1]).reset_index()
+```
+
+```{python}
+CoverDFI12.columns = ['Clock.Today', 'Experiment', 'SowingDate', 'SD']
+SDs = ['SD' + str(SD) for SD in range(1, 11)]
+SDs
+for i in SDs:
+    CoverDFI12.loc[CoverDFI12.SowingDate == i, 
+                   ['Clock.Today', 'SD']].to_csv('./03processed-data/CoverDataIversen12' + i + '.csv',
+                                                 index = False)
 ```
