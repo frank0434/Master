@@ -40,12 +40,9 @@
           "ReadOnly": false
         },
         {
-          "$type": "Models.PostSimulationTools.ExcelInput, Models",
+          "$type": "Models.PostSimulationTools.Input, Models",
           "FileNames": [
-            "%root%\\Tests\\Validation\\Slurp\\ShallowSoilTest\\CoverDataObs.xlsx"
-          ],
-          "SheetNames": [
-            "Cover"
+            "C:\\Data\\Master\\03processed-data\\LAIAshleyDeneSD1.csv"
           ],
           "Name": "Cover",
           "Children": [],
@@ -56,7 +53,7 @@
         {
           "$type": "Models.PostSimulationTools.Input, Models",
           "FileNames": [
-            "C:\\Data\\Master\\03processed-data\\CoverDataAshleyDeneSD1.csv"
+            "C:\\Data\\Master\\03processed-data\\LAIAshleyDeneSD1.csv"
           ],
           "Name": "Input",
           "Children": [],
@@ -176,8 +173,8 @@
         },
         {
           "$type": "Models.Clock, Models",
-          "Start": "1998-10-14T00:00:00",
-          "End": "1999-05-01T00:00:00",
+          "Start": "2010-10-20T00:00:00",
+          "End": "2012-07-31T00:00:00",
           "Name": "Clock",
           "Children": [],
           "IncludeInDocumentation": false,
@@ -240,7 +237,7 @@
                 },
                 {
                   "$type": "Models.Manager, Models",
-                  "Code": "using Models.Soils;\r\nusing System.Data;\r\nusing APSIM.Shared.Utilities;\r\nusing System.Xml.Serialization;\r\nusing Models;\r\nusing Models.PMF;\r\nusing System.Text;\r\nusing System.Collections.Generic;\r\nusing Models.Core;\r\nusing System;\r\nnamespace Models\r\n{\r\n    [Serializable] \r\n    //[System.Xml.Serialization.XmlInclude(typeof(Model))]\r\n    public class Script : Model\r\n    {\r\n        [Link] Plant SCUM;\r\n        [Link] Clock Clock;\r\n        [Link] Zone zone;\r\n        [Link] Simulation Simulation;\r\n        [Link] Soil Soil;\r\n        \r\n        [Description(\"File of Yields\")]\r\n        public string CoverFile { get; set; }\r\n        [Description(\"Extinction coefficient\")]\r\n        public  double Ext_coef { get; set; }\r\n        [Description(\"Maximum height of the crop at full cover\")]\r\n        public double MaximumHeight { get; set; }\r\n        \r\n        [XmlIgnore] private DataTable Covers { get; set; }\r\n\r\n        public string Cover { get; set; }\r\n        public string Irrigation { get; set; }\r\n        public string Treatment { get; set; }\r\n        \r\n        private double CoverRead { get; set; }\r\n        public double leaflai { get; private set; }\r\n                \r\n        [EventSubscribe(\"StartOfSimulation\")]\r\n        private void OnStartOfSimulation(object sender, EventArgs e)\r\n        {\r\n            \r\n            Treatment = Cover + \"_\" + Irrigation;\r\n            \r\n            string fullFileName = PathUtilities.GetAbsolutePath(CoverFile, Simulation.FileName);\r\n            \r\n            ApsimTextFile textFile = new ApsimTextFile();\r\n            textFile.Open(fullFileName);\r\n            Covers = textFile.ToTable();\r\n            textFile.Close();\r\n        }\r\n        \r\n        [EventSubscribe(\"StartOfDay\")]\r\n        private void OnStartOfDay(object sender, EventArgs e)\r\n        {\r\n            foreach (DataRow row in Covers.Rows)\r\n            {\r\n                DateTime TodayDate = Convert.ToDateTime(row[\"Date\"]);\r\n                if (TodayDate.Date == Clock.Today.Date)\r\n                {\r\n                    CoverRead = Convert.ToDouble(row[Treatment]);\r\n                }\r\n            }\r\n        \r\n            if ((bool)zone.Get(\"Slurp.IsAlive\") == true)\r\n            {\r\n                //Only assign cover valuse if crop is emerged\r\n                \r\n                if (CoverRead == 1)\r\n                    leaflai = Math.Log(0.01) / -Ext_coef;\r\n                else\r\n                {\r\n                    if (CoverRead > 0)\r\n                        leaflai = Math.Log(1 - CoverRead) / -Ext_coef;\r\n                    else\r\n                        leaflai = 0;\r\n                }\r\n                //Summary.WriteMessage(this, \"LAI \" + leaflai);\r\n                object LAIResetValue = leaflai;\r\n                zone.Set(\"Slurp.Leaf.Area.FixedValue\", LAIResetValue);  \r\n                object HeightResetValue = CoverRead * MaximumHeight;\r\n                zone.Set(\"Slurp.Leaf.Tallness.FixedValue\", HeightResetValue);  \r\n            }\r\n            \r\n          \r\n        }\r\n\r\n    }\r\n}\r\n                \r\n",
+                  "Code": "using Models.Soils;\r\nusing System.Data;\r\nusing APSIM.Shared.Utilities;\r\nusing System.Xml.Serialization;\r\nusing Models;\r\nusing Models.PMF;\r\nusing System.Text;\r\nusing System.Collections.Generic;\r\nusing Models.Core;\r\nusing System;\r\nnamespace Models\r\n{\r\n    [Serializable] \r\n    //[System.Xml.Serialization.XmlInclude(typeof(Model))]\r\n    public class Script : Model\r\n    {\r\n        [Link] Plant SCUM;\r\n        [Link] Clock Clock;\r\n        [Link] Zone zone;\r\n        [Link] Simulation Simulation;\r\n        [Link] Soil Soil;\r\n        \r\n        [Description(\"File of Yields\")]\r\n        public string CoverFile { get; set; }\r\n        [Description(\"Extinction coefficient\")]\r\n        public  double Ext_coef { get; set; }\r\n        [Description(\"Maximum height of the crop at full cover\")]\r\n        public double MaximumHeight { get; set; }\r\n        \r\n        [XmlIgnore] private DataTable Covers { get; set; }\r\n\r\n        [Description(\"Column name for the LAI data\")]\r\n        public string Cover { get; set; }\r\n        //public string Irrigation { get; set; }\r\n\r\n        public string Treatment { get; set; }\r\n        \r\n        private double CoverRead { get; set; }\r\n        public double leaflai { get; private set; }\r\n                \r\n        [EventSubscribe(\"StartOfSimulation\")]\r\n        private void OnStartOfSimulation(object sender, EventArgs e)\r\n        {\r\n            \r\n            Treatment = Cover;\r\n            \r\n            string fullFileName = PathUtilities.GetAbsolutePath(CoverFile, Simulation.FileName);\r\n            \r\n            ApsimTextFile textFile = new ApsimTextFile();\r\n            textFile.Open(fullFileName);\r\n            Covers = textFile.ToTable();\r\n            textFile.Close();\r\n        }\r\n        \r\n        [EventSubscribe(\"StartOfDay\")]\r\n        private void OnStartOfDay(object sender, EventArgs e)\r\n        {\r\n            foreach (DataRow row in Covers.Rows)\r\n            {\r\n                DateTime TodayDate = Convert.ToDateTime(row[\"Clock.Today\"]);\r\n                if (TodayDate.Date == Clock.Today.Date)\r\n                {\r\n                    CoverRead = Convert.ToDouble(row[Treatment]);\r\n                }\r\n            }\r\n        \r\n            if ((bool)zone.Get(\"Slurp.IsAlive\") == true)\r\n            {\r\n                //Only assign cover valuse if crop is emerged\r\n                \r\n                /*if (CoverRead == 1)\r\n                    leaflai = Math.Log(0.01) / -Ext_coef;\r\n                else\r\n                {\r\n                    if (CoverRead > 0)\r\n                        leaflai = Math.Log(1 - CoverRead) / -Ext_coef;\r\n                    else\r\n                        leaflai = 0;\r\n                }\r\n                */\r\n                leaflai = CoverRead;\r\n                //Summary.WriteMessage(this, \"LAI \" + leaflai);\r\n                object LAIResetValue = leaflai;\r\n                zone.Set(\"Slurp.Leaf.Area.FixedValue\", LAIResetValue);  \r\n                object HeightResetValue = CoverRead * MaximumHeight;\r\n                zone.Set(\"Slurp.Leaf.Tallness.FixedValue\", HeightResetValue);  \r\n            }\r\n            \r\n          \r\n        }\r\n\r\n    }\r\n}\r\n                \r\n",
                   "Parameters": [
                     {
                       "Key": "CoverFile",
@@ -256,11 +253,7 @@
                     },
                     {
                       "Key": "Cover",
-                      "Value": ""
-                    },
-                    {
-                      "Key": "Irrigation",
-                      "Value": ""
+                      "Value": "LAImod"
                     },
                     {
                       "Key": "Treatment",
@@ -803,7 +796,7 @@
           ],
           "LegendPosition": 2,
           "LegendOrientation": 0,
-          "DisabledSeries": null,
+          "DisabledSeries": [],
           "LegendOutsideGraph": false,
           "Name": "N balance components",
           "Children": [
@@ -1442,7 +1435,7 @@
               "Minimum": "NaN",
               "Maximum": "NaN",
               "Interval": "NaN",
-              "DateTimeAxis": false,
+              "DateTimeAxis": true,
               "CrossesAtZero": false
             },
             {
@@ -1459,7 +1452,7 @@
           ],
           "LegendPosition": 1,
           "LegendOrientation": 0,
-          "DisabledSeries": null,
+          "DisabledSeries": [],
           "LegendOutsideGraph": false,
           "Name": "Crop structure",
           "Children": [
@@ -1578,13 +1571,13 @@
               "Minimum": "NaN",
               "Maximum": "NaN",
               "Interval": "NaN",
-              "DateTimeAxis": false,
+              "DateTimeAxis": true,
               "CrossesAtZero": false
             }
           ],
           "LegendPosition": 0,
           "LegendOrientation": 0,
-          "DisabledSeries": null,
+          "DisabledSeries": [],
           "LegendOutsideGraph": false,
           "Name": "Stress Factors",
           "Children": [
@@ -1641,6 +1634,102 @@
               "CumulativeX": false,
               "Filter": null,
               "Name": "FN",
+              "Children": [],
+              "IncludeInDocumentation": false,
+              "Enabled": true,
+              "ReadOnly": false
+            }
+          ],
+          "IncludeInDocumentation": false,
+          "Enabled": true,
+          "ReadOnly": false
+        },
+        {
+          "$type": "Models.Graph, Models",
+          "Caption": null,
+          "Axis": [
+            {
+              "$type": "Models.Axis, Models",
+              "Type": 3,
+              "Title": "X axis title 2",
+              "Inverted": false,
+              "Minimum": "NaN",
+              "Maximum": "NaN",
+              "Interval": "NaN",
+              "DateTimeAxis": false,
+              "CrossesAtZero": false
+            },
+            {
+              "$type": "Models.Axis, Models",
+              "Type": 0,
+              "Title": "LAI",
+              "Inverted": false,
+              "Minimum": "NaN",
+              "Maximum": "NaN",
+              "Interval": "NaN",
+              "DateTimeAxis": false,
+              "CrossesAtZero": false
+            }
+          ],
+          "LegendPosition": 2,
+          "LegendOrientation": 0,
+          "DisabledSeries": [],
+          "LegendOutsideGraph": false,
+          "Name": "LAI",
+          "Children": [
+            {
+              "$type": "Models.Series, Models",
+              "Type": 1,
+              "XAxis": 3,
+              "YAxis": 0,
+              "ColourArgb": -2793984,
+              "FactorToVaryColours": null,
+              "FactorToVaryMarkers": null,
+              "FactorToVaryLines": null,
+              "Marker": 11,
+              "MarkerSize": 0,
+              "Line": 0,
+              "LineThickness": 0,
+              "TableName": "Report",
+              "XFieldName": "Clock.Today",
+              "YFieldName": "Slurp.Leaf.LAI",
+              "X2FieldName": "",
+              "Y2FieldName": "",
+              "ShowInLegend": true,
+              "IncludeSeriesNameInLegend": true,
+              "Cumulative": false,
+              "CumulativeX": false,
+              "Filter": null,
+              "Name": "Calculated",
+              "Children": [],
+              "IncludeInDocumentation": false,
+              "Enabled": true,
+              "ReadOnly": false
+            },
+            {
+              "$type": "Models.Series, Models",
+              "Type": 1,
+              "XAxis": 3,
+              "YAxis": 0,
+              "ColourArgb": -2793984,
+              "FactorToVaryColours": null,
+              "FactorToVaryMarkers": null,
+              "FactorToVaryLines": null,
+              "Marker": 0,
+              "MarkerSize": 0,
+              "Line": 4,
+              "LineThickness": 0,
+              "TableName": "Cover",
+              "XFieldName": "Clock.Today",
+              "YFieldName": "LAImod",
+              "X2FieldName": null,
+              "Y2FieldName": null,
+              "ShowInLegend": true,
+              "IncludeSeriesNameInLegend": true,
+              "Cumulative": false,
+              "CumulativeX": false,
+              "Filter": null,
+              "Name": "TrueLAI",
               "Children": [],
               "IncludeInDocumentation": false,
               "Enabled": true,
