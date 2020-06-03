@@ -1,3 +1,0 @@
-.Simulations.New Zealand.Iversen_12.Simulation3.clock.Start=2010-09-03T00:00:00
-.Simulations.New Zealand.Iversen_12.Simulation3.clock.End =2015-09-03T00:00:00
-.Simulations.New Zealand.Iversen_12.Simulation3.Weather.FileName = C:\Data\Master\01raw-data\ClimateAndObserved\lincoln.met
