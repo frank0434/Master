@@ -1,4 +1,4 @@
-20200510
+## 20200510
 How to calculate initial soil water and parameterise it? 
 
 Should I use one PAWC_profile for all treatment 
@@ -97,3 +97,12 @@ Looks good – however I suspect that each SD will have slightly different value
 For the crops sown in year two I would use an average LL – because the crops were not fully established they did not reach a terminal drought situation and extract all the water from whole profile. You can see from SD6 to 10, the depth of max extraction was progressively less.
 
 Interestingly, the first measured point in SD6-10 seems low. These plots had been fallowed and I would expect them to be closer to the DUL values – I can have a closer look at these.
+
+
+## 20200531
+ERROR Message:   
+`Property set method not found.`
+Caused by:   
+ zone.Set("Slurp.Leaf.CoverTotal", CoverTotalResetValue); 
+
+Why I can't set this variable? do I have to use the current setup to back calculate the LAI?
