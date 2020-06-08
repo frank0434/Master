@@ -31,5 +31,3 @@ The note here is aiming to explain the details behind each apsim file.
 428K May 31 17:08 20200520Demo.apsimx
 	The demo apsimx for edit feature. 
 	
- 63K Jun  2 23:40 20200601SlurpBase.apsimx
-	Exploratray slurp model. 

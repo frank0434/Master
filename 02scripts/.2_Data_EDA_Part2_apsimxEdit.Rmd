@@ -116,6 +116,58 @@ setkey(SW_DUL_LL, Experiment, SowingDate, Depth)
 kable(SW_DUL_LL, caption = "Initial soil parameters for 22 layers in 10 different sowing dates.")%>%
   kable_styling() %>%
   scroll_box(width = "100%", height = "500px")
+
+# save the processed table for 
+```
+# Explore the python system call 
+
+```{r}
+library(reticulate)
+```
+```{python}
+import sqlite3
+import re
+import datetime
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+import math
+```
+
+_Test_
+```{python test}
+con = sqlite3.connect('../03processed-data/Richard.sqlite3')
+mycur = con.cursor() 
+mycur.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
+(mycur.fetchall())
+```
+
+Check the configuration data
+
+```{python}
+print(r.SW_DUL_LL)
+SDs = ['SD' + str(SD) for SD in range(1, 11)]
+SDs
+sites = ['AshleyDene', 'Iversen12']
+sites
+```
+```{python}
+
+for site in sites: 
+    for i in SDs:
+        r.SW_DUL_LL.loc[(r.SW_DUL_LL['Experiment'] == site) 
+                       & (r.SW_DUL_LL.SowingDate == i),:].drop_duplicates().to_csv('../03processed-data/Config' + site + i + '.csv',index = False)
+```
+```{python}
+initialSW = ".Simulations.LnP.LandPBase.Field.Soil.InitialConditions.SW = "
+DUL <- ".Simulations.LnP.Factors.Permutation.SKL.InitialKL.SlurpSoil.DUL = "
+LL <- ".Simulations.LnP.Factors.Permutation.SKL.InitialKL.SlurpSoil.LL = "
+LL15 <- ".Simulations.LnP.Factors.Permutation.SKL.InitialKL.SlurpSoil.LL15 = "
+SAT <- ".Simulations.LnP.Factors.Permutation.SKL.InitialKL.SlurpSoil.SAT = "
+
+
+
 ```
 
 # Set directory structure

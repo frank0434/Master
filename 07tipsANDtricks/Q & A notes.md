@@ -106,3 +106,6 @@ Caused by:
  zone.Set("Slurp.Leaf.CoverTotal", CoverTotalResetValue); 
 
 Why I can't set this variable? do I have to use the current setup to back calculate the LAI?
+
+## 20200608
+How does Hamish prepare initial soil water content when sowing dates doesn't match soil water measurements? 
