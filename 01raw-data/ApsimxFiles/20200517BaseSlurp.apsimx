@@ -940,6 +940,7 @@
                   "$type": "Models.Report, Models",
                   "VariableNames": [
                     "[Clock].Today as Date",
+                    "[Soil].Physical.SlurpSoil.KL[1] as SKL",
                     "[SetCropVariables].Script.Ext_coef as k",
                     "[Slurp].Leaf.CoverTotal as cover",
                     "[Slurp].Leaf.LAI as LAI",
