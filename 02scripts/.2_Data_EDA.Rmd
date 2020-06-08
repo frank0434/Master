@@ -1,0 +1,1013 @@
+---
+title: "Data_EDA"
+author: "jian (AKA Frank) liu"
+date: "04/10/2019"
+output:
+  bookdown::html_document2:
+              code_folding: hide
+              toc: true
+              toc_depth: 3
+              fig_caption: yes
+---
+
+# Experiment details 
+
+a. **2** years experiment.
+b. **2** sites
+   a. Lincoln Uni
+   b. Ashely Dene
+c. **10** sowing date in both sites. 
+   a. five sowing date in the first year
+   b. five sowing date in second year
+   
+|Year 1 (Seedling crop) | Year 2 (Seedling & Regrowth)|
+|--------| ------------|
+|SD1, SD2, SD3, SD4, SD5| The first five sowing date Regrowth|
+||SD6, SD7, SD8, SD9, SD10|The second five sowing date seedling|
+_Note:_ The setup helps to compare the seedling and regrowth in the same conditions in Year 2. 
+
+d. **1** cultivar.
+e. **4** reps each site. 
+f. **2** soil types
+   a. stone free - plant available water capaciy (PAWC) 360mm/2.3m
+   b. ~~stony - PAWC 240/2.3m~~ This type is for a grazing trial. probably not a good idea for a starting?
+   c. very stony 130mm/2.3m 
+g. **22** layers of soil water measurements - 10 cm interval below top 20 cm
+   a. top 20 cm was measured by TDR. 
+   c. remaining 21 layers was meastured by Neutron probe
+h. **1** follow treat in both sites - absolute soil evaporation 
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.align = "center", fig.width = 10, fig.height = 7, dpi = 300)
+#Constants
+outlier.colour = "#ff0000"
+source("R/packages.R")
+source("R/functions.R")
+con <- dbConnect(SQLite(), "../03processed-data/Richard.sqlite3")
+dbListTables(con)
+SowingDates <- dbReadTable(con, "SowingDates") %>% 
+  as.data.table()
+
+```
+
+|		  |AD        | I12|
+|:----|:-----|:------|
+|SD1	|21-Oct-10|	4-Oct-10|
+|SD2	|9-Nov-10|	4-Nov-10|
+|SD3	|8-Dec-10|	2-Dec-10|
+|SD4	|13-Jan-11	|10-Jan-11|
+|SD5	|3-Feb-11|	7-Feb-11|
+|SD6	|10-Oct-11	|10-Oct-11|
+|SD7	|7-Nov-11|	7-Nov-11|
+|SD8	|9-Dec-11|	9-Dec-11|
+|SD9	|10-Jan-12	|10-Jan-12|
+|SD10|	17-Feb-12	|17-Feb-12|
+
+
+## 20200426 Start to figure out the DUL LL and initial water for different SD
+
+Key outcomes:   
+- a set of DUL[20200511 RESUME the tasks]    
+- a set of LL[20200511 RESUME the tasks]      
+- Initial soil water content[20200513 Initial soil water]  
+- a set of kls[20200513 kls]  
+
+Figure \@ref(fig:OverallAD) A boxplot shows the range of SWC in AshleyDene over 2 years. 
+
+```{r OverallAD, fig.cap='A boxplot shows the range of SWC in AshleyDene over 2 years.'}
+water <- dbReadTable(con, "SoilWater", check.names = FALSE) %>% 
+  as.data.table()
+
+water[, ':='(Clock.Today = as.Date(Clock.Today))]
+# [, SowingDate := factor(SowingDate, levels(SowingDate)[c(1,3:10, 2)])]
+# Isolate SD 1 in AshleyDene
+water[Experiment == "AshleyDene" ] %>% 
+  ggplot(aes(Clock.Today, SWC, group = Clock.Today)) +
+  # geom_point()+
+  geom_boxplot(outlier.colour = outlier.colour, outlier.size = 5) +
+  geom_text(aes(label = SowingDate), check_overlap = TRUE, size = 3)
+dbDisconnect(con)
+
+```
+
+**Task1:**  
+Grab DUL & LL from each layer. 
+
+```{r, fig.height=15,fig.width=10}
+swcTovwc <- 100
+ADSD1 <- copy(water)[Experiment == "AshleyDene" & SowingDate== "SD1"][, SWC:=NULL]
+ADSD1
+id_vars <- colnames(ADSD1)[!colnames(ADSD1) %in% grep("SW\\(\\d.+", colnames(ADSD1), value = TRUE)]
+value_vars <- colnames(ADSD1)[!colnames(ADSD1) %in% id_vars]
+id_vars
+
+
+p <- ADSD1 %>% 
+  melt(id_vars) %>% 
+  .[, variable := fct_relevel(variable, paste0("SW(",1:23, ")"))] %>%
+  ggplot(aes(Clock.Today, value, group = Clock.Today)) +
+  geom_boxplot(outlier.colour = outlier.colour) +
+  facet_grid( variable~.)
+p
+ADSD1[, lapply(.SD, mean),
+      by = .(Experiment, Clock.Today, SowingDate), .SDcol = value_vars
+      ][, as.list(unlist(lapply(.SD, max_min))),
+      by = .(Experiment, SowingDate), .SDcol = value_vars]
+
+```
+
+## 20200511 RESUME the tasks
+
+all DUL_LL for both sites 
+PAWC for different sowing dates 
+
+```{r}
+# set key and make it order by dates and sowing date
+setkey(water, Experiment, SowingDate, Clock.Today)
+# water[, SWC:= NULL]
+id_vars <- c("Experiment", "Clock.Today", "SowingDate")
+value_vars <- grep("SW\\(\\d.+", colnames(water), value = TRUE)
+# the range of all valus 
+# 
+allSD_SWC <- water[, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = "SWC" # average 4 reps
+                   ][, unlist(lapply(.SD, max_min), recursive = FALSE),
+                     by = .(Experiment, SowingDate),.SDcols = "SWC"
+                     ][, mean(SWC.DUL) , by = .(Experiment) ]
+```
+
+```{r} 
+kable(allSD_SWC, caption = "All sowing dates averaged soil water content")
+```
+
+what if for only the first 5
+max SWC and min SWC for the first 5 SD are identical to all SD
+but larger than averaged by SD first and then extract MAX AND MIN. 
+**USE all SD to extract DUL and LL would be appropriate **
+
+```{r}
+water[, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = "SWC" # average 4 reps
+                   ][, unlist(lapply(.SD, max_min), recursive = FALSE), by = .(Experiment), .SDcols = "SWC"
+                     ][, PAWC := SWC.DUL - SWC.LL][]
+
+```
+sampling dates does not effect the PAWC because it calculated from MAX(SWC) - MIN(SWC)
+A slight different results compare to Richard's 
+
+DUL and LL should be consistant for all sowing dates since they are soil parameters 
+Therefore, simply average to have the DUL and LL for each layer will be sufficient at this stage 
+**use all SD will have lower PAWC (140-114.3) in AD but higher PAWC(362.8-370.6) in I12 compare to the result from last chunk**   
+**use FIRST 5 SDs will have lower PAWC (140-132) AD but higher PAWC(362.8-391.7) in I12 compare to the result from last chunk**   
+Use all for now  
+```{r}
+# [SowingDate %in% paste0("SD", 1:5)]
+DUL_LL <- water[, lapply(.SD, mean, na.rm = TRUE), by = .(Experiment, Clock.Today), .SDcols = value_vars # average 4 reps
+                  ][, unlist(lapply(.SD, max_min), recursive = FALSE), by = .(Experiment), .SDcols = value_vars]
+
+DUL_LL <- DUL_LL %>% 
+  melt(id.var = "Experiment") %>% 
+  .[, (c("Depth", "variables")) := tstrsplit(variable, "\\.")] %>% 
+  dcast(Experiment +  Depth ~ variables)
+
+
+kable(DUL_LL[, ':='(DUL = DUL,
+                    LL = LL )
+             ][, PAWC := DUL - LL][])%>%
+  kable_styling() %>%
+  scroll_box(width = "100%", height = "200px")
+# Recheck the PAWC 
+kable(DUL_LL[, sum(PAWC), by = .(Experiment)], align = "l")
+```
+
+DUL for AD at layer 1 seems always higher than the apsim current value. 
+Did a manual check on the rainfall and swc (File is in R/20200512), there are two 60mm rainfall events. 
+SD4 in AD always provide high values 
+try to take it out 
+
+## 20200513 Initial soil water 
+
+```{r}
+SD <- SowingDates[, (c("AD", "I12")) := lapply(.SD, as.Date), .SDcols = c("AD", "I12")] %>% 
+  melt(id.vars = "SD", 
+       variable.name = "Experiment", value.name = "Clock.Today",
+       variable.factor = FALSE) 
+SD[, Experiment := ifelse(Experiment == "AD", "AshleyDene",  "Iversen12")]
+
+SW_mean <- water[, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = value_vars]
+SW_initials <- SW_mean[SD, on = c("Experiment", "SowingDate == SD", "Clock.Today"), roll = "nearest"]
+SW_initials <- melt(SW_initials, 
+                    id.vars = id_vars, variable.factor = FALSE,
+                    variable.name = "Depth", value.name = "SW"
+                    )[, ':='(SW = round(SW / 100, digits = 3))
+                      ]
+
+kable(SW_initials, caption = "Initial soil water content in each layer in 10 sowing dates")%>%
+  kable_styling() %>%
+  scroll_box(width = "100%", height = "200px")
+# Output the SW for different SDs
+sites <- unique(SW_initials$Experiment)
+
+# for(i in paste0("SD", 1:10)){
+#   for(j in sites){
+#     dt <- SW_initials[SowingDate == i & Experiment == j]
+#     fwrite(dt, file = file.path("../03processed-data/", paste0(j, i, "SW")), sep = "\t")
+#   }
+# }
+```
+
+
+**DUL AND LL CAN BE SOWINGDATES DEPEND - apsim is a point model.  **
+```{r}
+# [SowingDate %in% paste0("SD", 1:5)]
+DUL_LL <- water[, lapply(.SD, mean, na.rm = TRUE), 
+                by = id_vars, .SDcols = value_vars # average 4 reps
+                  ][, unlist(lapply(.SD, max_min), recursive = FALSE), 
+                    by = .(Experiment, SowingDate), .SDcols = value_vars]
+
+melted_DUL_LL <- melt(DUL_LL, 
+                      id.var = c("Experiment","SowingDate"), 
+                      variable.factor = FALSE) 
+DUL_LL_SDs <- melted_DUL_LL[, (c("Depth", "variable")) := tstrsplit(variable, "\\.")] %>% 
+  dcast(Experiment +  SowingDate + Depth ~ variable)
+
+# Recheck the PAWC. First 5 SDs will be most close values to Richard's calculation
+# DUL_LL_SDs[, ':='(DUL = DUL,
+#               LL = LL )
+#        ][, PAWC := DUL - LL][]
+# DUL_LL_SDs[SowingDate %in% paste0("SD", 1:5)
+#            ][, sum(PAWC), by = .(Experiment, SowingDate)
+#              ][, mean(V1), by = .(Experiment)]
+DUL_LL_SDsVWC <- DUL_LL_SDs[, ':='(DUL = round(DUL/100, digits = 3),
+                                   LL = round(LL/100, digits = 3))
+                            ][, PAWC := DUL - LL]
+
+SW_DUL_LL <- SW_initials[DUL_LL_SDsVWC, on = c("Experiment", "SowingDate", "Depth")][Depth != "SW(2)"]
+
+# Check if anything unusual 
+SW_DUL_LL[DUL<SW]
+SW_DUL_LL[LL>SW]
+
+# Order the layers
+SW_DUL_LL[, ':='(Depth = as.integer(gsub("\\D", "", Depth)),
+                 SowingDate = fct_relevel(as.factor(SowingDate), paste0("SD", 1:10)))]
+# order the order - CRITICAL 
+setkey(SW_DUL_LL, Experiment, SowingDate, Depth)
+kable(SW_DUL_LL, caption = "Initial soil parameters for 22 layers in 10 different sowing dates.")%>%
+  kable_styling() %>%
+  scroll_box(width = "100%", height = "500px")
+```
+
+try to modify apsimx file in place. **Edit** feature. 
+_Note_: apsimx is not working properly in the bash env.  
+
+```{r}
+#TESING script list here
+"./R/20200513outputSoilWatParasByEdit.R"
+```
+
+## 20200513 kls
+
+Visulise the data to have a feel.
+
+```{r , fig.height=7, fig.width=10, fig.cap='(ref:Selected SW in selected SD in Selected site)'}
+SW_mean <- water[, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = value_vars]
+# melt(SW_mean, id.vars = id_vars, variable.factor = FALSE,
+#      variable.name = "Depth",value.name = "SW")
+SD <- "SD5"
+Site <- "AshleyDene"
+SW_mean[SowingDate == SD & Experiment == Site] %>% 
+  ggplot(aes(Clock.Today, `SW(1)`)) +
+  geom_point() +
+  geom_smooth(span = 0.5) +
+  scale_x_date(breaks = "2 weeks") +
+  theme_classic() +
+  geom_text(aes(label = Clock.Today), check_overlap = TRUE) +
+  theme(axis.text.x = element_text(angle = 90))
+
+
+
+```
+**How to deal with outliers!!!**
+
+do i just assume that all the water was sucked up by the
+`Areas within 1m of the neutron probe access tubes were also avoided.`
+no harvest around NP? always full canopy?
+
+https://douglas-watson.github.io/post/2018-09_exponential_curve_fitting/
+
+Eliminate the noise data   
+1. full canopy cover - LAI > 1  
+2. No rainfall during the period. 
+
+```{r}
+dt1 <- SW_mean[SowingDate == "SD1" & Experiment == "AshleyDene" & Clock.Today > "2011-07-27",
+               .(Clock.Today, SW = `SW(1)`)]
+qplot(x = Clock.Today, y = SW, data = dt1)
+# 2011-07-27 Had no rainfall, the SW was the same like the previous measurement. 
+# Therefore, a good starting point. 
+
+```
+sw
+need to ask Hamish about the model-fitting exercises. Brown 2009
+
+
+```{r, fig.width=10, fig.height=7}
+con <- dbConnect(SQLite(), "../03processed-data/Richard.sqlite3")
+biomass <- dbReadTable(con, "biomass") %>% 
+  as.data.table()
+met_AD <- dbReadTable(con, "met_AshleyDene") %>% 
+  as.data.table()
+dbDisconnect(con)
+SD1fullCano <- biomass[,.(Experiment, SowingDate, 
+                          Clock.Today = as.Date(Clock.Today), 
+                          Rotation = as.character(Rotation.No.),Harvest.No., LAI..FW.)
+                       ][Experiment == "AshleyDene"
+                         ][LAI..FW.>1 & LAI..FW. < 1.5
+                           ][, list(LAI_mean = mean(LAI..FW.)), 
+                             by = .(SowingDate, Clock.Today,Rotation,Harvest.No.)]
+SD1fullCano %>% 
+  ggplot(aes(Clock.Today, LAI_mean, color = Rotation, shape = SowingDate))+
+  geom_point()
+# The dates that has full canopy clousre for SD1 
+dates_interested <- unique(SD1fullCano$Clock.Today)
+water_SD1 <- water[Experiment == "AshleyDene"]
+water_mean <- water_SD1[, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = value_vars]
+water_mean <- melt(water_mean, 
+                   id.vars = id_vars)
+# bring in the rainfall 
+met_AD <- met_AD[, day := seq(from = 152, length.out = .N, by = 1)
+                 ][, Clock.Today := as.Date(day, origin = "2010-01-01")
+                   ][, rain := ifelse(rain == 0.0, NA, rain)
+                     ][,.(Clock.Today, rain)]
+
+pallete <- c("#0000ff", "#ff0000", "black")
+names(pallete) <- c("SW", "LAI_mean", "rain")
+datesForCurveFitting <- as.Date(c("2011-10-21", "2012-01-16"))
+p <- water_mean[SowingDate == "SD1" & variable %in% paste0("SW(", 1:3, ")")] %>% 
+  ggplot(aes(x = Clock.Today)) +
+  geom_vline(xintercept = datesForCurveFitting) +
+  geom_point(aes(y = value, color = "SW"))+
+  geom_point(data = SD1fullCano, aes(y = LAI_mean*10, color = "LAI_mean")) +
+  geom_point(data = met_AD[Clock.Today %in% dates_interested],
+             aes(y = rain, color = "rain")) +
+  scale_color_manual(values = pallete) + 
+  facet_grid(variable ~ ., scales = "free_y")
+p
+p + coord_cartesian(xlim = as.Date(c("2011-10-21", "2012-06-16")))
+```
+richard conversion of met file had one day off   
+152th of 2010 should be 2nd of June  2010 
+
+In the thesis,   
+arbitrary dates were selected for extraction initiation and finishing.   
+p147: _Extraction began in the 0.25 m soil layer on the 25 October 2011 at both sites._  
+p150: _The EFV reached the maximum depth of measurement (2.25 m) on 23 December 2011 at Ashley Dene and 11 March 2012 at Iversen 12_
+_Crops at both Ashley Dene and Iversen reached maximum extraction depth in late February 2012._
+Assumption based on the graph below.   
+soil water content was averaged across different sowing dates in the second season. 
+Water extraction was observed to start in early August 2011 for regrowth crops, however a large rainfall event returned SWC to DUL on **21 October 2011**. Models were fitted from this point to maximum SWD which occurred on **16 January 2012 and 25 May 2012** at Ashley Dene and Iversen 12, respectively.
+
+p136   $$SWC_t = LL + PAWC exp(-kl(t-tc)Sc)$$
+
+```{r}
+artificial <- water_mean[variable %in% paste0("SW(", 1,")") 
+                         & SowingDate %in% paste0("SD", 1:5) 
+                         & Clock.Today >= "2011-10-21" 
+                         & Clock.Today <= "2012-03-01"
+                         ][, list(mean_SW = mean(value)),
+                           by = .(Experiment,  Clock.Today)] 
+artificial %>% 
+  ggplot(aes(x = Clock.Today)) +
+  geom_point(aes(y = mean_SW)) +
+  geom_text(aes(y = mean_SW, label = mean_SW))
+artificial[, start := as.Date("2011-10-21")
+           ][, t := as.numeric(difftime(Clock.Today,start, units = "day"))][]
+pawc <- 27
+ll <- 6
+
+fit <- nls(mean_SW ~ SSasymp(t, Asym = pawc, R0 = ll, x), data = artificial)
+
+fit
+qplot(t, mean_SW, data = broom::augment(fit)) + geom_line(aes(y = .fitted))
+tidy(fit) %>% 
+  dplyr::select(term, estimate) %>% 
+  spread(term, estimate) %>% 
+  mutate(alpha = exp(x))
+
+
+```
+
+is this manual curve fitting procedure robust? the rainfall definetly affect the SW in the top soils?  
+how can we ensure that the decay is due to the plant transipiration rather than evaporation?? 
+
+## 20200515 More fitting trys 
+
+https://rpubs.com/mengxu/exponential-model 
+ $$SWC_t = LL + PAWC * exp(-kl(x)Sc)$$
+ why not $$SWC_t = DUL - PAWC * exp(-kl(t-tc)Sc)$$
+ because the plant take water up rather than storing water. 
+ The SW will need to get smaller over time. 
+ 
+ 
+```{r}
+artificial <- copy(water_mean)[variable %in% paste0("SW(", 1,")") 
+                               & SowingDate %in% paste0("SD", 1:5) 
+                               & Clock.Today >= "2011-10-21" 
+                               & Clock.Today <= "2012-05-15"
+                               ][, list(mean_SW = mean(value)/100),
+                                 by = .(Experiment,  Clock.Today, SowingDate)] 
+artificial %>% 
+  ggplot(aes(x = Clock.Today)) +
+  geom_point(aes(y = mean_SW)) +
+  geom_text(aes(y = mean_SW, label = mean_SW))
+artificial[, start := as.Date("2011-10-21")
+           ][, t := as.numeric(difftime(Clock.Today, start, units = "day"))][]
+# Nested data into a list column
+nested <- artificial[, list(model = list(.SD)), 
+                     by = .(Experiment, SowingDate), .SDcols = c("Clock.Today","mean_SW", "start", "t")]
+# paras_SW <- DUL_LL_SDs[Experiment == "AshleyDene" 
+#                        & SowingDate %in% paste0("SD", 1:5)
+#                        & Depth %in% paste0("SW(", 1,")") ]
+# paras_SW_SD1to5 <- nested[paras_SW, on = c("Experiment", "SowingDate")]
+
+data.df <- nested$model[[1]]
+# Select an approximate $\theta$, since theta must be lower than min(y), and greater than zero
+ll.0 <- min(data.df$mean_SW) * 0.5  
+
+# Estimate the rest parameters using a linear model
+model.0 <- lm(log(mean_SW - ll.0) ~ t, data=data.df)  
+pawc.0 <- exp(coef(model.0)[1])
+kl.0 <- coef(model.0)[2]
+
+# Starting parameters
+start <- list( pawc = pawc.0, kl = kl.0, ll = ll.0)
+
+model <- nls(mean_SW ~ pawc * exp(kl * t) + ll , data = data.df, start = start)
+
+# Plot fitted curve
+# plot(data.df$t, data.df$mean_SW)
+# lines(data.df$t, predict(model, list(x = data.df$t)), col = 'skyblue', lwd = 3)
+qplot(t, mean_SW, data = broom::augment(model)) + geom_line(aes(y = .fitted))
+tidy(model) %>% 
+  dplyr::select(term, estimate) %>% 
+  spread(term, estimate) 
+```
+Seems too much effort to figure out the starting point by oneself.? 
+selfstarting might be the way to go
+
+Asked Rodelyn about the `nls` and `start` point preparation.  
+the online document takes two steps for fitting the curve:  
+1. prepara the `nls` a starting point by transforming it to a linear function.  
+2. apply the origin function in `nls` with the `start` 
+
+```{r, echo=FALSE, include=FALSE}
+water_mean <- water[SowingDate %in% paste0("SD", 1:10) 
+                    ][, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = value_vars]
+water_mean <- melt(water_mean, 
+                   id.vars = id_vars,
+                   variable.factor = FALSE)[, value := value/100]
+# Nested data into a list column
+nested <- water_mean[Clock.Today >= "2011-10-21" 
+                     & Clock.Today <= "2012-05-15"
+                     ][, list(data = list(.SD)), 
+                       by = .(Experiment, SowingDate, variable), 
+                       .SDcols = c("Clock.Today","value")]
+# Relevel the order 
+nested[, ':='(SowingDate=fct_relevel(as.factor(SowingDate), paste0("SD", 1:10)),
+              variable = fct_relevel(as.factor(variable), paste0("SW(", 1:23,")")))]
+
+# Add a t value to represent the days difference
+nested <- nested[, data := lapply(data, function(x){
+  x <- x[, c(unique(.SD))
+         ][, start := as.Date("2011-10-21")
+           ][, t := as.numeric(difftime(Clock.Today, start, units = "day"))]
+  x
+  }
+  )]
+# paras_list <- vector("list", nrow(nested))
+nested[, paras_list:= lapply(data, function(x) {
+  dt = x
+# for(i in seq_len(nrow(nested))){
+  # dt = nested$data[[i]]
+  # name = paste(nested$Experiment[[i]], 
+  #               nested$SowingDate[[i]],
+  #               nested$variable[[i]],sep = "_")
+  # cat(name, "\r\n")
+  # Lower limit starting point 
+  ll.0 =  min(dt$value)/2
+  # Use a simple liner model to get the starting points for the decay rate _kl_
+  # The liner model has to be log transferred first 
+  model.0 = lm(log(value - ll.0) ~ t, data = dt)  
+  pawc.0 = exp(coef(model.0)[1]) # The starting point for interception
+  kl.0 = coef(model.0)[2] # kl starting point
+  #  Starting parameters
+  start = list(PAWC = pawc.0, kl = kl.0, LL = ll.0)
+  model = tryCatch({
+    nls(value ~ PAWC * exp(kl * t) + LL , data = dt, start = start)
+    },
+    error = function(cond){
+      print("Warning!!! nls can't describe part of the data.")
+      return(NA)
+    })
+  # paras_list[[i]] <- as.data.table(broom::tidy(model))
+  return(model)
+
+# } # the end of for loop 
+  })]
+```
+
+```{r}
+nested$paras_list[[1]] 
+nested[, augment := lapply(paras_list, function(x){
+  x <- tryCatch(augment(x), 
+                error = function(cond){
+                  message(cond)
+                  return(NA)
+                })
+  x
+  })]
+nested[, tidied := lapply(paras_list, tidy)]
+# debug a dataset that failed nls 
+"./R/20200515curveFittingKLs.R"
+```
+
+
+```{r, fig.height=14, fig.width=14}
+kl_present <- nested[!is.na(paras_list)]
+unnested_plot <- kl_present[, unlist(augment, recursive = FALSE), 
+                            by = .(Experiment, SowingDate, variable)]
+
+p <- unnested_plot %>%
+  ggplot(aes(t, value)) +
+  geom_point() + 
+  geom_line(aes(y = .fitted), color = "#ff0000")+ 
+  facet_grid(variable ~ Experiment + SowingDate) +
+  ggthemes::theme_few()
+p
+# qplot(t, mean_SW, data = broom::augment(model)) + geom_line(aes(y = .fitted))
+# ggsave("../05figures/SoilWaterEDA/kl_curveFitting.pdf", dpi = 300, height = 10,width = 20)
+
+```
+```{r,fig.height=14, fig.width=7,dpi=300}
+nested[SowingDate == "SD8"
+       ][, unlist(data, recursive = FALSE), 
+         by = .(Experiment, SowingDate, variable)] %>% 
+  ggplot(aes(t, value)) +
+  geom_point() + 
+  # geom_line(aes(y = .fitted), color = "#ff0000")+ 
+  facet_grid(variable ~ Experiment + SowingDate) +
+  geom_smooth(color = "#ff0000") +
+  ggthemes::theme_few()
+
+```
+
+# Curve fitting is not going to work 
+
+kl should be link to the root turnover?? **YES**  
+But it can't be dynamic to reflect the real world stuiation in NZ since the cold temperature could limit the crop water uptake.  
+
+why we can't make the kl calculated on the fly? 
+monthly value probably the best you could have but suspect that it still won't reflect the real world senarios. again, temperature and open canopy.  
+
+Slurp is probably the best way to go so far, since it accounts the incomplete canopy and tempareture. 
+curving fitting is not recommended since the assumptions are very easy to be violated in NZ.  
+
+
+#### 20200509 RESUME the tasks
+
+
+```{r}
+# convert SWC back to VWC
+# Layer 1 SW(1) is 20 cm while other layers are 10 cm 
+VWC_summarised <- water[, (value_vars) := lapply(.SD, function(x) x/100), .SDcols = value_vars
+                        ][, `SW(1)`:= `SW(1)`/2   # top 20 cm is a whole body
+                          ][, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = value_vars # average 4 reps
+                            ][, unlist(lapply(.SD, max_min), recursive = FALSE),
+                              by = .(Experiment, SowingDate),.SDcols = value_vars]
+
+VWC_summarised[order(`SW(1).DUL`)]
+test <- VWC_summarised[, lapply(.SD, mean, na.rm = TRUE), by = .(Experiment), .SDcols = colnames(VWC_summarised)[-(1:2)]]
+# test if the soil profil is right 
+test <- test %>% 
+  melt(id.vars = "Experiment") %>% 
+  .[, (c("Depth", "variables")) := tstrsplit(variable, "\\.")] %>% 
+  dcast(Experiment +  Depth ~ variables) 
+test[, PAWC := DUL - LL][, sum(PAWC)*2.3*100, by = .(Experiment)]
+summary(VWC_summarised[1:10,])
+```
+
+
+
+```{r}
+
+nested_water <- water[, list(SWC_list = list(.SD)), by = .(Experiment, SowingDate)]
+nested_water$SWC_DUL_LL <- lapply(nested_water$SWC_list, function(x){
+  x <- x[, lapply(.SD, mean), # average 4 reps for each sowing date
+         by = .(Clock.Today), 
+         .SDcol = value_vars
+         ][, as.list(unlist(lapply(.SD, max_min))), # grap the max and min over two years 
+           .SDcol = value_vars]
+  x <- melt(x, variable.factor = FALSE, measure = patterns("^SW"))
+  })
+
+DUL_LL <- nested_water[,.(Experiment, SowingDate, SWC_DUL_LL)
+                       ][, unlist(SWC_DUL_LL, recursive = FALSE),
+                         by = .(Experiment, SowingDate)]
+range(DUL_LL$DUL)
+DUL_LL <- DUL_LL[, (c("Depth", "variables")) := tstrsplit(variable, "\\.")] %>% 
+  dcast(Experiment + SowingDate + Depth ~ variables)
+
+# check if all duls > lls, yes if return 0
+sum(DUL_LL$LL > DUL_LL$DUL)
+
+SD_PAWC <- DUL_LL[, PAWC := DUL - LL][]
+
+SD_PAWC[, list(PAWC_profile = sum(PAWC, na.rm = TRUE)*2.3*100), by = .(Experiment, SowingDate)
+        ][, mean(PAWC_profile) , .(Experiment) ]
+
+SD_PAWC <- DUL_LL %>% 
+  dcast(Experiment + SowingDate  ~ Depth, value.var = "PAWC")
+SD_PAWC[, PAWC := rowSums(.SD, na.rm = T), .SDcols = value_vars][,.(Experiment, SowingDate, PAWC)]
+
+
+```
+initial soil water = the soil water contents at the sowing date
+need to be percentage of the full PAWC?
+
+```{r, fig.width=8, fig.height=12}
+
+SWC_MEAN <- water[,.(Experiment, Clock.Today, SowingDate, SWC)
+      ][, .(mean_swc = mean(SWC, na.rm = TRUE)), by = .(Experiment, SowingDate, Clock.Today)]
+SWC_MEAN[Experiment == "AshleyDene"
+         ][, SowingDate := fct_relevel(as.factor(SowingDate), paste0("SD", 1:10))]%>% 
+  ggplot(aes(Clock.Today, mean_swc)) +
+  geom_point() +
+  facet_grid( SowingDate ~ Experiment,scales = "free_y") +
+  geom_hline(aes(yintercept = min(SWC_MEAN[Experiment == "AshleyDene"]$mean_swc)), color = "red")+
+  geom_hline(aes(yintercept = max(SWC_MEAN[Experiment == "AshleyDene"]$mean_swc)), color = "blue") + 
+  theme(text = element_text(size = 14))
+# ggsave("../05figures/SoilWaterEDA/AverageSWC_AD.pdf", height = 12, width = 8, dpi = 300)
+SD <- SowingDates[, (c("AD", "I12")) := lapply(.SD, as.Date), .SDcols = c("AD", "I12")] %>% 
+  melt(id.vars = "SD", 
+       variable.name = "Experiment", value.name = "Clock.Today",
+       variable.factor = FALSE) 
+SD[, Experiment := ifelse(Experiment == "AD", "AshleyDene",  "Iversen12")]
+water[SD, on = c("Experiment", "SowingDate == SD", "Clock.Today"), roll = "nearest"]
+```
+
+SD1 in Ashley Dene has no SWC measurements. 
+Use the value from nearest measruement date instead, which was 2010-11-09
+
+[Initial Soil Water](https://www.apsim.info/documentation/model-documentation/soil-modules-documentation/soilwat/)
+
+There are five ways to parameterise initial soil water in SoilWater.  
+These can also be specified in the Manager module sections using the ‘set’ command  
+e.g SoilWater set insoil = 0.5 ()  
+
+
+
+
+#### inspect all sowing dates for vwc
+
+
+```{r}
+id_vars <- colnames(water)[!colnames(water)%in%grep("^SW", colnames(water), value = TRUE)]
+AD_long <- water[,SWC:=NULL] %>% 
+  melt(id_vars)
+# check levels
+levels(AD_long$variable)
+# check if the plot still the same 
+# AD_long[SowingDate == "SD1" & Experiment == "AshleyDene"] %>%
+#   ggplot(aes(Clock.Today, value, group = Clock.Today)) +
+#   geom_boxplot()  +
+#   facet_grid(variable ~ .)
+# place data into a nested dt 
+nested <- AD_long[, list(dt_list=list(.SD)), by = .(Experiment,SowingDate)]
+
+device = "pdf"
+
+# purrr::pmap(list(nested$Experiment, nested$SowingDate, nested$dt_list), 
+#             
+#      ~ggsave(filename = file.path("../05figures/SoilWaterEDA", paste0("SD_water",..1, ..2, ".",device)),
+#              plot = ggplot(..3, aes(Clock.Today, value,group = Clock.Today))+
+#                geom_boxplot(outlier.colour = outlier.colour)+
+#                ggtitle(paste0(..1, ..2)) +
+#                facet_grid( variable~., scales = "free_y"),
+#              device = device,dpi = 300, height = 30, width = 15)
+#       )
+```
+
+_Note_  
+1. SD2 in AD seems have a consistant outliner rep in the top 40 cm soil.   
+2. SD7 in AD seems have a consistant outliner rep in BETWEEN 40 and 100 cm soil.   
+3. I12 had one rep that had some outliner through the second season in the subsoil between 110 ~ 140 cm.  
+
+_Question_   
+1. How to deal with the outliners? just average them out?  
+2. Identify them?   
+
+
+```{r try average first}
+DT <- nested[, dt_list := lapply(dt_list, function(x){
+  x[,.(value = mean(value, na.rm = TRUE)/100),
+    by = .(Clock.Today, variable)
+    ]
+  })] # average the swc value among reps and change to vwc
+DUL_LL <- copy(DT)[, dt_list := lapply(dt_list, function(x){
+  x[, .(min = min(value, na.rm = TRUE),
+        max = max(value, na.rm = TRUE)),
+    by = .(variable)]
+  }) # figure out the DUL and LL for each layer
+  ][, unlist(dt_list, recursive = FALSE), 
+    by = .(Experiment,SowingDate)] # unnest the data.table
+
+```
+
+
+
+#### 20200330 Grab above ground component and soil water 
+
+Unit conversion for visulising the graph in apsimx UI.   
+
+```{r}
+path_richard = "c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
+con <- dbConnect(SQLite(), "../03processed-data/Richard.sqlite3")
+dbListTables(con)
+biomass <- dbReadTable(con, "biomass") %>% 
+  as.data.table()
+water <- dbReadTable(con, "SoilWater", check.names = FALSE) %>% 
+  as.data.table()
+dbDisconnect(con)
+
+# Fix the date 
+biomass[, Clock.Today := as.Date(Clock.Today)]
+water[, Clock.Today := as.Date(Clock.Today)]
+
+
+# Bring in the meta data for calculation 
+meta_data <- read_excel(path_richard)
+# Dry matter value to evaluate the apsimx predict value 
+# Need to be in g/m2 unit
+DM_obs <- meta_data %>% 
+  filter(!is.na(Equations)) %>% 
+  mutate(Equations = gsub("\\s|\\(|\\)",".", Equations))
+```
+
+#### Look at the plot level - EDA
+
+```{r fig.height=22, fig.width=10}
+AD <- water[Experiment == "AshleyDene"]
+
+# AD[, SWC := NULL] # drop it for now
+setorder(AD, "SowingDate","Plot") # Sort it by Plot
+
+# Grab the key vars for melting down to long format
+id_vars <- colnames(AD)[!colnames(AD) %in% grep("SW", colnames(AD), value = TRUE)]
+
+# Filter down to only sowing date 5 and do a trial plotting 
+AD[SowingDate == "SD5" ] %>% 
+  melt(., id.vars = id_vars) %>% 
+  ggplot(aes(Clock.Today, value)) + 
+  geom_point() +
+  facet_grid(variable ~ Plot)
+
+# Iterate all sowing date to output the graph
+var_sd <-  AD$SowingDate %>% unique()
+dir <-  "SoilWater"
+dir_EDA <- file.path("..", "05figures", paste0(dir,"EDA"))
+dir_exits <- dir.exists(dir_EDA)
+if(!dir_exits){
+  dir.create(dir_EDA)
+}
+# Depth ~ Plot in Sowing Date 
+# lapply(var_sd, function(x){
+#   p <- AD[SowingDate == x ] %>% 
+#     melt(., id.vars = id_vars) %>% 
+#     ggplot(aes(Clock.Today, value)) + 
+#     geom_point() +
+#     facet_grid(variable ~ Rep, scales = "free_y") +
+#     ggtitle(x)
+  # ggsave(filename = paste0(dir_EDA, "/",x, ".pdf"), plot = p, device = "pdf", width = 10, height = 22, dpi = 300)
+
+# })
+
+# Sowing date 1 to 5, investigate variations among reps
+p <- AD[SowingDate %in% paste0("SD", 1:5)] %>% 
+  melt(., id.vars = id_vars) %>% 
+  ggplot(aes(Clock.Today, value, color = as.factor(Rep))) + 
+  geom_point() +
+  facet_grid(variable ~ SowingDate, scales = "free_y") 
+
+
+# ggsave(filename = paste0(dir_EDA, "/SD1To5.pdf"), plot = p, device = "pdf", width = 10, height = 44, dpi = 300)
+
+p <- AD[SowingDate %in% paste0("SD", 6:10)] %>% 
+  melt(., id.vars = id_vars) %>% 
+  ggplot(aes(Clock.Today, value, color = as.factor(Rep))) + 
+  geom_point() +
+  facet_grid(variable ~ SowingDate, scales = "free_y") 
+
+
+# ggsave(filename = paste0(dir_EDA, "/SD6To10.pdf"), plot = p, device = "pdf", width = 10, height = 44, dpi = 300)
+
+```
+
+
+#### Read sql from replicates prediction
+
+
+```{r , echo=FALSE}
+#Disabled since the db is out of date 
+# con <- dbConnect(SQLite(), "../01raw-data/ApsimxFiles/PlotByPlot.db")
+# dbListTables(con)
+# Report <- dbReadTable(con, "Report", check.names = FALSE) %>% 
+#   as.data.table()
+# Report[, Clock.Today := as.Date(Clock.Today)]
+# dbDisconnect(con)
+```
+Probably not very useful since all the Rep will use the same set of soil parameters 
+
+
+```{r , echo=FALSE}
+# dim(Report)
+# 
+# id_vars <- colnames(Report)[1:4]
+# value_vars <- colnames(Report)[colnames(Report) %in% grep("SW", colnames(Report), value = TRUE)]
+# new_cols <- c(id_vars,value_vars)
+# p <- Report[,..new_cols][, SWC := NULL][SowingDate %in% paste0("SD", 1:5)] %>% 
+#   melt(., id.vars = id_vars) %>% 
+#   .[, value := round(as.numeric(value))] %>% 
+#   ggplot(aes(Clock.Today, value, color = as.factor(Zone))) + 
+#   geom_point() +
+#   facet_grid(variable ~ SowingDate) 
+
+# 
+# ggsave(filename = paste0(dir_EDA, "/PredictSD1To5.pdf"), plot = p, device = "pdf", width = 10, height = 44, dpi = 300)
+
+```
+
+
+
+
+#### Import data from sqlite - very first EDA - Retired
+
+```{r import sqlite, echo=FALSE}
+con <- dbConnect(SQLite(), "../03processed-data/Richard.sqlite3")
+# dbListTables(con)
+soilwater <- dbReadTable(con, "SoilWater")
+biomass <- dbReadTable(con, "biomass")
+root <- dbReadTable(con, "root")
+ES <- dbReadTable(con, "ES")
+dbDisconnect(con)
+
+#fix date
+
+soilwater <- fix_date(soilwater)
+biomass <- fix_date(biomass)
+root <- fix_date(root)
+ES <- fix_date(ES)
+```
+
+
+#### Soil Water Overview 
+
+_Note:_
+
+`SWC.2.3.m..mm.` is the profile water for each ob?
+Need to fix the layer names
+
+**The soil water has `r dim(soilwater)[1]` obs. **
+
+
+```{r Plot, fig.height=15, fig.width=10,dpi=300, echo=FALSE, eval=FALSE}
+vars <- colnames(soilwater)[c(1:9,33)]
+soilwater_melted <- soilwater %>% 
+  melt(.,id.vars = vars, variable.factor = FALSE) %>% 
+  .[, variable := as.integer(gsub("SWC.0.", "", variable))]
+soilwater_melted[, Sowing.Date := fct_relevel(as.factor(Sowing.Date), levels = c(paste0("SD",1:10)))] %>% 
+  
+  ggplot(aes(Date, value, color = as.factor(variable))) + 
+  geom_point() +
+  facet_grid(Sowing.Date ~ Site ) +
+  theme_water() +
+  scale_color_viridis_d()
+soilwater_melted[Sowing.Date %in% paste0("SD", 1:5)] %>% 
+  ggplot(aes(Date, value, color = Sowing.Date)) + 
+  geom_point() +
+  facet_grid(variable ~ Site ) +
+  theme_water() +
+  ggtitle("First 5 sowing date")
+```
+
+
+```{r profile water, echo=FALSE, eval=FALSE}
+soilwater[,.(Date, Site,Sowing.Date,SWC.2.3.m..mm.) ]%>% 
+  ggplot(aes(Date, SWC.2.3.m..mm., color = Sowing.Date)) + 
+  geom_point() +
+  facet_grid( ~ Site ) +
+  theme_water() +
+  ggtitle("Profile water")
+```
+
+
+
+```{r soilwater hist each layer, fig.height=12, fig.width=12, message=FALSE,warning=FALSE,dpi=300, echo=FALSE, eval=FALSE}
+
+nums <- inspect_num(soilwater[Site == "AshleyDene"])
+show_plot(nums)
+print("SWC distribution in each layer in AshleyDene")
+
+nums <- inspect_num(soilwater[Site != "AshleyDene"])
+show_plot(nums)
+print("SWC distribution in each layer in Lincoln Uni")
+```
+
+```{r hist, echo=FALSE, eval=FALSE}
+soilwater_melted %>% 
+  ggplot(aes(value))+
+  geom_histogram() +
+  facet_grid( ~ Site) +
+  theme_water()
+
+
+
+```
+
+# Evapotranspiration surface
+
+This is for calibrate the model for Potential Ep since there is no crop growing on this area?
+
+
+```{r ES, fig.height=7, fig.width=7, dpi=300}
+
+vars <- colnames(ES[, Data:= NULL])[c(1:6)]
+ES_melted <- ES %>% 
+  melt(.,id.vars = vars, variable.factor = FALSE) %>% 
+  .[, variable := as.integer(gsub("SWC.0\\.", "", variable))]
+ES %>% 
+  ggplot(aes(Clock.Today, SWCES_0.0.2)) + 
+  geom_point() +
+  facet_grid(  Experiment ~ .) +
+  theme_water()
+
+```
+
+# Biomass Overview 
+
+
+
+**The Biomass has `r dim(biomass)[1]` obs for two sites. **
+
+
+
+
+```{r biomass, fig.height=12, fig.width=12, message=FALSE,warning=FALSE,dpi=300}
+
+nums <- inspect_num(biomass)
+show_plot(nums)
+inspect_cat(biomass) %>% 
+  show_plot()
+```
+
+```{r}
+# GGally::ggpairs(biomass[,.(Site, Sowing.Date, Date, FW..g.,DW..g.)],aes(colour = Site, alpha = 0.4))
+colnames(biomass)
+biomass_sub <- biomass[,.(Experiment, Clock.Today, SowingDate, DAS,  Shoot.No., Shoots.m2, FW..g., DW..g., Leaf.Area..cm.,LAImod)]
+```
+
+_Note:_
+
+Too many vars, take long time to generate the pairplot. 
+R is a bit slow to plot big correlation plots 
+Try seaborn in python. still slow. 
+consider to set up `Draker` plan. 
+
+
+
+![Biomass random plotting](../05figures/References/biomass_cor.png)
+**Maybe leave the biomass data at last to touch. **
+```
+# import seaborn as sns
+# import matplotlib.pyplot as plt
+# 
+# sns.pairplot(r.biomass_sub, hue="Sowing.Date")
+# plt.show()
+# plt.savefig("biomass_cor.png", dpi = 300)
+```
+
+
+
+# Root Overview 
+
+
+**The Root tab has `r dim(root)[1]` obs. **
+
+
+```{r root, fig.height=12, fig.width=12,dpi=300}
+
+nums <- inspect_num(root)
+show_plot(nums)
+```
+
+
