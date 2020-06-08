@@ -1,7 +1,7 @@
 {
   "$type": "Models.Core.Simulations, Models",
   "ExplorerWidth": 271,
-  "Version": 92,
+  "Version": 101,
   "ApsimVersion": "0.0.0.0",
   "Name": "Simulations",
   "Children": [
@@ -138,6 +138,7 @@
         },
         {
           "$type": "Models.Core.Simulation, Models",
+          "IsRunning": false,
           "Name": "LandPBase",
           "Children": [
             {
@@ -882,7 +883,6 @@
                 },
                 {
                   "$type": "Models.PMF.Plant, Models",
-                  "CropType": "Slurp",
                   "ResourceName": "Slurp",
                   "Name": "Slurp",
                   "IncludeInDocumentation": true,
