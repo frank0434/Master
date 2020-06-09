@@ -159,15 +159,86 @@ for site in sites:
         r.SW_DUL_LL.loc[(r.SW_DUL_LL['Experiment'] == site) 
                        & (r.SW_DUL_LL.SowingDate == i),:].drop_duplicates().to_csv('../03processed-data/Config' + site + i + '.csv',index = False)
 ```
+
+
 ```{python}
+print(r.SW_DUL_LL['Experiment'].to_series())
+```
+
+```{r}
+## The Sowing date level configuration 
+
+weather = ".Simulations.LnP.Expt.Weather.FileName = "
+SD = ".Simulations.LnP.Expt.Field.ManagerFolder.SlurpSowingRule.SowingDate = "
+CoverData = ".Simulations.LnP.Expt.Field.ManagerFolder.SetCropVariables.CoverFile = "
+Height = ".Simulations.LnP.Expt.Field.ManagerFolder.SetCropVariables.MaximumHeight = "
 initialSW = ".Simulations.LnP.LandPBase.Field.Soil.InitialConditions.SW = "
-DUL <- ".Simulations.LnP.Factors.Permutation.SKL.InitialKL.SlurpSoil.DUL = "
+
+DUL <- ".Simulations.LnP.LandPBase.Field.Soil.Physical.DUL = "
+AirDry <- ".Simulations.LnP.LandPBase.Field.Soil.Physical.AirDry = "
+LL15 <- ".Simulations.LnP.LandPBase.Field.Soil.Physical.LL15 = "
+SAT <- ".Simulations.LnP.LandPBase.Field.Soil.Physical.SAT = "
+
 LL <- ".Simulations.LnP.Factors.Permutation.SKL.InitialKL.SlurpSoil.LL = "
-LL15 <- ".Simulations.LnP.Factors.Permutation.SKL.InitialKL.SlurpSoil.LL15 = "
-SAT <- ".Simulations.LnP.Factors.Permutation.SKL.InitialKL.SlurpSoil.SAT = "
 
+## The kl parameter level configuration 
+KL <- ".Simulations.LnP.LandPBase.Field.Soil.Physical.SlurpSoil.KL = "
 
+```
 
+```{r}
+t1 <- Sys.time()
+#path to apsimx 
+apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
+apsimx_flag <- "/Edit"
+apsimx_file <- "C:/Data/Master/01raw-data/ApsimxFiles/20200517BaseSlurp.apsimx"
+apsimx_sims_temp <- "C:/Data/Master/03processed-data/apsimxFiles/temp.apsimx"
+apsimx_sims_dir <- "C:/Data/Master/03processed-data/apsimxFiles/"
+apsimx_config <- "C:/Data/Master/03processed-data/configSoilWat"
+sites <- unique(SW_DUL_LL$Experiment)
+SDs <- paste0("SD", 1:10)
+# Vectorise the values 
+for(j in sites){
+  for(i in SDs){
+    # Site specfied changes 
+    met <- paste0(weather, )
+    
+    # Filter the right values 
+    SDsw <- SW_DUL_LL[SowingDate == i & Experiment == j]$SW
+    SDDUL <- SW_DUL_LL[SowingDate == i & Experiment == j]$DUL
+    SDLL <- SW_DUL_LL[SowingDate == i & Experiment == j]$LL
+    
+    apsimx_sw <- paste0(initialSW,
+                        paste(SDsw,collapse = ","))
+    apsimx_DUL <- paste0(DUL,
+                         paste(SDDUL,collapse = ","))
+    apsimx_LL <- paste0(LL,
+                        paste(SDLL,collapse = ","))
+    apsimx_LL15 <- paste0(LL15,
+                          paste(SDLL,collapse = ","))
+    apsimx_SAT <- paste0(SAT,
+                         paste(SDDUL,collapse = ","))
+    # Open a text file
+    f <- file(paste0(apsimx_config, j, i, ".txt"), "w")
+    # Write values into the file 
+    cat(apsimx_sw,
+        apsimx_DUL,
+        apsimx_LL,
+        apsimx_LL15,
+        apsimx_SAT,"\r",
+        sep = "\r", 
+        file = f, 
+        append = TRUE)
+    # Close the file and clean it from memory 
+    close(f)
+    rm(f)
+    gc()
+  }
+
+}
+
+t2 <- Sys.time()
+t2 - t1
 ```
 
 # Set directory structure
@@ -175,7 +246,7 @@ SAT <- ".Simulations.LnP.Factors.Permutation.SKL.InitialKL.SlurpSoil.SAT = "
 ```{r}
 t1 <- Sys.time()
 #path to apsimx 
-apsimx <- "C:/Data/ApsimxLatest/ApsimX/Bin/Models.exe"
+apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
 apsimx_flag <- "/Edit"
 apsimx_file <- "C:/Data/Master/01raw-data/ApsimxFiles/20200520Demo.apsimx"
 apsimx_sims_temp <- "C:/Data/Master/03processed-data/apsimxFiles/temp.apsimx"

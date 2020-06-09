@@ -675,7 +675,7 @@ CoverDFI12.columns = ['Date', 'Experiment', 'SowingDate', 'LightInterception']
 SDs = ['SD' + str(SD) for SD in range(1, 11)]
 SDs
 for i in SDs:
-    CoverDFI12.loc[CoverDFI12.SowingDate == i, 
+    CoverDFI12.loc[CoverDFI12['SowingDate'] == i, 
                    ['Clock.Today', 'LightInterception']].to_csv('./03processed-data/CoverDataIversen12' + i + '.csv',
                                                  index = False)
 ```
@@ -683,7 +683,7 @@ for i in SDs:
 # Out put k value with light interception for Ashley Dene
 
 ```{python}
-CoverDF.k.unique()
+CoverDF
 ```
 
 ```{python}
