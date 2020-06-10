@@ -21,5 +21,4 @@ test*
 
 #dir
 Data/
-05figures/*
 03processed-data/
