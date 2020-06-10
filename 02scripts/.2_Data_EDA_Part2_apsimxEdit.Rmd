@@ -119,6 +119,7 @@ kable(SW_DUL_LL, caption = "Initial soil parameters for 22 layers in 10 differen
 
 # save the processed table for 
 ```
+
 # Explore the python system call 
 
 ```{r}
@@ -160,25 +161,51 @@ for site in sites:
                        & (r.SW_DUL_LL.SowingDate == i),:].drop_duplicates().to_csv('../03processed-data/Config' + site + i + '.csv',index = False)
 ```
 
+_Note_  
+Tried to use python to vectorised the data and output.  
+seems not that easy to covert a column in pandas into a string.   
+Back to R
 
-```{python}
-print(r.SW_DUL_LL['Experiment'].to_series())
-```
+# File structure 
 
 ```{r}
+# Environmental variables to control file paths
+Sys.setenv("WorkingDir" = here::here())
+Sys.setenv("BaseApsimxDir" = file.path(Sys.getenv("WorkingDir"), "01raw-data/ApsimxFiles/"))
+Sys.setenv("MetDir" = file.path(Sys.getenv("WorkingDir"), "01raw-data/ClimateAndObserved/"))
+Sys.setenv("ConfigFileDir" = file.path(Sys.getenv("WorkingDir"), "03processed-data"))
+Sys.setenv("SimsDir" = file.path(Sys.getenv("WorkingDir"), "03processed-data/apsimxFiles/"))
+## Verifcation
+# Sys.getenv("MetDir")
+# list.files(Sys.getenv("SimsDir"))
+
+```
+# Construct kl ranges 
+```{r}
+
+```
+
+# ApsimX node paths 
+
+```{r}
+
+## The site level configuration 
+weather = ".Simulations.LnP.LandPBase.Weather.FileName = "
+Height = ".Simulations.LnP.LandPBase.Field.ManagerFolder.SetCropVariables.Script.MaximumHeight = "
+
 ## The Sowing date level configuration 
 
-weather = ".Simulations.LnP.Expt.Weather.FileName = "
-SD = ".Simulations.LnP.Expt.Field.ManagerFolder.SlurpSowingRule.SowingDate = "
-CoverData = ".Simulations.LnP.Expt.Field.ManagerFolder.SetCropVariables.CoverFile = "
-Height = ".Simulations.LnP.Expt.Field.ManagerFolder.SetCropVariables.MaximumHeight = "
+SDnode = ".Simulations.LnP.LandPBase.Field.ManagerFolder.SlurpSowingRule.Script.SowingDate = "
+ClockStart = ".Simulations.LnP.LandPBase.Clock.Start = "
+
+CoverData = ".Simulations.LnP.LandPBase.Field.ManagerFolder.SetCropVariables.Script.CoverFile = "
 initialSW = ".Simulations.LnP.LandPBase.Field.Soil.InitialConditions.SW = "
 
 DUL <- ".Simulations.LnP.LandPBase.Field.Soil.Physical.DUL = "
-AirDry <- ".Simulations.LnP.LandPBase.Field.Soil.Physical.AirDry = "
-LL15 <- ".Simulations.LnP.LandPBase.Field.Soil.Physical.LL15 = "
 SAT <- ".Simulations.LnP.LandPBase.Field.Soil.Physical.SAT = "
 
+AirDry <- ".Simulations.LnP.LandPBase.Field.Soil.Physical.AirDry = "
+LL15 <- ".Simulations.LnP.LandPBase.Field.Soil.Physical.LL15 = "
 LL <- ".Simulations.LnP.Factors.Permutation.SKL.InitialKL.SlurpSoil.LL = "
 
 ## The kl parameter level configuration 
@@ -186,46 +213,68 @@ KL <- ".Simulations.LnP.LandPBase.Field.Soil.Physical.SlurpSoil.KL = "
 
 ```
 
+# Replacement values
+
 ```{r}
 t1 <- Sys.time()
-#path to apsimx 
-apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
-apsimx_flag <- "/Edit"
-apsimx_file <- "C:/Data/Master/01raw-data/ApsimxFiles/20200517BaseSlurp.apsimx"
-apsimx_sims_temp <- "C:/Data/Master/03processed-data/apsimxFiles/temp.apsimx"
-apsimx_sims_dir <- "C:/Data/Master/03processed-data/apsimxFiles/"
-apsimx_config <- "C:/Data/Master/03processed-data/configSoilWat"
-sites <- unique(SW_DUL_LL$Experiment)
+# Constant
+sites <- unique(SD$Experiment)
 SDs <- paste0("SD", 1:10)
-# Vectorise the values 
-for(j in sites){
-  for(i in SDs){
-    # Site specfied changes 
-    met <- paste0(weather, )
+
+for (i in sites) {
+  for (j in SDs) {
     
-    # Filter the right values 
-    SDsw <- SW_DUL_LL[SowingDate == i & Experiment == j]$SW
-    SDDUL <- SW_DUL_LL[SowingDate == i & Experiment == j]$DUL
-    SDLL <- SW_DUL_LL[SowingDate == i & Experiment == j]$LL
-    
-    apsimx_sw <- paste0(initialSW,
-                        paste(SDsw,collapse = ","))
-    apsimx_DUL <- paste0(DUL,
-                         paste(SDDUL,collapse = ","))
-    apsimx_LL <- paste0(LL,
-                        paste(SDLL,collapse = ","))
-    apsimx_LL15 <- paste0(LL15,
-                          paste(SDLL,collapse = ","))
-    apsimx_SAT <- paste0(SAT,
-                         paste(SDDUL,collapse = ","))
-    # Open a text file
-    f <- file(paste0(apsimx_config, j, i, ".txt"), "w")
+  # Site level
+  ## met files 
+  replacement_met <- file.path(Sys.getenv("MetDir"), paste0(i,".met"))
+  ## Height
+  replacement_MaxHeight <- ifelse(i == "AshleyDene", 390L, 595L)
+  
+  # Sowing date level 
+  ## SD
+  replacement_SD <- SD[Experiment == i & SD == j ]$Clock.Today
+  ## ClockStart
+  replacement_ClockStart <- paste0(replacement_SD, "T00:00:00")
+  ## User provide light interception data 
+  replacement_CoverData <- file.path(Sys.getenv("ConfigFileDir"),paste0("CoverData", i, j, ".csv"))
+  ## Soil parameters 
+  replacement_initialSW <- SW_DUL_LL[Experiment == i & SowingDate == j]$SW
+  replacement_DUL <- SW_DUL_LL[Experiment == i & SowingDate == j]$DUL
+  replacement_SAT <- replacement_DUL
+  replacement_LL <- SW_DUL_LL[Experiment == i & SowingDate == j]$LL
+  replacement_AirDry <- replacement_LL
+  replacement_LL15 <- replacement_LL
+  
+  # Paste together ----
+  
+  apsimx_met <- paste0(weather, replacement_met)
+  apsimx_Height <- paste0(Height, replacement_MaxHeight)
+  apsimx_SD <- paste0(SDnode, replacement_SD)
+  apsimx_ClockStart <- paste0(ClockStart, replacement_ClockStart)
+  apsimx_CoverData <- paste0(CoverData, replacement_CoverData)
+  
+  apsimx_initialSW <- paste0(initialSW, paste(replacement_initialSW,collapse = ","))
+  apsimx_DUL <- paste0(DUL, paste(replacement_DUL,collapse = ","))
+  apsimx_LL <- paste0(LL, paste(replacement_LL,collapse = ","))
+  
+  apsimx_SAT <- paste0(SAT, paste(replacement_SAT,collapse = ","))
+  apsimx_AirDry<- paste0(AirDry, paste(replacement_AirDry,collapse = ","))
+  apsimx_LL15 <- paste0(LL15, paste(replacement_LL15,collapse = ","))
+  
+  # Write out ----
+  f <- file(paste0(Sys.getenv("ConfigFileDir"),"/Config", i, j, ".txt"), "w")
     # Write values into the file 
-    cat(apsimx_sw,
+    cat(apsimx_met,
+        apsimx_Height,
+        apsimx_SD,
+        apsimx_ClockStart,
+        apsimx_CoverData,
+        apsimx_initialSW,
         apsimx_DUL,
         apsimx_LL,
-        apsimx_LL15,
-        apsimx_SAT,"\r",
+        apsimx_SAT,
+        apsimx_AirDry,
+        apsimx_LL15, "\r",
         sep = "\r", 
         file = f, 
         append = TRUE)
@@ -234,11 +283,77 @@ for(j in sites){
     rm(f)
     gc()
   }
-
 }
 
 t2 <- Sys.time()
 t2 - t1
+```
+
+
+
+
+# Invoke Apsimx
+
+```{r}
+# Constants 
+apsimx <- "C:/Data/ApsimX/ApsimX/Bin/Models.exe"
+apsimx_flag <- "/Edit"
+apsimx_Basefile <- file.path(Sys.getenv("BaseApsimxDir"), "20200517BaseSlurp.apsimx")
+apsimx_sims_temp <- file.path(Sys.getenv("SimsDir"), "temp.apsimx")
+apsimx_sims_dir <- Sys.getenv("SimsDir")
+apsimx_config <- paste0(Sys.getenv("ConfigFileDir"),"/Config")
+
+# Copy the base apsimx file to a temp file in a disposable dir
+system(paste('cp', apsimx_Basefile, apsimx_sims_temp))
+system(paste(apsimx, apsimx_sims_temp, apsimx_flag, paste0(apsimx_config, sites[1], SDs[1],".txt")))
+
+t1 <- Sys.time()
+for(j in sites){
+   for(i in SDs){
+     # Edit the base apsimx file and save it to a new name
+     ## modify the apsimx file
+     modifiedName <- paste0(apsimx_sims_dir, "/Modified", j, i, ".apsimx")
+     system(paste("cp", apsimx_sims_temp, modifiedName))
+     system(paste(apsimx, modifiedName, apsimx_flag, paste0(apsimx_config, j, i,".txt")))
+     ## rename the modified one
+     # system(paste("mv", apsimx_sims_temp, paste0(apsimx_sims_dir, "/Modified", j, i, ".apsimx")))
+     
+   }
+}
+## delete the temp apsimx 
+system(paste("rm", paste0(apsimx_sims_dir, "/temp*")))
+t2 <- Sys.time()
+t2 - t1
+```
+
+.Simulations.LnP.Factors.Permutation.Manager.InitialKL
+.Simulations.LnP.Factors.Permutation.KLR
+
+Edit does not allow to access manager script? SOLVED IN ISSUE [#4905](https://github.com/APSIMInitiative/ApsimX/issues/4905#issuecomment-641614089)
+```
+System.Exception: Invalid path: .Simulations.LnP.LandPBase.Field.ManagerFolder.SetCropVariables.MaximumHeight
+   at Models.Core.ApsimFile.EditFile.ApplyChanges(String apsimxFileName, List`1 factors) in C:\Data\ApsimX\ApsimX\Models\Core\ApsimFile\EditFile.cs:line 84
+   at Models.Core.ApsimFile.EditFile.Do(String apsimxFilePath, String configFilePath) in C:\Data\ApsimX\ApsimX\Models\Core\ApsimFile\EditFile.cs:line 29
+   at Models.Program.ModifyFile(String fileName, Boolean recurse) in C:\Data\ApsimX\ApsimX\Models\Main.cs:line 202
+   at Models.Program.Main(String[] args) in C:\Data\ApsimX\ApsimX\Models\Main.cs:line 94
+PS C:\Data\Master> ../ApsimX/ApsimX/Bin/Models.exe 03processed-data/apsimxFiles/temp.apsimx /Edit 03processed-data/ConfigAshleyDeneSD10.txt
+System.Exception: Invalid path: .Simulations.LnP.LandPBase.Field.ManagerFolder.SlurpSowingRule.SowingDate
+   at Models.Core.ApsimFile.EditFile.ApplyChanges(String apsimxFileName, List`1 factors) in C:\Data\ApsimX\ApsimX\Models\Core\ApsimFile\EditFile.cs:line 84
+   at Models.Core.ApsimFile.EditFile.Do(String apsimxFilePath, String configFilePath) in C:\Data\ApsimX\ApsimX\Models\Core\ApsimFile\EditFile.cs:line 29
+   at Models.Program.ModifyFile(String fileName, Boolean recurse) in C:\Data\ApsimX\ApsimX\Models\Main.cs:line 202
+   at Models.Program.Main(String[] args) in C:\Data\ApsimX\ApsimX\Models\Main.cs:line 94
+PS C:\Data\Master> ../ApsimX/ApsimX/Bin/Models.exe 03processed-data/apsimxFiles/temp.apsimx /Edit 03processed-data/ConfigAshleyDeneSD10.txt
+PS C:\Data\Master> ../ApsimX/ApsimX/Bin/Models.exe 03processed-data/apsimxFiles/temp.apsimx /Edit 03processed-data/ConfigAshleyDeneSD10.txt
+System.Exception: Invalid path: .Simulations.LnP.LandPBase.Field.ManagerFolder.SetCropVariables.CoverFile
+   at Models.Core.ApsimFile.EditFile.ApplyChanges(String apsimxFileName, List`1 factors) in C:\Data\ApsimX\ApsimX\Models\Core\ApsimFile\EditFile.cs:line 84
+   at Models.Core.ApsimFile.EditFile.Do(String apsimxFilePath, String configFilePath) in C:\Data\ApsimX\ApsimX\Models\Core\ApsimFile\EditFile.cs:line 29
+   at Models.Program.ModifyFile(String fileName, Boolean recurse) in C:\Data\ApsimX\ApsimX\Models\Main.cs:line 202
+   at Models.Program.Main(String[] args) in C:\Data\ApsimX\ApsimX\Models\Main.cs:line 94
+```
+
+
+```{r}
+
 ```
 
 # Set directory structure
