@@ -16,13 +16,17 @@ library(knitr)
 library(pander)
 library(ggplot2)
 library(cowplot)
-
-# Customised package
-library(autoapsimx)
-
 library(broom)
 library(dplyr)
 library(tidyr)
 library(kableExtra)
 library(bookdown)
 library(here)
+
+# Stats
+library(hydroGOF)
+
+# Customised package
+library(autoapsimx)
+
+

@@ -69,9 +69,9 @@ SW_initials <- melt(SW_initials,
                     )[, ':='(SW = round(SW / 100, digits = 3))
                       ]
 
-kable(SW_initials, caption = "Initial soil water content in each layer in 10 sowing dates")%>%
-  kable_styling() %>%
-  scroll_box(width = "100%", height = "500px")
+# kable(SW_initials, caption = "Initial soil water content in each layer in 10 sowing dates")%>%
+#   kable_styling() %>%
+#   scroll_box(width = "100%", height = "500px")
 # Output the SW for different SDs
 sites <- unique(SW_initials$Experiment)
 
@@ -113,35 +113,33 @@ SW_DUL_LL[, ':='(Depth = as.integer(gsub("\\D", "", Depth)),
                  SowingDate = fct_relevel(as.factor(SowingDate), paste0("SD", 1:10)))]
 # order the order - CRITICAL 
 setkey(SW_DUL_LL, Experiment, SowingDate, Depth)
-kable(SW_DUL_LL, caption = "Initial soil parameters for 22 layers in 10 different sowing dates.")%>%
-  kable_styling() %>%
-  scroll_box(width = "100%", height = "500px")
+# kable(SW_DUL_LL, caption = "Initial soil parameters for 22 layers in 10 different sowing dates.")%>%
+#   kable_styling() %>%
+#   scroll_box(width = "100%", height = "500px")
 
 # save the processed table for 
 ```
 
 # Explore the python system call 
 
-```{r}
-library(reticulate)
-```
+
 ```{python}
-import sqlite3
-import re
-import datetime
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import os
-import math
+# import sqlite3
+# import re
+# import datetime
+# import pandas as pd
+# import numpy as np
+# import matplotlib.pyplot as plt
+# import os
+# import math
 ```
 
 _Test_
 ```{python test}
-con = sqlite3.connect('../03processed-data/Richard.sqlite3')
-mycur = con.cursor() 
-mycur.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
-(mycur.fetchall())
+# con = sqlite3.connect('../03processed-data/Richard.sqlite3')
+# mycur = con.cursor() 
+# mycur.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
+# (mycur.fetchall())
 ```
 
 Check the configuration data
@@ -155,10 +153,10 @@ sites
 ```
 ```{python}
 
-for site in sites: 
-    for i in SDs:
-        r.SW_DUL_LL.loc[(r.SW_DUL_LL['Experiment'] == site) 
-                       & (r.SW_DUL_LL.SowingDate == i),:].drop_duplicates().to_csv('../03processed-data/Config' + site + i + '.csv',index = False)
+# for site in sites: 
+#     for i in SDs:
+#         r.SW_DUL_LL.loc[(r.SW_DUL_LL['Experiment'] == site) 
+#                        & (r.SW_DUL_LL.SowingDate == i),:].drop_duplicates().to_csv('../03processed-data/Config' + site + i + '.csv',index = False)
 ```
 
 _Note_  
@@ -186,8 +184,13 @@ Sys.setenv("SimsDir" = file.path(Sys.getenv("WorkingDir"), "03processed-data/aps
 KL_range <- seq(0.01, 0.11, by = 0.01)
 # Could be defined on the fly 
 KL_layer <- length(SW_DUL_LL[Experiment == "AshleyDene" & SowingDate == "SD1"]$Depth)
-SKLs <- lapply(KL_range, function(x) rep(x, times = KL_layer))
+# SKLs <- lapply(KL_range, function(x) rep(x, times = KL_layer))
 names(SKLs) <- KL_range
+
+#BD 
+DB_AshleyDene <- c("1.150,1.150,1.310,1.310,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950")
+DB_Iversen12 <- c("1.260,1.260,1.260,1.440,1.440,1.440,1.570,1.570,1.570,1.580,1.580,1.580,1.580,1.590,1.590,1.590,1.590,1.590,1.590,1.590,1.590,1.590,1.590")
+
 ```
 
 # ApsimX node paths 
@@ -195,26 +198,26 @@ names(SKLs) <- KL_range
 ```{r}
 
 ## The site level configuration 
-weather = ".Simulations.LnP.LandPBase.Weather.FileName = "
-Height = ".Simulations.LnP.LandPBase.Field.ManagerFolder.SetCropVariables.Script.MaximumHeight = "
-
+weather = "[Weather].FileName = "
+Height = "[SetCropVariables].Script.MaximumHeight = "
+BD = "[Soil].Physical.BD = "
 ## The Sowing date level configuration 
 
-SDnode = ".Simulations.LnP.LandPBase.Field.ManagerFolder.SlurpSowingRule.Script.SowingDate = "
-ClockStart = ".Simulations.LnP.LandPBase.Clock.Start = "
+SDnode = "[SlurpSowingRule].Script.SowingDate = "
+ClockStart = "[Clock].Start = "
 
-CoverData = ".Simulations.LnP.LandPBase.Field.ManagerFolder.SetCropVariables.Script.CoverFile = "
-initialSW = ".Simulations.LnP.LandPBase.Field.Soil.InitialConditions.SW = "
+CoverData = "[SetCropVariables].Script.CoverFile = "
+initialSW = "[Soil].InitialConditions.SW = "
 
-DUL <- ".Simulations.LnP.LandPBase.Field.Soil.Physical.DUL = "
-SAT <- ".Simulations.LnP.LandPBase.Field.Soil.Physical.SAT = "
+DUL <- "[Soil].Physical.DUL = "
+SAT <- "[Soil].Physical.SAT = "
 
-AirDry <- ".Simulations.LnP.LandPBase.Field.Soil.Physical.AirDry = "
-LL15 <- ".Simulations.LnP.LandPBase.Field.Soil.Physical.LL15 = "
-LL <- ".Simulations.LnP.LandPBase.Field.Soil.Physical.SlurpSoil.LL = "
+AirDry <- "[Soil].Physical.AirDry = "
+LL15 <- "[Soil].Physical.LL15 = "
+LL <- "[Soil].Physical.SlurpSoil.LL = "
 
 ## The kl parameter level configuration 
-KL <- ".Simulations.LnP.LandPBase.Field.Soil.Physical.SlurpSoil.KL = "
+KL <- paste0("[Soil].Physical.SlurpSoil.KL", "[1:", KL_layer,"]"," = ")
 
 ```
 
@@ -234,7 +237,7 @@ for (i in sites) {
   replacement_met <- file.path(Sys.getenv("MetDir"), paste0(i,".met"))
   ## Height
   replacement_MaxHeight <- ifelse(i == "AshleyDene", 390L, 595L)
-  
+  replacement_BD <- ifelse(i == "AshleyDene", DB_AshleyDene, DB_Iversen12)
   # Sowing date level 
   ## SD
   replacement_SD <- SD[Experiment == i & SD == j ]$Clock.Today
@@ -251,13 +254,14 @@ for (i in sites) {
   replacement_LL15 <- replacement_LL
   
   ## The kl parameter level configuration 
-  for (skl in SKLs){
+  for (skl in KL_range){
     replacement_KL <- skl
     
     # Paste together ----
   
     apsimx_met <- paste0(weather, replacement_met)
     apsimx_Height <- paste0(Height, replacement_MaxHeight)
+    apsimx_BD <- paste0(BD, replacement_BD)
     apsimx_SD <- paste0(SDnode, replacement_SD)
     apsimx_ClockStart <- paste0(ClockStart, replacement_ClockStart)
     apsimx_CoverData <- paste0(CoverData, replacement_CoverData)
@@ -276,6 +280,7 @@ for (i in sites) {
       cat(apsimx_met,
           apsimx_ClockStart,
           apsimx_Height,
+          apsimx_BD,
           apsimx_SD,
           apsimx_CoverData,
           apsimx_initialSW,
@@ -339,6 +344,14 @@ t2 <- Sys.time()
 t2 - t1
 ```
 
+
+# Run all simulations 
+
+```
+..\ApsimX\ApsimX\Bin\Models.exe .\03processed-data\apsimxFiles\*.apsimx
+```
+
+
 .Simulations.LnP.Factors.Permutation.Manager.InitialKL
 .Simulations.LnP.Factors.Permutation.KLR
 
@@ -366,10 +379,7 @@ System.Exception: Invalid path: .Simulations.LnP.LandPBase.Field.ManagerFolder.S
    at Models.Program.Main(String[] args) in C:\Data\ApsimX\ApsimX\Models\Main.cs:line 94
 ```
 
-
-```{r}
-
-```
+# Testing
 
 # Set directory structure
 

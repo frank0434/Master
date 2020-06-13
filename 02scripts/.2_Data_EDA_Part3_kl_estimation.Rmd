@@ -105,95 +105,103 @@ kable(SW_DUL_LL, caption = "Initial soil parameters for 22 layers in 10 differen
   scroll_box(width = "100%", height = "500px")
 ```
 
-# Set directory structure
+
+# Slurp simulations setup in the .2_Data_EDA_Part2
+
+# Slurp results analysis 
 
 ```{r}
-t1 <- Sys.time()
-#path to apsimx 
-apsimx <- "C:/Data/ApsimxLatest/ApsimX/Bin/Models.exe"
-apsimx_flag <- "/Edit"
-apsimx_file <- "C:/Data/Master/01raw-data/ApsimxFiles/20200520Demo.apsimx"
-apsimx_sims_temp <- "C:/Data/Master/03processed-data/apsimxFiles/temp.apsimx"
-apsimx_sims_dir <- "C:/Data/Master/03processed-data/apsimxFiles/"
-apsimx_config <- "C:/Data/Master/03processed-data/configSoilWat"
-
-# Node Path - copied from ApsimX UI
-
-initialSW <- ".Simulations.New Zealand.AshleyDene.Factors.SowingDate.SD.ADsoils.InitialConditions.SW = "
-DUL <- ".Simulations.New Zealand.AshleyDene.Factors.SowingDate.SD.ADsoils.Physical.DUL = "
-LL <- ".Simulations.New Zealand.AshleyDene.Factors.SowingDate.SD.ADsoils.Physical.LucerneSoil.LL = "
-LL15 <- ".Simulations.New Zealand.AshleyDene.Factors.SowingDate.SD.ADsoils.Physical.LL15 = "
-# PAWC <- ".Simulations.New Zealand.AshleyDene.Factors.SowingDate.SD.ADsoils.Physical.PAWC = "
-SAT <- ".Simulations.New Zealand.AshleyDene.Factors.SowingDate.SD.ADsoils.Physical.SAT = "
-# Keys
-sites <- unique(SW_DUL_LL$Experiment)
-SDs <- paste0("SD", 1:10)
-
-# Vectorise the values 
-for(j in sites){
-  for(i in SDs){
-    # Filter the right values 
-    SDsw <- SW_DUL_LL[SowingDate == i & Experiment == j]$SW
-    SDDUL <- SW_DUL_LL[SowingDate == i & Experiment == j]$DUL
-    SDLL <- SW_DUL_LL[SowingDate == i & Experiment == j]$LL
-    apsimx_sw <- paste0(initialSW,
-                        paste(SDsw,collapse = ","))
-    apsimx_DUL <- paste0(DUL,
-                         paste(SDDUL,collapse = ","))
-    apsimx_LL <- paste0(LL,
-                        paste(SDLL,collapse = ","))
-    apsimx_LL15 <- paste0(LL15,
-                          paste(SDLL,collapse = ","))
-    apsimx_SAT <- paste0(SAT,
-                         paste(SDDUL,collapse = ","))
-    # Open a text file
-    f <- file(paste0(apsimx_config, j, i, ".txt"), "w")
-    # Write values into the file 
-    cat(apsimx_sw,
-        apsimx_DUL,
-        apsimx_LL,
-        apsimx_LL15,
-        apsimx_SAT,"\r",
-        sep = "\r", 
-        file = f, 
-        append = TRUE)
-    # Close the file and clean it from memory 
-    close(f)
-    rm(f)
-    gc()
-  }
-
-}
-
-t2 <- Sys.time()
-t2 - t1
+con_eda <- dbConnect(SQLite(), "../03processed-data/apsimxFiles/ModifiedSKL_0.01AshleyDeneSD2.db")
+dbListTables(con_eda)
+report <- dbReadTable(conn = con_eda, "Report",  check.names = FALSE)%>% 
+  as.data.table()
+dbDisconnect(conn = con_eda)
 ```
-
-# Invoke Apsimx
+## Subset the preds
 
 ```{r}
-t1 <- Sys.time()
-for(j in sites){
-   for(i in SDs){
-     # Edit the base apsimx file and save it to a new name
-     ## modify the apsimx file 
-     system(paste(apsimx, apsimx_file, apsimx_flag, paste0(apsimx_config, j, i,".txt")))
-     ## rename the modified one
-     system(paste("cp", apsimx_file, paste0(apsimx_sims_dir, "Modified", j, i, ".apsimx")))
-     ## delete the temp apsimx 
-     # system(paste("rm", paste0(apsimx_sims_dir, "temp*")))
-   }
-  }
-t2 <- Sys.time()
-t2 - t1
+pred_swc_SD2 <- report[,.(Date = as.Date(Date), SimulationID,KLR, RFV, SKL, k, LAI, PSWC)][order(SimulationID)]
+```
+
+## Browse the preds
+
+
+```{r, fig.height=10,fig.width=10}
+pred_swc_SD2 %>% 
+  ggplot(aes(Date, PSWC)) +
+  geom_point() +
+  facet_wrap(~ SimulationID)
+
+```
+
+## Subset the obs 
+
+```{r}
+con <- dbConnect(SQLite(), "../03processed-data/Richard.sqlite3")
+water <- dbReadTable(con, "SoilWater", check.names = FALSE) %>% 
+  as.data.table()
+water[, ':='(Clock.Today = as.Date(Clock.Today))]
+
+obs_SD2 <- water[, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = "SWC" # average 4 reps
+      ][SowingDate == "SD2" & Experiment == "AshleyDene"]
+```
+
+## Join the pred and obs
+
+```{r}
+# Join and drop NAs of no obs
+pred_obs <- pred_swc_SD2[obs_SD2, on = c(  "Date" = "Clock.Today" )][order(SimulationID)]
+ # obs_SD2[pred_swc_SD2, on = c(  "Clock.Today" = "Date"), by = "SimulationID"]
+# pred_obs[complete.cases(pred_obs)]
+NSE(pred_obs$PSWC, pred_obs$SWC)
+```
+
+## Stats
+
+```{r}
+TEST <- pred_obs[SimulationID == 1]
+m <- gof(sim = TEST$PSWC, obs = TEST$SWC) 
+m[4] # RMSE
+m[5] # Normalised RMSE
+m[9] # NSE Nash-Sutcliffe Efficiency ( -Inf <= NSE <= 1 )
+m[16] # Pearson Correlation coefficient ( -1 <= r <= 1 )
+m[17] # Coefficient of Determination ( 0 <= R2 <= 1 ). 
+      # Gives the proportion of the variance of one variable that is predictable from the other variable
+
+setnames(test, rownames(m))
+setkey(pred_obs, "Experiment", "SimulationID", "SowingDate", "KLR","RFV","SKL")
+nested <- pred_obs[, list(data = list(.SD)), by = key(pred_obs)][]
+nested[, data := lapply(data, function(x){
+  m <- hydroGOF::gof(x$PSWC, x$SWC)
+  m <- m %>% 
+    as.data.table(keep.rownames = T) %>% 
+    transpose(make.names = 'rn')
+})]
+nested$data[[1]]
+
+
+stats <- nested[, unlist(data, recursive = FALSE), by = key(pred_obs)]
+stats
+```
+
+## visul check 
+```{r}
+pred_obs %>% 
+  ggplot(aes(Date, PSWC)) +
+  geom_point() +
+  geom_point(aes(y = SWC), color = "red") +
+  facet_wrap(~ SimulationID)
+  
 ```
 
 ```{r}
-# system(apsimx)
-t1 <- Sys.time()
-# system(paste(apsimx, paste0(apsimx_sims_dir,"*.apsimx"), "/NumberOfProcessors:8"))
-t2 <- Sys.time()
-t2 - t1
+dbs <- list.files(path = "../03processed-data/apsimxFiles/", pattern = ".db$", full.names = TRUE)
+l_dbs <- lapply(dbs, function(x) {
+  con <- dbConnect(RSQLite::SQLite(), x)
+  df <- dbReadTable(con, "Report", check.names = FALSE)
+  dt <- as.data.table(df)
+  })
 ```
 
-It only takes 6 seconds for the apsimx ui to run 10 simulations. 
+
+
