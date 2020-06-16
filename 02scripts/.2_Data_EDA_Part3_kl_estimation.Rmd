@@ -53,9 +53,6 @@ P88 in the thesis,
 LAI was calculated from $Specfic Leaf Area(SLA) \times TotalFW_{HarvestArea} \div 2000 $ 
 ```{r glimpse}
 
-kable(LAI[1:50, ], caption = "Initial soil biomass content in each layer in 10 sowing dates")%>%
-  kable_styling() %>%
-  scroll_box(width = "100%", height = "500px")
 
 ```
 
@@ -81,29 +78,10 @@ LAI_summaried %>%
   facet_grid(SowingDate~ Experiment) +
   theme_water()
 # Output the SW for different SDs
-sites <- unique(SW_initials$Experiment)
+
 
 ```
 
-
-# Combine Soil Paras
-
-```{r}
-SW_DUL_LL <- SW_initials[DUL_LL_SDsVWC, on = c("Experiment", "SowingDate", "Depth")][Depth != "SW(2)"]
-
-# Check if anything unusual 
-SW_DUL_LL[DUL<SW]
-SW_DUL_LL[LL>SW]
-
-# Order the layers
-SW_DUL_LL[, ':='(Depth = as.integer(gsub("\\D", "", Depth)),
-                 SowingDate = fct_relevel(as.factor(SowingDate), paste0("SD", 1:10)))]
-# order the order - CRITICAL 
-setkey(SW_DUL_LL, Experiment, SowingDate, Depth)
-kable(SW_DUL_LL, caption = "Initial soil parameters for 22 layers in 10 different sowing dates.")%>%
-  kable_styling() %>%
-  scroll_box(width = "100%", height = "500px")
-```
 
 
 # Slurp simulations setup in the .2_Data_EDA_Part2
@@ -141,7 +119,8 @@ con <- dbConnect(SQLite(), "../03processed-data/Richard.sqlite3")
 water <- dbReadTable(con, "SoilWater", check.names = FALSE) %>% 
   as.data.table()
 water[, ':='(Clock.Today = as.Date(Clock.Today))]
-
+obs <- water[, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = "SWC" # average 4 reps
+             ]
 obs_SD2 <- water[, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = "SWC" # average 4 reps
       ][SowingDate == "SD2" & Experiment == "AshleyDene"]
 ```
@@ -168,40 +147,339 @@ m[16] # Pearson Correlation coefficient ( -1 <= r <= 1 )
 m[17] # Coefficient of Determination ( 0 <= R2 <= 1 ). 
       # Gives the proportion of the variance of one variable that is predictable from the other variable
 
-setnames(test, rownames(m))
+
 setkey(pred_obs, "Experiment", "SimulationID", "SowingDate", "KLR","RFV","SKL")
+# Nested the data.table by keys
 nested <- pred_obs[, list(data = list(.SD)), by = key(pred_obs)][]
 nested[, data := lapply(data, function(x){
+  # Calculate the stats via goodness of fit
   m <- hydroGOF::gof(x$PSWC, x$SWC)
+  # Convert the matrix into a data.table with colnames 
   m <- m %>% 
     as.data.table(keep.rownames = T) %>% 
     transpose(make.names = 'rn')
 })]
-nested$data[[1]]
 
-
+# Unnest the data.table 
 stats <- nested[, unlist(data, recursive = FALSE), by = key(pred_obs)]
 stats
 ```
 
 ## visul check 
+
+
+
 ```{r}
-pred_obs %>% 
-  ggplot(aes(Date, PSWC)) +
-  geom_point() +
+
+pred_obs_withNAs <- obs_SD2[ pred_swc_SD2, on = c("Clock.Today" = "Date") ][order(SimulationID)]
+
+pred_obs_withNAs %>% 
+  ggplot(aes(Clock.Today, PSWC)) +
+  geom_point(color = "grey") +
   geom_point(aes(y = SWC), color = "red") +
   facet_wrap(~ SimulationID)
   
 ```
 
+# Try to process the whole 220 dbs
+
+`for` loop to process one by one to avoid large memory usage? 
+
+what are the necessary bits in the `for`
+
+1. read db  
+2. subset observation  
+3. join the obs and preds   
+4. nested the data.table   
+5. calcualting inside the nested   
+6. unnest  
+7. store into the list  
+
+## Test
+
 ```{r}
 dbs <- list.files(path = "../03processed-data/apsimxFiles/", pattern = ".db$", full.names = TRUE)
-l_dbs <- lapply(dbs, function(x) {
-  con <- dbConnect(RSQLite::SQLite(), x)
+i = dbs[10]
+  con <- dbConnect(RSQLite::SQLite(), i)
   df <- dbReadTable(con, "Report", check.names = FALSE)
+  dbDisconnect(con)
   dt <- as.data.table(df)
-  })
+  site_sd <- gsub(".+ModifiedSKL_0\\.\\d{2}|\\.db","",i)
+  site_sd <- gsub("(.+)(SD\\d{1,2})", "\\1_\\2", site_sd)
+  site <- unlist(strsplit(site_sd, split = "_"))[1]
+  sd <- unlist(strsplit(site_sd, split = "_"))[2]
+  obs_sd <- obs[Experiment == site & SowingDate == sd]
+dt
+sd
+site
+```
+# The workflow has been integrated into drake_plan
+
+```
+t1 <- Sys.time()
+dbs <- list.files(path = "../03processed-data/apsimxFiles/", pattern = ".db$", full.names = TRUE)
+# A list to store all the stats results 
+l_stats <- vector("list", length = length(dbs))
+names(l_stats) <- dbs
+no <- 1L
+for (i in dbs) {
+  # 1 read db 
+  con <- dbConnect(RSQLite::SQLite(), i)
+  df <- dbReadTable(con, "Report", check.names = FALSE)
+  dbDisconnect(con)
+  dt <- as.data.table(df)
+  # 2 subset 
+  ## 2.1 Site and sowing date infor to subset the observation dt
+  cat("Processing", i, no,"of", length(dbs), ".\r\n")
+  no = no + 1L
+  site_sd <- gsub(".+ModifiedSKL_0\\.\\d{1,2}|\\.db","",i)
+  site_sd <- gsub("(.+)(SD\\d{1,2})", "\\1_\\2", site_sd)
+  site <- unlist(strsplit(site_sd, split = "_"))[1]
+  sd <- unlist(strsplit(site_sd, split = "_"))[2]
+  obs_sd <- obs[Experiment == site & SowingDate == sd]
+  
+  ## 2.2 Subset necessary cols in prediction 
+  pred_swc <- dt[,.(Date = as.Date(Date), SimulationID,KLR, RFV, SKL, k, LAI, PSWC)][order(SimulationID)]
+
+  # 3 Join 
+  pred_obs <- pred_swc[obs_sd, on = c("Date" = "Clock.Today" )][order(SimulationID)]
+  
+  # 4 nested the data.table   
+  setkey(pred_obs, "Experiment", "SimulationID", "SowingDate", "KLR","RFV","SKL")
+  nested <- pred_obs[, list(data = list(.SD)), by = key(pred_obs)]
+  
+  # 5 calcualting inside the nested   
+  nested[, data := lapply(data, function(x){
+    # Calculate the stats via goodness of fit
+    m <- hydroGOF::gof(x$PSWC, x$SWC)
+    # Convert the matrix into a data.table with colnames 
+    m <- m %>% 
+      as.data.table(keep.rownames = T) %>% 
+      transpose(make.names = 'rn')
+    })]
+  # 6 Unnest the data.table 
+  stats <- nested[, unlist(data, recursive = FALSE), by = key(pred_obs)]
+  
+  # 7 store into the list
+  l_stats[[i]] <- stats
+
+
+}
+t2 <- Sys.time()
+t2-t1
+# 
+# l_dbs <- lapply(dbs, function(x) {
+#   con <- dbConnect(RSQLite::SQLite(), x)
+#   df <- dbReadTable(con, "Report", check.names = FALSE)
+#   dt <- as.data.table(df)
+#   })
 ```
 
 
+```
+rbindlist(l_stats)
+```
+ 
+201 TO 220 has nothing? 
+because the regex was wrong and subset ob failed. 
+
+```{r}
+l_stats[220]
+```
+
+# EDA on loadding stats from cache FOR 1 SKL
+
+```{r}
+DT_stats <- drake::readd(DT_stats)
+# Check if any NAs
+DT_stats[, lapply(.SD, function(x) sum(is.na(x)))]
+# Check if any 0s - probably not very useful 
+# DT_stats[, lapply(.SD, function(x) sum(which(x == 0)))]
+```
+
+# NSE needs to be close to 1 
+
+NSE is acceptable if the value is above 
+
+```{r}
+# Nest it into different treatment 
+setkey(DT_stats, "Experiment","SimulationID", "SowingDate", "KLR","RFV","SKL")
+stats_nested = DT_stats[,.(stats), by = key(DT_stats)]
+test = stats_nested[, unlist(stats, recursive = FALSE), by = key(stats_nested)]
+
+# Best NSE for different treatment 
+test = test[, list(stats = list(.SD)), 
+            by = .(Experiment, SowingDate)
+            ]
+best_NSE= test$stats[[1]][order(NSE, R2, RMSE, decreasing = TRUE)][, .SD[.I[1]]]
+
+
+# best_NSE = test$stats[[1]][order(NSE, decreasing = TRUE)][, .SD[.I[1]]]
+```
+
+# Check the best fit NSE for a single simulation 
+
+```{r fig.height=10, fig.width=14}
+path <- "../03processed-data/apsimxFiles/ModifiedSKL_0.11AshleyDeneSD1.db"
+dt_pred07 <- autoapsimx::read_dbtab(path = path, "Report")
+dt_pred07
+dt_obs <- readd(SWC_mean)
+site_sd <- autoapsimx::extract_trts(path)
+dt_obs = dt_obs[Experiment == site_sd[1] & SowingDate == site_sd[2]]
+pred_obs = manipulate(DT_obs = dt_obs, DT_pred = dt_pred07)
+test
+palette = rep("grey", times = 2)
+             
+palette_named = setNames(palette,  c("PSWC", "SWC"))
+palette_named[2] = "red"
+point_size = 2
+pred_obs[, KLR_RFV := paste0("klReduction=", KLR, "\r\n", "RFV=", RFV)] %>% 
+  ggplot(aes(Date)) +
+  geom_point(aes(y = PSWC, color = "PSWC"), size = point_size) +
+  geom_point(aes(y = SWC,color = "SWC"), size = point_size) +
+  facet_wrap(~ KLR_RFV) +
+  ggtitle(paste0("Surface kl = ", unique(pred_obs$SKL))) +
+  theme_water() +
+  scale_x_date(date_labels = "%Y %b") +
+  scale_color_manual(name = "", values = palette_named) +
+  theme(legend.position = "top", 
+        axis.text.x = element_text(angle = 30, hjust = 1))
+
+```
+# Subset to the best NSE
+
+```{r}
+best_NSE
+pred_obs$SKL %>% unique()
+bestfit= pred_obs[KLR == best_NSE$KLR[1] &
+                    RFV == best_NSE$RFV[1] ] 
+bestfit %>% 
+  ggplot(aes(Date, PSWC)) +
+  geom_point(color = "grey") +
+  geom_point(aes(y = SWC), color = "red")
+```
+
+# EDA SD1 with all SKL 
+```{r}
+
+test = DT_stats[, unlist(stats, recursive = FALSE),
+                by = key(DT_stats)
+                ]
+top5_stats = test[ NSE > 0 
+                   ][order(NSE,R2, RMSE, decreasing = TRUE),
+                     index := seq_len(.N), 
+                     by = list(Experiment, SowingDate)
+                     ][index <= 5][, index := NULL][]
+
+top5_stats[Experiment %like% "Ashley"]$SowingDate %>% unique() 
+top5_stats[Experiment %like% "Iver"]$SowingDate %>% unique() 
+
+DT_stats_sub = DT_stats[top5_stats, 
+                        on = c("Experiment", "SowingDate", "SimulationID", "KLR", "RFV", "SKL")]
+
+top5 = DT_stats_sub[, unlist(data, recursive = FALSE), 
+                    by = list(Experiment, SowingDate, KLR, RFV, SKL, NSE, R2, RMSE)]
+
+```
+
+```{r graph top5, fig.width=10, fig.height=10}
+palette = rep("grey", times = 2)
+             
+palette_named = setNames(palette,  c("Predict SWC", "Observed SWC"))
+palette_named[2] = "red"
+point_size = 2
+DT = top5[, KLR_RFV_SKL := paste0("klReduction=", KLR, 
+                                  "\r\n", "RFV=", RFV,
+                                  "\r\n", "SKL=", SKL)
+           ][Experiment == "AshleyDene" & SowingDate == "SD5"] 
+DT %>% 
+  ggplot(aes(Date)) +
+  geom_point(aes(y = PSWC, color = names(palette_named)[1]), size = point_size) +
+  geom_point(aes(y = SWC,color = names(palette_named)[2]), size = point_size) +
+  geom_text(aes(x = max(DT$Date) - 60, y = median(DT$PSWC), 
+                label = paste0("NSE = ", NSE,
+                                "\r\nR.square = ", R2,
+                                "\r\nRMSE = ", RMSE)),inherit.aes = FALSE)+
+  facet_grid(  KLR_RFV_SKL ~.) +
+  ggtitle(paste0(unique(DT$Experiment), unique(DT$SowingDate))) +
+  scale_x_date(date_labels = "%Y %b", date_breaks = "4 weeks") +
+  scale_color_manual(name = "", values = palette_named) +
+  theme_water() +
+  theme(legend.position = "top", 
+        axis.text.x = element_text(angle = 30, hjust = 1))
+```
+
+
+## Iversen12 Sowingdates 9 and 10 have negative NSEs
+
+EDA A BIT 
+Seems there are too few observations in the SD10 in Iversen12
+the prediction performance even worse than the using mean values 
+
+```{r}
+I12sd9and10 = DT_stats[Experiment %like% "Iver" &
+                         SowingDate %in% c(paste0("SD", 9:10))]
+I12sd9and10[, unlist(stats, recursive = FALSE), by = list(SowingDate, SimulationID, KLR, RFV, SKL)]
+I12sd9and10$data[[1]] %>% 
+  ggplot(aes(Date)) +
+  geom_point(aes(y = PSWC, color = "PSWC"), size = point_size) +
+  geom_point(aes(y = SWC,color = "SWC"), size = point_size) +
+  # facet_wrap(~ KLR_RFV) +
+  # ggtitle(paste0("Surface kl = ", unique(pred_obs$SKL))) +
+  theme_water() +
+  scale_x_date(date_labels = "%Y %b") +
+  scale_color_manual(name = "", values = palette_named) +
+  theme(legend.position = "top", 
+        axis.text.x = element_text(angle = 30, hjust = 1))
+I12sd9and10[SowingDate == "SD9"]$data[[1]] %>% 
+  ggplot(aes(Date)) +
+  geom_point(aes(y = PSWC, color = "PSWC"), size = point_size) +
+  geom_point(aes(y = SWC,color = "SWC"), size = point_size) +
+  # facet_wrap(~ KLR_RFV) +
+  # ggtitle(paste0("Surface kl = ", unique(pred_obs$SKL))) +
+  theme_water() +
+  scale_x_date(date_labels = "%Y %b") +
+  scale_color_manual(name = "", values = palette_named) +
+  theme(legend.position = "top", 
+        axis.text.x = element_text(angle = 30, hjust = 1))
+```
+What about ashley dene if the sd 9 and 10 so bad in iversen 12.
+Seems much better even without look at the best fit parameters.
+
+
+```{r}
+I12sd9and10 = DT_stats[Experiment %like% "Ashley" &
+                         SowingDate %in% c(paste0("SD", 9:10))]
+I12sd9and10[, unlist(stats, recursive = FALSE), by = list(SowingDate, SimulationID, KLR, RFV, SKL)]
+I12sd9and10$data[[1]] %>% 
+  ggplot(aes(Date)) +
+  geom_point(aes(y = PSWC, color = "PSWC"), size = point_size) +
+  geom_point(aes(y = SWC,color = "SWC"), size = point_size) +
+  # facet_wrap(~ KLR_RFV) +
+  # ggtitle(paste0("Surface kl = ", unique(pred_obs$SKL))) +
+  theme_water() +
+  scale_x_date(date_labels = "%Y %b") +
+  scale_color_manual(name = "", values = palette_named) +
+  theme(legend.position = "top", 
+        axis.text.x = element_text(angle = 30, hjust = 1))
+I12sd9and10[SowingDate == "SD9"]$data[[1]] %>% 
+  ggplot(aes(Date)) +
+  geom_point(aes(y = PSWC, color = "PSWC"), size = point_size) +
+  geom_point(aes(y = SWC,color = "SWC"), size = point_size) +
+  # facet_wrap(~ KLR_RFV) +
+  # ggtitle(paste0("Surface kl = ", unique(pred_obs$SKL))) +
+  theme_water() +
+  scale_x_date(date_labels = "%Y %b") +
+  scale_color_manual(name = "", values = palette_named) +
+  theme(legend.position = "top", 
+        axis.text.x = element_text(angle = 30, hjust = 1))
+```
+
+```{r}
+path <- "../03processed-data/apsimxFiles/"
+path_dbs = list.files("../03processed-data/apsimxFiles/", ".+Ashley.+SD1.db$", full.names = TRUE)
+l_obs = lapply(path_dbs, function(x) read_dbtab(x, "Report"))
+SD1_SKLs = rbindlist(l_obs)
+
+```
 
