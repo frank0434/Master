@@ -2,8 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
-
-
 #less desired files
 *.html
 *.db-shm
@@ -14,11 +12,11 @@
 *.sqlite3
 temp*
 test*
-#notebook checkout points 
+#notebook checkout points
 .ipynb_check*
-
-
-
 #dir
 Data/
 03processed-data/
+.drake/*
+05figures/*
+.drake/
