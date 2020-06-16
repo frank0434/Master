@@ -1,5 +1,4 @@
 
-
 #' max_min
 #'
 #' @param x 
@@ -13,12 +12,13 @@ max_min <- function(x){list(DUL = max(x, na.rm = TRUE),
 
 #' check_resi
 #'
-#' @description check if the residue of the simulated and observed values are randomly placed. 
-#' 
-#' @param df 
-#' @param SimulationID 
-#' @param col_date 
-#' @param col_target 
+#' @description check if the residue of the simulated and observed values are
+#'   randomly placed.
+#'
+#' @param df
+#' @param SimulationID
+#' @param col_date
+#' @param col_target
 #'
 #' @return
 #' @export
