@@ -166,3 +166,11 @@ Use the simulation water as the initial conditions
 
 Progress to calculate all STATS for all layers. 
 Maybe this could tell which layer contribute to poor prediction? 
+
+Hamish comments:
+
+Two approaches: 
+1. expotential decay is good to generalised the model 
+2. layer by layer fit is good for details study 
+
+Try both 
