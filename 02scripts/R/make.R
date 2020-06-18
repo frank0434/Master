@@ -34,3 +34,4 @@ vis_drake_graph(
   # parallelism = "clustermq",
   # jobs = 16
 )
+drake_ggraph(plan)

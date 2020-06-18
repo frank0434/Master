@@ -1,4 +1,29 @@
 
+
+#' rename_cols
+#' @description Rename the soilwater data. The top 20cm data has been
+#'   artifically divide into two 10 cm layer. 
+#'
+#' @param DT data.table which has water data 
+#' @param pattern the colnames for soil water content for each layer 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+rename_cols <- function(DT, pattern = "^(?!SW)"){
+  if("SWC" %in% names(DT)){
+  data.table::setnames(DT, names(DT),  
+                       c(grep(pattern = "^(?!SW)" , perl = TRUE, names(DT), value = TRUE), 
+                         paste0("SW(", 1:22,")"), 
+                         "SWC"))
+  } else {
+    data.table::setnames(DT, names(DT),  
+                         c(grep(pattern = "^(?!SW)" , perl = TRUE, names(DT), value = TRUE), 
+                           paste0("SW(", 1:22,")")))
+  }
+  DT
+}
 #' max_min
 #'
 #' @param x 
