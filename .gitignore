@@ -18,5 +18,5 @@ test*
 Data/
 03processed-data/
 .drake/*
-05figures/*
+
 .drake/
