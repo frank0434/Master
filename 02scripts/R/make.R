@@ -17,11 +17,12 @@ id_vars <- c("Experiment", "SowingDate", "Clock.Today")
 Sites <- c("AshleyDene", "Iversen12")
 
 stats_key <- c("Experiment", "SowingDate", "SimulationID", "KLR", "RFV", "SKL")
+stats_key_SW <- c("Experiment", "SowingDate", "SimulationID", "KLR", "RFV", "SKL", "Depth")
+
 stats_key_extra <- c(stats_key, "NSE", "R2", "RMSE")
-drake::make(plan, lock_envir = F)
-
-
-
+stats_key_SW_extra <- c(stats_key_SW, "NSE", "R2", "RMSE")
+drake::make(plan, lock_envir = F, memory_strategy = "autoclean", 
+            garbage_collection = TRUE)
 
 
 library(visNetwork) 
