@@ -475,6 +475,114 @@ I12sd9and10[SowingDate == "SD9"]$data[[1]] %>%
         axis.text.x = element_text(angle = 30, hjust = 1))
 ```
 
+
+# What about each layers 
+
+```{r}
+SW_obs = readd(SW_mean)
+SW_obs
+DT_stats = readd(DT_stats)
+DT_stats$data[[3]]
+readd(dt)
+DT = readd(pred_swc)
+cols <- c("CheckpointID", "Experiment", "FolderName")
+DT[, (cols) :=  NULL
+   ][order(SimulationID)]
+
+DT <- readd(pred_sw)
+DT_STATS <- sims_stats(DT, col_pred = "SW(1)", col_obs = "i.SW(1)")
+DT_STATS$data[[1]]
+DT[, Zone := NULL]
+grep("^(!?SW)", names(DT), value = TRUE)
+setkeyv(DT, c("Date","Experiment", "SimulationID", "SowingDate",
+              "KLR","RFV","SKL"))
+key(DT)
+
+DT %>% melt(id.vars = key(DT))
+
+
+```
+
+Might be easier to melt first and then join 
+```{r}
+dt <- readd(dt)
+value_vars <- grep("^(!?SW\\()", names(dt), value = TRUE)
+pred <- dt %>% 
+  melt(value.name = "pred_VWC",
+       measure.vars =value_vars, 
+       variable.name = "Depth",
+       variable.factor = FALSE)
+cols <- c("CheckpointID", "Experiment", "FolderName", "Zone")
+pred[, (cols) := NULL]
+obs <- readd(obs_sd)
+obs <- obs %>% 
+  melt(value.name = "ob_VWC", 
+       measure.vars =value_vars, 
+       variable.name = "Depth",
+       variable.factor = FALSE)
+pred_obs <- merge.data.table(pred, obs, by.x = c("Date", "Depth"), by.y = c("Clock.Today", "Depth"))
+
+TEST <- pred_obs[, list(data = list(.SD)), 
+         by = c("Experiment", "SowingDate", "Depth","SimulationID")]
+TEST <- sims_stats(pred_obs, keys = c("Experiment", "SowingDate", "Depth","SimulationID"),
+           col_pred = "pred_VWC",
+           col_obs = "ob_VWC")[]
+TEST$stats[[1]]
+```
+
+```{r fig.height=14, fig.width=10}
+# readd(DT_stats_SW)
+DT = readd(pred_obs_pred_SW_Site_SD_AshleyDene_SD10_long_obs_SW_AshleyDene_SD10)
+DT$Depth %>% 
+  unique() %>% 
+  factor(levels = paste0("SW(",1:22, ")"))
+DT[, Depth := forcats::fct_relevel(as.factor(Depth), paste0("SW(",1:22, ")"))][]
+
+point_size = 2
+col_pred = "pred_VWC"
+col_obs = "obs_VWC"
+palette = rep("grey", times = 2)
+palette_named = setNames(palette,  c(col_pred, col_obs))
+palette_named[2] = "red"
+DT %>% 
+  ggplot(aes(Date)) +
+        geom_point(aes(y = get(col_pred), color = names(palette_named)[1]), size = point_size) +
+        geom_point(aes(y = get(col_obs), color = names(palette_named)[2]), size = point_size) +
+        geom_text(aes(x = as.Date("2011-07-01"), y = median(DT[[col_pred]]),
+                      label = paste0("NSE = ", NSE,
+                                     "\r\nR.square = ", R2,
+                                     "\r\nRMSE = ", RMSE)),inherit.aes = FALSE)+
+        facet_grid( reformulate( "KLR_RFV_SKL", "Depth")) +
+        ggtitle(paste0(unique(DT$Experiment), unique(DT$SowingDate))) +
+        scale_x_date(date_labels = "%Y %b", date_breaks = "4 weeks") +
+        scale_color_manual(name = "", values = palette_named) +
+        theme_water() +
+        theme(legend.position = "top",
+              axis.text.x = element_text(angle = 30, hjust = 1))
+  
+  plot_params("../05figures/TEST.PNG", col_pred = "pred_VWC", col_obs = "obs_VWC", Depth = "Depth")
+```
+# Out put top5 as a table 
+```{r}
+
+dt = readd(top5)
+nested = dt[, list(data = list(.SD)), 
+            by = .(Experiment, SowingDate, SimulationID, SKL,KLR, RFV, NSE, R2, RMSE)
+            ][order(NSE, R2,RMSE)
+              ][, .SD[1], by = .(Experiment, SowingDate)]
+fwrite(nested[, data:=NULL], file = "../03processed-data/best_fitForSWC_Profile.csv")
+nested
+```
+
+## Maybe use the top 5 to look at different layers? 
+```{r}
+readd(Site_SD_AshleyDene_SD3)
+readd(top5)
+DT = readd(DT_stats)
+DT$data[[1]]
+```
+
+
 ```{r}
 path <- "../03processed-data/apsimxFiles/"
 path_dbs = list.files("../03processed-data/apsimxFiles/", ".+Ashley.+SD1.db$", full.names = TRUE)
