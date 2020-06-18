@@ -9,7 +9,7 @@ path_EDAfigures <- here::here("05figures/klEDA/")
 source(file.path(kRpath, "functions.R"))
 source(file.path(kRpath, "packages.R"))
 source(file.path(kRpath, "plan.R"))
-
+source(file.path(kRpath, "plan_SW.R"))
 
 # Constant
 
@@ -23,7 +23,8 @@ stats_key_extra <- c(stats_key, "NSE", "R2", "RMSE")
 stats_key_SW_extra <- c(stats_key_SW, "NSE", "R2", "RMSE")
 drake::make(plan, lock_envir = F, memory_strategy = "autoclean", 
             garbage_collection = TRUE)
-
+drake::make(plan_SW, lock_envir = F, memory_strategy = "autoclean", 
+            garbage_collection = TRUE)
 
 library(visNetwork) 
 vis_drake_graph(

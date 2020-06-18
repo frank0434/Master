@@ -110,23 +110,7 @@ plan <- drake::drake_plan(
   ), 
   
   ## SW layer
-  ## Calculate individual layers stats is pointless 
-  # l_stats_SW = autoapsimx::sims_stats_multi(path_sims = path_sims,
-  #                                           DT_observation = SW_mean,
-  #                                           mode = "Layers", 
-  #                                           keys = stats_key_SW),
-  # DT_stats_SW = data.table::rbindlist(l_stats_SW),
-  # top5_stats_SW = DT_stats_SW[, unlist(stats, recursive = FALSE),
-  #                       by = stats_key_SW
-  #                       ][NSE > 0 # Pointless to have NSE value less than 0
-  #                         ][order(NSE,R2, RMSE, decreasing = TRUE),
-  #                           index := seq_len(.N), 
-  #                           by = list(Experiment, SowingDate, Depth)
-  #                           ][index <= 5][, index := NULL],
-  # DT_stats_sub_SW = DT_stats_SW[top5_stats_SW, 
-  #                               on = stats_key_SW],
-  # top5_SW = DT_stats_sub_SW[, unlist(data, recursive = FALSE), 
-  #                           by = stats_key_SW_extra],
+ 
   obs_SW = target(
     autoapsimx::subset_obs(DT = SW_mean, 
                            treatment1 = sites ,
