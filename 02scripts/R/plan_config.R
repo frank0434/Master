@@ -54,8 +54,9 @@ plan_config <- drake::drake_plan(
   # Joinning all 
   SW_DUL_LL = SW_initials_tidied[DUL_LL_SDsVWC, 
                                  on = c("Experiment", "SowingDate", "Depth")
-                                 ][Depth != "SW(2)"
-                                   ][,':='(Depth = as.integer(gsub("\\D", "", Depth)))],
+                                 ][,':='(Depth = as.integer(gsub("\\D", "", Depth)))
+                                     ][order(Experiment,SowingDate, Depth, Clock.Today)],
+  
   
   # kl ----------------------------------------------------------------------
   ## Prepare the slurp model input 
