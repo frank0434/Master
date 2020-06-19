@@ -12,11 +12,11 @@
 *.sqlite3
 temp*
 test*
+*.txt
+*.csv
+*.pdf
 #notebook checkout points
 .ipynb_check*
 #dir
 Data/
-03processed-data/
-05figures/
-
 .drake/
