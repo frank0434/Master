@@ -86,7 +86,8 @@ KL <- paste0("[Soil].Physical.SlurpSoil.KL", "[1:", KL_layer,"]"," = ")
 # Replacement values
 
 ```{r load data from cache}
-drake::loadd()
+drake::readd(SW_DUL_LL)
+drake::readd(SD_tidied)
 # Critical order
 setkey(SW_DUL_LL, Experiment, SowingDate, Depth)
 ```
