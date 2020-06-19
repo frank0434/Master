@@ -65,9 +65,9 @@ plan_analysis <- drake::drake_plan(
                               "SD6",  "SD7",  "SD8",  "SD9",  "SD10"))
   ),
   plot = target(
-    plot_params(DT = Site_SD, file_out(!!paste0(path_EDAfigures,"/",.id_chr))),
+    plot_params(DT = Site_SD, file_out(!!paste0(path_EDAfigures,"/",.id_chr)), format = "png"),
     transform = map(Site_SD),
-    trigger = trigger(condition = FALSE, mode = "blacklist")
+    trigger = trigger(condition = TRUE, mode = "blacklist")
   ), 
   
   ## SW layer
@@ -108,9 +108,9 @@ plan_analysis <- drake::drake_plan(
                 col_pred = "pred_VWC", col_obs = "obs_VWC",
                 Depth = "Depth",
                 height = 16, width = 9,
-                title = file_out(!!paste0(path_EDAfigures,"/",.id_chr))),
+                title = file_out(!!paste0(path_EDAfigures,"/",.id_chr)),format = "png"),
     transform = map(pred_obs),
-    trigger = trigger(condition = FALSE, mode = "blacklist")
+    trigger = trigger(condition = TRUE, mode = "blacklist")
   ),
   best_fit = target(
     data.table::fwrite(top5[, list(Experiment, SowingDate, SimulationID, SKL,KLR, RFV, NSE, R2, RMSE)

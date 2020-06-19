@@ -9,8 +9,6 @@ path_EDAfigures <- here::here("05figures/klEDA/")
 source(file.path(kRpath, "functions.R"))
 source(file.path(kRpath, "packages.R"))
 
-
-
 source(file.path(kRpath, "EditApsimx.R"))
 source(file.path(kRpath, "plan.R"))
 source(file.path(kRpath, "plan_SW.R"))
@@ -26,14 +24,20 @@ stats_key_SW <- c("Experiment", "SowingDate", "SimulationID", "KLR", "RFV", "SKL
 
 stats_key_extra <- c(stats_key, "NSE", "R2", "RMSE")
 stats_key_SW_extra <- c(stats_key_SW, "NSE", "R2", "RMSE")
-# Configuration plan will 
+
+# # Configuration plan will  ----------------------------------------------
+
+
 # Create configuration files for slurp 
 # Create CoverData as slurp input 
 # Create apsimx files 
 # Run all apsimx files - take long time 
 drake::make(plan_config, lock_envir = F, memory_strategy = "autoclean", 
             garbage_collection = TRUE)
-# Analysis plan will 
+
+# # Analysis plan will  ---------------------------------------------------
+
+
 # Process all simulation output 
 # Identify the best fit parameters for SKL, KLR and RFV regarding to soil water
 # profile
@@ -41,7 +45,10 @@ drake::make(plan_config, lock_envir = F, memory_strategy = "autoclean",
 # Output a table of real best fit 
 drake::make(plan_analysis, lock_envir = F, memory_strategy = "autoclean", 
             garbage_collection = TRUE)
-# Soil water plan will 
+
+# # Soil water plan will  -------------------------------------------------
+
+
 # Process all simulation output 
 # Identify the best fit parameters for SKL, KLR and RFV regarding to soil water
 # in each layer
@@ -60,10 +67,28 @@ source(file.path(kRpath, "plan_LayerCalibr.R"))
 apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
 drake::make(plan_LayerCalibr, lock_envir = F, memory_strategy = "autoclean", 
             garbage_collection = TRUE)
+
+
 library(visNetwork) 
 vis_drake_graph(
-  plan, targets_only = TRUE,
+  plan_config, targets_only = TRUE,
   font_size = 25,
+  # file = "05figures/dependency.png",
+  navigationButtons = FALSE
+  # parallelism = "clustermq",
+  # jobs = 16
+)
+vis_drake_graph(
+  plan_analysis, targets_only = TRUE,
+ 
+  # file = "05figures/dependency.png",
+  navigationButtons = FALSE
+  # parallelism = "clustermq",
+  # jobs = 16
+)
+vis_drake_graph(
+  plan_SW, targets_only = TRUE,
+  
   # file = "05figures/dependency.png",
   navigationButtons = FALSE
   # parallelism = "clustermq",
