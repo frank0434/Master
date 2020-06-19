@@ -8,8 +8,10 @@ path_EDAfigures <- here::here("05figures/klEDA/")
 #plan 
 source(file.path(kRpath, "functions.R"))
 source(file.path(kRpath, "packages.R"))
+source(file.path(kRpath, "EditApsimx.R"))
 source(file.path(kRpath, "plan.R"))
 source(file.path(kRpath, "plan_SW.R"))
+
 
 # Constant
 

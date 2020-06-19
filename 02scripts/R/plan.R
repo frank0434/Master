@@ -1,5 +1,5 @@
 # plan.R
-plan <- drake::drake_plan(
+plan_analysis <- drake::drake_plan(
   # Data input
   water = autoapsimx::read_dbtab(path = path_sql, 
                                  table = "SoilWater"),
@@ -17,55 +17,16 @@ plan <- drake::drake_plan(
   SW_mean = water_22layers[, lapply(.SD, function(x) mean(x, na.rm = TRUE)/100), 
                   by = id_vars,
                   .SDcols = value_vars],
-  ## SowingDate
-  SD = SowingDates[, (c("AD", "I12")) := lapply(.SD, as.Date), 
-                    .SDcols = c("AD", "I12")] %>% 
-    data.table::melt(id.vars = "SD", 
-                     variable.name = "Experiment", value.name = "Clock.Today",
-                     variable.factor = FALSE) ,
-  SD_tidied = SD[, Experiment := ifelse(Experiment == "AD", 
-                                        "AshleyDene",  
-                                        "Iversen12")],
-  # Joinning for initial soil water conditions 
-  SW_initials = SW_mean[SD_tidied, 
-                        on = c("Experiment", "SowingDate == SD", "Clock.Today"),
-                        roll = "nearest"],
-  SW_initials_tidied = data.table::melt(
-    SW_initials, 
-    id.vars = id_vars, 
-    variable.factor = FALSE,
-    variable.name = "Depth",
-    value.name = "SW"
-    )[, ':='(SW = round(SW, digits = 3))],
-  # DUL AND LL 
-  DUL_LL = SW_mean[, unlist(lapply(.SD, max_min), recursive = FALSE), 
-                   by = .(Experiment, SowingDate), .SDcols = value_vars],
-  # Tidy up DUL AND LL
-  melted_DUL_LL = data.table::melt(DUL_LL, 
-                                   id.var = c("Experiment","SowingDate"), 
-                                   variable.factor = FALSE),
-  DUL_LL_SDs = melted_DUL_LL[, 
-                             (c("Depth", "variable")) := tstrsplit(variable, "\\.")] %>% 
-    data.table::dcast(Experiment +  SowingDate + Depth ~ variable),
-  
-  DUL_LL_SDsVWC = DUL_LL_SDs[, ':='(DUL = round(DUL, digits = 3),
-                                     LL = round(LL, digits = 3))
-                              ][, PAWC := DUL - LL],
-  # Joinning all 
-  SW_DUL_LL = SW_initials_tidied[DUL_LL_SDsVWC, 
-                                 on = c("Experiment", "SowingDate", "Depth")
-                                 ][Depth != "SW(2)"
-                                   ][,':='(Depth = as.integer(gsub("\\D", "", Depth)))],
   
   # kl ----------------------------------------------------------------------
   ## Prepare the slurp model input 
   ## The canopy cover data is processed in a separate notebook
   ## SetUpCoverDataForSlurp
-  
+  # CoverData = source_python(file_in("02scripts/Python/SetupCoverScript.py"),convert = FALSE),
   ## Prepare the configuration file and create multiple slurp simulations 
-  ## .2_Data_EDA_Part2_apsimxEdit.Rmd
-  
-  ## Trigger the simulation run
+  # .2_Data_EDA_Part2_apsimxEdit.Rmd
+
+    ## Trigger the simulation run
   
   ## Analysis the simulation output 
   ## .2_Data_EDA_Part3_kl_estimation.Rmd
@@ -80,7 +41,7 @@ plan <- drake::drake_plan(
   # stats = sims_stats(pred_obs = pred_swc)
   
   ## SWC
-  l_stats = autoapsimx::sims_stats_multi(path_sims = path_sims, 
+  l_stats = autoapsimx::sims_stats_multi(file_in(path_sims), 
                                          DT_observation = SWC_mean,
                                          mode = "Profile"),
   DT_stats = data.table::rbindlist(l_stats),
