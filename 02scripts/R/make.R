@@ -12,7 +12,7 @@ source(file.path(kRpath, "EditApsimx.R"))
 source(file.path(kRpath, "plan.R"))
 source(file.path(kRpath, "plan_SW.R"))
 
-
+source(file.path(kRpath, "plan_config.R"))
 # Constant
 
 id_vars <- c("Experiment", "SowingDate", "Clock.Today")
@@ -23,6 +23,9 @@ stats_key_SW <- c("Experiment", "SowingDate", "SimulationID", "KLR", "RFV", "SKL
 
 stats_key_extra <- c(stats_key, "NSE", "R2", "RMSE")
 stats_key_SW_extra <- c(stats_key_SW, "NSE", "R2", "RMSE")
+
+drake::make(plan_config, lock_envir = F, memory_strategy = "autoclean", 
+            garbage_collection = TRUE)
 drake::make(plan, lock_envir = F, memory_strategy = "autoclean", 
             garbage_collection = TRUE)
 drake::make(plan_SW, lock_envir = F, memory_strategy = "autoclean", 
