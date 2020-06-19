@@ -30,113 +30,6 @@
               "Children": [
                 {
                   "$type": "Models.Factorial.Factor, Models",
-                  "Specification": "",
-                  "Name": "SKL",
-                  "Children": [
-                    {
-                      "$type": "Models.Factorial.CompositeFactor, Models",
-                      "Specifications": [
-                        "[Soil].Physical.SlurpSoil"
-                      ],
-                      "Paths": null,
-                      "Values": null,
-                      "Name": "InitialKL",
-                      "Children": [
-                        {
-                          "$type": "Models.Soils.SoilCrop, Models",
-                          "LL": [
-                            0.063,
-                            0.08,
-                            0.074,
-                            0.076,
-                            0.069,
-                            0.07,
-                            0.07,
-                            0.07,
-                            0.069,
-                            0.07,
-                            0.073,
-                            0.079,
-                            0.084,
-                            0.086,
-                            0.092,
-                            0.096,
-                            0.094,
-                            0.095,
-                            0.095,
-                            0.095,
-                            0.098,
-                            0.1
-                          ],
-                          "KL": [
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01
-                          ],
-                          "XF": [
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0
-                          ],
-                          "LLMetadata": null,
-                          "KLMetadata": null,
-                          "XFMetadata": null,
-                          "Name": "SlurpSoil",
-                          "Children": [],
-                          "IncludeInDocumentation": true,
-                          "Enabled": true,
-                          "ReadOnly": false
-                        }
-                      ],
-                      "IncludeInDocumentation": true,
-                      "Enabled": true,
-                      "ReadOnly": false
-                    }
-                  ],
-                  "IncludeInDocumentation": true,
-                  "Enabled": true,
-                  "ReadOnly": false
-                },
-                {
-                  "$type": "Models.Factorial.Factor, Models",
                   "Specification": "[SlurpSowingRule].Script.KLReductionFactor = 0.0005,00.001,00.002,00.003,00.005,000.01",
                   "Name": "KLR",
                   "Children": [],
@@ -303,7 +196,7 @@
                       "Parameters": [
                         {
                           "Key": "CoverFile",
-                          "Value": "C:\\Data\\Master\\03processed-data\\CoverDataAshleyDeneSD1.csv"
+                          "Value": "C:\\Data\\Master\\03processed-data\\CoverData\\CoverDataAshleyDeneSD1.csv"
                         },
                         {
                           "Key": "Ext_coef",
