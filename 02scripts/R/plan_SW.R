@@ -1,3 +1,6 @@
+# This plan is using the assumption that the kl values decay expotentially by
+# depth
+
 plan_SW <- drake::drake_plan(
   water = autoapsimx::read_dbtab(path = path_sql, 
                                  table = "SoilWater"),

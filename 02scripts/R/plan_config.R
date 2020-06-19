@@ -62,8 +62,16 @@ plan_config <- drake::drake_plan(
   ## Prepare the slurp model input 
   ## The canopy cover data is processed in a separate notebook
   ## SetUpCoverDataForSlurp
-  CoverData = source_python(file_in("02scripts/Python/SetupCoverScript.py"),convert = FALSE),
+  CoverData = target(
+    source_python(file_in("02scripts/Python/SetupCoverScript.py"),convert = FALSE),
+    trigger = trigger(condition =  length(dir("./03processed-data/CoverData/")) == 0,
+                      mode = "blacklist")
+    ),
   ## Prepare the configuration file and create multiple slurp simulations 
   # .2_Data_EDA_Part2_apsimxEdit.Rmd
-  apsimxs = EditApsimx(SW_DUL_LL, SD_tidied)
+  apsimxs = target(
+    EditApsimx(SW_DUL_LL, SD_tidied),
+    trigger = trigger(condition =  length(dir("./03processed-data/apsimxFiles/")) == 0,
+                      mode = "blacklist")
+  )
 )
