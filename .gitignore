@@ -15,6 +15,7 @@ test*
 *.txt
 *.csv
 *.pdf
+*.png
 #notebook checkout points
 .ipynb_check*
 #dir
