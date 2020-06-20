@@ -79,9 +79,10 @@ setkey(SW_DUL_LL, Experiment, SowingDate, Depth)
 
 t1 <- Sys.time()
 # Constant
-
-for (i in best_fit$Experiment) {
-  for (j in best_fit$SowingDate) {
+Sites <- unique(best_fit$Experiment)
+SowingDates <- unique(best_fit$SowingDate)
+for (i in Sites) {
+  for (j in SowingDates) {
     
     # Site level
     ## met files 
@@ -108,7 +109,7 @@ for (i in best_fit$Experiment) {
     # for (skl in KL_range){
       replacement_KL <- best_fit[Experiment == i & SowingDate == j]$SKL
       replacement_RFV <-  best_fit[Experiment == i & SowingDate == j]$RFV
-      SKL <- replacement_KL
+
       # Paste together ----
       
       apsimx_met <- paste0(weather, replacement_met)
@@ -121,7 +122,7 @@ for (i in best_fit$Experiment) {
       apsimx_initialSW <- paste0(initialSW, paste(replacement_initialSW,collapse = ","))
       apsimx_DUL <- paste0(DUL, paste(replacement_DUL,collapse = ","))
       apsimx_LL <- paste0(LL, paste(replacement_LL,collapse = ","))
-      apsimx_KL <- paste0(KL, paste(replacement_KL,collapse = ","))
+      apsimx_KL <- paste0(KL, replacement_KL)
       apsimx_RFV <- paste0(RFV, replacement_RFV)
       apsimx_SAT <- paste0(SAT, paste(replacement_SAT,collapse = ","))
       apsimx_AirDry<- paste0(AirDry, paste(replacement_AirDry,collapse = ","))
@@ -129,7 +130,7 @@ for (i in best_fit$Experiment) {
       
       # Write out ----
       f <- file(paste0(Sys.getenv("ConfigFileDir"),"/ConfigSKL_",
-                       SKL, "RFV_", replacement_RFV, i, j, ".txt"), "w")
+                       replacement_KL, "RFV_", replacement_RFV, i, j, ".txt"), "w")
       # Write values into the file 
       cat(apsimx_met,
           apsimx_ClockStart,
@@ -170,19 +171,22 @@ apsimx_Basefile <- file.path(Sys.getenv("BaseApsimxDir"), "20200618CalibrateLaye
 apsimx_sims_temp <- file.path(Sys.getenv("SimsDir"), "temp.apsimx")
 apsimx_sims_dir <- Sys.getenv("SimsDir")
 apsimx_config <- paste0(Sys.getenv("ConfigFileDir"),"/ConfigSKL_")
-paste0(Sys.getenv("ConfigFileDir"),"/ConfigSKL_", SKL, "RFV_", replacement_RFV, i, j, ".txt")
+# paste0(Sys.getenv("ConfigFileDir"),"/ConfigSKL_", SKL, "RFV_", replacement_RFV, i, j, ".txt")
 # Copy the base apsimx file to a temp file in a disposable dir
 system(paste('cp', apsimx_Basefile, apsimx_sims_temp))
 # system(paste(apsimx, apsimx_sims_temp, apsimx_flag, paste0(apsimx_config, sites[1], SDs[1],".txt")))
 
 t1 <- Sys.time()
-for (i in best_fit$Experiment) {
-  for (j in best_fit$SowingDate) {
+for (i in Sites) {
+  for (j in SowingDates) {
+    replacement_KL <- best_fit[Experiment == i & SowingDate == j]$SKL
+    replacement_RFV <-  best_fit[Experiment == i & SowingDate == j]$RFV
+
       # Edit the base apsimx file and save it to a new name
       ## modify the apsimx file
-      modifiedName <- paste0(apsimx_sims_dir, "/ModifiedSKL_", SKL, "RFV_", replacement_RFV,  i, j, ".apsimx")
+      modifiedName <- paste0(apsimx_sims_dir, "/ModifiedSKL_", replacement_KL, "RFV_", replacement_RFV,  i, j, ".apsimx")
       system(paste("cp", apsimx_sims_temp, modifiedName))
-      system(paste(apsimx, modifiedName, apsimx_flag, paste0(apsimx_config,  SKL, "RFV_", replacement_RFV,  i, j,".txt")))
+      system(paste(apsimx, modifiedName, apsimx_flag, paste0(apsimx_config,  replacement_KL, "RFV_", replacement_RFV,  i, j,".txt")))
       ## rename the modified one
       # system(paste("mv", apsimx_sims_temp, paste0(apsimx_sims_dir, "/Modified", i, j, ".apsimx")))
     
@@ -193,3 +197,18 @@ system(paste("rm", paste0(apsimx_sims_dir, "/temp*")))
 t2 <- Sys.time()
 t2 - t1
 }
+
+
+
+EditLayerKL <- function(layers, KL_range, files, path ="c:/Data/ApsimX/ApsimXLatest/Bin/Models.exe",
+                        saveTo){
+  for(i in layers){
+    for( j in KL_range){
+      for( k in files){
+        EditLayerKL(i, j, path = path, 
+                    apsimx = k,
+                    saveTo = saveTo)
+      }
+    }
+  }
+  }

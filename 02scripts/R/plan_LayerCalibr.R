@@ -9,7 +9,13 @@ plan_LayerCalibr <- drake::drake_plan(
   # .2_Data_EDA_Part2_apsimxEdit.Rmd
   apsimxs = target(
     EditApsimxLayers(apsimx, best_fit, SW_DUL_LL, SD_tidied),
-    trigger = trigger(condition =  length(dir("./03processed-data/apsimxFilesLayers/")) == 0,
-                      mode = "blacklist")
+    trigger = trigger(condition =  TRUE,
+                      mode = "whitelist")
+  ),
+
+  files = list.files("./03processed-data/apsimxFilesLayers/", ".apsimx$", full.names = TRUE),
+  apsimxlayerkl = target(
+    EditLayerKL(layer = layer, value = value, path = apsimx, 
+                saveTo = path_sims2)
   )
 )
