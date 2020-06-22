@@ -106,3 +106,121 @@ dt %>%
 dt = readd(Site_SD_AshleyDene_SD1)
 dt %>% 
   plot_params("./05figures/TEST"              )
+
+
+library(drake)
+library(autoapsimx)
+db <- "./03processed-data/apsimxFilesLayers/SKL_0.01RFV_15AshleyDeneSD10L10kl0.005.db"
+# x fail l_stats_layerKL
+# Error: target l_stats_layerKL failed.
+# diagnose(l_stats_layerKL)error$message:
+#   missing value where TRUE/FALSE needed
+# diagnose(l_stats_layerKL)error$calls:
+#   1. \-autoapsimx::sims_stats_multi(...)
+# 2.   \-autoapsimx::sims_stats(...)
+# 3.     +-...[]
+# 4.     \-data.table:::`[.data.table`(...)
+# 5.       \-base::eval(jsub, SDenv, parent.frame())
+# 6.         \-base::eval(jsub, SDenv, parent.frame())
+# 7.           \-base::lapply(...)
+# 8.             \-autoapsimx:::FUN(X[[i]], ...)
+# 9.               +-hydroGOF::gof(x[[col_pred]], x[[col_obs]])
+# 10.               \-hydroGOF::gof.default(x[[col_pred]], x[[col_obs]])
+# 11.                 +-hydroGOF::rsr(sim, obs, na.rm = na.rm, ...)
+# 12.                 \-hydroGOF::rsr.default(sim, obs, na.rm = na.rm, ...)
+# In addition: There were 50 or more warnings (use warnings() to see the first 50)
+pred_I12SD1 <- read_dbtab(db, table = "Report")
+layerNo. <- regmatches(basename(db), regexpr("L\\d{1,2}", basename(db)))
+layer <- gsub("(L)(\\d{1,2})", "SW\\\\(\\2\\\\)", layerNo.)
+depth_int <- as.integer(gsub("L", "", layerNo.))
+colsofInteresetd <- grep(pattern = layer, colnames(pred_I12SD1), value = TRUE)
+keys <- grep("SW", colnames(pred_I12SD1), invert = TRUE, value = TRUE)
+cols <- c(keys, colsofInteresetd)
+pred <- pred_I12SD1[,..cols
+                    ][, Depth := depth_int]
+data.table::setnames(pred, colsofInteresetd, "pred_VWC")
+obs_I12SD1 <- readd(SW_mean)
+keys_obs <- grep("SW", colnames(obs_I12SD1), invert = TRUE, value = TRUE)
+cols <- c(keys_obs, colsofInteresetd)
+site = extract_trts(db)[1]
+sd = extract_trts(db)[2]
+obs <- obs_I12SD1[,..cols
+                  ][Experiment == site&
+                      SowingDate == sd
+                    ][, Depth := depth_int]
+data.table::setnames(obs, colsofInteresetd, "ob_VWC")
+
+pred_obs <- data.table::merge.data.table(pred, obs,
+                                         by.x = c("Date", "Depth"),
+                                         by.y = c("Clock.Today", "Depth"))
+stats <- sims_stats(pred_obs,
+                    keys = c("Experiment", "SowingDate", "Depth"),
+                    col_pred = "pred_VWC",
+                    col_obs = "ob_VWC")
+stats$stats
+layerNo. <- regmatches(basename(i), regexpr("L\\d{1,2}", basename(i)))
+layer <- gsub("(L)(\\d{1,2})", "SW\\\\(\\2\\\\)", layerNo.)
+depth_int <- as.integer(gsub("L", "", layerNo.))
+colsofInteresetd <- grep(pattern = layer, colnames(dt), value = TRUE)
+obs_sd <- DT_observation[Experiment == "AshleyDene" &
+                 SowingDate == "SD10"]
+keys_obs <- grep("SW", colnames(obs_sd), invert = TRUE, value = TRUE)
+cols <- c(keys_obs, colsofInteresetd)
+obs <- obs_sd[,..cols
+              ][, Depth := depth_int]
+data.table::setnames(obs, colsofInteresetd, "ob_VWC")
+
+pred_obs <- data.table::merge.data.table(pred, obs,
+                                         by.x = c("Date", "Depth"),
+                                         by.y = c("Clock.Today", "Depth"))
+
+stats <- sims_stats(pred_obs = pred_obs,
+                    keys = keys,
+                    col_pred = "pred_VWC",
+                    col_obs = "ob_VWC")
+
+dt = read_dbtab(db, "Report")
+treatmentNamse = extract_trts(filename = db)
+treatmentNames <- extract_trts(filename =db)
+site <- treatmentNames[1]
+sd <- treatmentNames[2]
+DT = readd(SW_mean)
+
+obs_sd <- DT[Experiment == site & SowingDate == sd]
+layerNo. <- regmatches(basename(i), regexpr("L\\d{1,2}", basename(i)))
+layer <- gsub("(L)(\\d{1,2})", "SW\\\\(\\2\\\\)", layerNo.)
+depth_int <- as.integer(gsub("L", "", layerNo.))
+colsofInteresetd <- grep(pattern = layer, colnames(dt), value = TRUE)
+keys <- grep("SW", colnames(dt), invert = TRUE, value = TRUE)
+cols <- c(keys, colsofInteresetd)
+pred <- dt[,..cols
+           ][, Depth := depth_int]
+data.table::setnames(pred, colsofInteresetd, "pred_VWC")
+
+keys_obs <- grep("SW", colnames(DT), invert = TRUE, value = TRUE)
+cols <- c(keys_obs, colsofInteresetd)
+obs <- obs_sd[,..cols
+              ][, Depth := depth_int]
+data.table::setnames(obs, colsofInteresetd, "ob_VWC")
+
+pred_obs <- data.table::merge.data.table(pred, obs,
+                                         by.x = c("Date", "Depth"),
+                                         by.y = c("Clock.Today", "Depth"))
+stats <- sims_stats(pred_obs = pred_obs,
+                    keys = keys,
+                    col_pred = "pred_VWC",
+                    col_obs = "ob_VWC")
+is.data.table(pred_obs)
+col_pred %in% colnames(pred_obs)
+col_obs %in% colnames(pred_obs)
+setkeyv(pred_obs, keys)
+nested <- pred_obs[, list(data = list(.SD)), by = key(pred_obs)]
+nested <- nested[, stats := lapply(data, function(x){
+  # Calculate the stats via goodness of fit
+  m <- hydroGOF::gof(x[[col_pred]], x[[col_obs]])
+  # Convert the matrix into a data.table with colnames
+  m <- m %>%
+    as.data.table(keep.rownames = T) %>%
+    transpose(make.names = 'rn')
+})]
+nested$stats

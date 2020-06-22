@@ -200,14 +200,14 @@ t2 - t1
 
 
 
-EditLayerKL <- function(layers, KL_range, files, path ="c:/Data/ApsimX/ApsimXLatest/Bin/Models.exe",
+EditLayerKL_multi <- function(layers, KL_range, files, path ="c:/Data/ApsimX/ApsimXLatest/Bin/Models.exe",
                         saveTo){
   for(i in layers){
     for( j in KL_range){
       for( k in files){
-        EditLayerKL(i, j, path = path, 
-                    apsimx = k,
-                    saveTo = saveTo)
+        autoapsimx::EditLayerKL(i, j, path = path, 
+                                apsimx = k,
+                                saveTo = saveTo)
       }
     }
   }
