@@ -562,7 +562,7 @@ DT %>%
   
   plot_params("../05figures/TEST.PNG", col_pred = "pred_VWC", col_obs = "obs_VWC", Depth = "Depth")
 ```
-# Out put top5 as a table 
+# Out put top1 as a table 
 ```{r}
 
 dt = readd(top5)
@@ -650,6 +650,84 @@ pred_obs %>%
 ```{r}
 DT = readd(SW_mean)
 autoapsimx::sims_stats_multi(path_sims = "../03processed-data/apsimxFilesLayers/", pattern = "^SKL.+.db$", DT_observation = DT, mode = "Manual")
+```
+
+
+# Test the visulisation 
+2 sites * 18 sowingdates * 21 depths = 756 sims
+
+
+```{r}
+DT = readd(DT_stats_layerKL)
+# Add a new simID as unique identifier, otherwise the unlist won't work correctly. 
+
+DT[, SimsID := 1:nrow(DT)]
+unnest <- DT[, unlist(data, recursive = FALSE), by = .(Experiment, SowingDate, Depth, SimsID)]
+unnest$SKL %>% unique() %>% length()
+unnest
+unnest_stats <- DT[, unlist(stats, recursive = FALSE), by = .(Experiment, SowingDate, Depth, SimsID)]
+renest <- unnest_stats[,.(NSE, R2, RMSE) , by =.(Experiment, SowingDate, Depth, SimsID)
+                       ][, list(stats_renest = list(.SD)), by =.(Experiment, SowingDate, Depth)]
+renest[, stats_renest := lapply(stats_renest, function(x){
+  x[NSE > 0 # Pointless to have NSE value less than 0
+    ][order(NSE,R2, RMSE, decreasing = TRUE),
+      index := seq_len(.N),
+      by = list(SimsID)
+      ][index < 5][, index := NULL]
+  x
+})]
+
+ADSD2 <- DT[Experiment == "AshleyDene" & SowingDate == "SD2" & Depth == "2"]
+ADSD2 <- ADSD2[, unlist(data, recursive = FALSE) , by = .(Experiment, SowingDate, Depth, SimsID)]
+ADSD2$SKL %>% unique()
+```
+# Things are not right because  
+1. skl is still the surface kl in the current calculation DT  
+2. Simulations have only detachted kl in different layers  
+
+**Need to redesign the workflow** 
+
+logic:  
+1. take the best fit of SKL and edit them into 18 simulations files 
+2. generate 18 * 11 simulation files for the second layer   
+3. calculate the stats in the second layer and decide the best fit   
+4. use the best fit in second layer and change thrid layer 
+5. and so forth 
+
+### what is the best fit in first layer
+
+```{r}
+DT = readd(top5)
+DT$SimulationID %>% unique() %>% length()
+DT$Experiment %>% unique() %>% length()
+DT$SowingDate %>% unique() %>% length()
+DT$KLR %>% unique() %>% length()
+DT$SKL %>% unique() %>% length()
+dt = readd(top5)
+nested = dt[, list(data = list(.SD)), 
+            by = .(Experiment, SowingDate, SimulationID, SKL,KLR, RFV, NSE, R2, RMSE)
+            ][order(NSE, R2,RMSE)
+              ][, .SD[1], by = .(Experiment, SowingDate)]
+
+nested[Experiment %like% "Ash" & SowingDate == "SD2"]
+```
+
+## Reconstruct the apsimx file name to extract from the 440 files 
+
+lesson from poor starting design 
+
+```{r}
+info = nested[,.(Experiment, SowingDate, SimulationID, SKL, KLR,RFV)]
+
+files = sapply(seq(1, nrow(info)), function(x){
+  paste0("ModifiedSKL_", info[x, ][["SKL"]], info[x, ][["Experiment"]], info[x, ][["SowingDate"]], ".apsimx")
+})
+# info[1, ][["Experiment"]]
+# info[1, ][["SowingDate"]]
+# info[1, ][["SKL"]]
+file1 = file.path(here::here("03processed-data/apsimxFiles/"), files[1])
+fileTo = file.path(here::here("03processed-data/"))
+system(paste("cp", file1, fileTo))
 ```
 
 
