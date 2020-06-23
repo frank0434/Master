@@ -6,13 +6,39 @@
 # - Invoke **Edit**  [Invoke Apsimx]  
 
 
-
+#' process_list
+#'
+#' @param files a list of data.tables. 
+#' @param keys the id variables that doesn't need to be melted
+#' @param pattern a regex pattern to select multiple columns 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+process_list <- function(files, keys = c("Experiment", "SowingDate", "SKL", "RFV"),
+                         pattern = "KLmod"){
+  DT = rbindlist(files)
+  setkeyv(DT, cols = keys)
+  value_vars = grep(pattern = pattern, colnames(DT), value = TRUE)
+  id_vars = data.table::key(DT)
+  cols = c(id_vars, value_vars)
+  DT_long = DT[,..cols] %>% 
+    melt(id.vars = id_vars, 
+         measure.vars = value_vars)
+  DT_long[, ':='(Layer = gsub("\\D", "", variable),
+                 kl = SKL * value)]
+  DT_long
+}
 # File structure 
 
 #' EditApsimxLayers
 #'
 #' @param path path to apsimx models.exe
-#' @param best_fit path to the file has best fit paramters 
+#' @param info path to the file has best fit paramters 
+#' @param SW_DUL_LL the initial conditions of the soils
+#' @param SD_tidied the sowing date treatment or other treatment?!
+#' @param kls the kls calcuated from the best fit surface kl 
 #'
 #' @import data.table 
 #' @return
@@ -20,8 +46,10 @@
 #'
 #' @examples
 EditApsimxLayers <- function(path, 
-                             best_fit ,
-                             SW_DUL_LL, SD_tidied){
+                             info,
+                             SW_DUL_LL, 
+                             SD_tidied,
+                             kls){
   
 # Environmental variables to control file paths
 Sys.setenv("WorkingDir" = here::here())
@@ -31,21 +59,13 @@ Sys.setenv("ConfigFileDir" = file.path(Sys.getenv("WorkingDir"), "03processed-da
 Sys.setenv("CoverDataDir" = file.path(Sys.getenv("WorkingDir"), "03processed-data/CoverData/"))
 Sys.setenv("SimsDir" = file.path(Sys.getenv("WorkingDir"), "03processed-data/apsimxFilesLayers/"))
 ## Verifcation
-# Sys.getenv("MetDir")
-# list.files(Sys.getenv("SimsDir"))
-
-
 # Construct kl ranges 
-
 # Could be defined on the fly 
 KL_layer <- 22L
-
 
 #BD 
 DB_AshleyDene <- c("1.150,1.150,1.310,1.310,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950")
 DB_Iversen12 <- c("1.260,1.260,1.260,1.440,1.440,1.440,1.570,1.570,1.570,1.580,1.580,1.580,1.580,1.590,1.590,1.590,1.590,1.590,1.590,1.590,1.590,1.590,1.590")
-
-
 
 # ApsimX node paths 
 ## The site level configuration 
@@ -71,16 +91,13 @@ LL <- "[Soil].Physical.SlurpSoil.LL = "
 KL <- paste0("[Soil].Physical.SlurpSoil.KL", "[1:", KL_layer,"]"," = ")
 RFV <-  paste0("[SlurpSowingRule].Script.RFV = ")
 # Replacement values
-
 # Critical order
 setkey(SW_DUL_LL, Experiment, SowingDate, Depth)
 
-
-
 t1 <- Sys.time()
 # Constant
-Sites <- unique(best_fit$Experiment)
-SowingDates <- unique(best_fit$SowingDate)
+Sites <- unique(info$Experiment)
+SowingDates <- unique(info$SowingDate)
 for (i in Sites) {
   for (j in SowingDates) {
     
@@ -107,8 +124,8 @@ for (i in Sites) {
     
     ## The kl parameter level configuration 
     # for (skl in KL_range){
-      replacement_KL <- best_fit[Experiment == i & SowingDate == j]$SKL
-      replacement_RFV <-  best_fit[Experiment == i & SowingDate == j]$RFV
+      replacement_KL <- kls[Experiment == i & SowingDate == j]$kl
+      replacement_RFV <-  unique(kls[Experiment == i & SowingDate == j]$RFV)
 
       # Paste together ----
       
@@ -122,15 +139,15 @@ for (i in Sites) {
       apsimx_initialSW <- paste0(initialSW, paste(replacement_initialSW,collapse = ","))
       apsimx_DUL <- paste0(DUL, paste(replacement_DUL,collapse = ","))
       apsimx_LL <- paste0(LL, paste(replacement_LL,collapse = ","))
-      apsimx_KL <- paste0(KL, replacement_KL)
+      apsimx_KL <- paste0(KL, paste(replacement_KL,collapse = ","))
       apsimx_RFV <- paste0(RFV, replacement_RFV)
       apsimx_SAT <- paste0(SAT, paste(replacement_SAT,collapse = ","))
       apsimx_AirDry<- paste0(AirDry, paste(replacement_AirDry,collapse = ","))
       apsimx_LL15 <- paste0(LL15, paste(replacement_LL15,collapse = ","))
       
       # Write out ----
-      f <- file(paste0(Sys.getenv("ConfigFileDir"),"/ConfigSKL_",
-                       replacement_KL, "RFV_", replacement_RFV, i, j, ".txt"), "w")
+      f <- file(paste0(Sys.getenv("ConfigFileDir"),"/LayerKL_",
+                       replacement_KL[1], "RFV_", replacement_RFV, i, j, ".txt"), "w")
       # Write values into the file 
       cat(apsimx_met,
           apsimx_ClockStart,
@@ -170,7 +187,7 @@ apsimx_flag <- "/Edit"
 apsimx_Basefile <- file.path(Sys.getenv("BaseApsimxDir"), "20200618CalibrateLayersSlurp.apsimx")
 apsimx_sims_temp <- file.path(Sys.getenv("SimsDir"), "temp.apsimx")
 apsimx_sims_dir <- Sys.getenv("SimsDir")
-apsimx_config <- paste0(Sys.getenv("ConfigFileDir"),"/ConfigSKL_")
+apsimx_config <- paste0(Sys.getenv("ConfigFileDir"),"/LayerKL_")
 # paste0(Sys.getenv("ConfigFileDir"),"/ConfigSKL_", SKL, "RFV_", replacement_RFV, i, j, ".txt")
 # Copy the base apsimx file to a temp file in a disposable dir
 system(paste('cp', apsimx_Basefile, apsimx_sims_temp))
@@ -179,12 +196,12 @@ system(paste('cp', apsimx_Basefile, apsimx_sims_temp))
 t1 <- Sys.time()
 for (i in Sites) {
   for (j in SowingDates) {
-    replacement_KL <- best_fit[Experiment == i & SowingDate == j]$SKL
-    replacement_RFV <-  best_fit[Experiment == i & SowingDate == j]$RFV
+    replacement_KL <- info[Experiment == i & SowingDate == j]$SKL
+    replacement_RFV <-  info[Experiment == i & SowingDate == j]$RFV
 
       # Edit the base apsimx file and save it to a new name
       ## modify the apsimx file
-      modifiedName <- paste0(apsimx_sims_dir, "/ModifiedSKL_", replacement_KL, "RFV_", replacement_RFV,  i, j, ".apsimx")
+      modifiedName <- paste0(apsimx_sims_dir, "/LayerKL_", replacement_KL, "RFV_", replacement_RFV,  i, j, ".apsimx")
       system(paste("cp", apsimx_sims_temp, modifiedName))
       system(paste(apsimx, modifiedName, apsimx_flag, paste0(apsimx_config,  replacement_KL, "RFV_", replacement_RFV,  i, j,".txt")))
       ## rename the modified one
@@ -200,11 +217,15 @@ t2 - t1
 
 
 
-EditLayerKL_multi <- function(layers, KL_range, files, path ="c:/Data/ApsimX/ApsimXLatest/Bin/Models.exe",
+EditLayerKL_multi <- function(KL_layers, KL_range, files, path ="c:/Data/ApsimX/ApsimXLatest/Bin/Models.exe",
                         saveTo){
-  for(i in layers){
-    for( j in KL_range){
-      for( k in files){
+  # print(KL_layers)
+  # print(KL_range)
+  # print(files)
+  for(i in KL_layers){
+    for(j in KL_range){
+      for(k in files){
+        cat(i, j, k, "\r\n")
         autoapsimx::EditLayerKL(i, j, path = path, 
                                 apsimx = k,
                                 saveTo = saveTo)
