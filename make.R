@@ -65,7 +65,7 @@ drake::make(plan_SW, lock_envir = F, memory_strategy = "autoclean",
 source(file.path(kRpath, "EditApsimxCalibrateLayers.R"))
 source(file.path(kRpath, "plan_LayerCalibr.R"))
 apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
-layers <- seq(2, 22, by = 1)
+KL_layers <- as.integer(seq(2, 22, by = 1))
 KL_range <- seq(0.005, 0.11, by = 0.005)
 path_sims2 <- "c:/Data/Master/03processed-data/apsimxFilesLayers"
 drake::make(plan_LayerCalibr, lock_envir = F, memory_strategy = "autoclean", 
@@ -97,4 +97,11 @@ vis_drake_graph(
   # parallelism = "clustermq",
   # jobs = 16
 )
-drake_ggraph(plan)
+vis_drake_graph(
+  plan_LayerCalibr, targets_only = TRUE,
+  
+  # file = "05figures/dependency.png",
+  navigationButtons = FALSE
+  # parallelism = "clustermq",
+  # jobs = 16
+)
