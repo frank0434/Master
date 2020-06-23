@@ -729,6 +729,54 @@ file1 = file.path(here::here("03processed-data/apsimxFiles/"), files[1])
 fileTo = file.path(here::here("03processed-data/"))
 system(paste("cp", file1, fileTo))
 ```
+## Retrive the kl values for layer 2 to 22 in the best fit 
+
+Another lesson:  ** Didn't even put a kl there**
+
+```{r}
+ files = lapply(seq(1, nrow(info)), function(x){
+    orig = here::here("03processed-data/apsimxFiles/")
+    copyto = here::here("03processed-data/apsimxFilesLayers/")
+    basename = paste0("ModifiedSKL_", 
+                      info[x, ][["SKL"]],
+                      info[x, ][["Experiment"]], 
+                      info[x, ][["SowingDate"]], ".db")
+    file = file.path(orig, basename)
+    dt = read_dbtab(file, "SummaryNumbers")
+    dt[, ':='(Experiment = info[x, ][["Experiment"]],
+              SowingDate = info[x, ][["SowingDate"]],
+              SKL = info[x, ][["SKL"]])]
+    
+    dt = dt[SimulationID == info[x, ][["SimulationID"]]]
+  })
+# info
+DT = rbindlist(files)
+colnames(DT)
+setkeyv(DT, c("Experiment", "SowingDate", "SKL", "RFV"))
+value_vars = grep("KLmod", colnames(DT), value = TRUE)
+id_vars = data.table::key(DT)
+cols = c(id_vars, value_vars)
+DT_long = DT[,..cols] %>% 
+  melt(id.vars = id_vars, 
+       measure.vars = value_vars)
+DT_long[, ':='(Layer = gsub("\\D", "", variable),
+               kl = SKL * value)][]
+DT_long$kl %>% range()
+DT_long[Experiment %like% "Ash" & SowingDate == "SD2"]
+```
+
+can a kl value as low as 0.00015??
+
+### STEP 1 Get the apsimx files with the correct initial conditions
+```{r}
+
+```
+
+### STEP 2 Modified them with the best fit SKL and the results from the expotential decay
+
+### STEP 3 Modified the `best fit` apsimx files to cover more kl values from layer 2 
+
+### STEP 4 Run
 
 
 ```{r}
