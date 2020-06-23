@@ -26,3 +26,5 @@ for db in dbs:
     (mycur.fetchall())
     mycur.close()
     con.close() 
+
+
