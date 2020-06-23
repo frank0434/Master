@@ -22,18 +22,6 @@ plan_LayerCalibr <- drake::drake_plan(
     dt = dt[SimulationID == info[x, ][["SimulationID"]]]
   }), 
   kls = process_list(best_files), 
-  
-  # files = sapply(seq(1, nrow(info)), function(x){
-  #   orig = here::here("03processed-data/apsimxFiles/")
-  #   copyto = here::here("03processed-data/apsimxFilesLayers/")
-  #   basename = paste0("ModifiedSKL_", 
-  #                     info[x, ][["SKL"]],
-  #                     info[x, ][["Experiment"]], 
-  #                     info[x, ][["SowingDate"]], ".apsimx")
-  #   file = file.path(orig, basename)
-  #   system(paste("cp", file, copyto))
-  # })
-
   ## Prepare the configuration file and create multiple slurp simulations 
   # .2_Data_EDA_Part2_apsimxEdit.Rmd
   # Set up initial condtions 
@@ -49,12 +37,17 @@ plan_LayerCalibr <- drake::drake_plan(
     EditLayerKL_multi(KL_layers , KL_range, path =  apsimx,
                       files = files[1:18],
                       saveTo = path_sims2),
-    trigger = trigger(condition =  TRUE)
-  )
-  # l_stats_layerKL = autoapsimx::sims_stats_multi(path_sims = "./03processed-data/apsimxFilesLayers/",
-  #                                                pattern = "^SKL.+.db$", 
-  #                                                DT_observation = readd(SW_mean),
-  #                                                mode = "Manual",
-  #                                                keys = c("Experiment", "SowingDate", "Depth")),
-  # DT_stats_layerKL = data.table::rbindlist(l_stats_layerKL)
+    trigger = trigger(condition =  FALSE),
+  ),
+  closeDBconn = target(
+    source_python(file_in("02/Python/SetupCoverScript.py"),convert = FALSE),
+    trigger = trigger(condition =  length(dir("03processed-data/apsimxFilesLayers/", pattern = "*.db-wal")) != 0,
+                      mode = "blacklist")
+  ),
+  l_stats_layerKL = autoapsimx::sims_stats_multi(path_sims = "./03processed-data/apsimxFilesLayers/",
+                                                 pattern = "^SKL.+.db$",
+                                                 DT_observation = readd(SW_mean),
+                                                 mode = "Manual",
+                                                 keys = c("Experiment", "SowingDate", "Depth")),
+  DT_stats_layerKL = data.table::rbindlist(l_stats_layerKL)
 )
