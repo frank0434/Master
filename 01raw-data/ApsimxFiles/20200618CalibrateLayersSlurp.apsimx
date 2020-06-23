@@ -1135,7 +1135,7 @@
                 "[SlurpSowingRule].Script.RFV as RFVCheck",
                 "[SlurpSowingRule].Script.KLReductionDepth as KLRDepth",
                 "[SlurpSowingRule].Script.KLReductionFactor as KLR",
-                "[Soil].Physical.SlurpSoil.KL",
+                "[Soil].Physical.SlurpSoil.KL as kl",
                 "[SetCropVariables].Script.Cover as CoverCheck"
               ],
               "EventNames": [
