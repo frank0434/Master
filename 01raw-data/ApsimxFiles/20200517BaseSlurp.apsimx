@@ -1171,6 +1171,7 @@
                   "VariableNames": [
                     "[Clock].Today as Date",
                     "[SlurpSowingRule].Script.CultivarName as CropNameCheck",
+                    "[Soil].Physical.SlurpSoil.KL as kl",
                     "[SlurpSowingRule].Script.KLReductionFactor as KLRCheck",
                     "[SlurpSowingRule].Script.RootDepth as RDpCheck",
                     "[SlurpSowingRule].Script.RFV as RFVCheck",
