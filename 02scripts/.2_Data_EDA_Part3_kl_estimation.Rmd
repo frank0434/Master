@@ -780,6 +780,67 @@ can a kl value as low as 0.00015??
 ### STEP 4 Run
 
 
+### STEP 5 Visual best fit 
+
+```{r, fig.height=14, fig.width=8}
+DT = readd(DT_stats_layerKL)
+stats = DT[, Source:=basename(Source)
+           ][order(Experiment, SowingDate, Depth)]
+stats$Depth %>% range()
+top3 = stats[, unlist(stats, recursive = FALSE), by =.(Source, Experiment, SowingDate, Depth)
+               ][Depth != 1 
+                 # & NSE > 0 
+                 ][order(NSE,R2, RMSE, decreasing = TRUE),
+                   index := seq_len(.N), 
+                   by = list(Experiment, SowingDate,Depth)
+                   ]
+
+JOINNED = stats[top3[index == 1], on = "Source"
+                ][, unlist(data, recursive = FALSE), 
+                  by = .(Source, Experiment, SowingDate, Depth)
+                  ][, kl := regmatches(Source, regexpr("kl0\\.\\d{1,3}", Source, perl = TRUE))]
+
+id = JOINNED$Source %>% unique()
+top1stats = stats[Source %in% id
+                  ][, unlist(stats, recursive = FALSE), 
+                    by = .(Source, Experiment, SowingDate, Depth)]
+JOINNED_stats = top1stats[JOINNED, on = "Source"]
+adsd2 = JOINNED_stats[Experiment == "AshleyDene" & SowingDate == "SD2"
+                      ][order(Depth)] 
+adsd2 %>% 
+  ggplot(aes(Date)) +
+  geom_point(aes(y = ob_VWC), col = "red")+
+  geom_point(aes(y = pred_VWC)) +
+  # geom_point(aes(y = RootDepth/10000), col = "green") +
+  facet_grid( Depth ~ kl) +
+  
+  ggtitle("Overview of the kl values distribution for", 
+          subtitle = paste(unique(adsd2$Experiment), unique(adsd2$SowingDate)))
+
+adsd2[, ':='(NSE = paste0("NSE=\r\n",NSE), 
+             R2 = paste0("R2=\r\n", R2),
+             RMSE = paste0("RMSE=\r\n", RMSE))] %>% 
+  ggplot(aes(Date)) +
+  geom_point(aes(y = ob_VWC), col = "red")+
+  geom_point(aes(y = pred_VWC)) +
+  # geom_point(aes(y = RootDepth/10000), col = "green") +
+  facet_grid( Depth + kl + NSE + RMSE + R2 ~ .) +
+  
+  ggtitle("Overview of the kl values distribution for", 
+          subtitle = paste(unique(adsd2$Experiment), unique(adsd2$SowingDate)))
+
+```
+
+#### TEST THE SUBSET_STATS FUNCTION
+```{r}
+DT = readd(DT_stats_layerKL)
+DT = subset_stats(DT)
+DT[, .(Experiment, SowingDate )] %>% unique()
+plot_params(DT, )
+```
+
+
+
 ```{r}
 path <- "../03processed-data/apsimxFiles/"
 path_dbs = list.files("../03processed-data/apsimxFiles/", ".+Ashley.+SD1.db$", full.names = TRUE)
