@@ -57,7 +57,7 @@ Sys.setenv("BaseApsimxDir" = file.path(Sys.getenv("WorkingDir"), "01raw-data/Aps
 Sys.setenv("MetDir" = file.path(Sys.getenv("WorkingDir"), "01raw-data/ClimateAndObserved/"))
 Sys.setenv("ConfigFileDir" = file.path(Sys.getenv("WorkingDir"), "03processed-data/ConfigurationFiles/"))
 Sys.setenv("CoverDataDir" = file.path(Sys.getenv("WorkingDir"), "03processed-data/CoverData/"))
-Sys.setenv("SimsDir" = file.path(Sys.getenv("WorkingDir"), "03processed-data/apsimxFilesLayers/"))
+Sys.setenv("SimsDir" = file.path(Sys.getenv("WorkingDir"), "03processed-data/bestfitLayerkl/"))
 ## Verifcation
 # Construct kl ranges 
 # Could be defined on the fly 
@@ -65,7 +65,7 @@ KL_layer <- 22L
 
 #BD 
 DB_AshleyDene <- c("1.150,1.150,1.310,1.310,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950")
-DB_Iversen12 <- c("1.260,1.260,1.260,1.440,1.440,1.440,1.570,1.570,1.570,1.580,1.580,1.580,1.580,1.590,1.590,1.590,1.590,1.590,1.590,1.590,1.590,1.590,1.590")
+DB_Iversen12 <- c("1.260,1.260,1.260,1.440,1.440,1.440,1.570,1.570,1.570,1.580,1.580,1.580,1.580,1.590,1.590,1.590,1.590,1.590,1.590,1.590,1.590,1.590")
 
 # ApsimX node paths 
 ## The site level configuration 
