@@ -67,7 +67,8 @@ source(file.path(kRpath, "plan_LayerCalibr.R"))
 apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
 KL_layers <- as.integer(seq(2, 22, by = 1))
 KL_range <- seq(0.005, 0.11, by = 0.005)
-path_sims2 <- "c:/Data/Master/03processed-data/apsimxFilesLayers"
+path_sims2 <- here::here("03processed-data/apsimxFilesLayers")
+path_layerkl <- here::here("05figures/kl_LayerByLayerCalibrationEDA/")
 drake::make(plan_LayerCalibr, lock_envir = F, memory_strategy = "autoclean", 
             garbage_collection = TRUE)
 

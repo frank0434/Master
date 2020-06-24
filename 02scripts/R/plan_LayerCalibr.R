@@ -49,5 +49,32 @@ plan_LayerCalibr <- drake::drake_plan(
                                                  DT_observation = readd(SW_mean),
                                                  mode = "Manual",
                                                  keys = c("Experiment", "SowingDate", "Depth")),
-  DT_stats_layerKL = data.table::rbindlist(l_stats_layerKL, use.names = T, idcol = "Source")
+  DT_stats_layerKL = data.table::rbindlist(l_stats_layerKL, use.names = T, idcol = "Source"),
+  best_fit_layers =  subset_stats(DT_stats_layerKL),
+  Treatments = unique(best_fit_layers[,.(Experiment, SowingDate)]),
+  pred_obs_layerkl = target(
+    best_fit_layers[Experiment == sites & SowingDate == sds],
+    transform = cross(sites = c("AshleyDene", "Iversen12"),
+                      sds = c("SD1",  "SD2", "SD3",  "SD4",  "SD5",
+                              "SD6",  "SD7",  "SD8",  "SD9",  "SD10"))
+  ), 
+  plot_layerkl_distribution = target(
+    plot_params(DT = pred_obs_layerkl,
+                col_pred = "pred_VWC", col_obs = "ob_VWC",
+                Depth = "Layerkl_distribution",
+                height = 16, width = 9,
+                title = file_out(!!paste0(path_layerkl,"/",.id_chr)),format = "png"),
+    transform = map(pred_obs_layerkl),
+    trigger = trigger(condition = TRUE, mode = "blacklist")
+    ),
+  plot_layerkl = target(
+    plot_params(DT = pred_obs_layerkl,
+                col_pred = "pred_VWC", col_obs = "ob_VWC",
+                Depth = "Layerkl",
+                height = 16, width = 9,
+                title = file_out(!!paste0(path_layerkl,"/",.id_chr)),format = "png"),
+    transform = map(pred_obs_layerkl),
+    trigger = trigger(condition = TRUE, mode = "blacklist")
+  )
+
 )
