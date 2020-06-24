@@ -75,6 +75,13 @@ plan_LayerCalibr <- drake::drake_plan(
                 title = file_out(!!paste0(path_layerkl,"/",.id_chr)),format = "png"),
     transform = map(pred_obs_layerkl),
     trigger = trigger(condition = TRUE, mode = "blacklist")
+  ),
+  # Output the best fit layer kls
+  best_fit_layerkl = target(
+    process_bestfit(readd(best_fit),  readd(best_fit_layers))
+  ),
+  write_bestfit = target(
+    data.table::fwrite(best_fit_layerkl, file_out(paste0("03processed-data/best_fit_layerkls", ".csv")))
   )
 
 )
