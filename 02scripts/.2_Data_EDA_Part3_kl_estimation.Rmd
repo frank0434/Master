@@ -839,6 +839,123 @@ DT[, .(Experiment, SowingDate )] %>% unique()
 plot_params(DT, )
 ```
 
+```{r}
+skl_best_fit = readd(best_fit)
+skl_best_fit = skl_best_fit[,.(Experiment, SowingDate, kl = SKL, Depth = 1L)]
+DT = readd(best_fit_layers)
+DT[,kl := as.numeric(gsub("kl","", kl))]
+kl_best_fit = unique(DT[, .(Experiment, SowingDate, Depth, kl)])
+best_fit_layerkl = rbindlist(list(skl_best_fit, kl_best_fit), use.names = TRUE)
+setkey(best_fit_layerkl, Experiment, SowingDate, Depth)
+best_fit_layerkl
+```
+
+
+#### fill the best fit back to the model - PLAN IS NOT WORKING SO THIS IS THE ALTERNATIVE QUICK FIX
+```{r, fig.width=10, fig.height=17}
+# process ob 
+
+palette = rep("grey", times = 2)
+palette_named = setNames(palette,  c("pred_VWC", "obs_VWC"))
+palette_named[2] = "red"
+dbs = list.files("../03processed-data/bestfitLayerkl/", pattern = ".db$", full.names = TRUE)
+# l_p <- vector("list", length = length(dbs))
+# names(l_p) = dbs
+Sites <- c("AshleyDene", "Iversen12")
+dt_sw = readd(SW_mean)
+sds = unique(dt_swc$SowingDate)
+for(i in Sites){
+  for(j in sds){
+    db = grep(paste0(i, j,".db"), x = dbs, value = TRUE)
+    OBS = dt_sw[Experiment == i & SowingDate == j]
+    PREDS = read_dbtab(db, table = "Report")
+    value_vars = readd(value_vars)
+    pred_SW = data.table::melt(PREDS,
+                               value.name = "pred_VWC",
+                               measure.vars = value_vars,
+                               variable.name = "Depth",
+                               variable.factor = FALSE)
+    long = data.table::melt(OBS,
+                            value.name = "obs_VWC",
+                            measure.vars =value_vars,
+                            variable.name = "Depth",
+                            variable.factor = FALSE)
+    pred_obs = merge.data.table(pred_SW[,(c("CheckpointID", "Experiment", "FolderName","Zone")) := NULL],
+                 long, 
+                 by.x = c("Date", "Depth"), 
+                 by.y = c("Clock.Today", "Depth"))[, Depth := forcats::fct_relevel(as.factor(Depth),                                                                                   paste0("SW(",1:22,")"))]
+
+p1 = pred_obs %>% 
+  ggplot(aes(Date)) +
+  geom_point(aes(y = obs_VWC, col = "obs_VWC"))+
+  geom_point(aes(y = pred_VWC, col = "pred_VWC")) +
+  # geom_point(aes(y = RootDepth/10000), col = "green") +
+  facet_grid( Depth ~ .)  +
+  ggtitle(paste0(unique(pred_obs$Experiment), unique(pred_obs$SowingDate))) +
+       scale_x_date(date_labels = "%Y %b", date_breaks = "4 weeks") +
+       scale_color_manual(name = "", values = palette_named) +
+       theme_water() +
+       theme(legend.position = "top",
+             axis.text.x = element_text(angle = 30, hjust = 1))
+
+ggsave(paste0("C:/Data/Master/05figures/kl_LayerByLayerCalibrationEDA/", basename(db), ".png"), p1, dpi = 300, height = 14, width = 8)
+
+  }
+}
+
+```
+swc
+
+```{r}
+dt_swc = readd(SWC_mean)
+
+for(i in Sites){
+  for(j in sds){
+    db = grep(paste0(i, j,".db"), x = dbs, value = TRUE)
+    OBS = dt_swc[Experiment == i & SowingDate == j]
+    PREDS = read_dbtab(db, table = "Report")
+    value_vars = readd(value_vars)
+    pred_obs = merge.data.table(PREDS[,(c("CheckpointID", "Experiment", "FolderName","Zone")) := NULL],
+                     OBS, 
+                     by.x = c("Date"), 
+                     by.y = c("Clock.Today"))
+    palette = rep("grey", times = 2)
+    palette_named = setNames(palette,  c("PSWC", "SWC"))
+    palette_named[2] = "red"
+    p2 = pred_obs %>% 
+      ggplot(aes(Date)) +
+      geom_point(aes(y = PSWC, col = "PSWC"))+
+      geom_point(aes(y = SWC, col = "SWC")) +
+      ggtitle(paste0(unique(pred_obs$Experiment), unique(pred_obs$SowingDate))) +
+           scale_x_date(date_labels = "%Y %b", date_breaks = "4 weeks") +
+           scale_color_manual(name = "", values = palette_named) +
+           theme_water() +
+           theme(legend.position = "top",
+                 axis.text.x = element_text(angle = 30, hjust = 1))
+    ggsave(paste0("C:/Data/Master/05figures/kl_LayerByLayerCalibrationEDA/", basename(db), "SWC.png"), p2, dpi = 300, height = 7, width = 10)
+  }
+}
+```
+
+
+```{r}
+pred_obs %>% 
+  ggplot(aes(Date)) +
+  geom_point(aes(y = SWC), col = "red")+
+  geom_point(aes(y = PSWC))
+
+```
+
+
+```{r}
+bestfitkls = readd(best_fit_layerkl)
+info = readd(info)
+SW_DUL_LL = readd(SW_DUL_LL)
+SD_tidied = readd(SD_tidied)
+apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
+source("../02scripts/R/EditApsimxCalibrateLayers.R")
+EditApsimxLayers(path = apsimx, info = info, SW_DUL_LL = SW_DUL_LL, SD_tidied = SD_tidied, kls = bestfitkls)
+```
 
 
 ```{r}
