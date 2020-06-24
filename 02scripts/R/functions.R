@@ -1,5 +1,16 @@
 
 
+
+process_bestfit <- function(skl_best_fit, kl_best_fit, saveTo){
+  skl_best_fit = skl_best_fit[,.(Experiment, SowingDate, kl = SKL, Depth = 1L)]
+  kl_best_fit[,kl := as.numeric(gsub("kl","", kl))]
+  kl_best_fit = unique(kl_best_fit[, .(Experiment, SowingDate, Depth, kl)])
+  best_fit_layerkl = rbindlist(list(skl_best_fit, kl_best_fit), use.names = TRUE)
+  setkey(best_fit_layerkl, Experiment, SowingDate, Depth)
+  
+}
+
+
 #' rename_cols
 #' @description Rename the soilwater data. The top 20cm data has been
 #'   artifically divide into two 10 cm layer. 
