@@ -37,17 +37,17 @@ plan_LayerCalibr <- drake::drake_plan(
     EditLayerKL_multi(KL_layers , KL_range, path =  apsimx,
                       files = files[1:18],
                       saveTo = path_sims2),
-    trigger = trigger(condition =  FALSE),
+    trigger = trigger(condition =  FALSE,mode = "blacklist"),
   ),
   closeDBconn = target(
-    source_python(file_in("02/Python/SetupCoverScript.py"),convert = FALSE),
+    source_python(file_in("02scripts/Python/SetupCoverScript.py"),convert = FALSE),
     trigger = trigger(condition =  length(dir("03processed-data/apsimxFilesLayers/", pattern = "*.db-wal")) != 0,
                       mode = "blacklist")
   ),
-  l_stats_layerKL = autoapsimx::sims_stats_multi(path_sims = "./03processed-data/apsimxFilesLayers/",
-                                                 pattern = "^SKL.+.db$",
+  l_stats_layerKL = autoapsimx::sims_stats_multi(path_sims = path_sims2,
+                                                 pattern = "^LayerKL.+.db$",
                                                  DT_observation = readd(SW_mean),
                                                  mode = "Manual",
                                                  keys = c("Experiment", "SowingDate", "Depth")),
-  DT_stats_layerKL = data.table::rbindlist(l_stats_layerKL)
+  DT_stats_layerKL = data.table::rbindlist(l_stats_layerKL, use.names = T, idcol = "Source")
 )
