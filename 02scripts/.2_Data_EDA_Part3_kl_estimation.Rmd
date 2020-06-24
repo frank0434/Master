@@ -594,9 +594,13 @@ dbs <- list.files(path, pattern = "*.db$", full.names = TRUE)
 
 `sims_stats.R` function development 
 ```{r}
-db <- "../03processed-data/apsimxFilesLayers/SKL_0.08RFV_20Iversen12SD1L2kl0.01.db"
+db <- "../03processed-data/apsimxFilesLayers/LayerKL_0.065RFV_15Iversen12SD1.db"
+# db <- "LayerKL_0.01RFV_15AshleyDeneSD10L2kl0.01.db"
 pred_I12SD1 <- read_dbtab(db, table = "Report")
 layerNo. <- regmatches(basename(db), regexpr("L\\d{1,2}", basename(db)))
+if(length(layerNo.) == 0){
+  layerNo. <- as.character("L1")
+}
 layer <- gsub("(L)(\\d{1,2})", "SW\\\\(\\2\\\\)", layerNo.)
 depth_int <- as.integer(gsub("L", "", layerNo.))
 colsofInteresetd <- grep(pattern = layer, colnames(pred_I12SD1), value = TRUE)
@@ -619,37 +623,34 @@ stats <- sims_stats(pred_obs,
                     keys = c("Experiment", "SowingDate", "Depth"),
                     col_pred = "pred_VWC",
                     col_obs = "ob_VWC")
-pred_I12SD1 %>%
-  data.table::melt(value.name = "pred_VWC",
-                   measure.vars = colsofInteresetd,
-                   variable.name = "Depth",
-                   variable.factor = FALSE)
-pred_obs <- manipulate(obs_I12SD1, redundant_cols = c("CheckpointID", "Zone"), DT_pred = pred_I12SD1)
+# pred_I12SD1 %>%
+#   data.table::melt(value.name = "pred_VWC",
+#                    measure.vars = colsofInteresetd,
+#                    variable.name = "Depth",
+#                    variable.factor = FALSE)
+# pred_obs <- manipulate(obs_I12SD1, redundant_cols = c("CheckpointID", "Zone"), DT_pred = pred_I12SD1)
+# 
+# 
+# pred_obs
 
-
-pred_obs
-
-
-
-
-pred_obs[, Layer := layerNo.]
-is.data.table(pred_obs)
-sims_stats(pred_obs = pred_obs, keys = c("Experiment", "SowingDate", "Layer"), col_pred = "SW(2)", col_obs =  "i.SW(2)")[]
-setkeyv(pred_obs, keys)
-nested <- pred_obs[, list(data = list(.SD)), by = key(pred_obs)]
-hydroGOF::gof(pred_obs$`SW(2)`, pred_obs$`i.SW(2)`)
+# pred_obs[, Layer := layerNo.]
+# is.data.table(pred_obs)
+# sims_stats(pred_obs = pred_obs, keys = c("Experiment", "SowingDate", "Layer"), col_pred = "SW(2)", col_obs =  "i.SW(2)")[]
+# setkeyv(pred_obs, keys)
+# nested <- pred_obs[, list(data = list(.SD)), by = key(pred_obs)]
+# hydroGOF::gof(pred_obs$`SW(2)`, pred_obs$`i.SW(2)`)
 
 pred_obs %>% 
   ggplot(aes(Date)) +
-  geom_point(aes(y = `SW(2)`), col = "red")+
-  geom_point(aes(y = `i.SW(2)`))
+  geom_point(aes(y = ob_VWC), col = "red")+
+  geom_point(aes(y = pred_VWC))
 ```
 
 `sims_stats` function test 
 
 ```{r}
 DT = readd(SW_mean)
-autoapsimx::sims_stats_multi(path_sims = "../03processed-data/apsimxFilesLayers/", pattern = "^SKL.+.db$", DT_observation = DT, mode = "Manual")
+l <- autoapsimx::sims_stats_multi(path_sims = "../03processed-data/apsimxFilesLayers/", pattern = "^Layer.+.db$", DT_observation = DT, mode = "Manual", keys = c("Experiment", "SowingDate", "Depth"), test = TRUE)
 ```
 
 
