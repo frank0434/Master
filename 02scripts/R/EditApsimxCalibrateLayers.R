@@ -5,6 +5,20 @@
 # - Modify apsimx file via edit
 # - Invoke **Edit**  [Invoke Apsimx]  
 
+process_dbs <- function(dbs){
+  list = sapply(dbs, read_dbtab, table = "Report", 
+                USE.NAMES = TRUE, simplify = FALSE)
+  
+  DT = rbindlist(list, idcol = "Source")
+  DT[, ':='(Experiment = regmatches(basename(Source), 
+                                    regexpr("(AshleyDene|Iversen12)", 
+                                            basename(Source))),
+            SowingDate = regmatches(basename(Source), 
+                                    regexpr("SD\\d{1,2}", 
+                                            basename(Source))))]
+  DT
+}
+
 
 #' process_list
 #'

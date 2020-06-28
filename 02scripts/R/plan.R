@@ -3,8 +3,8 @@ plan_analysis <- drake::drake_plan(
   # Data input
   water = autoapsimx::read_dbtab(path = path_sql, 
                                  table = "SoilWater"),
-  SowingDates = autoapsimx::read_dbtab(path = path_sql, 
-                                       table = "SowingDates"),
+  # SowingDates = autoapsimx::read_dbtab(path = path_sql, 
+  #                                      table = "SowingDates"),
   # Process data
   ## SoilWater
   # Actual measurements are 22 layers 
@@ -41,7 +41,7 @@ plan_analysis <- drake::drake_plan(
   # stats = sims_stats(pred_obs = pred_swc)
   
   ## SWC
-  l_stats = autoapsimx::sims_stats_multi(file_in(path_sims), 
+  l_stats = autoapsimx::sims_stats_multi(file_in(!!path_sims), 
                                          DT_observation = SWC_mean,
                                          mode = "Profile"),
   DT_stats = data.table::rbindlist(l_stats),
@@ -100,7 +100,8 @@ plan_analysis <- drake::drake_plan(
   pred_obs = target(
     merge.data.table(pred_SW, long, 
                      by.x = c("Date", "Depth","Experiment", "SowingDate"), 
-                     by.y = c("Clock.Today", "Depth","Experiment", "SowingDate"))[, Depth := forcats::fct_relevel(as.factor(Depth), paste0("SW(",1:22, ")"))],
+                     by.y = c("Clock.Today", "Depth","Experiment", "SowingDate"), 
+                     all.x = TRUE )[, Depth := forcats::fct_relevel(as.factor(Depth), paste0("SW(",1:22, ")"))],
     transform = map(pred_SW, long)
   ),
   plot_SW = target(
@@ -117,7 +118,7 @@ plan_analysis <- drake::drake_plan(
                             ][order(NSE, R2,RMSE)
                               ][, .SD[1], by = .(Experiment, SowingDate)
                                 ][, data:=NULL],
-                       file_out(paste0(.id_chr, ".csv"))),
+                       file_out(!!paste0(.id_chr, ".csv"))),
     transform = map(data = c(top5))
   )
   

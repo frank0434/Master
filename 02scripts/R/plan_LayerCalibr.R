@@ -27,7 +27,7 @@ plan_LayerCalibr <- drake::drake_plan(
   # Set up initial condtions 
   apsimxs = target(
     EditApsimxLayers(apsimx, info, readd(SW_DUL_LL), readd(SD_tidied), kls),
-    trigger = trigger(condition =  FALSE)
+    trigger = trigger(condition =  FALSE ,mode = "blacklist")
   ),
 
   files = list.files(here::here("03processed-data/apsimxFilesLayers/"), 
@@ -81,7 +81,7 @@ plan_LayerCalibr <- drake::drake_plan(
     process_bestfit(readd(best_fit),  readd(best_fit_layers))
   ),
   write_bestfit = target(
-    data.table::fwrite(best_fit_layerkl, file_out(paste0("03processed-data/best_fit_layerkls", ".csv")))
+    data.table::fwrite(best_fit_layerkl, file_out(!!paste0("03processed-data/best_fit_layerkls", ".csv")))
   )
 
 )
