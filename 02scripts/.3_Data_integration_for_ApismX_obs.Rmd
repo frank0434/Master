@@ -2,11 +2,8 @@
 title: "Data_integration"
 author: "Frank" 
 date: "`r sys.Date()`"
-output:
-  html_document: 
-    code_folding: hide
-    toc: true
-    toc_depth: 3
+output:  html_document
+
 ---
 
 
@@ -14,8 +11,32 @@ output:
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 source("R/packages.R")
 source("R/functions.R")
-
 ```
+
+
+## Read prediction results
+
+```{r}
+dbs = list.files("../03processed-data/apsimxLucerne/", "*.db$", full.names = TRUE)
+dt =  read_dbtab(dbs, table = "Report")
+dt[, (c("CheckpointID", "Zone")):= NULL]
+dt
+```
+
+
+## Read the obersvations 
+
+**WATER**
+```{r}
+SWC = readd(SWC_mean)
+```
+
+
+
+
+
+
+### Old work - probably no use in the future
 
 ```{r}
 con <- dbConnect(SQLite(), "../03processed-data/Richard.sqlite3")
@@ -93,7 +114,3 @@ names(l) <- l
 lapply(l, function(x)fread(x, skip = "()",nrows = 30))
 
 ```
-
-21 `.met` files 
-select the ones needed based on the apsimx output DB
-
