@@ -34,6 +34,15 @@ stats_key_SW_extra <- c(stats_key_SW, "NSE", "R2", "RMSE")
 # Run all apsimx files - take long time 
 drake::make(plan_config, lock_envir = F, memory_strategy = "autoclean", 
             garbage_collection = TRUE)
+library(visNetwork) 
+vis_drake_graph(
+  plan_config, targets_only = TRUE,
+  font_size = 25,
+  # file = "05figures/dependency.png",
+  navigationButtons = FALSE
+  # parallelism = "clustermq",
+  # jobs = 16
+)
 
 # # Analysis plan will  ---------------------------------------------------
 
@@ -43,6 +52,14 @@ drake::make(plan_config, lock_envir = F, memory_strategy = "autoclean",
 # profile
 # Draw graphs of top 3 best fit 
 # Output a table of real best fit 
+vis_drake_graph(
+  plan_analysis, targets_only = TRUE,
+  
+  # file = "05figures/dependency.png",
+  navigationButtons = FALSE
+  # parallelism = "clustermq",
+  # jobs = 16
+)
 drake::make(plan_analysis, lock_envir = F, memory_strategy = "autoclean", 
             garbage_collection = TRUE)
 
@@ -57,7 +74,14 @@ drake::make(plan_analysis, lock_envir = F, memory_strategy = "autoclean",
 drake::make(plan_SW, lock_envir = F, memory_strategy = "autoclean", 
             garbage_collection = TRUE)
 
-
+vis_drake_graph(
+  plan_SW, targets_only = TRUE,
+  
+  # file = "05figures/dependency.png",
+  navigationButtons = FALSE
+  # parallelism = "clustermq",
+  # jobs = 16
+)
 
 # Calibrate layer by layer ------------------------------------------------
 
@@ -73,31 +97,7 @@ drake::make(plan_LayerCalibr, lock_envir = F, memory_strategy = "autoclean",
             garbage_collection = TRUE)
 
 
-library(visNetwork) 
-vis_drake_graph(
-  plan_config, targets_only = TRUE,
-  font_size = 25,
-  # file = "05figures/dependency.png",
-  navigationButtons = FALSE
-  # parallelism = "clustermq",
-  # jobs = 16
-)
-vis_drake_graph(
-  plan_analysis, targets_only = TRUE,
- 
-  # file = "05figures/dependency.png",
-  navigationButtons = FALSE
-  # parallelism = "clustermq",
-  # jobs = 16
-)
-vis_drake_graph(
-  plan_SW, targets_only = TRUE,
-  
-  # file = "05figures/dependency.png",
-  navigationButtons = FALSE
-  # parallelism = "clustermq",
-  # jobs = 16
-)
+
 vis_drake_graph(
   plan_LayerCalibr, targets_only = TRUE,
   
@@ -106,3 +106,20 @@ vis_drake_graph(
   # parallelism = "clustermq",
   # jobs = 16
 )
+
+
+# Best fit layer kls  -----------------------------------------------------
+path_sims3 <- here::here("03processed-data/bestfitLayerkl/")
+path_layerkl <- here::here("05figures/kl_LayerByLayerCalibrationEDA/")
+source(file.path(kRpath, "EditApsimxCalibrateLayers.R"))
+
+source(file.path(kRpath, "plan_bestfitlayerkl.R"))
+
+vis_drake_graph(
+  plan_bestfitlayerkl, targets_only = TRUE
+)
+
+
+drake::make(plan_bestfitlayerkl, lock_envir = F, memory_strategy = "autoclean", 
+            garbage_collection = TRUE)
+
