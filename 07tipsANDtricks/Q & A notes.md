@@ -174,3 +174,25 @@ Two approaches:
 2. layer by layer fit is good for details study 
 
 Try both 
+
+
+## 20200629 
+
+```
+System.Exception: ERROR in file:
+C:\Data\Master\03processed-data\apsimxLucerne\BestfitLayerkl.apsimx
+Simulation name: Iversen12SowingDateSD1
+System.Exception: Saturation of 0.290 in layer 5 is above acceptable value of
+0.264. You must adjust bulk density to below 1.882 OR saturation to below 0.264
+Saturation of 0.300 in layer 6 is above acceptable value of 0.264. You must
+adjust bulk density to below 1.855 OR saturation to below 0.264
+Saturation of 0.306 in layer 7 is above acceptable value of 0.264. You must
+adjust bulk density to below 1.839 OR saturation to below 0.264
+...
+```
+
+Solution 
+Use debug mode in visul studio to change the `specific_bd` from 2.65 to 3.20 in
+the `SoilChecker.cs`
+
+More detailed discussion [#5130](https://github.com/APSIMInitiative/ApsimX/issues/5130)
