@@ -5,6 +5,7 @@ plan_config <- drake::drake_plan(
                                  table = "SoilWater"),
   SowingDates = autoapsimx::read_dbtab(path = path_sql, 
                                        table = "SowingDates"),
+  preds = read_dbtab("./03processed-data/apsimxLucerne/BestfitLayerkl.db", table = "Report"), 
   # Process data
   ## SoilWater
   # Actual measurements are 22 layers 
@@ -56,22 +57,105 @@ plan_config <- drake::drake_plan(
                                  on = c("Experiment", "SowingDate", "Depth")
                                  ][,':='(Depth = as.integer(gsub("\\D", "", Depth)))
                                      ][order(Experiment,SowingDate, Depth, Clock.Today)],
+  # Subset
+  configs = target(
+    autoapsimx::subsetByTreatment(DT = SW_DUL_LL, 
+                                  treatment1 = sites,
+                                  treatment2 = sds),
+    transform = cross(sites = c("AshleyDene", "Iversen12"),
+                      sds = c("SD1",  "SD2", "SD3",  "SD4",  "SD5",
+                              "SD6",  "SD7",  "SD8",  "SD9",  "SD10"))
+  ),
   
   
-  # kl ----------------------------------------------------------------------
-  ## Prepare the slurp model input 
-  ## The canopy cover data is processed in a separate notebook
-  ## SetUpCoverDataForSlurp
+  # Subset observation data ----------------------------------------------------------------------
+  ## k and LAI
   CoverData = target(
     source_python(file_in("02scripts/Python/SetupCoverScript.py"),convert = FALSE),
     trigger = trigger(condition =  length(dir("./03processed-data/CoverData/")) == 0,
                       mode = "blacklist")
     ),
-  ## Prepare the configuration file and create multiple slurp simulations 
-  # .2_Data_EDA_Part2_apsimxEdit.Rmd
-  # apsimxs = target(
-  #   EditApsimx(SW_DUL_LL, SD_tidied),
-  #   trigger = trigger(condition =  length(dir("./03processed-data/apsimxFiles/")) == 0,
-  #                     mode = "blacklist")
-  # )
+  ## SW 
+  obs_SW = target(
+    autoapsimx::subsetByTreatment(DT = SW_mean, 
+                                  treatment1 = sites,
+                                  treatment2 = sds),
+    transform = cross(sites = c("AshleyDene", "Iversen12"),
+                      sds = c("SD1",  "SD2", "SD3",  "SD4",  "SD5",
+                              "SD6",  "SD7",  "SD8",  "SD9",  "SD10"))
+  ),
+  ## SWC
+  obs_SWC = target(
+    autoapsimx::subsetByTreatment(DT = SWC_mean, 
+                                  treatment1 = sites ,
+                                  treatment2 = sds),
+    transform = cross(sites = c("AshleyDene", "Iversen12"),
+                      sds = c("SD1",  "SD2", "SD3",  "SD4",  "SD5",
+                              "SD6",  "SD7",  "SD8",  "SD9",  "SD10"))
+  ),
+  ## SW_long 
+  obs_long = target(
+    data.table::melt(obs_SW,
+                     value.name = "obs_VWC",
+                     measure.vars = value_vars, 
+                     variable.name = "Depth",
+                     variable.factor = FALSE),
+    transform = map(obs_SW)
+  ),
+  preds_long = target(
+    data.table::melt(prediction[, PSWC := NULL],
+                     value.name = "preds_VWC",
+                     measure.vars = value_vars, 
+                     variable.name = "Depth",
+                     variable.factor = FALSE),
+    transform = map(prediction)
+  ),
+  ## SWC 
+  prediction = target(
+    autoapsimx::subsetByTreatment(DT = preds, 
+                                  treatment1 = sites ,
+                                  treatment2 = sds),
+    transform = cross(sites = c("AshleyDene", "Iversen12"),
+                      sds = c("SD1",  "SD2", "SD3",  "SD4",  "SD5",
+                              "SD6",  "SD7",  "SD8",  "SD9",  "SD10"))
+  ), 
+  joined_SWC = target(
+    merge.data.table(prediction, obs_SWC, all.x = TRUE, 
+                     by.x = c("Date", "Experiment", "SowingDate"),
+                     by.y = c("Clock.Today", "Experiment", "SowingDate")),
+    transform = map(prediction, obs_SWC)
+  ),
+  
+  joined_SW = target(
+    merge.data.table(preds_long, obs_long, all.x = TRUE, 
+                     by.x = c("Date", "Experiment","SowingDate", "Depth"),
+                     by.y = c("Clock.Today", "Experiment", "SowingDate", "Depth")),
+    transform = map(preds_long, obs_long)
+  ),
+  plot_SW = target(
+    plot_params(DT = joined_SW[, Depth := forcats::fct_relevel(as.factor(Depth), 
+                                                              paste0("SW(",1:22, ")"))], 
+                col_pred = "preds_VWC", col_obs = "obs_VWC",
+                stats = FALSE,
+                Depth = "Depth", group_params = ".",
+                height = 16, width = 9,
+                title = file_out(!!paste0(path_EDAfigures,"/",
+                                          gsub("joined_SW_preds_long_prediction_(AshleyDene|Iversen12)_SD\\d{1,2}_obs_long_obs_SW", 
+                                               "", .id_chr))),format = "png"),
+    transform = map(joined_SW),
+    trigger = trigger(condition = FALSE, mode = "blacklist")
+  ),
+  plot_SWC = target(
+    plot_params(DT = joined_SWC, 
+                col_pred = "PSWC", 
+                col_obs = "SWC",
+                group_params = "Experiment",
+                stats = FALSE, height = 4.1,
+                title = file_out(!!paste0(path_EDAfigures,"/",
+                                          gsub("joined_SWC_prediction_(AshleyDene|Iversen12)_SD\\d{1,2}_obs_SWC", 
+                                               "", .id_chr))),format = "png"),
+    transform = map(joined_SWC),
+    trigger = trigger(condition = FALSE, mode = "blacklist")
+  )
+  
 )
