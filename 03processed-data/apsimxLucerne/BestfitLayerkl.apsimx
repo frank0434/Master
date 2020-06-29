@@ -7864,7 +7864,10 @@
       "Children": [
         {
           "$type": "Models.Factorial.Experiment, Models",
-          "DisabledSimNames": null,
+          "DisabledSimNames": [
+            "Iversen12SowingDateSD10",
+            "Iversen12SowingDateSD9"
+          ],
           "Name": "Iversen12",
           "Children": [
             {
@@ -16210,7 +16213,30 @@
                                     0.309,
                                     0.306
                                   ],
-                                  "KL": null,
+                                  "KL": [
+                                    0.06,
+                                    0.06,
+                                    0.049,
+                                    0.048,
+                                    0.055,
+                                    0.05,
+                                    0.048,
+                                    0.059,
+                                    0.076,
+                                    0.051,
+                                    0.094,
+                                    0.069,
+                                    0.033,
+                                    0.03,
+                                    0.043,
+                                    0.043,
+                                    0.056,
+                                    0.061,
+                                    0.03,
+                                    0.03,
+                                    0.03,
+                                    0.03
+                                  ],
                                   "XF": [
                                     1.0,
                                     1.0,
