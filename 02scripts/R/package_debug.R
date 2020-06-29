@@ -2,6 +2,14 @@
 
 library(drake)
 
+
+# column not exist --------------------------------------------------------
+
+
+# object PSWC not found ---------------------------------------------------
+
+
+
 loadd(joined_SWC_prediction_AshleyDene_SD6_obs_SWC_AshleyDene_SD6)
 loadd(starts_with("joined_SWC_prediction_AshleyDene_SD"))
 loadd(prediction_AshleyDene_SD6)
