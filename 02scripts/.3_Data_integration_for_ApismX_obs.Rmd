@@ -9,6 +9,14 @@ output:
     toc_depth: 3
 ---
 
+Aim:  
+
+~~1. Integrate all observed data into a excel format so that it can be sourced by apsimx to do graphying.~~
+
+New Aim:   
+1. Grep data from cache and visulise it in R for pred vs obs comparsion.  
+
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
@@ -16,6 +24,16 @@ source("R/packages.R")
 source("R/functions.R")
 
 ```
+
+# New aim  
+
+```{r read cache}
+SWC = readd(SWC_mean)
+```
+
+
+
+# Old aims
 
 ```{r}
 con <- dbConnect(SQLite(), "../03processed-data/Richard.sqlite3")

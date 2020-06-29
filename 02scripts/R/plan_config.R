@@ -69,9 +69,9 @@ plan_config <- drake::drake_plan(
     ),
   ## Prepare the configuration file and create multiple slurp simulations 
   # .2_Data_EDA_Part2_apsimxEdit.Rmd
-  apsimxs = target(
-    EditApsimx(SW_DUL_LL, SD_tidied),
-    trigger = trigger(condition =  length(dir("./03processed-data/apsimxFiles/")) == 0,
-                      mode = "blacklist")
-  )
+  # apsimxs = target(
+  #   EditApsimx(SW_DUL_LL, SD_tidied),
+  #   trigger = trigger(condition =  length(dir("./03processed-data/apsimxFiles/")) == 0,
+  #                     mode = "blacklist")
+  # )
 )
