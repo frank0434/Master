@@ -5,7 +5,10 @@ plan_config <- drake::drake_plan(
                                  table = "SoilWater"),
   SowingDates = autoapsimx::read_dbtab(path = path_sql, 
                                        table = "SowingDates"),
-  preds = read_dbtab("./03processed-data/apsimxLucerne/BestfitLayerkl.db", table = "Report"), 
+  preds = target(
+    read_dbtab("./03processed-data/apsimxLucerne/BestfitLayerkl.db", table = "Report"),
+    trigger = trigger(condition = TRUE)
+    ), 
   # Process data
   ## SoilWater
   # Actual measurements are 22 layers 
@@ -143,7 +146,7 @@ plan_config <- drake::drake_plan(
                                           gsub("joined_SW_preds_long_prediction_(AshleyDene|Iversen12)_SD\\d{1,2}_obs_long_obs_SW", 
                                                "", .id_chr))),format = "png"),
     transform = map(joined_SW),
-    trigger = trigger(condition = FALSE, mode = "blacklist")
+    trigger = trigger(condition = TRUE, mode = "blacklist")
   ),
   plot_SWC = target(
     plot_params(DT = joined_SWC, 
@@ -155,7 +158,7 @@ plan_config <- drake::drake_plan(
                                           gsub("joined_SWC_prediction_(AshleyDene|Iversen12)_SD\\d{1,2}_obs_SWC", 
                                                "", .id_chr))),format = "png"),
     transform = map(joined_SWC),
-    trigger = trigger(condition = FALSE, mode = "blacklist")
+    trigger = trigger(condition = TRUE, mode = "blacklist")
   )
   
 )

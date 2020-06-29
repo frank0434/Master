@@ -28,10 +28,13 @@ source("R/functions.R")
 # New aim  
 
 ```{r read cache}
-SWC = readd(SWC_mean)
+loadd(starts_with("configs"))
+configs_AshleyDene_SD3
 ```
+```{r read db for preds}
+preds = read_dbtab("../03processed-data/apsimxLucerne/BestfitLayerkl.db", table = "Report")
 
-
+```
 
 # Old aims
 

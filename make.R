@@ -10,9 +10,7 @@ source(file.path(kRpath, "functions.R"))
 source(file.path(kRpath, "packages.R"))
 
 source(file.path(kRpath, "EditApsimx.R"))
-source(file.path(kRpath, "plan_analysis.R"))
-source(file.path(kRpath, "plan_SW.R"))
-source(file.path(kRpath, "plan_config.R"))
+
 
 # Constant
 
@@ -33,6 +31,7 @@ stats_key_SW_extra <- c(stats_key_SW, "NSE", "R2", "RMSE")
 # Create apsimx files 
 # Run all apsimx files - take long time 
 
+source(file.path(kRpath, "plan_config.R"))
 
 vis_drake_graph(
   plan_config, targets_only = TRUE,
