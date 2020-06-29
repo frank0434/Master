@@ -2,8 +2,12 @@
 
 library(drake)
 
-
-
+loadd(joined_SWC_prediction_AshleyDene_SD6_obs_SWC_AshleyDene_SD6)
+loadd(starts_with("joined_SWC_prediction_AshleyDene_SD"))
+loadd(prediction_AshleyDene_SD6)
+merge.data.table(prediction_AshleyDene_SD6, obs_SWC_AshleyDene_SD6, all.x = TRUE, 
+                 by.x = c("Date", "Experiment", "SowingDate"),
+                 by.y = c("Clock.Today", "Experiment", "SowingDate"))
 # stats fail --------------------------------------------------------------
 
 # x fail stats

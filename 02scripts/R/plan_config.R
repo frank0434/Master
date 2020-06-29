@@ -106,12 +106,13 @@ plan_config <- drake::drake_plan(
     transform = map(obs_SW)
   ),
   preds_long = target(
-    data.table::melt(prediction[, PSWC := NULL],
+    data.table::melt(prediction,
                      value.name = "preds_VWC",
                      measure.vars = value_vars, 
                      variable.name = "Depth",
                      variable.factor = FALSE),
-    transform = map(prediction)
+    transform = map(prediction),
+    trigger = trigger(condition = TRUE)
   ),
   ## SWC 
   prediction = target(
@@ -120,20 +121,23 @@ plan_config <- drake::drake_plan(
                                   treatment2 = sds),
     transform = cross(sites = c("AshleyDene", "Iversen12"),
                       sds = c("SD1",  "SD2", "SD3",  "SD4",  "SD5",
-                              "SD6",  "SD7",  "SD8",  "SD9",  "SD10"))
+                              "SD6",  "SD7",  "SD8",  "SD9",  "SD10")),
+    trigger = trigger(condition = TRUE)
   ), 
   joined_SWC = target(
-    merge.data.table(prediction, obs_SWC, all.x = TRUE, 
+    merge.data.table(prediction[,list(Date, Experiment, SowingDate, PSWC)], obs_SWC, all.x = TRUE, 
                      by.x = c("Date", "Experiment", "SowingDate"),
                      by.y = c("Clock.Today", "Experiment", "SowingDate")),
-    transform = map(prediction, obs_SWC)
+    transform = map(prediction, obs_SWC),
+    trigger = trigger(condition = TRUE)
   ),
   
   joined_SW = target(
     merge.data.table(preds_long, obs_long, all.x = TRUE, 
                      by.x = c("Date", "Experiment","SowingDate", "Depth"),
                      by.y = c("Clock.Today", "Experiment", "SowingDate", "Depth")),
-    transform = map(preds_long, obs_long)
+    transform = map(preds_long, obs_long),
+    trigger = trigger(condition = TRUE)
   ),
   plot_SW = target(
     plot_params(DT = joined_SW[, Depth := forcats::fct_relevel(as.factor(Depth), 
