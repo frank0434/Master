@@ -178,6 +178,7 @@ Try both
 
 ## 20200629 
 
+The soil node was not replaced properly because didn't specify it in the factor manager. 
 ```
 System.Exception: ERROR in file:
 C:\Data\Master\03processed-data\apsimxLucerne\BestfitLayerkl.apsimx
@@ -196,3 +197,24 @@ Use debug mode in visul studio to change the `specific_bd` from 2.65 to 3.20 in
 the `SoilChecker.cs`
 
 More detailed discussion [#5130](https://github.com/APSIMInitiative/ApsimX/issues/5130)
+
+## 20200630
+
+the best layer by layer kls performance well for AshleyDene, 
+But poorly for Iversen12
+
+A design flaw in the `SetupCoverScript.py`. The LAI and Light interception are
+separated. could be better just have them together.
+
+The current setup of the model provides:  
+1. very high LAI 
+2. Low above ground biomass 
+
+
+Modified the `Fw` in `RUE` to see if anything will change. 
+Probably need to recalculate the relationship between RUE and soil water supply/demand. 
+
+
+Build a dev version `BestfitLayerkl` with observed data in the UI
+
+
