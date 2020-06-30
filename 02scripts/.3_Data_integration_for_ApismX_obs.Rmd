@@ -109,11 +109,14 @@ biomass_obs = biomass_obs[Clock.Today > "2011-11-30" &
                             Clock.Today < "2012-03-01" & 
                             Experiment == "AshleyDene", k:= 0.66
                           ][, k := ifelse(is.na(k), 0.94, k)
-                            ][, LightInterception := 1 - exp(-k*LAI)]
+                            ][, LightInterception := 1 - exp(-k*LAI)
+                              ][, Height := Height * 10
+                                ][, Height := ifelse(is.nan(Height), NA, Height)]
 whole = rbindlist(list(water, biomass_obs), fill = TRUE, use.names = TRUE)
 
 whole[, ':='(SimulationName = paste0(Experiment, "SowingDate", SowingDate))]
-setcolorder(whole, "SimulationName")
+setcolorder(whole, c("SowingDate","SimulationName"))
+whole = whole[!(Experiment == "Iversen12" & SowingDate %in% c("SD9","SD10"))]
 write.xlsx(whole, "../03processed-data/20200630Whole.xlsx", sheetName = "Observed")
 
 ```
