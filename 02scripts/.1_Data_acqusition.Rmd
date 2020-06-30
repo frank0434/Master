@@ -111,7 +111,7 @@ biomass <- dt[Data == "Biomass"]
 
 col_good <- choose_cols(biomass) # identify the right cols 
 
-biomass <- biomass[,..col_good] # subset the right cols
+biomass <- biomass[Seed == "CS",..col_good] # subset the right cols
 
 # drop the extra cols in place 
 
@@ -150,7 +150,7 @@ root <- root[,..col_good]
 
 ```{r Phenology tab}
 
-Phenology <- dt[Data == "Phenology"]
+Phenology <- dt[Seed == "CS" & Harvest.No. != "Post" & Data == "Phenology"]
 
 col_good <- choose_cols(Phenology) # identify the right cols 
 
@@ -273,7 +273,7 @@ climate_units <- read_met_col("../01raw-data/ClimateAndObserved/lincoln.met", sk
 Iversen12 <- read_met("../01raw-data/ClimateAndObserved/lincoln.met", skip_unit =  7, skip_meta = 6)
 head(Iversen12)
 
-AshleyDene <- read_met("../01raw-data/ClimateAndObserved/Weather_AshleyDene.met", skip_unit = 10, skip_meta = 8)
+AshleyDene <- read_met("../01raw-data/ClimateAndObserved/AshleyDene.met", skip_unit = 10, skip_meta = 8)
 
 
 ```
@@ -302,8 +302,9 @@ DBI::dbListTables(con)
 # sqlite does not support ISO date. it will be julian date. 
 
 # ls()
-tab_names <- c("biomass",  "root", "Phenology","SoilWater","ES") 
-purrr::map2(list(biomass, root, Phenology, SoilWater, ES), tab_names, ~ dbWriteTable(con, .y, .x, overwrite = TRUE))
+# dbRemoveTable(con, "biomass")
+tab_names <- c("biomass",  "root", "Phenology","ES") 
+purrr::map2(list(biomass, root, Phenology, ES), tab_names, ~ dbWriteTable(con, .y, .x, overwrite = TRUE))
 dbWriteTable(con, "met_Iversen12", Iversen12, overwrite = TRUE)
 dbWriteTable(con, "met_AshleyDene", AshleyDene, overwrite = TRUE)
 dbWriteTable(con, "SowingDates", SowingDates, overwrite = TRUE)
