@@ -5,8 +5,8 @@ jupyter:
     text_representation:
       extension: .Rmd
       format_name: rmarkdown
-      format_version: '1.2'
-      jupytext_version: 1.4.2
+      format_version: '1.1'
+      jupytext_version: 1.2.4
   kernelspec:
     display_name: Python 3
     language: python
@@ -84,7 +84,7 @@ def print_full(x):
 
 ```{python}
 # Build connection with db
-con = sqlite3.connect('./03processed-data/Richard.sqlite3')
+con = sqlite3.connect('../../03processed-data/Richard.sqlite3')
 mycur = con.cursor() 
 mycur.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
 (mycur.fetchall())

@@ -24,12 +24,8 @@ stats_key_extra <- c(stats_key, "NSE", "R2", "RMSE")
 stats_key_SW_extra <- c(stats_key_SW, "NSE", "R2", "RMSE")
 
 # # Configuration plan will  ----------------------------------------------
-
-
-# Create configuration files for slurp 
-# Create CoverData as slurp input 
-# Create apsimx files 
-# Run all apsimx files - take long time 
+# read simulation resutls from the lucern model
+# give prediction vs observation graph
 
 source(file.path(kRpath, "plan_config.R"))
 
