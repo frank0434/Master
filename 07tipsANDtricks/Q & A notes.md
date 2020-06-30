@@ -216,5 +216,12 @@ Probably need to recalculate the relationship between RUE and soil water supply/
 
 
 Build a dev version `BestfitLayerkl` with observed data in the UI
-
-
+```
+System.Exception
+  HResult=0x80131500
+  Message=PredictedObserved: Observed data was found but didn't match the predicted values. Make sure the values in the SimulationName column match the simulation names in the user interface. Also ensure column names in the observed file match the APSIM report column names.
+  Source=Models
+  StackTrace:
+   at Models.PostSimulationTools.PredictedObserved.Run() in C:\Data\ApsimX\ApsimXLatest\Models\PostSimulationTools\PredictedObserved.cs:line 267
+```
+The join column must be `Clock.Today` because it is explicit. 
