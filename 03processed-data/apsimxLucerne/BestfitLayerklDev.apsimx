@@ -2975,134 +2975,116 @@
                                   "Name": "Vegetative",
                                   "Children": [
                                     {
-                                      "$type": "Models.Functions.LessThanFunction, Models",
+                                      "$type": "Models.Functions.MultiplyFunction, Models",
                                       "Name": "LAER",
                                       "Children": [
                                         {
+                                          "$type": "Models.Functions.LessThanFunction, Models",
+                                          "Name": "LAERBASE",
+                                          "Children": [
+                                            {
+                                              "$type": "Models.Functions.VariableReference, Models",
+                                              "VariableName": "[Phenology].DeltaPhotoperiod",
+                                              "Name": "DeltaPhotoperiod",
+                                              "Children": [],
+                                              "IncludeInDocumentation": true,
+                                              "Enabled": true,
+                                              "ReadOnly": false
+                                            },
+                                            {
+                                              "$type": "Models.Functions.Constant, Models",
+                                              "FixedValue": 0.0,
+                                              "Units": null,
+                                              "Name": "Zero",
+                                              "Children": [],
+                                              "IncludeInDocumentation": true,
+                                              "Enabled": true,
+                                              "ReadOnly": false
+                                            },
+                                            {
+                                              "$type": "Models.Functions.LinearInterpolationFunction, Models",
+                                              "Name": "Decreasing",
+                                              "Children": [
+                                                {
+                                                  "$type": "Models.Functions.XYPairs, Models",
+                                                  "X": [
+                                                    8.0,
+                                                    10.0,
+                                                    16.5
+                                                  ],
+                                                  "Y": [
+                                                    0.0,
+                                                    0.0056,
+                                                    0.015
+                                                  ],
+                                                  "Name": "XYPairs",
+                                                  "Children": [],
+                                                  "IncludeInDocumentation": true,
+                                                  "Enabled": true,
+                                                  "ReadOnly": false
+                                                },
+                                                {
+                                                  "$type": "Models.Functions.VariableReference, Models",
+                                                  "VariableName": "[Phenology].Photoperiod",
+                                                  "Name": "XValue",
+                                                  "Children": [],
+                                                  "IncludeInDocumentation": true,
+                                                  "Enabled": true,
+                                                  "ReadOnly": false
+                                                }
+                                              ],
+                                              "IncludeInDocumentation": true,
+                                              "Enabled": true,
+                                              "ReadOnly": false
+                                            },
+                                            {
+                                              "$type": "Models.Functions.LinearInterpolationFunction, Models",
+                                              "Name": "Increasing",
+                                              "Children": [
+                                                {
+                                                  "$type": "Models.Functions.XYPairs, Models",
+                                                  "X": [
+                                                    8.0,
+                                                    11.5,
+                                                    12.0,
+                                                    16.5
+                                                  ],
+                                                  "Y": [
+                                                    0.0,
+                                                    0.0,
+                                                    0.018,
+                                                    0.02
+                                                  ],
+                                                  "Name": "XYPairs",
+                                                  "Children": [],
+                                                  "IncludeInDocumentation": true,
+                                                  "Enabled": true,
+                                                  "ReadOnly": false
+                                                },
+                                                {
+                                                  "$type": "Models.Functions.VariableReference, Models",
+                                                  "VariableName": "[Phenology].Photoperiod",
+                                                  "Name": "XValue",
+                                                  "Children": [],
+                                                  "IncludeInDocumentation": true,
+                                                  "Enabled": true,
+                                                  "ReadOnly": false
+                                                }
+                                              ],
+                                              "IncludeInDocumentation": true,
+                                              "Enabled": true,
+                                              "ReadOnly": false
+                                            }
+                                          ],
+                                          "IncludeInDocumentation": true,
+                                          "Enabled": true,
+                                          "ReadOnly": false
+                                        },
+                                        {
                                           "$type": "Models.Functions.VariableReference, Models",
-                                          "VariableName": "[Phenology].DeltaPhotoperiod",
-                                          "Name": "DeltaPhotoperiod",
+                                          "VariableName": "[Leaf].Fw",
+                                          "Name": "Fw",
                                           "Children": [],
-                                          "IncludeInDocumentation": true,
-                                          "Enabled": true,
-                                          "ReadOnly": false
-                                        },
-                                        {
-                                          "$type": "Models.Functions.Constant, Models",
-                                          "FixedValue": 0.0,
-                                          "Units": null,
-                                          "Name": "Zero",
-                                          "Children": [],
-                                          "IncludeInDocumentation": true,
-                                          "Enabled": true,
-                                          "ReadOnly": false
-                                        },
-                                        {
-                                          "$type": "Models.Functions.LinearInterpolationFunction, Models",
-                                          "Name": "Decreasing",
-                                          "Children": [
-                                            {
-                                              "$type": "Models.Functions.XYPairs, Models",
-                                              "X": [
-                                                8.0,
-                                                10.0,
-                                                16.5
-                                              ],
-                                              "Y": [
-                                                0.0,
-                                                0.0056,
-                                                0.015
-                                              ],
-                                              "Name": "XYPairs",
-                                              "Children": [],
-                                              "IncludeInDocumentation": true,
-                                              "Enabled": true,
-                                              "ReadOnly": false
-                                            },
-                                            {
-                                              "$type": "Models.Functions.VariableReference, Models",
-                                              "VariableName": "[Phenology].Photoperiod",
-                                              "Name": "XValue",
-                                              "Children": [],
-                                              "IncludeInDocumentation": true,
-                                              "Enabled": true,
-                                              "ReadOnly": false
-                                            }
-                                          ],
-                                          "IncludeInDocumentation": true,
-                                          "Enabled": true,
-                                          "ReadOnly": false
-                                        },
-                                        {
-                                          "$type": "Models.Functions.LinearInterpolationFunction, Models",
-                                          "Name": "Increasing",
-                                          "Children": [
-                                            {
-                                              "$type": "Models.Functions.XYPairs, Models",
-                                              "X": [
-                                                8.0,
-                                                11.5,
-                                                12.0,
-                                                16.5
-                                              ],
-                                              "Y": [
-                                                0.0,
-                                                0.0,
-                                                0.018,
-                                                0.02
-                                              ],
-                                              "Name": "XYPairs",
-                                              "Children": [],
-                                              "IncludeInDocumentation": true,
-                                              "Enabled": true,
-                                              "ReadOnly": false
-                                            },
-                                            {
-                                              "$type": "Models.Functions.VariableReference, Models",
-                                              "VariableName": "[Phenology].Photoperiod",
-                                              "Name": "XValue",
-                                              "Children": [],
-                                              "IncludeInDocumentation": true,
-                                              "Enabled": true,
-                                              "ReadOnly": false
-                                            }
-                                          ],
-                                          "IncludeInDocumentation": true,
-                                          "Enabled": true,
-                                          "ReadOnly": false
-                                        },
-                                        {
-                                          "$type": "Models.Functions.LinearInterpolationFunction, Models",
-                                          "Name": "FW",
-                                          "Children": [
-                                            {
-                                              "$type": "Models.Functions.XYPairs, Models",
-                                              "X": [
-                                                0.0,
-                                                0.5,
-                                                0.9
-                                              ],
-                                              "Y": [
-                                                0.0,
-                                                0.1,
-                                                1.0
-                                              ],
-                                              "Name": "XYPairs",
-                                              "Children": [],
-                                              "IncludeInDocumentation": true,
-                                              "Enabled": true,
-                                              "ReadOnly": false
-                                            },
-                                            {
-                                              "$type": "Models.Functions.VariableReference, Models",
-                                              "VariableName": "[Leaf].Area.LeafArea.DeltaLAI.LAER.Vegetative.LAER",
-                                              "Name": "XValue",
-                                              "Children": [],
-                                              "IncludeInDocumentation": true,
-                                              "Enabled": true,
-                                              "ReadOnly": false
-                                            }
-                                          ],
                                           "IncludeInDocumentation": true,
                                           "Enabled": true,
                                           "ReadOnly": false

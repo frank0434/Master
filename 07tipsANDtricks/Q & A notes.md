@@ -225,3 +225,15 @@ System.Exception
    at Models.PostSimulationTools.PredictedObserved.Run() in C:\Data\ApsimX\ApsimXLatest\Models\PostSimulationTools\PredictedObserved.cs:line 267
 ```
 The join column must be `Clock.Today` because it is explicit. 
+
+
+## 20200701
+
+Rog had a look at the simulation results. 
+Suggestions for optimisation:  
+1. Run the slurp model to have the water simulation resutls.   
+2. Run optimisation for the layer by layer calibration. 
+3. Compare the RMSE changes between 1 and 2.  
+4. Run a second time optimisation till the kls stablised. 
+
+MAE to do the selections. 
