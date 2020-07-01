@@ -7,6 +7,7 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
                       fig.align = "center", fig.width = 10, fig.height = 7, dpi = 300)
+options(scipen = 999)
 source("../02scripts/R/packages.R")
 ```
 
@@ -39,6 +40,96 @@ Sys.setenv("SimsDir" = file.path(Sys.getenv("WorkingDir"), "03processed-data/aps
 # list.files(Sys.getenv("SimsDir"))
 
 ```
+
+# 20200701 Edit slurp kls into apsimx lucerne 
+
+**Because the best fit kls are not yet the best**
+
+1. Need the best parameter combination.  
+2. Extract the percentage reduction of surface kls from the `SummaryNumber` in the db.  
+3. Calculate the artifical kls. 
+
+```{r}
+nodes = readLines("../01raw-data/ApsimxFiles/LucerneBaseConfigTemplate")
+loadd(info)
+dbs = list.files("../03processed-data/apsimxFiles/", pattern = "*.db$")
+loadd(kls) # This is the best kls from slurp model
+kls[, kl := round(kl, digits = 3)]
+```
+
+```{r}
+InitialConds = readd(SW_DUL_LL)
+SowingDates = readd(SD_tidied)
+SDs = unique(SowingDates$SD)
+Countries = "NewZealand"
+Locations = unique(SowingDates$Experiment)
+ll = vector("list", length = length(Countries) * length(Locations) *length(SDs))
+pos = 1
+for(Country in Countries){
+  for(Location in Locations){
+    for(SD in SDs){
+      names(ll)[[pos]] = paste0(Country, ".", Location, ".", SD)
+   
+      # print(Country);print(Location);print(SD)
+      nodepath = gsub("Country", Country, nodes)
+      nodepath = gsub("Location", Location, nodepath)
+      nodepath = gsub("SDXX", SD, nodepath)
+      v = vector("character", length = length(nodepath))
+      # 
+      # Parameters and values
+      SW = InitialConds[Experiment == Location & SowingDate == SD]$SW
+      kl = kls[Experiment == Location & SowingDate == SD]$kl
+      LL = InitialConds[Experiment == Location & SowingDate ==SD]$LL
+      LL15 = LL
+      AirDry = LL
+      DUL = InitialConds[Experiment == Location & SowingDate ==SD]$DUL
+      SAT = DUL
+      # # The order is critical - fix me? remove the order hurdle
+      v = c(paste0(SW, collapse = ","),
+            paste0(kl, collapse = ","),
+            paste0(LL, collapse = ","),
+            paste0(LL15, collapse = ","),
+            paste0(AirDry, collapse = ","),
+            paste0(DUL, collapse = ","),
+            paste0(SAT, collapse = ","))
+      ll[[pos]] = paste0(nodepath, v)
+      pos = pos + 1
+      
+    }
+  }
+}
+
+
+
+f <- file(paste0(Sys.getenv("ConfigFileDir"),"/Bestslurpkls.txt"), "w")
+# Write values into the file 
+cat(unlist(ll, recursive = FALSE, use.names = FALSE), "\r",
+   sep = "\r", 
+   file = f, 
+   append = TRUE)
+# Close the file and clean it from memory 
+close(f)
+rm(f)
+gc()
+```
+
+```{r Edit best layer kl in Lucerne apsimx}
+
+
+# Constants 
+apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
+apsimx_flag <- "/Edit"
+apsimx_Basefile <- file.path(Sys.getenv("BaseApsimxDir"), "20200625LucerneBase.apsimx")
+apsimx_sims_temp <- file.path(Sys.getenv("WorkingDir"), "03processed-data/apsimxLucerne/temp.apsimx")
+apsimx_sims_dir <- file.path(Sys.getenv("WorkingDir"), "03processed-data/apsimxLucerne/")
+apsimx_config <- paste0(Sys.getenv("ConfigFileDir"),"/Bestslurpkls.txt")
+modifiedName <- paste0(apsimx_sims_dir, "/Bestslurpkls.apsimx")
+system(paste('cp', apsimx_Basefile, modifiedName))
+
+
+system(paste(apsimx, modifiedName, apsimx_flag, apsimx_config))
+```
+
 
 # 20200625 Edit best fit layers into apsimx lucerne 
 
