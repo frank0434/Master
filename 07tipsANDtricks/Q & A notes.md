@@ -174,3 +174,55 @@ Two approaches:
 2. layer by layer fit is good for details study 
 
 Try both 
+
+## 20200703
+
+Catch up with Derrick. Key points:  
+
+1. The chapter for the thesis.   
+  - Literature review on kl (apsimx/stick approaches - prons/cons - free
+  draining/stone)
+  - Comparision of automated and conventional ways of soil initial condition
+  calculation (SW, DUL and LL)
+  - Comparision of automated and conventional ways of kls 
+  - The three concepts of simulation validation: water, nitrogen and biomass
+  
+2. The talk.  
+  - Bring back the bucket picture 
+  - Engage with the audience by showing a working model and how this works and
+  why it is relevant (the soil water measurements are crutial to set the initial
+  soil conditions right)  
+  - A package developed to facilitate the job  
+  - when we try to add other type of soil all of a sudden it is not so great  
+  - why (stone content/ model set up incorrect)   
+  
+3. The next.  
+  - There is no canopy at all during winter (July to August). Therefore, there
+  should not be any water usage by the plants. 
+  - Stone content must be considered. Hope a literature review would reveal more
+  insights about dealing with stony soils.  
+  - Plant parameterisation might be incorrect if the soil has been set up
+  correctly and water prediction reasonable.  
+  - Derive kls from observation data is still possible but just need to remove
+  the big rainfall event.  
+  - Where is the root in the soil profile. The root must be in the certain layer
+  to be able to use the water. Check if the root prediction is correct.
+  - Water table rise up could be an issue.   
+  - If biomass is still accumulate while soil profile was dried out, we assume
+  the plant was extracting water from deeper layer which exceeded the measured
+  depth.
+  - Aim a conference talk just on the automation of deriving soil initial
+  condition
+  - Aim a paper for the parameterisation of soil initial conditions 
+
+
+Catch up with Xiumei. Key points:   Latest version Apsimx might have broken
+parts in the PMF because resipiration constant is not affecting the simulation.
+
+
+# 20200708
+
+Xiumei suggested that the hydrothermal effect could affect the seed germination 
+which will have effects on the canopy development for sure. 
+but Changing the `shootlag` in the [Lucerne].Phenology.emergence didn't change any 
+prediction results. 
