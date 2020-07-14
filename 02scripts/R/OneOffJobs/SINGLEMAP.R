@@ -76,7 +76,9 @@ leaflet("basemap_ra_ref") %>%
   fitBounds(min(pixel_df$Lon), min(pixel_df$Lat), max(pixel_df$Lon), max(pixel_df$Lat)) %>% 
   addRectangles(r$Lon+halfPixelDeg, r$Lat+halfPixelDeg,
                 r$Lon-halfPixelDeg, r$Lat-halfPixelDeg,
-                color = pal(r$thisVar), fillOpacity = 1, weight = 0)
+                color = pal(r$thisVar), fillOpacity = 1, weight = 0) %>%
+  addLegend(pal = pal, values = legendValues, 
+            title = units)
 
 leaflet(rasterDF_Alt)
 halfPixelDeg  = 0.025
@@ -89,7 +91,7 @@ leaflet("basemap_ra_ref") %>%
   clearGroup(group=c("Rasters","boundaries"))
 opacity = 0.5
 boundaries = "none"
-units = ""
+units = "kg DM/ha"
 geoJsonList = NULL
 pal = pal
 legendValues = r$thisVar

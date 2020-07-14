@@ -237,3 +237,9 @@ Suggestions for optimisation:
 4. Run a second time optimisation till the kls stablised. 
 
 MAE to do the selections. 
+
+## 20200713 
+
+Discussion with Rog about the evaluation of process based model 
+
+`Criteria for publishing papers on crop modeling`
