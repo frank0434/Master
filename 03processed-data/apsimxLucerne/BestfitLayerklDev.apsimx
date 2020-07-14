@@ -7920,6 +7920,9 @@
         {
           "$type": "Models.Factorial.Experiment, Models",
           "DisabledSimNames": [
+            "Iversen12SowingDateSD7",
+            "Iversen12SowingDateSD6",
+            "Iversen12SowingDateSD8",
             "Iversen12SowingDateSD10",
             "Iversen12SowingDateSD9"
           ],
