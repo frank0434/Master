@@ -226,3 +226,21 @@ Xiumei suggested that the hydrothermal effect could affect the seed germination
 which will have effects on the canopy development for sure. 
 but Changing the `shootlag` in the [Lucerne].Phenology.emergence didn't change any 
 prediction results. 
+
+# 20200718
+
+RootFrontVelocity has 3 stages in the current model:
+1. Preemergence  Germination-->Emergence
+2. Early Emergence-->StartFlowering
+3. Late  StartFlowering-->Maturity
+
+1. I should derive RFV by different stages? 
+2. water stress has an effect on it as well? 
+
+Root Depth is definately not correct. 
+How to get it right? 
+re-analysis RFV based on development stages? 
+
+
+something more to try
+1. get the iversen12 orginal kls back
