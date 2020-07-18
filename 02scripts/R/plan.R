@@ -51,13 +51,13 @@ plan_analysis <- drake::drake_plan(
                           ][order(NSE,R2, RMSE, decreasing = TRUE),
                             index := seq_len(.N), 
                             by = list(Experiment, SowingDate)
-                            ][index <= 3][, index := NULL],
+                            ][index <= 1][, index := NULL],
   DT_stats_sub = DT_stats[top5_stats, 
                           on = stats_key],
   top5 = DT_stats_sub[, unlist(data, recursive = FALSE), 
                       by = stats_key_extra],
   Site_SD = target(
-    autoapsimx::subset_pred(DT = top5, 
+    autoapsimx::subsetByTreatment(DT = top5, mode = "prediction",
                             treatment1 = sites ,
                             treatment2 = sds),
     transform = cross(sites = c("AshleyDene", "Iversen12"),
@@ -69,11 +69,12 @@ plan_analysis <- drake::drake_plan(
     transform = map(Site_SD),
     trigger = trigger(condition = TRUE, mode = "blacklist")
   ), 
+
   
   ## SW layer
  
   obs_SW = target(
-    autoapsimx::subset_obs(DT = SW_mean, 
+    autoapsimx::subsetByTreatment(DT = SW_mean, mode = "observation",
                            treatment1 = sites ,
                            treatment2 = sds),
     transform = cross(sites = c("AshleyDene", "Iversen12"),
@@ -104,6 +105,16 @@ plan_analysis <- drake::drake_plan(
                      all.x = TRUE )[, Depth := forcats::fct_relevel(as.factor(Depth), paste0("SW(",1:22, ")"))],
     transform = map(pred_SW, long)
   ),
+  plot_Root = target(
+    plot_root(DT = Site_SD, 
+              title = file_out(!!paste0(path_EDAfigures,"/",
+                                        gsub("pred_obs_pre_SW.+SW", 
+                                             "" ,.id_chr))), 
+              point_size = 5,
+              height = 6, width = 9, format = "png"),
+    transform = map(pred_obs),
+    trigger = trigger(condition = TRUE, mode = "blacklist")
+  ), 
   plot_SW = target(
     plot_params(DT = pred_obs, 
                 col_pred = "pred_VWC", col_obs = "obs_VWC",
