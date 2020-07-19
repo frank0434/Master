@@ -175,71 +175,78 @@ Two approaches:
 
 Try both 
 
+## 20200703
 
-## 20200629 
+Catch up with Derrick. Key points:  
 
-The soil node was not replaced properly because didn't specify it in the factor manager. 
-```
-System.Exception: ERROR in file:
-C:\Data\Master\03processed-data\apsimxLucerne\BestfitLayerkl.apsimx
-Simulation name: Iversen12SowingDateSD1
-System.Exception: Saturation of 0.290 in layer 5 is above acceptable value of
-0.264. You must adjust bulk density to below 1.882 OR saturation to below 0.264
-Saturation of 0.300 in layer 6 is above acceptable value of 0.264. You must
-adjust bulk density to below 1.855 OR saturation to below 0.264
-Saturation of 0.306 in layer 7 is above acceptable value of 0.264. You must
-adjust bulk density to below 1.839 OR saturation to below 0.264
-...
-```
-
-Solution 
-Use debug mode in visul studio to change the `specific_bd` from 2.65 to 3.20 in
-the `SoilChecker.cs`
-
-More detailed discussion [#5130](https://github.com/APSIMInitiative/ApsimX/issues/5130)
-
-## 20200630
-
-the best layer by layer kls performance well for AshleyDene, 
-But poorly for Iversen12
-
-A design flaw in the `SetupCoverScript.py`. The LAI and Light interception are
-separated. could be better just have them together.
-
-The current setup of the model provides:  
-1. very high LAI 
-2. Low above ground biomass 
-
-
-Modified the `Fw` in `RUE` to see if anything will change. 
-Probably need to recalculate the relationship between RUE and soil water supply/demand. 
-
-
-Build a dev version `BestfitLayerkl` with observed data in the UI
-```
-System.Exception
-  HResult=0x80131500
-  Message=PredictedObserved: Observed data was found but didn't match the predicted values. Make sure the values in the SimulationName column match the simulation names in the user interface. Also ensure column names in the observed file match the APSIM report column names.
-  Source=Models
-  StackTrace:
-   at Models.PostSimulationTools.PredictedObserved.Run() in C:\Data\ApsimX\ApsimXLatest\Models\PostSimulationTools\PredictedObserved.cs:line 267
-```
-The join column must be `Clock.Today` because it is explicit. 
+1. The chapter for the thesis.   
+  - Literature review on kl (apsimx/stick approaches - prons/cons - free
+  draining/stone)
+  - Comparision of automated and conventional ways of soil initial condition
+  calculation (SW, DUL and LL)
+  - Comparision of automated and conventional ways of kls 
+  - The three concepts of simulation validation: water, nitrogen and biomass
+  
+2. The talk.  
+  - Bring back the bucket picture 
+  - Engage with the audience by showing a working model and how this works and
+  why it is relevant (the soil water measurements are crutial to set the initial
+  soil conditions right)  
+  - A package developed to facilitate the job  
+  - when we try to add other type of soil all of a sudden it is not so great  
+  - why (stone content/ model set up incorrect)   
+  
+3. The next.  
+  - There is no canopy at all during winter (July to August). Therefore, there
+  should not be any water usage by the plants. 
+  - Stone content must be considered. Hope a literature review would reveal more
+  insights about dealing with stony soils.  
+  - Plant parameterisation might be incorrect if the soil has been set up
+  correctly and water prediction reasonable.  
+  - Derive kls from observation data is still possible but just need to remove
+  the big rainfall event.  
+  - Where is the root in the soil profile. The root must be in the certain layer
+  to be able to use the water. Check if the root prediction is correct.
+  - Water table rise up could be an issue.   
+  - If biomass is still accumulate while soil profile was dried out, we assume
+  the plant was extracting water from deeper layer which exceeded the measured
+  depth.
+  - Aim a conference talk just on the automation of deriving soil initial
+  condition
+  - Aim a paper for the parameterisation of soil initial conditions 
 
 
-## 20200701
+Catch up with Xiumei. Key points:   Latest version Apsimx might have broken
+parts in the PMF because resipiration constant is not affecting the simulation.
 
-Rog had a look at the simulation results. 
-Suggestions for optimisation:  
-1. Run the slurp model to have the water simulation resutls.   
-2. Run optimisation for the layer by layer calibration. 
-3. Compare the RMSE changes between 1 and 2.  
-4. Run a second time optimisation till the kls stablised. 
 
-MAE to do the selections. 
+# 20200708
 
-## 20200713 
+Xiumei suggested that the hydrothermal effect could affect the seed germination 
+which will have effects on the canopy development for sure. 
+but Changing the `shootlag` in the [Lucerne].Phenology.emergence didn't change any 
+prediction results. 
 
-Discussion with Rog about the evaluation of process based model 
+# 20200718
 
-`Criteria for publishing papers on crop modeling`
+RootFrontVelocity has 3 stages in the current model:
+1. Preemergence  Germination-->Emergence
+2. Early Emergence-->StartFlowering
+3. Late  StartFlowering-->Maturity
+
+1. I should derive RFV by different stages? 
+2. water stress has an effect on it as well? 
+
+Root Depth is definately not correct. 
+How to get it right? 
+ 
+
+
+something more to try
+1. get the iversen12 orginal kls back
+
+
+Question for Hamish
+
+1. k values for canopy structure - origin 0.81, drought 0.66, I12 0.94 - manager script to make it dynamic?
+2. re-analysis RFV based on development stages?
