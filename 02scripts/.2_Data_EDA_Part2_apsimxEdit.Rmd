@@ -50,7 +50,7 @@ Sys.setenv("SimsDir" = file.path(Sys.getenv("WorkingDir"), "03processed-data/aps
 3. Calculate the artifical kls. 
 
 ```{r}
-nodes = readLines("../01raw-data/ApsimxFiles/LucerneBaseConfigTemplate")
+nodes = readLines("../01raw-data/ApsimxFiles/LucerneBaseConfigTemplate.txt")
 loadd(info)
 dbs = list.files("../03processed-data/apsimxFiles/", pattern = "*.db$")
 loadd(kls) # This is the best kls from slurp model
