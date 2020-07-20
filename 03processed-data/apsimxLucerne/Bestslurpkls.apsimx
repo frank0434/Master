@@ -375,8 +375,8 @@
                 },
                 {
                   "$type": "Models.PMF.Phen.EmergingPhase, Models",
-                  "ShootLag": 30.0,
-                  "ShootRate": 1.0,
+                  "ShootLag": 15.0,
+                  "ShootRate": 10.0,
                   "Start": "Germination",
                   "End": "Emergence",
                   "TTForTimeStep": 0.0,
@@ -403,20 +403,46 @@
                   "Name": "Juvenile",
                   "Children": [
                     {
-                      "$type": "Models.Functions.Constant, Models",
-                      "FixedValue": 500.0,
-                      "Units": null,
-                      "Name": "Target",
+                      "$type": "Models.Functions.VariableReference, Models",
+                      "VariableName": "[Phenology].ThermalTime",
+                      "Name": "Progression",
                       "Children": [],
                       "IncludeInDocumentation": true,
                       "Enabled": true,
                       "ReadOnly": false
                     },
                     {
-                      "$type": "Models.Functions.VariableReference, Models",
-                      "VariableName": "[Phenology].ThermalTime",
-                      "Name": "Progression",
-                      "Children": [],
+                      "$type": "Models.Functions.LinearInterpolationFunction, Models",
+                      "Name": "Target",
+                      "Children": [
+                        {
+                          "$type": "Models.Functions.XYPairs, Models",
+                          "X": [
+                            10.0,
+                            14.0,
+                            18.0
+                          ],
+                          "Y": [
+                            521.0,
+                            521.0,
+                            90.0
+                          ],
+                          "Name": "XYPairs",
+                          "Children": [],
+                          "IncludeInDocumentation": true,
+                          "Enabled": true,
+                          "ReadOnly": false
+                        },
+                        {
+                          "$type": "Models.Functions.VariableReference, Models",
+                          "VariableName": "[Phenology].Photoperiod",
+                          "Name": "XValue",
+                          "Children": [],
+                          "IncludeInDocumentation": true,
+                          "Enabled": true,
+                          "ReadOnly": false
+                        }
+                      ],
                       "IncludeInDocumentation": true,
                       "Enabled": true,
                       "ReadOnly": false
@@ -2402,12 +2428,10 @@
                           "$type": "Models.Functions.XYPairs, Models",
                           "X": [
                             0.0,
-                            0.5,
                             1.0,
-                            1.2
+                            1.5
                           ],
                           "Y": [
-                            1.0,
                             1.0,
                             1.0,
                             1.0
