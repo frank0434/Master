@@ -250,3 +250,12 @@ Question for Hamish
 
 1. k values for canopy structure - origin 0.81, drought 0.66, I12 0.94 - manager script to make it dynamic?
 2. re-analysis RFV based on development stages?
+
+
+
+# 20200720
+
+`error: cannot lock ref 'refs/remotes/origin/master': is at #commit but expected #commit`
+This error occured when try to pull or fetch remotes after delete the remote branch 
+solution: 
+manuaully update the local branch reference `git update-ref -d refs/notes/origin/(branch name)`
