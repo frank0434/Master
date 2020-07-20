@@ -1,7 +1,7 @@
 {
   "$type": "Models.Core.Simulations, Models",
   "ExplorerWidth": 282,
-  "Version": 102,
+  "Version": 103,
   "ApsimVersion": "0.0.0.0",
   "Name": "Simulations",
   "Children": [
@@ -239,9 +239,7 @@
               "Name": "Phenology",
               "Children": [
                 {
-                  "$type": "Models.Functions.AirTemperatureFunction, Models",
-                  "SubDailyTemperatures": null,
-                  "SubDailyResponse": null,
+                  "$type": "Models.Functions.HourlyInterpolation, Models",
                   "agregationMethod": 0,
                   "Name": "ThermalTime",
                   "Children": [
@@ -259,7 +257,7 @@
                         25.0,
                         0.0
                       ],
-                      "Name": "TemperatureResponse",
+                      "Name": "Response",
                       "Children": [],
                       "IncludeInDocumentation": true,
                       "Enabled": true,
@@ -280,9 +278,7 @@
                   "ReadOnly": false
                 },
                 {
-                  "$type": "Models.Functions.AirTemperatureFunction, Models",
-                  "SubDailyTemperatures": null,
-                  "SubDailyResponse": null,
+                  "$type": "Models.Functions.HourlyInterpolation, Models",
                   "agregationMethod": 0,
                   "Name": "ThermalTime1",
                   "Children": [
@@ -300,7 +296,7 @@
                         25.0,
                         0.0
                       ],
-                      "Name": "TemperatureResponse",
+                      "Name": "Response",
                       "Children": [],
                       "IncludeInDocumentation": true,
                       "Enabled": true,
@@ -875,9 +871,7 @@
                   "ReadOnly": false
                 },
                 {
-                  "$type": "Models.Functions.AirTemperatureFunction, Models",
-                  "SubDailyTemperatures": null,
-                  "SubDailyResponse": null,
+                  "$type": "Models.Functions.HourlyInterpolation, Models",
                   "agregationMethod": 0,
                   "Name": "TemperatureEffect",
                   "Children": [
@@ -893,7 +887,7 @@
                         1.0,
                         1.0
                       ],
-                      "Name": "TemperatureResponse",
+                      "Name": "Response",
                       "Children": [],
                       "IncludeInDocumentation": true,
                       "Enabled": true,
@@ -3567,9 +3561,7 @@
                   "Name": "FRGR",
                   "Children": [
                     {
-                      "$type": "Models.Functions.AirTemperatureFunction, Models",
-                      "SubDailyTemperatures": null,
-                      "SubDailyResponse": null,
+                      "$type": "Models.Functions.HourlyInterpolation, Models",
                       "agregationMethod": 0,
                       "Name": "FRGRFunctionTemp",
                       "Children": [
@@ -3587,7 +3579,7 @@
                             1.0,
                             0.0
                           ],
-                          "Name": "TemperatureResponse",
+                          "Name": "Response",
                           "Children": [],
                           "IncludeInDocumentation": true,
                           "Enabled": true,
@@ -7898,7 +7890,8 @@
                       "Specifications": [
                         "[LucerneSowingRule].Script.SowingDate = 2010-10-04",
                         "[Cutting]",
-                        "[Clock].StartDate = 2010-10-04"
+                        "[Clock].StartDate = 2010-10-04",
+                        "[Soil]"
                       ],
                       "Paths": null,
                       "Values": null,
@@ -8914,7 +8907,8 @@
                       "Specifications": [
                         "[LucerneSowingRule].Script.SowingDate = 2010-11-04",
                         "[Cutting]",
-                        "[Clock].StartDate = 2010-11-04"
+                        "[Clock].StartDate = 2010-11-04",
+                        "[Soil]"
                       ],
                       "Paths": null,
                       "Values": null,
@@ -9925,7 +9919,8 @@
                       "Specifications": [
                         "[LucerneSowingRule].Script.SowingDate = 2010-12-02",
                         "[Cutting]",
-                        "[Clock].StartDate = 2010-12-02"
+                        "[Clock].StartDate = 2010-12-02",
+                        "[Soil]"
                       ],
                       "Paths": null,
                       "Values": null,
@@ -10930,7 +10925,8 @@
                       "Specifications": [
                         "[LucerneSowingRule].Script.SowingDate = 2011-01-10",
                         "[Cutting]",
-                        "[Clock].StartDate = 2011-01-10"
+                        "[Clock].StartDate = 2011-01-10",
+                        "[Soil]"
                       ],
                       "Paths": null,
                       "Values": null,
@@ -11929,7 +11925,8 @@
                       "Specifications": [
                         "[LucerneSowingRule].Script.SowingDate = 2011-02-07",
                         "[Cutting]",
-                        "[Clock].StartDate = 2011-02-7"
+                        "[Clock].StartDate = 2011-02-7",
+                        "[Soil]"
                       ],
                       "Paths": null,
                       "Values": null,
@@ -12928,7 +12925,8 @@
                       "Specifications": [
                         "[LucerneSowingRule].Script.SowingDate = 2011-10-10",
                         "[Cutting]",
-                        "[Clock].StartDate = 2011-10-10"
+                        "[Clock].StartDate = 2011-10-10",
+                        "[Soil]"
                       ],
                       "Paths": null,
                       "Values": null,
@@ -13903,7 +13901,8 @@
                       "Specifications": [
                         "[LucerneSowingRule].Script.SowingDate = 2011-11-07",
                         "[Cutting]",
-                        "[Clock].StartDate = 2011-11-07"
+                        "[Clock].StartDate = 2011-11-07",
+                        "[Soil]"
                       ],
                       "Paths": null,
                       "Values": null,
@@ -14872,7 +14871,8 @@
                       "Specifications": [
                         "[LucerneSowingRule].Script.SowingDate = 2011-12-09",
                         "[Cutting]",
-                        "[Clock].StartDate = 2011-12-09"
+                        "[Clock].StartDate = 2011-12-09",
+                        "[Soil]"
                       ],
                       "Paths": null,
                       "Values": null,
@@ -15835,7 +15835,8 @@
                       "Specifications": [
                         "[LucerneSowingRule].Script.SowingDate = 2012-01-10",
                         "[Cutting]",
-                        "[Clock].StartDate = 2012-01-10"
+                        "[Clock].StartDate = 2012-01-10",
+                        "[Soil]"
                       ],
                       "Paths": null,
                       "Values": null,
@@ -16792,7 +16793,8 @@
                       "Specifications": [
                         "[LucerneSowingRule].Script.SowingDate = 2012-02-17",
                         "[Cutting]",
-                        "[Clock].StartDate = 2012-02-17"
+                        "[Clock].StartDate = 2012-02-17",
+                        "[Soil]"
                       ],
                       "Paths": null,
                       "Values": null,
@@ -18635,7 +18637,8 @@
                       "Specifications": [
                         "[LucerneSowingRule].Script.SowingDate = 2010-10-21",
                         "[Cutting]",
-                        "[Clock].StartDate = 2010-10-21"
+                        "[Clock].StartDate = 2010-10-21",
+                        "[Soil]"
                       ],
                       "Paths": null,
                       "Values": null,
@@ -19628,7 +19631,8 @@
                       "Specifications": [
                         "[LucerneSowingRule].Script.SowingDate = 2010-11-09",
                         "[Cutting]",
-                        "[Clock].StartDate = 2010-11-09"
+                        "[Clock].StartDate = 2010-11-09",
+                        "[Soil]"
                       ],
                       "Paths": null,
                       "Values": null,
@@ -20621,7 +20625,8 @@
                       "Specifications": [
                         "[LucerneSowingRule].Script.SowingDate = 2010-12-08",
                         "[Cutting]",
-                        "[Clock].StartDate = 2010-12-08"
+                        "[Clock].StartDate = 2010-12-08",
+                        "[Soil]"
                       ],
                       "Paths": null,
                       "Values": null,
@@ -21608,7 +21613,8 @@
                       "Specifications": [
                         "[LucerneSowingRule].Script.SowingDate = 2011-01-13",
                         "[Cutting]",
-                        "[Clock].StartDate = 2011-01-13"
+                        "[Clock].StartDate = 2011-01-13",
+                        "[Soil]"
                       ],
                       "Paths": null,
                       "Values": null,
@@ -22595,7 +22601,8 @@
                       "Specifications": [
                         "[LucerneSowingRule].Script.SowingDate = 2011-02-03",
                         "[Cutting]",
-                        "[Clock].StartDate = 2011-02-03"
+                        "[Clock].StartDate = 2011-02-03",
+                        "[Soil]"
                       ],
                       "Paths": null,
                       "Values": null,
@@ -23576,7 +23583,8 @@
                       "Specifications": [
                         "[LucerneSowingRule].Script.SowingDate = 2011-10-10",
                         "[Cutting]",
-                        "[Clock].StartDate = 2011-10-10"
+                        "[Clock].StartDate = 2011-10-10",
+                        "[Soil]"
                       ],
                       "Paths": null,
                       "Values": null,
@@ -24545,7 +24553,8 @@
                       "Specifications": [
                         "[LucerneSowingRule].Script.SowingDate = 2011-11-07",
                         "[Cutting]",
-                        "[Clock].StartDate = 2011-11-07"
+                        "[Clock].StartDate = 2011-11-07",
+                        "[Soil]"
                       ],
                       "Paths": null,
                       "Values": null,
@@ -25508,7 +25517,8 @@
                       "Specifications": [
                         "[LucerneSowingRule].Script.SowingDate = 2011-12-09",
                         "[Cutting]",
-                        "[Clock].StartDate = 2011-12-09"
+                        "[Clock].StartDate = 2011-12-09",
+                        "[Soil]"
                       ],
                       "Paths": null,
                       "Values": null,
@@ -26465,7 +26475,8 @@
                       "Specifications": [
                         "[LucerneSowingRule].Script.SowingDate = 2012-01-10",
                         "[Cutting]",
-                        "[Clock].StartDate = 2012-01-10"
+                        "[Clock].StartDate = 2012-01-10",
+                        "[Soil]"
                       ],
                       "Paths": null,
                       "Values": null,
@@ -27422,7 +27433,8 @@
                       "Specifications": [
                         "[LucerneSowingRule].Script.SowingDate = 2012-02-17",
                         "[Cutting]",
-                        "[Clock].StartDate = 2012-02-17"
+                        "[Clock].StartDate = 2012-02-17",
+                        "[Soil]"
                       ],
                       "Paths": null,
                       "Values": null,
