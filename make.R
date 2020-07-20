@@ -65,7 +65,6 @@ drake::make(plan_analysis, lock_envir = F, memory_strategy = "autoclean",
 
 # # Soil water plan will  -------------------------------------------------
 
-
 # Process all simulation output 
 # Identify the best fit parameters for SKL, KLR and RFV regarding to soil water
 # in each layer

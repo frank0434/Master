@@ -1,23 +1,10 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py:light
-#     text_representation:
-#       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.4.2
-#   kernelspec:
-#     display_name: Python 3
-#     language: python
-#     name: python3
-# ---
+#!/usr/bin/env python
 
 #load packages
 import sqlite3
 import glob
 # List all db file names in the working dir
-dbs = glob.glob('./03processed-data/apsimxFilesLayers/*.db')
+dbs = glob.glob('../../03processed-data/apsimxFiles/*.db')
 # Loop 
 for db in dbs:
     con = sqlite3.connect(db)

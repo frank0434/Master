@@ -8,7 +8,7 @@ plan_bestfitlayerkl <- drake::drake_plan(
   ),
   bestfitlayerkls_pred = process_dbs(bestfitlayerkl_dbs),
   bestfitlayerkls_pred_SW = target(
-    autoapsimx::subset_obs(DT = bestfitlayerkls_pred, 
+    autoapsimx::subsetByTreatment(DT = bestfitlayerkls_pred, mode = "observation",
                            treatment1 = sites ,
                            treatment2 = sds),
     transform = cross(sites = c("AshleyDene", "Iversen12"),
@@ -16,7 +16,7 @@ plan_bestfitlayerkl <- drake::drake_plan(
                               "SD6",  "SD7",  "SD8",  "SD9",  "SD10"))
   ),
   bestfitlayerkls_obs_SW = target(
-    autoapsimx::subset_obs(DT = drake::readd(SW_mean), 
+    autoapsimx::subsetByTreatment(DT = drake::readd(SW_mean), mode = "observation",
                            treatment1 = sites ,
                            treatment2 = sds),
     transform = cross(sites = c("AshleyDene", "Iversen12"),
@@ -61,7 +61,7 @@ plan_bestfitlayerkl <- drake::drake_plan(
     trigger = trigger(condition = TRUE, mode = "blacklist")
   ),
   bestfitlayerkls_obs_SWC = target(
-    autoapsimx::subset_obs(DT = drake::readd(SWC_mean), 
+    autoapsimx::subsetByTreatment(DT = drake::readd(SWC_mean), mode = "observation",
                            treatment1 = sites ,
                            treatment2 = sds),
     transform = cross(sites = c("AshleyDene", "Iversen12"),
