@@ -41,6 +41,85 @@ Sys.setenv("SimsDir" = file.path(Sys.getenv("WorkingDir"), "03processed-data/aps
 
 ```
 
+# 20200720 Edit 2nd layer of best slurp to do one layer optimisation 
+
+```{r}
+nodes = readLines("../01raw-data/ApsimxFiles/LucerneBaseConfigTemplate")
+layernode = nodes[2]
+
+SowingDates = readd(SD_tidied)
+SDs = unique(SowingDates$SD)
+Countries = "NewZealand"
+Locations = unique(SowingDates$Experiment)
+KL_range <- seq(0.005, 0.11, by = 0.005)
+# Could be defined on the fly 
+KL_layers <- 21L
+
+
+Edit_singalLayer <- function(Countries. = Countries,
+                             Locations. = Locations, 
+                             SDs. = SDs, 
+                             kl, 
+                             nodes = layernode, 
+                             layberNo. = 2, 
+                             outdir = "../03processed-data/ConfigurationFiles/"){
+  nodes = gsub("\\s=\\s", paste0("[", layberNo., "]", " = "), layernode)
+  ll = vector("list", length = length(Countries) * length(Locations) *length(SDs))
+  pos = 1
+  for(Country in Countries.){
+    for(Location in Locations.){
+      for(SD in SDs.){
+        names(ll)[[pos]] = paste0(Country, ".", Location, ".", SD)
+        # print(Country);print(Location);print(SD)
+        nodepath = gsub("Country", Country, nodes)
+        nodepath = gsub("Location", Location, nodepath)
+        nodepath = gsub("SDXX", SD, nodepath)
+        v = vector("character", length = length(nodepath))
+        # Parameters and values
+        ll[[pos]] = paste0(nodepath, kl)
+        pos = pos + 1
+        f <- file(paste0(outdir, "Layer_", layberNo., "kl_", kl,".txt"), "w")
+        # Write values into the file 
+        cat(unlist(ll, recursive = FALSE, use.names = FALSE), "\r",
+            sep = "\r", 
+            file = f, 
+            append = TRUE)
+        # Close the file and clean it from memory 
+        close(f)
+        rm(f)
+        gc()
+      }
+    }
+  }
+  }
+```
+
+```{r output configuration files for 2nd layer}
+for( i in KL_range){
+  Edit_singalLayer(kl = i)
+}
+
+```
+```{r Edit 2nd layer kl in Lucerne apsimx}
+layberNo. = 2
+# Constants 
+apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
+apsimx_flag <- "/Edit"
+apsimx_Basefile <- file.path("../03processed-data/apsimxLucerne/Bestslurpkls2nd.apsimx")
+
+apsimx_sims_dir <- file.path(Sys.getenv("WorkingDir"), "/03processed-data/apsimxFilesLayers/")
+
+for (kl in KL_range){
+       # Edit the base apsimx file and save it to a new name
+       ## modify the apsimx file
+       modifiedName <- paste0("../03processed-data/apsimxFilesLayers", "/Layer_", layberNo., "kl_", kl,".apsimx")
+       system(paste("cp", apsimx_Basefile, modifiedName))
+       system(paste(apsimx, modifiedName, apsimx_flag, paste0(Sys.getenv("ConfigFileDir"), "/Layer_", layberNo., "kl_", kl,".txt")))
+
+     }
+
+```
+
 # 20200701 Edit slurp kls into apsimx lucerne 
 
 **Because the best fit kls are not yet the best**
@@ -50,7 +129,7 @@ Sys.setenv("SimsDir" = file.path(Sys.getenv("WorkingDir"), "03processed-data/aps
 3. Calculate the artifical kls. 
 
 ```{r}
-nodes = readLines("../01raw-data/ApsimxFiles/LucerneBaseConfigTemplate.txt")
+nodes = readLines("../01raw-data/ApsimxFiles/LucerneBaseConfigTemplate")
 loadd(info)
 dbs = list.files("../03processed-data/apsimxFiles/", pattern = "*.db$")
 loadd(kls) # This is the best kls from slurp model
@@ -123,7 +202,7 @@ apsimx_Basefile <- file.path(Sys.getenv("BaseApsimxDir"), "20200625LucerneBase.a
 apsimx_sims_temp <- file.path(Sys.getenv("WorkingDir"), "03processed-data/apsimxLucerne/temp.apsimx")
 apsimx_sims_dir <- file.path(Sys.getenv("WorkingDir"), "03processed-data/apsimxLucerne/")
 apsimx_config <- paste0(Sys.getenv("ConfigFileDir"),"/Bestslurpkls.txt")
-modifiedName <- paste0(apsimx_sims_dir, "/Bestslurpkls.apsimx")
+modifiedName <- paste0(apsimx_sims_dir, "/Bestslurpkls2nd.apsimx")
 system(paste('cp', apsimx_Basefile, modifiedName))
 
 
