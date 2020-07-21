@@ -120,6 +120,87 @@ for (kl in KL_range){
 
 ```
 
+need a minimum plan to run the optimisation
+
+```{r 2nd layer optimisation development}
+dbs = list.files("../03processed-data/apsimxFilesLayers/", 
+                 pattern = "Layer_2.+.db$", full.names = TRUE)
+tab = read_dbtab(dbs[1], "PredictedObserved")
+colnames(tab)
+layer2 = tab[,.(Observed.Experiment,Observed.SowingDate,Clock.Today, 
+                `Predicted.SW(2)`, `Observed.SW(2)`)]
+p = layer2 %>% 
+  ggplot(aes(Clock.Today, `Predicted.SW(2)`))+
+  geom_line()+
+  geom_point(aes(y =  `Observed.SW(2)`), color = "red")+
+  facet_wrap(Observed.Experiment~Observed.SowingDate)
+stats = hydroGOF::gof(sim = layer2[["Predicted.SW(2)"]], obs = layer2[["Observed.SW(2)"]])
+transpose(as.data.table(stats, keep.rownames = T), make.names = "rn")
+```
+
+```{r}
+read_subsetLayer <- function(layerNo. = 2, 
+                             path = "../03processed-data/apsimxFilesLayers/"){
+  layerNo. = layerNo.
+  pattern = paste0("Layer_", layerNo., ".+.db$")
+  dbs = list.files(path, pattern = pattern, full.names = TRUE)
+  col_pred = paste0("Predicted.SW(", layerNo., ")")
+  col_obs = paste0("Observed.SW(", layerNo., ")")
+  cols = c("Observed.Experiment","Observed.SowingDate","Clock.Today", 
+           col_pred, col_obs)
+  tab = lapply(dbs, function(x){
+    tab = read_dbtab(x, "PredictedObserved")
+    layer2 = tab[,..cols]
+  })
+}
+
+tabs = read_subsetLayer()
+names(tabs) = dbs
+lapply(names(tabs) , function(x){
+  p = tabs[[x]] %>% 
+    ggplot(aes(Clock.Today, `Predicted.SW(2)`))+
+    geom_line()+
+    geom_point(aes(y =  `Observed.SW(2)`), color = "red")+
+    facet_wrap(Observed.Experiment~Observed.SowingDate)
+  ggsave(filename = file.path("../05figures/kl_LayerByLayerCalibrationEDA/",
+                            paste0(basename(x), ".png")), plot = p, device = "png",
+       dpi = 300, height = 9, width = 12)
+})
+tab_stats = lapply(tabs,function(x){
+  stats = hydroGOF::gof(sim = x[[col_pred]], obs = x[[col_obs]])
+  transpose(as.data.table(stats, keep.rownames = T), make.names = "rn")
+})
+tab_stats =rbindlist(tab_stats, idcol = "source")
+bestfit = tab_stats[order(NSE,r, RMSE, MAE, decreasing = TRUE)]$source[1]
+bestfitkl = as.numeric(regmatches(basename(bestfit), 
+                                regexpr("0\\.\\d{2,3}", 
+                                        basename(bestfit))))
+cat("The best fit kl for 2nd layer is", bestfitkl, ".\r\n")
+theapsimx = gsub("\\.db$", ".apsimx", bestfit)
+if(isTRUE(file.exists(theapsimx))){
+  cat("Found the right apsimx file -", theapsimx)
+}
+```
+```{r}
+layberNo. = 3
+# Constants 
+apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
+apsimx_flag <- "/Edit"
+apsimx_Basefile <- file.path(theapsimx)
+
+apsimx_sims_dir <- file.path(Sys.getenv("WorkingDir"), "/03processed-data/apsimxFilesLayers/")
+
+for (kl in KL_range){
+       # Edit the base apsimx file and save it to a new name
+       ## modify the apsimx file
+       modifiedName <- paste0("../03processed-data/apsimxFilesLayers", "/Layer_", layberNo., "kl_", kl,".apsimx")
+       system(paste("cp", apsimx_Basefile, modifiedName))
+       system(paste(apsimx, modifiedName, apsimx_flag, paste0(Sys.getenv("ConfigFileDir"), "/Layer_", layberNo., "kl_", kl,".txt")))
+
+     }
+```
+
+
 # 20200701 Edit slurp kls into apsimx lucerne 
 
 **Because the best fit kls are not yet the best**
