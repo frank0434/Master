@@ -244,3 +244,10 @@ re-analysis RFV based on development stages?
 
 something more to try
 1. get the iversen12 orginal kls back
+
+# 20200726
+
+1. The problem of inital LAI 5 comes back. Slurp LAI is set to 5 (Rog already taught how to overcame but forgot)
+2. The LAI wasn't sourced correctly because the manager script used wrong variables. 
+3. The LAI wasn't interploate so the prediction is stair case. 
+
