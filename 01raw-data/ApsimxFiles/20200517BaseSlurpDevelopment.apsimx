@@ -10,7 +10,33 @@
       "useFirebird": false,
       "CustomFileName": null,
       "Name": "DataStore",
-      "Children": [],
+      "Children": [
+        {
+          "$type": "Models.PostSimulationTools.Input, Models",
+          "FileNames": [
+            "C:\\Data\\Master\\03processed-data\\CoverData\\LAIAshleyDeneSD1.csv"
+          ],
+          "Name": "Input",
+          "Children": [],
+          "IncludeInDocumentation": true,
+          "Enabled": true,
+          "ReadOnly": false
+        },
+        {
+          "$type": "Models.PostSimulationTools.ExcelInput, Models",
+          "FileNames": [
+            "C:\\Data\\Master\\03processed-data\\ADSD1Test.xlsx"
+          ],
+          "SheetNames": [
+            "Observed"
+          ],
+          "Name": "ExcelInput",
+          "Children": [],
+          "IncludeInDocumentation": true,
+          "Enabled": true,
+          "ReadOnly": false
+        }
+      ],
       "IncludeInDocumentation": true,
       "Enabled": true,
       "ReadOnly": false
@@ -196,7 +222,7 @@
                       "Parameters": [
                         {
                           "Key": "CoverFile",
-                          "Value": "C:\\Data\\Master\\03processed-data\\CoverData\\LAIIversen12SD1.csv"
+                          "Value": "C:\\Data\\Master\\03processed-data\\CoverData\\LAIAshleyDeneSD1.csv"
                         },
                         {
                           "Key": "Ext_coef",
@@ -204,7 +230,7 @@
                         },
                         {
                           "Key": "MaximumHeight",
-                          "Value": "590"
+                          "Value": "395"
                         },
                         {
                           "Key": "LAI",
@@ -1234,7 +1260,7 @@
           "LegendOrientation": 0,
           "DisabledSeries": [],
           "LegendOutsideGraph": false,
-          "Name": "Graph",
+          "Name": "LAI",
           "Children": [
             {
               "$type": "Models.Series, Models",
@@ -1250,7 +1276,7 @@
               "Line": 0,
               "LineThickness": 0,
               "TableName": "Report",
-              "XFieldName": "Date",
+              "XFieldName": "Clock.Today",
               "YFieldName": "LAI",
               "X2FieldName": null,
               "Y2FieldName": null,
@@ -1259,7 +1285,7 @@
               "Cumulative": false,
               "CumulativeX": false,
               "Filter": null,
-              "Name": "Series",
+              "Name": "Prediction",
               "Children": [],
               "IncludeInDocumentation": true,
               "Enabled": true,
@@ -1267,7 +1293,7 @@
             },
             {
               "$type": "Models.Series, Models",
-              "Type": 0,
+              "Type": 1,
               "XAxis": 3,
               "YAxis": 0,
               "ColourArgb": 0,
@@ -1278,9 +1304,9 @@
               "MarkerSize": 0,
               "Line": 0,
               "LineThickness": 0,
-              "TableName": null,
-              "XFieldName": null,
-              "YFieldName": null,
+              "TableName": "Input",
+              "XFieldName": "Clock.Today",
+              "YFieldName": "LAImod",
               "X2FieldName": null,
               "Y2FieldName": null,
               "ShowInLegend": false,
@@ -1288,7 +1314,170 @@
               "Cumulative": false,
               "CumulativeX": false,
               "Filter": null,
-              "Name": "Series1",
+              "Name": "Observation",
+              "Children": [],
+              "IncludeInDocumentation": true,
+              "Enabled": true,
+              "ReadOnly": false
+            }
+          ],
+          "IncludeInDocumentation": true,
+          "Enabled": true,
+          "ReadOnly": false
+        },
+        {
+          "$type": "Models.Graph, Models",
+          "Caption": null,
+          "Axis": [
+            {
+              "$type": "Models.Axis, Models",
+              "Type": 3,
+              "Title": null,
+              "Inverted": false,
+              "Minimum": "NaN",
+              "Maximum": "NaN",
+              "Interval": "NaN",
+              "DateTimeAxis": true,
+              "CrossesAtZero": false
+            },
+            {
+              "$type": "Models.Axis, Models",
+              "Type": 0,
+              "Title": null,
+              "Inverted": false,
+              "Minimum": "NaN",
+              "Maximum": "NaN",
+              "Interval": "NaN",
+              "DateTimeAxis": false,
+              "CrossesAtZero": false
+            }
+          ],
+          "LegendPosition": 0,
+          "LegendOrientation": 0,
+          "DisabledSeries": [],
+          "LegendOutsideGraph": false,
+          "Name": "Cover",
+          "Children": [
+            {
+              "$type": "Models.Series, Models",
+              "Type": 1,
+              "XAxis": 3,
+              "YAxis": 0,
+              "ColourArgb": -16736653,
+              "FactorToVaryColours": "SimulationName",
+              "FactorToVaryMarkers": null,
+              "FactorToVaryLines": null,
+              "Marker": 11,
+              "MarkerSize": 0,
+              "Line": 0,
+              "LineThickness": 0,
+              "TableName": "Report",
+              "XFieldName": "Clock.Today",
+              "YFieldName": "cover",
+              "X2FieldName": null,
+              "Y2FieldName": null,
+              "ShowInLegend": false,
+              "IncludeSeriesNameInLegend": false,
+              "Cumulative": false,
+              "CumulativeX": false,
+              "Filter": null,
+              "Name": "Prediction",
+              "Children": [],
+              "IncludeInDocumentation": true,
+              "Enabled": true,
+              "ReadOnly": false
+            }
+          ],
+          "IncludeInDocumentation": true,
+          "Enabled": true,
+          "ReadOnly": false
+        },
+        {
+          "$type": "Models.Graph, Models",
+          "Caption": null,
+          "Axis": [
+            {
+              "$type": "Models.Axis, Models",
+              "Type": 3,
+              "Title": null,
+              "Inverted": false,
+              "Minimum": "NaN",
+              "Maximum": "NaN",
+              "Interval": "NaN",
+              "DateTimeAxis": true,
+              "CrossesAtZero": false
+            },
+            {
+              "$type": "Models.Axis, Models",
+              "Type": 0,
+              "Title": null,
+              "Inverted": false,
+              "Minimum": "NaN",
+              "Maximum": "NaN",
+              "Interval": "NaN",
+              "DateTimeAxis": false,
+              "CrossesAtZero": false
+            }
+          ],
+          "LegendPosition": 0,
+          "LegendOrientation": 0,
+          "DisabledSeries": [],
+          "LegendOutsideGraph": false,
+          "Name": "PSWC",
+          "Children": [
+            {
+              "$type": "Models.Series, Models",
+              "Type": 1,
+              "XAxis": 3,
+              "YAxis": 0,
+              "ColourArgb": -16736653,
+              "FactorToVaryColours": "SimulationName",
+              "FactorToVaryMarkers": null,
+              "FactorToVaryLines": null,
+              "Marker": 11,
+              "MarkerSize": 0,
+              "Line": 0,
+              "LineThickness": 0,
+              "TableName": "Report",
+              "XFieldName": "Clock.Today",
+              "YFieldName": "PSWC",
+              "X2FieldName": null,
+              "Y2FieldName": null,
+              "ShowInLegend": false,
+              "IncludeSeriesNameInLegend": false,
+              "Cumulative": false,
+              "CumulativeX": false,
+              "Filter": null,
+              "Name": "Prediction",
+              "Children": [],
+              "IncludeInDocumentation": true,
+              "Enabled": true,
+              "ReadOnly": false
+            },
+            {
+              "$type": "Models.Series, Models",
+              "Type": 1,
+              "XAxis": 3,
+              "YAxis": 0,
+              "ColourArgb": 0,
+              "FactorToVaryColours": "Experiment",
+              "FactorToVaryMarkers": null,
+              "FactorToVaryLines": null,
+              "Marker": 0,
+              "MarkerSize": 0,
+              "Line": 4,
+              "LineThickness": 0,
+              "TableName": "Observed",
+              "XFieldName": "Clock.Today",
+              "YFieldName": "SWC",
+              "X2FieldName": null,
+              "Y2FieldName": null,
+              "ShowInLegend": false,
+              "IncludeSeriesNameInLegend": false,
+              "Cumulative": false,
+              "CumulativeX": false,
+              "Filter": null,
+              "Name": "Observation",
               "Children": [],
               "IncludeInDocumentation": true,
               "Enabled": true,
