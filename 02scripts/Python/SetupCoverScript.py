@@ -24,7 +24,7 @@ import seaborn as sns
 import math
 
 # Build connection with db
-con = sqlite3.connect('./03processed-data/Richard.sqlite3')
+con = sqlite3.connect('../../03processed-data/Richard.sqlite3')
 mycur = con.cursor() 
 mycur.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
 # Read data in 
@@ -41,9 +41,9 @@ LAI_Height[(LAI_Height['Harvest.No.'] == 'Post') & (LAI_Height.LAImod==0)]
 # Add the k for all 
 LAI_Height['k'] = 0.94
 # Replace the k for the summur crop in Ashley Dene
-LAI_Height.loc[(LAI_Height['Clock.Today'] > '2011-11-30') 
-               & (LAI_Height['Clock.Today'] < '2012-03-01') 
-               & (LAI_Height['Experiment'] == 'AshleyDene'), 'k'] = 0.66
+# LAI_Height.loc[(LAI_Height['Clock.Today'] > '2011-11-30') 
+#                & (LAI_Height['Clock.Today'] < '2012-03-01') 
+#                & (LAI_Height['Experiment'] == 'AshleyDene'), 'k'] = 0.66
 LAI_Height['Date'] = pd.to_datetime(LAI_Height['Clock.Today']).dt.strftime('%Y %b')
 
 # ### Output LAI as the slurp input 
@@ -54,7 +54,8 @@ sites = ['AshleyDene', 'Iversen12']
 for site in sites: 
     for i in SDs:
         LAI_Height.loc[(LAI_Height['Experiment'] == site) & (LAI_Height.SowingDate == i),
-                       ['Clock.Today', 'LAImod','k']].to_csv('./03processed-data/CoverData/LAI' + site + i + '.csv',index = False)
+                       ['Clock.Today', 'LAImod','k']].\
+        to_csv('../../03processed-data/CoverData/LAI' + site + i + '.csv',index = False)
 
 LAI_Height['LI_frac'] = 1 - np.exp( - LAI_Height['k'] * LAI_Height['LAImod'])
 
@@ -178,9 +179,9 @@ CoverDF = pd.concat([CoverDF,CoverDFI12], axis=0)
 # Add the k for all 
 CoverDF['k'] = 0.94
 # Replace the k for the summur crop in Ashley Dene
-CoverDF.loc[(CoverDF['Date'] > '2011-11-30') 
-               & (CoverDF['Date'] < '2012-03-01') 
-               & (CoverDF['Experiment'] == 'AshleyDene'), 'k'] = 0.66
+# CoverDF.loc[(CoverDF['Date'] > '2011-11-30') 
+#                & (CoverDF['Date'] < '2012-03-01') 
+#                & (CoverDF['Experiment'] == 'AshleyDene'), 'k'] = 0.66
 
 # Output the coverData with k values 
 SDs = ['SD' + str(SD) for SD in range(1, 11)]
@@ -190,6 +191,6 @@ for i in sites:
         CoverDF.loc[(CoverDF['SowingDate'] == j)
                     & (CoverDF['Experiment'] == i),
                     ['Date', 'LightInterception','k']]. \
-        to_csv('./03processed-data/CoverData/CoverData' + i + j + '.csv', index = False)
+        to_csv('../../03processed-data/CoverData/CoverData' + i + j + '.csv', index = False)
 
 # CoverDF

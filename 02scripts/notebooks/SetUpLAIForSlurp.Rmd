@@ -123,87 +123,6 @@ LAI_Height['Date'] = pd.to_datetime(LAI_Height['Clock.Today']).dt.strftime('%Y %
 ```
 
 ```{python}
-# Check if the replace take effect
-grid = sns.FacetGrid(LAI_Height, col ='Experiment', row = 'SowingDate', 
-                      hue="SowingDate", palette="Set2",aspect=1.5, sharex=False)
-grid.map(plt.scatter, 'Date', 'k')
-grid.set_xticklabels(rotation=45)
-grid.fig.tight_layout()
-```
-
-# Note at 20200601
-
-The slurp seems not allow users to access [Slurp].Leaf.CoverTotal     
-The setupvariable manager script is calculating LAI to feed into the model with a fixed $k$ value
-
-```{python}
-print_full(LAI_Height[LAI_Height['LAImod']== 0])
-```
-
-# Harvest dates
-
-```{python}
-SDs = ['SD' + str(SD) for SD in range(1, 11)]
-SDs
-LAI_Height.loc[(LAI_Height['Experiment'] == 'AshleyDene')
-               & (LAI_Height['SowingDate'] =='SD1'), ['Clock.Today','Harvest.No.']].drop_duplicates()
-```
-
-```{python}
-sites = ['AshleyDene', 'Iversen12']
-for site in sites: 
-    for i in SDs:
-        LAI_Height.loc[(LAI_Height['Experiment'] == site) 
-                       & (LAI_Height.SowingDate == i),
-                       ['Clock.Today','Harvest.No.']]. \
-        drop_duplicates().to_csv('../../03processed-data/CutDates/CuttingDate' + site + i + '.csv',index = False)
-```
-
-### Observation dates 
-
-**NOTE** Once off output - enable when necessary
-
-```{python}
-# obs_DatesAD = LAI_Height.loc[LAI_Height['Experiment'] == 'AshleyDene', 'Clock.Today'].drop_duplicates()
-# obs_DatesAD.to_csv('./03processed-data/ObservationDatesAshleyDene.csv', index = False)
-# obs_DatesI12 = LAI_Height.loc[LAI_Height['Experiment'] != 'AshleyDene', 'Clock.Today'].drop_duplicates()
-# obs_DatesI12.to_csv('./03processed-data/ObservationDatesIversen12.csv', index = False)
-```
-
-### Output LAI as the slurp input 
-
-```{python}
-SDs = ['SD' + str(SD) for SD in range(1, 11)]
-SDs
-sites = ['AshleyDene', 'Iversen12']
-for site in sites: 
-    for i in SDs:
-        LAI_Height.loc[(LAI_Height['Experiment'] == site) & 
-                       (LAI_Height.SowingDate == i), 
-                       ['Clock.Today', 'LAImod','k']]. \
-        to_csv('../../03processed-data/CoverData/LAI' + site + i + '.csv',index = False)
-```
-
-```{python}
-
-```
-
-# Calculate $R/R_0$
-
-```{python}
-LAI_Height['LI_frac'] = 1 - np.exp( - LAI_Height['k'] * LAI_Height['LAImod'])
-```
-
-```{python}
-# Check if any weired values. e.g. over 1 or below 0 
-grid = sns.FacetGrid(LAI_Height, col ='Experiment',
-                      hue="SowingDate", palette="Set1",aspect=2, sharex=False)
-grid.map(plt.scatter, 'Date', 'LI_frac')
-grid.set_xticklabels(rotation=45)
-grid.fig.tight_layout()
-```
-
-```{python}
 LAI = LAI_Height.groupby(['Experiment', 'Clock.Today','SowingDate']).mean()
 LAI
 ```
@@ -224,81 +143,6 @@ for site in sites:
         to_csv('../../03processed-data/CoverData/LAI' + site + i + '.csv',index = False)
 ```
 
-```{python}
-
-```
-
-## Construct the index
-
-```{python}
-# Select only LI column
-LI = LAI_Height.loc[:, ['Experiment', 'Clock.Today','SowingDate', 
-                        'Rep', 'Plot', 
-                        'LI_frac']]
-# print_full(LI)
-# remove the rows that have 0S - Likely to be wrong 0s
-# LI = LI[LI['LI_frac'] != 0.00]
-LI
-```
-
-```{python}
-LI[LI['SowingDate']=='SD5']
-```
-
-```{python}
-LI = LI.pivot_table(index = 'Clock.Today', 
-                    columns=['Experiment', 'SowingDate', 
-                             'Rep', 'Plot'],
-                    values = 'LI_frac')
-LI
-```
-
-```{python}
-# Check if the mean values capture all the harvest for SD5 
-# SD5 has extra measurments in plot 15, 21,53,71
-print_full(LI.filter(regex = 'SD5').groupby(axis = 1, level = ['Experiment','SowingDate']).mean())
-
-```
-
-```{python}
-# Change the index to datetime tyep
-LI.index = pd.to_datetime(LI.index)
-# Rename the index name 
-LI.index.name = 'Clock.Today'
-# Normalise the datetime to midnight 
-LI.index = LI.index.normalize()
-```
-
-```{python}
-# Check indexs
-LI.axes
-```
-
-## Calcuate the mean LI_frac
-
-```{python}
-LIGroupedMean = LI.groupby(axis=1, level=['Experiment', 'SowingDate']).mean()
-```
-
-```{python}
-LIGroupedMean
-```
-
-```{python}
-# Graph to check the data 
-
-LIGroupedMean.loc[:,
-                  [X for X in LIGroupedMean.columns if 'SD5' in X]].plot(figsize=(10, 6),style='o-')
-
-```
-
-```{python}
-SDs = ['SD' + str(SD) for SD in range(1, 11)]
-for i in SDs:
-    LIGroupedMean.loc[:,
-                  [X for X in LIGroupedMean.columns if i in X]].plot(figsize=(10, 6),style='o-')
-```
-
 # Met data to calculate thermal time 
 
 ```{python}
@@ -307,6 +151,9 @@ met_AD['Experiment'] = 'AshleyDene'
 met_I12 = met_I12.loc[(met_I12['year'] >= 2010)                       
                       & (met_I12['year'] < 2013), ['year','day', 'maxt', 'mint','mean']]
 met_I12['Experiment'] = 'Iversen12'
+```
+
+```{python}
 met = pd.concat([met_AD, met_I12], ignore_index=True)
 ```
 
@@ -317,20 +164,6 @@ met['year'] = pd.to_datetime(met['year'])
 # Change the day to a delta days and add back to the year 
 met['Clock.Today'] = met['year'] + pd.to_timedelta(met['day'], unit='D')
 ```
-
-```{python}
-# Check if any weired values. 
-grid = sns.FacetGrid(met, row ='Experiment',
-                     aspect=2, sharex=False)
-grid.map(plt.scatter, 'Clock.Today', 'mean')
-grid.set_xticklabels(rotation=45)
-grid.fig.tight_layout()
-```
-
-#### Note:   
-1. The iversen 12 met has a long period of coverage.
-   Expt period: **October 2010 to July 2012.**
-   
 
 ```{python}
 met = met[(met['Clock.Today'] > '2010-06-01')
