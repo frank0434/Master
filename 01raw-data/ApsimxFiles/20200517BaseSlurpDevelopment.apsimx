@@ -1,7 +1,7 @@
 {
   "$type": "Models.Core.Simulations, Models",
-  "ExplorerWidth": 271,
-  "Version": 101,
+  "ExplorerWidth": 282,
+  "Version": 103,
   "ApsimVersion": "0.0.0.0",
   "Name": "Simulations",
   "Children": [
@@ -28,113 +28,6 @@
               "$type": "Models.Factorial.Permutation, Models",
               "Name": "Permutation",
               "Children": [
-                {
-                  "$type": "Models.Factorial.Factor, Models",
-                  "Specification": "",
-                  "Name": "SKL",
-                  "Children": [
-                    {
-                      "$type": "Models.Factorial.CompositeFactor, Models",
-                      "Specifications": [
-                        "[Soil].Physical.SlurpSoil"
-                      ],
-                      "Paths": null,
-                      "Values": null,
-                      "Name": "InitialKL",
-                      "Children": [
-                        {
-                          "$type": "Models.Soils.SoilCrop, Models",
-                          "LL": [
-                            0.063,
-                            0.08,
-                            0.074,
-                            0.076,
-                            0.069,
-                            0.07,
-                            0.07,
-                            0.07,
-                            0.069,
-                            0.07,
-                            0.073,
-                            0.079,
-                            0.084,
-                            0.086,
-                            0.092,
-                            0.096,
-                            0.094,
-                            0.095,
-                            0.095,
-                            0.095,
-                            0.098,
-                            0.1
-                          ],
-                          "KL": [
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01,
-                            0.01
-                          ],
-                          "XF": [
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0
-                          ],
-                          "LLMetadata": null,
-                          "KLMetadata": null,
-                          "XFMetadata": null,
-                          "Name": "SlurpSoil",
-                          "Children": [],
-                          "IncludeInDocumentation": true,
-                          "Enabled": true,
-                          "ReadOnly": false
-                        }
-                      ],
-                      "IncludeInDocumentation": true,
-                      "Enabled": true,
-                      "ReadOnly": false
-                    }
-                  ],
-                  "IncludeInDocumentation": true,
-                  "Enabled": true,
-                  "ReadOnly": false
-                },
                 {
                   "$type": "Models.Factorial.Factor, Models",
                   "Specification": "[SlurpSowingRule].Script.KLReductionFactor = 0.0005,00.001,00.002,00.003,00.005,000.01",
@@ -269,7 +162,7 @@
                         },
                         {
                           "Key": "RootDepth",
-                          "Value": "2000"
+                          "Value": "2300"
                         },
                         {
                           "Key": "KLReductionDepth",
@@ -299,11 +192,11 @@
                     },
                     {
                       "$type": "Models.Manager, Models",
-                      "Code": "using Models.Soils;\r\nusing System.Data;\r\nusing APSIM.Shared.Utilities;\r\nusing System.Xml.Serialization;\r\nusing Models;\r\nusing Models.PMF;\r\nusing System.Text;\r\nusing System.Collections.Generic;\r\nusing Models.Core;\r\nusing System;\r\nnamespace Models\r\n{\r\n    [Serializable] \r\n    //[System.Xml.Serialization.XmlInclude(typeof(Model))]\r\n    public class Script : Model\r\n    {\r\n        [Link] Plant SCUM;\r\n        [Link] Clock Clock;\r\n        [Link] Zone zone;\r\n        [Link] Simulation Simulation;\r\n        [Link] Soil Soil;\r\n        [Link] ISummary mysum;\r\n        \r\n        [Description(\"File of Light interception and Extinction coefficient\")]\r\n        public string CoverFile { get; set; }\r\n        //[Description(\"Extinction coefficient (if constant).\")]\r\n        public double Ext_coef { get; set; }\r\n        [Description(\"Maximum height of the crop at full cover\")]\r\n        public double MaximumHeight { get; set; }\r\n        \r\n        [XmlIgnore] private DataTable Covers { get; set; }\r\n        [Description(\"Column name for the fractional light interception\")]\r\n        public string Cover { get; set; }\r\n        [Description(\"Column name for the USER provide Extinction coefficient\")]\r\n        public string Extinctioncoefficient { get; set; }\r\n        //public string Irrigation { get; set; }\r\n        public string Treatment { get; set; }\r\n        \r\n        private double CoverRead { get; set; }\r\n        public double leaflai { get; private set; }\r\n                \r\n        [EventSubscribe(\"StartOfSimulation\")]\r\n        private void OnStartOfSimulation(object sender, EventArgs e)\r\n        {\r\n            \r\n            Treatment = Cover;\r\n            \r\n            string fullFileName = PathUtilities.GetAbsolutePath(CoverFile, Simulation.FileName);\r\n            \r\n            ApsimTextFile textFile = new ApsimTextFile();\r\n            textFile.Open(fullFileName);\r\n            Covers = textFile.ToTable();\r\n            textFile.Close();\r\n        }\r\n        \r\n        [EventSubscribe(\"StartOfDay\")]\r\n        private void OnStartOfDay(object sender, EventArgs e)\r\n        {\r\n            foreach (DataRow row in Covers.Rows)\r\n            {\r\n                DateTime TodayDate = Convert.ToDateTime(row[\"Date\"]);\r\n                if (TodayDate.Date == Clock.Today.Date)\r\n                {\r\n                \tmysum.WriteMessage(this, \"Date\" + Clock.Today.Date);\r\n                    CoverRead = Convert.ToDouble(row[Treatment]);\r\n                    Ext_coef = Convert.ToDouble(row[Extinctioncoefficient]);\r\n                }\r\n            }\r\n        \r\n            //if ((bool)zone.Get(\"Slurp.IsAlive\") == true)\r\n            //{\r\n                //Only assign cover valuse if crop is emerged\r\n                \r\n                if (CoverRead == 1)\r\n                    leaflai = Math.Log(0.01) / -Ext_coef;\r\n                else\r\n                {\r\n                    if (CoverRead > 0)\r\n                        leaflai = Math.Log(1 - CoverRead) / -Ext_coef;\r\n                    else\r\n                        leaflai = 0;\r\n                }\r\n                //Summary.WriteMessage(this, \"LAI \" + leaflai);\r\n                object LAIResetValue = leaflai;\r\n                zone.Set(\"Slurp.Leaf.Area.FixedValue\", LAIResetValue);  \r\n                object HeightResetValue = CoverRead * MaximumHeight;\r\n                zone.Set(\"Slurp.Leaf.Tallness.FixedValue\", HeightResetValue);  \r\n            //}\r\n            \r\n            /*if ((Clock.Today.DayOfYear == 160) && (Clock.Today.Year == 2011))\r\n                Soil.SoilWater.Reset();\r\n                */\r\n        }\r\n        /*[EventSubscribe(\"StartOfDay\")]\r\n        private void OnEndOfDay(object sender, EventArgs e)\r\n        {\r\n            if ((Clock.Today.DayOfYear == 66) && (Clock.Today.Year == 2012) && (Irrigation == \"Rain\"))\r\n            {\r\n                if (Cover == \"Lucerne\")\r\n                {\r\n                    double[] ValuesToSet = { 0.18, 0.21, 0.20, 0.06, 0.05, 0.06, 0.07, 0.08, 0.10, 0.14, 0.14, 0.14, 0.14 };\r\n                    Soil.SoilWater.SW = ValuesToSet;\r\n                }\r\n                if (Cover == \"Ryegrass\")\r\n                {\r\n                    double[] ValuesToSet = { 0.14, 0.20, 0.25, 0.11, 0.07, 0.08, 0.09, 0.09, 0.11, 0.14, 0.14, 0.14, 0.14 };\r\n                    Soil.SoilWater.SW = ValuesToSet;\r\n                }\r\n            }\r\n        }*/\r\n    }\r\n}\r\n                \r\n",
+                      "Code": "using Models.Soils;\r\nusing System.Data;\r\nusing APSIM.Shared.Utilities;\r\nusing System.Xml.Serialization;\r\nusing Models;\r\nusing Models.PMF;\r\nusing System.Text;\r\nusing System.Collections.Generic;\r\nusing Models.Core;\r\nusing System;\r\nnamespace Models\r\n{\r\n    [Serializable] \r\n    //[System.Xml.Serialization.XmlInclude(typeof(Model))]\r\n    public class Script : Model\r\n    {\r\n        [Link] Plant SCUM;\r\n        [Link] Clock Clock;\r\n        [Link] Zone zone;\r\n        [Link] Simulation Simulation;\r\n        [Link] Soil Soil;\r\n        [Link] ISummary mysum;\r\n        \r\n        [Description(\"File of Light interception and Extinction coefficient\")]\r\n        public string CoverFile { get; set; }\r\n        //[Description(\"Extinction coefficient (if constant).\")]\r\n        public double Ext_coef { get; set; }\r\n        [Description(\"Maximum height of the crop at full cover\")]\r\n        public double MaximumHeight { get; set; }\r\n        \r\n        [XmlIgnore] private DataTable Covers { get; set; }\r\n        [Description(\"Column name for the LEAF AREA INDEX\")]\r\n        public string LAI { get; set; }\r\n        [Description(\"Column name for the USER provide Extinction coefficient\")]\r\n        public double Extinctioncoefficient { get; set; }\r\n        //public string Irrigation { get; set; }\r\n        public string Treatment { get; set; }\r\n        \r\n        public double CoverRead { get; set; }\r\n        public double leaflai { get; private set; }\r\n                \r\n        [EventSubscribe(\"StartOfSimulation\")]\r\n        private void OnStartOfSimulation(object sender, EventArgs e)\r\n        {\r\n            \r\n            Treatment = LAI;\r\n            \r\n            string fullFileName = PathUtilities.GetAbsolutePath(CoverFile, Simulation.FileName);\r\n            \r\n            ApsimTextFile textFile = new ApsimTextFile();\r\n            textFile.Open(fullFileName);\r\n            Covers = textFile.ToTable();\r\n            textFile.Close();\r\n        }\r\n        \r\n        [EventSubscribe(\"StartOfDay\")]\r\n        private void OnStartOfDay(object sender, EventArgs e)\r\n        {\r\n            foreach (DataRow row in Covers.Rows)\r\n            {\r\n                DateTime TodayDate = Convert.ToDateTime(row[\"Clock.Today\"]);\r\n                if (TodayDate.Date == Clock.Today.Date)\r\n                {\r\n                \tmysum.WriteMessage(this, \"Date\" + Clock.Today.Date);\r\n                    leaflai = Convert.ToDouble(row[Treatment]);\r\n                    //Ext_coef = Convert.ToDouble(row[Extinctioncoefficient]);\r\n                }\r\n            }\r\n        \r\n            if ((bool)zone.Get(\"Slurp.IsAlive\") == true)\r\n            {\r\n                //Only assign cover valuse if crop is emerged\r\n\r\n                CoverRead = 1 - Math.Exp( - Extinctioncoefficient * leaflai);\r\n\r\n                /*\r\n                if (CoverRead == 1)\r\n                    leaflai = Math.Log(0.01) / -Ext_coef;\r\n                else\r\n                {\r\n                    if (CoverRead > 0)\r\n                        leaflai = Math.Log(1 - CoverRead) / -Ext_coef;\r\n                    else\r\n                        leaflai = 0;\r\n                }\r\n                */\r\n\r\n                //Summary.WriteMessage(this, \"LAI \" + leaflai);\r\n                object LAIResetValue = leaflai;\r\n                zone.Set(\"Slurp.Leaf.Area.FixedValue\", LAIResetValue);  \r\n                object HeightResetValue = CoverRead * MaximumHeight;\r\n                zone.Set(\"Slurp.Leaf.Tallness.FixedValue\", HeightResetValue);  \r\n            }\r\n            \r\n            /*if ((Clock.Today.DayOfYear == 160) && (Clock.Today.Year == 2011))\r\n                Soil.SoilWater.Reset();\r\n                */\r\n        }\r\n        /*[EventSubscribe(\"StartOfDay\")]\r\n        private void OnEndOfDay(object sender, EventArgs e)\r\n        {\r\n            if ((Clock.Today.DayOfYear == 66) && (Clock.Today.Year == 2012) && (Irrigation == \"Rain\"))\r\n            {\r\n                if (Cover == \"Lucerne\")\r\n                {\r\n                    double[] ValuesToSet = { 0.18, 0.21, 0.20, 0.06, 0.05, 0.06, 0.07, 0.08, 0.10, 0.14, 0.14, 0.14, 0.14 };\r\n                    Soil.SoilWater.SW = ValuesToSet;\r\n                }\r\n                if (Cover == \"Ryegrass\")\r\n                {\r\n                    double[] ValuesToSet = { 0.14, 0.20, 0.25, 0.11, 0.07, 0.08, 0.09, 0.09, 0.11, 0.14, 0.14, 0.14, 0.14 };\r\n                    Soil.SoilWater.SW = ValuesToSet;\r\n                }\r\n            }\r\n        }*/\r\n    }\r\n}\r\n                \r\n",
                       "Parameters": [
                         {
                           "Key": "CoverFile",
-                          "Value": "C:\\Data\\Master\\03processed-data\\CoverDataAshleyDeneSD1.csv"
+                          "Value": "C:\\Data\\Master\\03processed-data\\CoverData\\LAIIversen12SD1.csv"
                         },
                         {
                           "Key": "Ext_coef",
@@ -311,19 +204,23 @@
                         },
                         {
                           "Key": "MaximumHeight",
-                          "Value": "395"
+                          "Value": "590"
                         },
                         {
-                          "Key": "Cover",
-                          "Value": "LightInterception"
+                          "Key": "LAI",
+                          "Value": "LAImod"
                         },
                         {
                           "Key": "Extinctioncoefficient",
-                          "Value": "k"
+                          "Value": "0.94"
                         },
                         {
                           "Key": "Treatment",
                           "Value": ""
+                        },
+                        {
+                          "Key": "CoverRead",
+                          "Value": "0"
                         },
                         {
                           "Key": "leaflai",
@@ -1253,9 +1150,9 @@
                 {
                   "$type": "Models.Report, Models",
                   "VariableNames": [
-                    "[Clock].Today as Date",
+                    "[Clock].Today",
                     "[Soil].Physical.SlurpSoil.KL[1] as SKL",
-                    "[SetCropVariables].Script.Ext_coef as k",
+                    "[SetCropVariables].Script.Extinctioncoefficient as k",
                     "[Slurp].Leaf.CoverTotal as cover",
                     "[Slurp].Leaf.LAI as LAI",
                     "[Slurp].Leaf.Height as Height",
@@ -1278,12 +1175,13 @@
                   "VariableNames": [
                     "[Clock].Today as Date",
                     "[SlurpSowingRule].Script.CultivarName as CropNameCheck",
+                    "[Soil].Physical.SlurpSoil.KL as kl",
                     "[SlurpSowingRule].Script.KLReductionFactor as KLRCheck",
                     "[SlurpSowingRule].Script.RootDepth as RDpCheck",
                     "[SlurpSowingRule].Script.RFV as RFVCheck",
                     "[SlurpSowingRule].Script.YKLModifiers as KLmodCheck",
                     "[SlurpSowingRule].Script.XDepth as KLdepCheck",
-                    "[SetCropVariables].Script.Cover as CoverCheck"
+                    "[SetCropVariables].Script.CoverRead as CoverCheck"
                   ],
                   "EventNames": [
                     "[Clock].EndOfSimulation"
@@ -1343,17 +1241,17 @@
               "Type": 1,
               "XAxis": 3,
               "YAxis": 0,
-              "ColourArgb": 0,
-              "FactorToVaryColours": null,
+              "ColourArgb": -16736653,
+              "FactorToVaryColours": "SimulationName",
               "FactorToVaryMarkers": null,
               "FactorToVaryLines": null,
-              "Marker": 0,
+              "Marker": 11,
               "MarkerSize": 0,
-              "Line": 4,
+              "Line": 0,
               "LineThickness": 0,
               "TableName": "Report",
               "XFieldName": "Date",
-              "YFieldName": "cover",
+              "YFieldName": "LAI",
               "X2FieldName": null,
               "Y2FieldName": null,
               "ShowInLegend": false,
@@ -1362,6 +1260,35 @@
               "CumulativeX": false,
               "Filter": null,
               "Name": "Series",
+              "Children": [],
+              "IncludeInDocumentation": true,
+              "Enabled": true,
+              "ReadOnly": false
+            },
+            {
+              "$type": "Models.Series, Models",
+              "Type": 0,
+              "XAxis": 3,
+              "YAxis": 0,
+              "ColourArgb": 0,
+              "FactorToVaryColours": null,
+              "FactorToVaryMarkers": null,
+              "FactorToVaryLines": null,
+              "Marker": 0,
+              "MarkerSize": 0,
+              "Line": 0,
+              "LineThickness": 0,
+              "TableName": null,
+              "XFieldName": null,
+              "YFieldName": null,
+              "X2FieldName": null,
+              "Y2FieldName": null,
+              "ShowInLegend": false,
+              "IncludeSeriesNameInLegend": false,
+              "Cumulative": false,
+              "CumulativeX": false,
+              "Filter": null,
+              "Name": "Series1",
               "Children": [],
               "IncludeInDocumentation": true,
               "Enabled": true,
