@@ -123,24 +123,22 @@ LAI_Height['Date'] = pd.to_datetime(LAI_Height['Clock.Today']).dt.strftime('%Y %
 ```
 
 ```{python}
-LAI = LAI_Height.groupby(['Experiment', 'Clock.Today','SowingDate']).mean()
+LAI = LAI_Height.pivot_table(index = 'Clock.Today', 
+                    columns=['Experiment', 'SowingDate', 
+                             'Rep', 'Plot'],
+                    values = 'LAImod')
+# Change the index to datetime tyep
+LAI.index = pd.to_datetime(LAI.index)
+# Rename the index name 
+LAI.index.name = 'Clock.Today'
+# Normalise the datetime to midnight 
+LAI.index = LAI.index.normalize()
 LAI
 ```
 
-### 20200726 Re output LAI as the input of slurp
-
 ```{python}
-SDs = ['SD' + str(SD) for SD in range(1, 11)]
-SDs
-sites = ['AshleyDene', 'Iversen12']
-for site in sites: 
-    for i in SDs:
-        # Build a slicer
-        idx = pd.IndexSlice
-        # Slice out the right cols and site and sowing date, remove index
-        LAI_SiteSD = LAI.loc[idx[site,:,i], 'LAImod'].reset_index()
-        LAI_SiteSD.loc[:,['Clock.Today', 'LAImod']].\
-        to_csv('../../03processed-data/CoverData/LAI' + site + i + '.csv',index = False)
+# LAI = LAI_Height.groupby(['Experiment', 'Clock.Today','SowingDate']).mean()
+LAI_Height
 ```
 
 # Met data to calculate thermal time 
@@ -187,10 +185,6 @@ met.set_index('Clock.Today', inplace = True)
 ```
 
 ```{python}
-print_full(met)
-```
-
-```{python}
 # Try 2 sites the same time 
 ThermalTimeAccum = met.loc[:, 'mean'].cumsum()
 ThermalTimeAccum.index = pd.to_datetime(ThermalTimeAccum.index)
@@ -200,13 +194,13 @@ ThermalTimeAccum.index = pd.to_datetime(ThermalTimeAccum.index)
 
 ```{python}
 #Reindex coverdata frame to daily values
-LIDaily = LI.reindex(ThermalTimeAccum.index)
-LIDaily.loc[:, 'AccumTT'] = ThermalTimeAccum
+LAIDaily = LAI.reindex(ThermalTimeAccum.index)
+LAIDaily.loc[:, 'AccumTT'] = ThermalTimeAccum
 # CoverDataDaily.loc[:,'AccumTT'] = ThermalTimeAccum
 ```
 
 ```{python}
-print_full(LIDaily.filter(regex='SD5'))
+print_full(LAIDaily.filter(regex='SD5'))
 ```
 
 ## Interpolate daily values 
@@ -292,12 +286,6 @@ LIGroupedMeanI12 = LIDailyI12.groupby(axis=1, level=['Experiment', 'SowingDate']
 
 ```{python}
 LIGroupedMeanI12.columns
-```
-
-```{python}
-# Graph to check the data 
-LIGroupedMeanI12.loc[:,
-                  [X for X in LIGroupedMeanI12.columns if X != (   'AccumTT',     '')]].plot(figsize=(10, 6),style='o-')
 ```
 
 # Force the starting point to be 0
@@ -441,6 +429,22 @@ LIGroupedMeanI12Forced
 
 ```{python}
 LIGroupedMeanADForced
+```
+
+### 20200726 Re output LAI as the input of slurp
+
+```{python}
+SDs = ['SD' + str(SD) for SD in range(1, 11)]
+SDs
+sites = ['AshleyDene', 'Iversen12']
+for site in sites: 
+    for i in SDs:
+        # Build a slicer
+        idx = pd.IndexSlice
+        # Slice out the right cols and site and sowing date, remove index
+        LAI_SiteSD = LAI.loc[idx[site,:,i], 'LAImod'].reset_index()
+        LAI_SiteSD.loc[:,['Clock.Today', 'LAImod']].\
+        to_csv('../../03processed-data/CoverData/LAI' + site + i + '.csv',index = False)
 ```
 
 # Does it make difference by changing the period of met data?
