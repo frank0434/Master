@@ -1,6 +1,6 @@
 ---
 title: "APSIM_edit_fun"
-author: "Junqi Zhu"
+author: "Junqi Zhu and Jian Liu"
 date: "`r Sys.Date()`"
 output: html_document
 ---
@@ -42,7 +42,7 @@ outlier.colour = "#ff0000"
   #path to apsimx 
   apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
   apsimx_flag <- "/Edit"
-  apsimx_file <- "C:/Data/Master/02scripts/test/grapevine_base.apsimx"
+  apsimx_file <- "C:/Data/Master/01raw-data/ApsimxFiles/20200517BaseSlurp.apsimx"
   # apsimx_sims_temp <- "C:/Data/Master/03processed-data/tempGrape.apsimx"
   apsimx_sims_dir <- "C:/Data/Master/03processed-data/"
   apsimx_config <- "C:/Data/Master/03processed-data/Configure_Grape_"
@@ -53,9 +53,8 @@ APSIMEditFun <- function(par)
 {
 
   # Node Path - copied from ApsimX UI
-  RUE_JV <- ".Simulations.Replacements.Grapevine.Leaf.Photosynthesis.RUE.Juvenile.Constant.FixedValue ="
-  
-  # RUE_VE <- ".Simulations.Replacements.Grapevine.Leaf.Photosynthesis.RUE.Vegetative.Constant.FixedValue ="
+  klr <- "[SlurpSowingRule].Script.KLReductionFactor = "
+  rfv = "[SlurpSowingRule].Script.RFV = "
 
 # Vectorise the values 
   # for(i in SDs){
@@ -138,7 +137,10 @@ cost.function <- function(par)
 
 ```
 
+KLR RANGE 
+0.0005,00.001,00.002,00.003,00.005,000.01 
 
+[SlurpSowingRule].Script.RFV = 10,15,20,25,30,35
 #run the optim function
 ```{r}
 t1 <- Sys.time()
