@@ -1,7 +1,7 @@
 {
   "$type": "Models.Core.Simulations, Models",
   "ExplorerWidth": 282,
-  "Version": 103,
+  "Version": 107,
   "ApsimVersion": "0.0.0.0",
   "Name": "Simulations",
   "Children": [
@@ -17,20 +17,6 @@
             "C:\\Data\\Master\\03processed-data\\CoverData\\LAIAshleyDeneSD1.csv"
           ],
           "Name": "Input",
-          "Children": [],
-          "IncludeInDocumentation": true,
-          "Enabled": true,
-          "ReadOnly": false
-        },
-        {
-          "$type": "Models.PostSimulationTools.ExcelInput, Models",
-          "FileNames": [
-            "C:\\Data\\Master\\03processed-data\\ADSD1Test.xlsx"
-          ],
-          "SheetNames": [
-            "Observed"
-          ],
-          "Name": "ExcelInput",
           "Children": [],
           "IncludeInDocumentation": true,
           "Enabled": true,
@@ -85,6 +71,7 @@
         {
           "$type": "Models.Core.Simulation, Models",
           "IsRunning": false,
+          "Descriptors": null,
           "Name": "LandPBase",
           "Children": [
             {
@@ -791,6 +778,7 @@
                         0.08,
                         0.9
                       ],
+                      "NPartitionApproach": 0,
                       "Name": "SoilNitrogen",
                       "Children": [
                         {
