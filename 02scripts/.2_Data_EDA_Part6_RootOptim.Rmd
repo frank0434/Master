@@ -39,31 +39,69 @@ outlier.colour = "#ff0000"
 
 ```{r}
 
-  #path to apsimx 
-  apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
-  apsimx_flag <- "/Edit"
-  apsimx_file <- "C:/Data/Master/01raw-data/ApsimxFiles/20200517BaseSlurp.apsimx"
-  # apsimx_sims_temp <- "C:/Data/Master/03processed-data/tempGrape.apsimx"
-  apsimx_sims_dir <- "C:/Data/Master/03processed-data/"
-  apsimx_config <- "C:/Data/Master/03processed-data/Configure_Grape_"
+#path to apsimx 
+apsimx = "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
+apsimx_flag = "/Edit"
+apsimx_file = "C:/Data/Master/01raw-data/ApsimxFiles/20200517BaseSlurp.apsimx"
+apsimx_sims_dir = "C:/Data/Master/03processed-data/"
+apsimx_config = "C:/Data/Master/03processed-data/Configure_Grape_"
   
-par <- c(1)
+# Prepare the configuration file
 
-APSIMEditFun <- function(par)
+# ApsimX node paths 
+
+KL_layer = 22
+
+## The site level configuration 
+config_weather = "[Weather].FileName = "
+config_Height = "[SetCropVariables].Script.MaximumHeight = "
+config_BD = "[Soil].Physical.BD = "
+## The Sowing date level configuration 
+
+config_SDnode = "[SlurpSowingRule].Script.SowingDate = "
+config_ClockStart = "[Clock].Start = "
+
+config_CoverData = "[SetCropVariables].Script.CoverFile = "
+config_initialSW = "[Soil].InitialConditions.SW = "
+
+config_DUL = "[Soil].Physical.DUL = "
+config_SAT = "[Soil].Physical.SAT = "
+
+config_AirDry = "[Soil].Physical.AirDry = "
+config_LL15 = "[Soil].Physical.LL15 = "
+config_LL = "[Soil].Physical.SlurpSoil.LL = "
+
+## The kl parameter level configuration 
+config_KL = paste0("[Soil].Physical.SlurpSoil.KL", "[1:", KL_layer,"]"," = ")
+
+
+nodes = grep("config_", x = ls(), value = TRUE)
+
+nodes_v = vector("character", length = length(nodes))
+
+for (i in seq_len(length(nodes))){
+  names(nodes_v)[i] = get(nodes[i])
+}
+
+
+
+par = c(1)
+
+APSIMEditFun = function(par)
 {
 
   # Node Path - copied from ApsimX UI
-  klr <- "[SlurpSowingRule].Script.KLReductionFactor = "
+  klr = "[SlurpSowingRule].Script.KLReductionFactor = "
   rfv = "[SlurpSowingRule].Script.RFV = "
 
 # Vectorise the values 
   # for(i in SDs){
     # Filter the right values 
-    apsimx_RUE_JV <- paste0(RUE_JV, par)
-    # apsimx_RUE_VE <- paste0(RUE_VE, par[2])
+    apsimx_RUE_JV = paste0(RUE_JV, par)
+    # apsimx_RUE_VE = paste0(RUE_VE, par[2])
                          # paste(j,collapse = ","))
     # Open a text file
-    f <- file(paste0(apsimx_config, "RUE", par, ".txt"), "w")
+    f = file(paste0(apsimx_config, "RUE", par, ".txt"), "w")
     # Write values into the file 
     cat(
         apsimx_RUE_JV,"\r",
@@ -78,7 +116,7 @@ APSIMEditFun <- function(par)
   
 }
 
-APSIMRun <- function(par)
+APSIMRun = function(par)
 {
   # Create a new name for the apsimx file 
   newname = paste0(apsimx_sims_dir, "RUE", par, ".apsimx")
@@ -97,7 +135,7 @@ APSIMRun <- function(par)
 }
 
 library(RSQLite)
-cost.function <- function(par)
+cost.function = function(par)
 {
   # Iterate through the parameters 
   for (i in par){
@@ -112,17 +150,17 @@ cost.function <- function(par)
   for (i in par){
   
 
-  db <- RSQLite::dbConnect(RSQLite::SQLite(),
+  db = RSQLite::dbConnect(RSQLite::SQLite(),
               paste0(apsimx_sims_dir, "RUE", i, '.db'))
   
   dbListTables(db)
   #dbWriteTable(con, "mtcars", mtcars) #add a table into database
-  PredictedObserved <-   dbReadTable(db,"PredictedObserved")
+  PredictedObserved =   dbReadTable(db,"PredictedObserved")
   
-  shoot.dw <- na.omit(PredictedObserved$Observed.shoot.dw - 
+  shoot.dw = na.omit(PredictedObserved$Observed.shoot.dw - 
                       PredictedObserved$Predicted.shoot.dw)
   
-  cost1 <- sum(shoot.dw^2)
+  cost1 = sum(shoot.dw^2)
   
   RSQLite::dbDisconnect(db)
   
@@ -143,12 +181,12 @@ KLR RANGE
 [SlurpSowingRule].Script.RFV = 10,15,20,25,30,35
 #run the optim function
 ```{r}
-t1 <- Sys.time()
+t1 = Sys.time()
 #DEoptim
-maxIt <- 1
-n <- 1
+maxIt = 1
+n = 1
 
-opt.res <-
+opt.res =
   DEoptim::DEoptim(fn=cost.function, 
                    lower = c(0.8),
                    upper = c(1.3),
@@ -170,14 +208,14 @@ opt.res <-
 save(opt.res, file =  file.path(apsimx_sims_dir,
                                 paste0('opt.res', ".RData")))
 
-fit.par <- data.frame(estimates = opt.res$optim$bestmem, cost = opt.res$optim$bestval)
+fit.par = data.frame(estimates = opt.res$optim$bestmem, cost = opt.res$optim$bestval)
 
  
 #output the statistical test
-par <- fit.par$estimates
+par = fit.par$estimates
 
 write.csv(par, 'opt.par.csv', row.names = F)
-t2 <- Sys.time()
+t2 = Sys.time()
 t2-t1
 ```
 
