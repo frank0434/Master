@@ -16,11 +16,14 @@ test*
 *.csv
 *.pdf
 *.png
-03processed-data/*/*.apsimx
+
+
 #notebook checkout points
 .ipynb_check*
+*CloseSimDBs.ipynb
+
 #dir
 Data/
 .drake/
 .drake_history/
-*CloseSimDBs.ipynb
+03processed-data/apsimxFiles/*
