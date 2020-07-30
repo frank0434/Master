@@ -12,33 +12,28 @@
       "Name": "DataStore",
       "Children": [
         {
-          "$type": "Models.PostSimulationTools.Input, Models",
+          "$type": "Models.PostSimulationTools.ExcelInput, Models",
           "FileNames": [
-            "C:\\Data\\Master\\03processed-data\\CoverData\\LAIAshleyDeneSD1.csv"
+            "C:\\Data\\Master\\03processed-data\\ADSD1Test.xlsx"
           ],
-          "Name": "Input",
+          "SheetNames": [
+            "Observed"
+          ],
+          "Name": "Observed",
           "Children": [],
           "IncludeInDocumentation": true,
           "Enabled": true,
           "ReadOnly": false
         },
         {
-          "$type": "Models.PostSimulationTools.Input, Models",
-          "FileNames": [
-            "C:\\Data\\Master\\03processed-data\\CoverData\\CoverAshleyDeneSD1.csv"
-          ],
-          "Name": "LI",
-          "Children": [],
-          "IncludeInDocumentation": true,
-          "Enabled": true,
-          "ReadOnly": false
-        },
-        {
-          "$type": "Models.PostSimulationTools.Input, Models",
-          "FileNames": [
-            "C:\\Data\\Master\\03processed-data\\CoverData\\ObservationAshleyDeneSD1.csv"
-          ],
-          "Name": "obLAI",
+          "$type": "Models.PostSimulationTools.PredictedObserved, Models",
+          "PredictedTableName": "Report",
+          "ObservedTableName": "Observed",
+          "FieldNameUsedForMatch": "Clock.Today",
+          "FieldName2UsedForMatch": null,
+          "FieldName3UsedForMatch": null,
+          "AllColumns": false,
+          "Name": "PredictedObserved",
           "Children": [],
           "IncludeInDocumentation": true,
           "Enabled": true,
@@ -53,7 +48,7 @@
       "$type": "Models.Core.Simulation, Models",
       "IsRunning": false,
       "Descriptors": null,
-      "Name": "LandPBase",
+      "Name": "Experiment",
       "Children": [
         {
           "$type": "Models.Weather, Models",
@@ -152,7 +147,7 @@
                     },
                     {
                       "Key": "RFV",
-                      "Value": "10"
+                      "Value": "20"
                     },
                     {
                       "Key": "KLReductionFactor",
@@ -594,26 +589,26 @@
                       "KL": [
                         0.06,
                         0.06,
-                        0.049,
-                        0.048,
-                        0.055,
-                        0.05,
-                        0.048,
-                        0.059,
-                        0.076,
-                        0.051,
-                        0.094,
-                        0.069,
-                        0.033,
-                        0.03,
-                        0.043,
-                        0.043,
-                        0.056,
-                        0.061,
-                        0.03,
-                        0.03,
-                        0.03,
-                        0.03
+                        0.06,
+                        0.06,
+                        0.06,
+                        0.06,
+                        0.06,
+                        0.06,
+                        0.06,
+                        0.06,
+                        0.06,
+                        0.06,
+                        0.06,
+                        0.06,
+                        0.06,
+                        0.06,
+                        0.06,
+                        0.06,
+                        0.06,
+                        0.06,
+                        0.06,
+                        0.06
                       ],
                       "XF": [
                         1.0,
@@ -1037,7 +1032,7 @@
                   "NO3N": null,
                   "NH4N": null,
                   "SW": [
-                    0.204,
+                    0.105,
                     0.168,
                     0.134,
                     0.11,
@@ -1147,14 +1142,13 @@
               "VariableNames": [
                 "[Clock].Today",
                 "[Soil].Physical.SlurpSoil.KL[1] as SKL",
-                "[Slurp].Leaf.ExtinctionCoefficient as kslurp",
                 "[SetCropVariables].Script.Extinctioncoefficient as k",
-                "[Slurp].Leaf.CoverTotal as cover",
+                "[Slurp].Leaf.CoverTotal as LightInterception",
                 "[Slurp].Leaf.LAI as LAI",
                 "[Slurp].Leaf.Height as Height",
                 "[Slurp].Root.Depth as RootDepth",
                 "[Soil].SoilWater.SW as SW",
-                "sum([Soil].SoilWater.SWmm) as PSWC"
+                "sum([Soil].SoilWater.SWmm) as SWC"
               ],
               "EventNames": [
                 "[Clock].DoReport"
@@ -1269,9 +1263,9 @@
               "MarkerSize": 0,
               "Line": 4,
               "LineThickness": 0,
-              "TableName": "obLAI",
+              "TableName": "Observed",
               "XFieldName": "Clock.Today",
-              "YFieldName": "LAImod",
+              "YFieldName": "LAI",
               "X2FieldName": null,
               "Y2FieldName": null,
               "ShowInLegend": false,
@@ -1338,7 +1332,7 @@
               "LineThickness": 0,
               "TableName": "Report",
               "XFieldName": "Clock.Today",
-              "YFieldName": "cover",
+              "YFieldName": "LightInterception",
               "X2FieldName": null,
               "Y2FieldName": null,
               "ShowInLegend": false,
@@ -1365,9 +1359,9 @@
               "MarkerSize": 0,
               "Line": 4,
               "LineThickness": 0,
-              "TableName": "LI",
+              "TableName": "Observed",
               "XFieldName": "Clock.Today",
-              "YFieldName": "LI",
+              "YFieldName": "LightInterception",
               "X2FieldName": null,
               "Y2FieldName": null,
               "ShowInLegend": false,
@@ -1425,7 +1419,7 @@
               "XAxis": 3,
               "YAxis": 0,
               "ColourArgb": -16747854,
-              "FactorToVaryColours": null,
+              "FactorToVaryColours": "Zone",
               "FactorToVaryMarkers": null,
               "FactorToVaryLines": null,
               "Marker": 11,
@@ -1434,7 +1428,7 @@
               "LineThickness": 0,
               "TableName": "Report",
               "XFieldName": "Clock.Today",
-              "YFieldName": "PSWC",
+              "YFieldName": "SWC",
               "X2FieldName": null,
               "Y2FieldName": null,
               "ShowInLegend": false,
@@ -1443,6 +1437,35 @@
               "CumulativeX": false,
               "Filter": null,
               "Name": "Prediction",
+              "Children": [],
+              "IncludeInDocumentation": true,
+              "Enabled": true,
+              "ReadOnly": false
+            },
+            {
+              "$type": "Models.Series, Models",
+              "Type": 1,
+              "XAxis": 3,
+              "YAxis": 0,
+              "ColourArgb": -16736653,
+              "FactorToVaryColours": null,
+              "FactorToVaryMarkers": null,
+              "FactorToVaryLines": null,
+              "Marker": 0,
+              "MarkerSize": 0,
+              "Line": 4,
+              "LineThickness": 0,
+              "TableName": "Observed",
+              "XFieldName": "Clock.Today",
+              "YFieldName": "SWC",
+              "X2FieldName": null,
+              "Y2FieldName": null,
+              "ShowInLegend": false,
+              "IncludeSeriesNameInLegend": false,
+              "Cumulative": false,
+              "CumulativeX": false,
+              "Filter": null,
+              "Name": "Observation",
               "Children": [],
               "IncludeInDocumentation": true,
               "Enabled": true,
