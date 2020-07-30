@@ -251,3 +251,6 @@ something more to try
 2. The LAI wasn't sourced correctly because the manager script used wrong variables. 
 3. The LAI wasn't interploate so the prediction is stair case. 
 
+# 20200728
+
+Lower k value was observed during the summer 
