@@ -6,7 +6,7 @@ jupyter:
       extension: .Rmd
       format_name: rmarkdown
       format_version: '1.2'
-      jupytext_version: 1.5.0
+      jupytext_version: 1.4.2
   kernelspec:
     display_name: Python 3
     language: python
@@ -477,7 +477,26 @@ for i in sites:
         to_csv('../../03processed-data/CoverData/Observation' + i + j + '.csv',index = False)
 ```
 
+# Process observation data into treatment excels 
+
+
 ```{python}
-df
+import xlsxwriter
+df = pd.read_excel('../../03processed-data/20200630Whole.xlsx')
+df['SimulationName'] = 'Experiment'
+for i in sites:
+    for j in SDs:
+        sitesd = df.loc[(df['Experiment'] == i) 
+                        & (df['SowingDate'] == j)]
+
+        # Create a Pandas Excel writer using XlsxWriter as the engine.
+        writer = pd.ExcelWriter('../../03processed-data/CoverData/Observation' + i + j + '.xlsx', engine='xlsxwriter') 
+        # Convert the dataframe to an XlsxWriter Excel object.
+        sitesd.to_excel(writer, sheet_name='Observed', index = False)
+        # Close the Pandas Excel writer and output the Excel file.
+        writer.save()
+```
+
+```{python}
 
 ```
