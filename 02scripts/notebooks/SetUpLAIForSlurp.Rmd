@@ -110,15 +110,6 @@ LAI_Height[(LAI_Height['Harvest.No.'] == 'Post') & (LAI_Height.LAImod==0)]
 ```
 
 ```{python}
-# Add the k for all 
-LAI_Height['k'] = 0.94
-# Replace the k for the summur crop in Ashley Dene
-# LAI_Height.loc[(LAI_Height['Clock.Today'] > '2011-11-30') 
-#                & (LAI_Height['Clock.Today'] < '2012-03-01') 
-#                & (LAI_Height['Experiment'] == 'AshleyDene'), 'k'] = 0.66
-```
-
-```{python}
 LAI_Height['Date'] = pd.to_datetime(LAI_Height['Clock.Today']).dt.strftime('%Y %b')
 ```
 
@@ -173,12 +164,6 @@ grid.fig.tight_layout()
 ```{python}
 # indexing 
 met.set_index('Clock.Today', inplace = True)
-```
-
-```{python}
-# Try 2 sites the same time 
-ThermalTimeAccum = met.loc[:, 'mean'].cumsum()
-ThermalTimeAccum.index = pd.to_datetime(ThermalTimeAccum.index)
 ```
 
 ## Combine thermal time with cover data
@@ -374,80 +359,48 @@ LAIGroupedMeanI12Forced
 LAIGroupedMeanADForced
 ```
 
-# Output the LI DAILY
+# Output the LAI and k value
 
 ```{python}
-# Reset the index back to a column
-LAIGroupedMeanADForced.columns
-```
-
-```{python}
+# Stack them together
 CoverDFAD = LAIGroupedMeanADForced.drop('AccumTT', axis=1, level=0).stack([0,1]).reset_index()
-```
-
-```{python}
-CoverDFAD.columns = ['Clock.Today', 'Experiment', 'SowingDate', 'LAImod']
-```
-
-```{python}
-CoverDFAD[CoverDFAD['LAImod'] == 0]
-```
-
-```{python}
-# Test
-CoverDFAD.loc[CoverDFAD.SowingDate == 'SD1', ['Clock.Today', 'LAImod']].\
-to_csv('../../03processed-data/CoverData/CoverDataSD1.csv',index = False)
-```
-
-```{python}
-SDs = ['SD' + str(SD) for SD in range(1, 11)]
-SDs
-for i in SDs:
-    CoverDFAD.loc[CoverDFAD.SowingDate == i,
-                  ['Clock.Today', 'LAImod']].\
-    to_csv('../../03processed-data/CoverData/LAIAshleyDene' + i + '.csv',index = False)
-```
-
-```{python}
 CoverDFI12 = LAIGroupedMeanI12Forced.drop('AccumTT', axis=1, level=0).stack([0,1]).reset_index()
+CoverDF = pd.concat([CoverDFAD, CoverDFI12], ignore_index = True )
 ```
 
 ```{python}
-CoverDFI12.columns = ['Clock.Today', 'Experiment', 'SowingDate', 'LAImod']
+CoverDF.columns = ['Clock.Today', 'Experiment', 'SowingDate', 'LAImod']
+# Add the k for all 
+CoverDF['k'] = 0.94
+# Replace the k for the summur crop in Ashley Dene
+CoverDF.loc[(CoverDF['Clock.Today'] > '2011-11-30') 
+               & (CoverDF['Clock.Today'] < '2012-03-01') 
+               & (CoverDF['Experiment'] == 'AshleyDene'), 'k'] = 0.66
+CoverDF['LI'] = 1 - np.exp( - CoverDF['k'] * CoverDF['LAImod'])
+```
+
+```{python}
+SDs = ['SD' + str(SD) for SD in range(1, 11)]
+Sites = ['AshleyDene', 'Iversen12']
+for i in SDs:
+    for j in Sites:
+        CoverDF.loc[(CoverDF['Experiment'] == j)
+                    & (CoverDF['SowingDate'] == i),
+                    ['Clock.Today', 'LAImod', 'k']].\
+        to_csv('../../03processed-data/CoverData/LAI' + j + i + '.csv',index = False)
+```
+
+# Out put light interception for Ashley Dene
+
+```{python}
 SDs = ['SD' + str(SD) for SD in range(1, 11)]
 SDs
 for i in SDs:
-    CoverDFI12.loc[CoverDFI12['SowingDate'] == i, 
-                   ['Clock.Today', 'LAImod']].\
-    to_csv('../../03processed-data/CoverData/LAIIversen12' + i + '.csv',
-                                                 index = False)
-```
-
-# Out put k value with light interception for Ashley Dene
-
-```{python}
-CoverDFAD['k'] = 0.94
-CoverDFAD['LI'] = 1 - np.exp( - CoverDFAD['k'] * CoverDFAD['LAImod'])
-CoverDFI12['k'] = 0.94
-CoverDFI12['LI'] = 1 - np.exp( - CoverDFI12['k'] * CoverDFI12['LAImod'])
-```
-
-```{python}
-SDs = ['SD' + str(SD) for SD in range(1, 11)]
-SDs
-for j in SDs:
-    CoverDFAD.loc[(CoverDFAD['SowingDate'] == j),
-                  ['Clock.Today', 'LI']]. \
-    to_csv('../../03processed-data/CoverData/CoverAshleyDene' + j + '.csv',index = False)
-```
-
-```{python}
-SDs = ['SD' + str(SD) for SD in range(1, 11)]
-SDs
-for j in SDs:
-    CoverDFI12.loc[(CoverDFI12['SowingDate'] == j),
-                  ['Clock.Today', 'LI']]. \
-    to_csv('../../03processed-data/CoverData/CoverIversen12' + j + '.csv',index = False)
+    for j in Sites:
+        CoverDF.loc[(CoverDF['Experiment'] == j)
+                    & (CoverDF['SowingDate'] == i),
+                      ['Clock.Today', 'LI']]. \
+        to_csv('../../03processed-data/CoverData/Cover' + i + j + '.csv',index = False)
 ```
 
 ```{python}
@@ -458,24 +411,6 @@ LAI_Height.loc[LAI_Height['Experiment'] != 'AshleyDene', 'Height'].max()
 #### Max height was _390 mm_ when the crop had full cover in AD
 #### Max height was _595 mm_ when the crop had full cover in I12
 
-```{python}
-LAI_Height.loc[(LAI_Height['Experiment'] == 'AshleyDene')
-               &(LAI_Height['Height'] > 38), :]
-LAI_Height.loc[(LAI_Height['Experiment'] != 'AshleyDene')
-               &(LAI_Height['Height'] > 58), :]
-```
-
-```{python}
-df = LAI_Height.groupby(['Experiment','SowingDate', 'Clock.Today'])['LAImod'].mean()
-df = df.reset_index()
-sites = ['AshleyDene', 'Iversen12']
-for i in sites:
-    for j in SDs:
-        df.loc[(df['Experiment'] == i) 
-               & (df['SowingDate'] == j),
-               ['Clock.Today', 'LAImod']]. \
-        to_csv('../../03processed-data/CoverData/Observation' + i + j + '.csv',index = False)
-```
 
 # Process observation data into treatment excels 
 
@@ -484,7 +419,7 @@ for i in sites:
 import xlsxwriter
 df = pd.read_excel('../../03processed-data/20200630Whole.xlsx')
 df['SimulationName'] = 'Experiment'
-for i in sites:
+for i in Sites:
     for j in SDs:
         sitesd = df.loc[(df['Experiment'] == i) 
                         & (df['SowingDate'] == j)]
@@ -495,8 +430,4 @@ for i in sites:
         sitesd.to_excel(writer, sheet_name='Observed', index = False)
         # Close the Pandas Excel writer and output the Excel file.
         writer.save()
-```
-
-```{python}
-
 ```

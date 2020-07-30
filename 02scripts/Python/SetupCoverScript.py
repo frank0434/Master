@@ -1,18 +1,3 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py:light
-#     text_representation:
-#       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.4.2
-#   kernelspec:
-#     display_name: Python 3
-#     language: python
-#     name: python3
-# ---
-
 #load packages
 import sqlite3
 import re
@@ -36,52 +21,17 @@ LAI_Height = biomass.loc[(biomass['Seed'] == 'CS')
                          & (biomass['Harvest.No.']!='Post'), 
                          ['Experiment', 'Clock.Today', 'SowingDate', 'Rep',
                           'Plot', 'Rotation.No.', 'Harvest.No.', 'Height','LAImod']]
-# Plot that had 'Post' measurement should be out 
-LAI_Height[(LAI_Height['Harvest.No.'] == 'Post') & (LAI_Height.LAImod==0)]
-# Add the k for all 
-LAI_Height['k'] = 0.94
-# Replace the k for the summur crop in Ashley Dene
-# LAI_Height.loc[(LAI_Height['Clock.Today'] > '2011-11-30') 
-#                & (LAI_Height['Clock.Today'] < '2012-03-01') 
-#                & (LAI_Height['Experiment'] == 'AshleyDene'), 'k'] = 0.66
 LAI_Height['Date'] = pd.to_datetime(LAI_Height['Clock.Today']).dt.strftime('%Y %b')
 
-# ### Output LAI as the slurp input 
-
-SDs = ['SD' + str(SD) for SD in range(1, 11)]
-SDs
-sites = ['AshleyDene', 'Iversen12']
-for site in sites: 
-    for i in SDs:
-        LAI_Height.loc[(LAI_Height['Experiment'] == site) & (LAI_Height.SowingDate == i),
-                       ['Clock.Today', 'LAImod','k']].\
-        to_csv('../../03processed-data/CoverData/LAI' + site + i + '.csv',index = False)
-
-LAI_Height['LI_frac'] = 1 - np.exp( - LAI_Height['k'] * LAI_Height['LAImod'])
-
-# +
-# Select only LI column
-LI = LAI_Height.loc[:, ['Experiment', 'Clock.Today','SowingDate', 
-                        'Rep', 'Plot', 
-                        'LI_frac']]
-# print_full(LI)
-# remove the rows that have 0S - Likely to be wrong 0s
-LI = LI[LI['LI_frac'] != 0.00]
-LI = LI.pivot_table(index = 'Clock.Today', 
-                    columns=['Experiment', 'SowingDate', 
-                             'Rep', 'Plot'],
-                    values = 'LI_frac')
-
+LAI = LAI_Height.pivot_table(index = 'Clock.Today', 
+                    columns=['Experiment', 'SowingDate'],
+                    values = 'LAImod')
 # Change the index to datetime tyep
-LI.index = pd.to_datetime(LI.index)
+LAI.index = pd.to_datetime(LAI.index)
 # Rename the index name 
-LI.index.name = 'Clock.Today'
+LAI.index.name = 'Clock.Today'
 # Normalise the datetime to midnight 
-LI.index = LI.index.normalize()
-
-# -
-
-LIGroupedMean = LI.groupby(axis=1, level=['Experiment', 'SowingDate']).mean()
+LAI.index = LAI.index.normalize()
 
 # +
 # Met data to calculate thermal time
@@ -102,13 +52,6 @@ met = met[(met['Clock.Today'] > '2010-06-01')
           &(met['Clock.Today'] < '2012-08-01')]
 # indexing 
 met.set_index('Clock.Today', inplace = True)
-# Try 2 sites the same time 
-ThermalTimeAccum = met.loc[:, 'mean'].cumsum()
-ThermalTimeAccum.index = pd.to_datetime(ThermalTimeAccum.index)
-#Reindex coverdata frame to daily values
-LIDaily = LI.reindex(ThermalTimeAccum.index)
-LIDaily.loc[:, 'AccumTT'] = ThermalTimeAccum
-# CoverDataDaily.loc[:,'AccumTT'] = ThermalTimeAccum
 
 sowingdates = pd.read_sql('Select * from SowingDates',  con)
 sowingdates.AD = pd.to_datetime(sowingdates.AD)
@@ -118,79 +61,106 @@ sowingdates.set_index('SD', inplace=True)
 sowingdates.columns = ['AshleyDene', 'Iversen12']
 
 # +
-LIAD = LI.filter(regex = 'Ashley')
+LAIAD = LAI.filter(regex = 'Ashley')
 #Reindex coverdata frame to daily values
 TTAccumAD = met.loc[(met['Experiment'] == 'AshleyDene')
-                    & (met.index > '2010-10-20'), 'mean'].cumsum()
+                    & (met.index > '2010-10-01'), 'mean'].cumsum()
 TTAccumAD.index = pd.to_datetime(TTAccumAD.index)
 
-LIDailyAD = LIAD.reindex(TTAccumAD.index)
-LIDailyAD.loc[:, 'AccumTT'] = TTAccumAD
+LAIDailyAD = LAIAD.reindex(TTAccumAD.index)
+LAIDailyAD.loc[:, 'AccumTT'] = TTAccumAD
 
+# Force LAI to be zero
 for sd in sowingdates.index:
     # Select the date for correpond sowing date
     date0 = sowingdates.at[sd, 'AshleyDene']
     # A slicer
     idx = pd.IndexSlice
     # Replace the row values with 0s
-    LIDailyAD.loc[LIDailyAD.index <= date0, idx[:,sd]] = float(0.001)
+    LAIDailyAD.loc[LAIDailyAD.index <= date0, idx[:,sd]] = float(0.001)
     # Verification 
-    df = LIDailyAD.loc[LIDailyAD.index == date0, idx[:,sd]]
-for p in LIDailyAD.columns:
-    Obs = LIDailyAD.loc[:,p].dropna()
-    LIDailyAD.loc[:,p] = np.interp(LIDailyAD.AccumTT,
-                                   LIDailyAD.loc[Obs.index,'AccumTT'],Obs)
+    df = LAIDailyAD.loc[LAIDailyAD.index == date0, idx[:,sd]]
+for p in LAIDailyAD.columns:
+    Obs = LAIDailyAD.loc[:,p].dropna()
+    LAIDailyAD.loc[:,p] = np.interp(LAIDailyAD.AccumTT,
+                                   LAIDailyAD.loc[Obs.index,'AccumTT'],Obs)
 # -
 
-LIGroupedMeanADForced = LIDailyAD.groupby(axis=1, level=['Experiment', 'SowingDate']).mean()
+LAIGroupedMeanADForced = LAIDailyAD.groupby(axis=1, level=['Experiment', 'SowingDate']).mean()
 
 # +
-LII12 = LI.filter(regex = 'Iver')
-#Reindex coverdata frame to daily values
-TTAccumI12 = met.loc[(met['Experiment'] == 'Iversen12')
-                    & (met.index > '2010-10-03'), 'mean'].cumsum()
-TTAccumI12.index = pd.to_datetime(TTAccumI12.index)
+LAII12 = LAI.filter(regex = 'Ive')
 
-LIDailyI12 = LII12.reindex(TTAccumI12.index)
-LIDailyI12.loc[:, 'AccumTT'] = TTAccumI12
+TTAccumI12 = met.loc[(met['Experiment'] == 'Iversen12')
+                      & (met.index > '2010-10-01'), 'mean'].cumsum()
+TTAccumI12.index = pd.to_datetime(TTAccumI12.index)
+LAIDailyI12 = LAII12.reindex(TTAccumI12.index)  #Reindex coverdata frame to daily values
+LAIDailyI12.loc[:,'AccumTT'] = TTAccumI12
 for sd in sowingdates.index:
     # Select the date for correpond sowing date
     date0 = sowingdates.at[sd, 'Iversen12']
     # A slicer
     idx = pd.IndexSlice
     # Replace the row values with 0s
-    LIDailyI12.loc[LIDailyI12.index <= date0, idx[:,sd]] = float(0.001)
-#     # Verification 
-    df = LIDailyI12.loc[LIDailyI12.index == date0, idx[:,sd]]
+    LAIDailyI12.loc[LAIDailyI12.index <= date0, idx[:,sd]] = float(0.001)
+    # Verification 
+    df = LAIDailyI12.loc[LAIDailyI12.index == date0, idx[:,sd]]
 #     print(df)
-for p in LIDailyI12.columns:
-    Obs = LIDailyI12.loc[:,p].dropna()
-    LIDailyI12.loc[:,p] = np.interp(LIDailyI12.AccumTT,
-                                   LIDailyI12.loc[Obs.index,'AccumTT'],Obs)
-LIGroupedMeanI12Forced = LIDailyI12.groupby(axis=1, level=['Experiment', 'SowingDate']).mean()
+# Interpolate LAI daily value by thermal time 
+for p in LAIDailyI12.columns:
+    Obs = LAIDailyI12.loc[:,p].dropna()
+    LAIDailyI12.loc[:,p] = np.interp(LAIDailyI12.AccumTT,
+                                   LAIDailyI12.loc[Obs.index,'AccumTT'],Obs)
+LAIGroupedMeanI12Forced = LAIDailyI12.groupby(axis=1, level=['Experiment', 'SowingDate']).mean()
 # -
 
-CoverDF = LIGroupedMeanADForced.drop('AccumTT', axis=1, level=0).stack([0,1]).reset_index()
-CoverDFI12 = LIGroupedMeanI12Forced.drop('AccumTT', axis=1, level=0).stack([0,1]).reset_index()
-CoverDF.columns = ['Date', 'Experiment', 'SowingDate', 'LightInterception']
-CoverDFI12.columns = ['Date', 'Experiment', 'SowingDate', 'LightInterception']
-CoverDF = pd.concat([CoverDF,CoverDFI12], axis=0)
+# Stack them together
+CoverDFAD = LAIGroupedMeanADForced.drop('AccumTT', axis=1, level=0).stack([0,1]).reset_index()
+CoverDFI12 = LAIGroupedMeanI12Forced.drop('AccumTT', axis=1, level=0).stack([0,1]).reset_index()
+CoverDF = pd.concat([CoverDFAD, CoverDFI12], ignore_index = True )
 
+CoverDF.columns = ['Clock.Today', 'Experiment', 'SowingDate', 'LAImod']
 # Add the k for all 
 CoverDF['k'] = 0.94
 # Replace the k for the summur crop in Ashley Dene
-# CoverDF.loc[(CoverDF['Date'] > '2011-11-30') 
-#                & (CoverDF['Date'] < '2012-03-01') 
-#                & (CoverDF['Experiment'] == 'AshleyDene'), 'k'] = 0.66
+CoverDF.loc[(CoverDF['Clock.Today'] > '2011-11-30') 
+               & (CoverDF['Clock.Today'] < '2012-03-01') 
+               & (CoverDF['Experiment'] == 'AshleyDene'), 'k'] = 0.66
+CoverDF['LI'] = 1 - np.exp( - CoverDF['k'] * CoverDF['LAImod'])
 
-# Output the coverData with k values 
+SDs = ['SD' + str(SD) for SD in range(1, 11)]
+Sites = ['AshleyDene', 'Iversen12']
+for i in SDs:
+    for j in Sites:
+        CoverDF.loc[(CoverDF['Experiment'] == j)
+                    & (CoverDF['SowingDate'] == i),
+                    ['Clock.Today', 'LAImod', 'k']].\
+        to_csv('../../03processed-data/CoverData/LAI' + j + i + '.csv',index = False)
+
 SDs = ['SD' + str(SD) for SD in range(1, 11)]
 SDs
-for i in sites:
+for i in SDs:
+    for j in Sites:
+        CoverDF.loc[(CoverDF['Experiment'] == j)
+                    & (CoverDF['SowingDate'] == i),
+                      ['Clock.Today', 'LI']]. \
+        to_csv('../../03processed-data/CoverData/Cover' + i + j + '.csv',index = False)
+
+# # Process observation data into treatment excels 
+
+import xlsxwriter
+df = pd.read_excel('../../03processed-data/20200630Whole.xlsx')
+df['SimulationName'] = 'Experiment'
+for i in Sites:
     for j in SDs:
-        CoverDF.loc[(CoverDF['SowingDate'] == j)
-                    & (CoverDF['Experiment'] == i),
-                    ['Date', 'LightInterception','k']]. \
-        to_csv('../../03processed-data/CoverData/CoverData' + i + j + '.csv', index = False)
+        sitesd = df.loc[(df['Experiment'] == i) 
+                        & (df['SowingDate'] == j)]
+
+        # Create a Pandas Excel writer using XlsxWriter as the engine.
+        writer = pd.ExcelWriter('../../03processed-data/CoverData/Observation' + i + j + '.xlsx', engine='xlsxwriter') 
+        # Convert the dataframe to an XlsxWriter Excel object.
+        sitesd.to_excel(writer, sheet_name='Observed', index = False)
+        # Close the Pandas Excel writer and output the Excel file.
+        writer.save()
 
 # CoverDF
