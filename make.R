@@ -34,14 +34,13 @@ stats_key_SW_extra <- c(stats_key_SW, "NSE", "R2", "RMSE")
 # Run all apsimx files - take long time 
 drake::make(plan_config, lock_envir = F, memory_strategy = "autoclean", 
             garbage_collection = TRUE)
-library(visNetwork) 
+
 vis_drake_graph(
   plan_config, targets_only = TRUE,
   font_size = 25,
   # file = "05figures/dependency.png",
   navigationButtons = FALSE
-  # parallelism = "clustermq",
-  # jobs = 16
+
 )
 
 # # Analysis plan will  ---------------------------------------------------

@@ -60,6 +60,7 @@ BD = "[Soil].Physical.BD = "
 SDnode = "[SlurpSowingRule].Script.SowingDate = "
 ClockStart = "[Clock].Start = "
 CoverData = "[SetCropVariables].Script.CoverFile = "
+ObserveData = "[DataStore].Observed.FileNames = "
 initialSW = "[Soil].InitialConditions.SW = "
 
 DUL <- "[Soil].Physical.DUL = "
@@ -96,6 +97,8 @@ for (i in sites) {
     replacement_ClockStart <- paste0(replacement_SD, "T00:00:00")
     ## User provide light interception data 
     replacement_CoverData <- file.path(Sys.getenv("CoverDataDir"),paste0("LAI", i, j, ".csv"))
+    replacement_ObserveData <- file.path(Sys.getenv("CoverDataDir"),
+                                         paste0("Observation", i, j, ".xlsx"))
     ## Soil parameters 
     replacement_initialSW <- SW_DUL_LL[Experiment == i & SowingDate == j]$SW
     replacement_DUL <- SW_DUL_LL[Experiment == i & SowingDate == j]$DUL
@@ -116,7 +119,7 @@ for (i in sites) {
       apsimx_SD <- paste0(SDnode, replacement_SD)
       apsimx_ClockStart <- paste0(ClockStart, replacement_ClockStart)
       apsimx_CoverData <- paste0(CoverData, replacement_CoverData)
-      
+      apsimx_ObserveData <- paste0(ObserveData, replacement_ObserveData)
       apsimx_initialSW <- paste0(initialSW, paste(replacement_initialSW,collapse = ","))
       apsimx_DUL <- paste0(DUL, paste(replacement_DUL,collapse = ","))
       apsimx_LL <- paste0(LL, paste(replacement_LL,collapse = ","))
@@ -134,6 +137,7 @@ for (i in sites) {
           apsimx_BD,
           apsimx_SD,
           apsimx_CoverData,
+          apsimx_ObserveData,
           apsimx_initialSW,
           apsimx_DUL,
           apsimx_KL,
