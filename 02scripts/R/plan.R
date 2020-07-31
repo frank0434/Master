@@ -100,7 +100,7 @@ plan_analysis <- drake::drake_plan(
   # Joining the prediction and observation for Soil water in each layer
   pred_obs = target(
     merge.data.table(pred_SW, long, 
-                     by.x = c("Date", "Depth","Experiment", "SowingDate"), 
+                     by.x = c("Clock.Today", "Depth","Experiment", "SowingDate"), 
                      by.y = c("Clock.Today", "Depth","Experiment", "SowingDate"), 
                      all.x = TRUE )[, Depth := forcats::fct_relevel(as.factor(Depth), paste0("SW(",1:22, ")"))],
     transform = map(pred_SW, long)
