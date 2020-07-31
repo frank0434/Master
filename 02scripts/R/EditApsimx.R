@@ -103,7 +103,7 @@ for (i in sites) {
     ## ClockStart
     replacement_ClockStart <- paste0(replacement_SD, "T00:00:00")
     ## User provide light interception data 
-    replacement_CoverData <- file.path(Sys.getenv("CoverDataDir"),paste0("CoverData", i, j, ".csv"))
+    replacement_CoverData <- file.path(Sys.getenv("CoverDataDir"),paste0("LAI", i, j, ".csv"))
     ## Soil parameters 
     replacement_initialSW <- SW_DUL_LL[Experiment == i & SowingDate == j]$SW
     replacement_DUL <- SW_DUL_LL[Experiment == i & SowingDate == j]$DUL
@@ -171,12 +171,12 @@ t2 - t1
 apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
 apsimx_flag <- "/Edit"
 apsimx_Basefile <- file.path(Sys.getenv("BaseApsimxDir"), "20200517BaseSlurp.apsimx")
-apsimx_sims_temp <- file.path(Sys.getenv("SimsDir"), "temp.apsimx")
+# apsimx_sims_temp <- file.path(Sys.getenv("SimsDir"), "temp.apsimx")
 apsimx_sims_dir <- Sys.getenv("SimsDir")
 apsimx_config <- paste0(Sys.getenv("ConfigFileDir"),"/ConfigSKL_")
 paste0(Sys.getenv("ConfigFileDir"),"/ConfigSKL_", skl[1], i, j, ".txt")
 # Copy the base apsimx file to a temp file in a disposable dir
-system(paste('cp', apsimx_Basefile, apsimx_sims_temp))
+# system(paste('cp', apsimx_Basefile, apsimx_sims_temp))
 # system(paste(apsimx, apsimx_sims_temp, apsimx_flag, paste0(apsimx_config, sites[1], SDs[1],".txt")))
 
 t1 <- Sys.time()
@@ -186,7 +186,7 @@ for(j in sites){
       # Edit the base apsimx file and save it to a new name
       ## modify the apsimx file
       modifiedName <- paste0(apsimx_sims_dir, "/ModifiedSKL_", skl, j, i, ".apsimx")
-      system(paste("cp", apsimx_sims_temp, modifiedName))
+      system(paste("cp", apsimx_Basefile, modifiedName))
       system(paste(apsimx, modifiedName, apsimx_flag, paste0(apsimx_config,  skl, j, i,".txt")))
       ## rename the modified one
       # system(paste("mv", apsimx_sims_temp, paste0(apsimx_sims_dir, "/Modified", j, i, ".apsimx")))
@@ -194,7 +194,7 @@ for(j in sites){
   }
 }
 ## delete the temp apsimx 
-system(paste("rm", paste0(apsimx_sims_dir, "/temp*")))
+# system(paste("rm", paste0(apsimx_sims_dir, "/temp*")))
 t2 <- Sys.time()
 t2 - t1
 }
