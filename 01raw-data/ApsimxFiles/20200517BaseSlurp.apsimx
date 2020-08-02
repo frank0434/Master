@@ -14,7 +14,7 @@
         {
           "$type": "Models.PostSimulationTools.ExcelInput, Models",
           "FileNames": [
-            "C:\\Data\\Master\\03processed-data\\ADSD1Test.xlsx"
+            "C:\\Data\\Master\\03processed-data\\CoverData\\ObservationAshleyDeneSD1.xlsx"
           ],
           "SheetNames": [
             "Observed"
