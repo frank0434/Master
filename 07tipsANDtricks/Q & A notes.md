@@ -1,3 +1,15 @@
+# 20200805
+
+Catch up with Hamish: 
+1. manual fitting will help understand the logic behind the model 
+2. automated optimisation will make things robust but won't necessary to help understand anything.  
+3. carry on doing the layer by layer fitting. 
+4. might end up with doing both manual fitting and optimisation. 
+5. RFV in slurp has a temperature effects. The value setup is the max rate when temperature is optimal 25 degree.
+	But the air tempareture will be less than 25 most of the time, so it is ok to extend the upper bounary a bit more. 
+6. Apsimx use the decimal places to do simulations but not necessary show up in the UI. UI only displays 3 decimals. 
+
+
 # 20200802  
 As Roberston's paper suggested that RFV was more important
 `This suggests that the most significant determinant of the threshold is the rate at which the crop gains access to water in the profile, which is a function of the root front velocity`
