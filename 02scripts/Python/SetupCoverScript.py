@@ -9,7 +9,7 @@ import seaborn as sns
 import math
 
 # Build connection with db
-con = sqlite3.connect('../../03processed-data/Richard.sqlite3')
+con = sqlite3.connect('./03processed-data/Richard.sqlite3')
 mycur = con.cursor() 
 mycur.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
 # Read data in 
@@ -135,7 +135,7 @@ for i in SDs:
         CoverDF.loc[(CoverDF['Experiment'] == j)
                     & (CoverDF['SowingDate'] == i),
                     ['Clock.Today', 'LAImod', 'k']].\
-        to_csv('../../03processed-data/CoverData/LAI' + j + i + '.csv',index = False)
+        to_csv('./03processed-data/CoverData/LAI' + j + i + '.csv',index = False)
 
 SDs = ['SD' + str(SD) for SD in range(1, 11)]
 SDs
@@ -144,12 +144,12 @@ for i in SDs:
         CoverDF.loc[(CoverDF['Experiment'] == j)
                     & (CoverDF['SowingDate'] == i),
                       ['Clock.Today', 'LI']]. \
-        to_csv('../../03processed-data/CoverData/Cover' + i + j + '.csv',index = False)
+        to_csv('./03processed-data/CoverData/Cover' + i + j + '.csv',index = False)
 
 # # Process observation data into treatment excels 
 
 import xlsxwriter
-df = pd.read_excel('../../03processed-data/20200630Whole.xlsx')
+df = pd.read_excel('./03processed-data/20200630Whole.xlsx')
 df['SimulationName'] = 'Experiment'
 for i in Sites:
     for j in SDs:
@@ -157,7 +157,7 @@ for i in Sites:
                         & (df['SowingDate'] == j)]
 
         # Create a Pandas Excel writer using XlsxWriter as the engine.
-        writer = pd.ExcelWriter('../../03processed-data/CoverData/Observation' + i + j + '.xlsx', engine='xlsxwriter') 
+        writer = pd.ExcelWriter('./03processed-data/CoverData/Observation' + i + j + '.xlsx', engine='xlsxwriter') 
         # Convert the dataframe to an XlsxWriter Excel object.
         sitesd.to_excel(writer, sheet_name='Observed', index = False)
         # Close the Pandas Excel writer and output the Excel file.
