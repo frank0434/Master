@@ -24,7 +24,7 @@ import seaborn as sns
 import math
 
 # Build connection with db
-con = sqlite3.connect('../../03processed-data/Richard.sqlite3')
+con = sqlite3.connect('./03processed-data/Richard.sqlite3')
 mycur = con.cursor() 
 mycur.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
 # Read data in 
@@ -54,7 +54,7 @@ sites = ['AshleyDene', 'Iversen12']
 for site in sites: 
     for i in SDs:
         LAI_Height.loc[(LAI_Height['Experiment'] == site) & (LAI_Height.SowingDate == i),
-                       ['Clock.Today', 'LAImod','k']].to_csv('../../03processed-data/CoverData/LAI' + site + i + '.csv',index = False)
+                       ['Clock.Today', 'LAImod','k']].to_csv('./03processed-data/CoverData/LAI' + site + i + '.csv',index = False)
 
 LAI_Height['LI_frac'] = 1 - np.exp( - LAI_Height['k'] * LAI_Height['LAImod'])
 
@@ -190,6 +190,6 @@ for i in sites:
         CoverDF.loc[(CoverDF['SowingDate'] == j)
                     & (CoverDF['Experiment'] == i),
                     ['Date', 'LightInterception','k']]. \
-        to_csv('../../03processed-data/CoverData/CoverData' + i + j + '.csv', index = False)
+        to_csv('./03processed-data/CoverData/CoverData' + i + j + '.csv', index = False)
 
 # CoverDF

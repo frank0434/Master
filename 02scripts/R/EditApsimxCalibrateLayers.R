@@ -127,7 +127,7 @@ for (i in Sites) {
     ## ClockStart
     replacement_ClockStart <- paste0(replacement_SD, "T00:00:00")
     ## User provide light interception data 
-    replacement_CoverData <- file.path(Sys.getenv("CoverDataDir"),paste0("CoverData", i, j, ".csv"))
+    replacement_CoverData <- file.path(Sys.getenv("CoverDataDir"),paste0("LAI", i, j, ".csv"))
     ## Soil parameters 
     replacement_initialSW <- SW_DUL_LL[Experiment == i & SowingDate == j]$SW
     replacement_DUL <- SW_DUL_LL[Experiment == i & SowingDate == j]$DUL
