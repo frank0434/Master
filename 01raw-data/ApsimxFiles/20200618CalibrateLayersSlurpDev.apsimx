@@ -113,7 +113,7 @@
                 },
                 {
                   "$type": "Models.Manager, Models",
-                  "Code": "\r\nusing Models.Soils;\r\nusing APSIM.Shared.Utilities;\r\nusing Models.PMF;\r\nusing Models.Core;\r\nusing System;\r\n        \r\nnamespace Models\r\n{\r\n    [Serializable] \r\n    [System.Xml.Serialization.XmlInclude(typeof(Model))]\r\n    public class Script : Model\r\n    {\r\n        [Link] Plant Slurp;\r\n        [Link] Clock Clock;\r\n        [Link] Soil Soil;\r\n        [Link] Zone zone;\r\n        \r\n        [Description(\"Cultivar\")]\r\n        public string CultivarName { get; set; }\r\n        [Description(\"Initial Root Depth\")]\r\n        public double InitialRootDepth { get; set; }\r\n        [Description(\"Sowing Date\")]\r\n        public DateTime SowingDate { get; set; }\r\n        [Description(\"Maximum Root Depth\")]\r\n        public double RootDepth { get; set; }\r\n        [Description(\"Roof Front Velocity\")]\r\n        public double RFV { get; set; }\r\n\r\n        [Description(\"Factor to change Kl modifier with Depth\")]\r\n        public double KLReductionFactor { get; set; }\r\n        [Description(\"Depth that KL starts to decline\")]\r\n        public double KLReductionDepth { get; set; }\r\n\r\n        public double[] YKLModifiers { get; set; }\r\n        public double[] XDepth { get; set; }\r\n\r\n        private double Depth { get; set; }\r\n\r\n        [Description(\"Maximum Stomatal Conductance\")]\r\n        public double MaxG { get; set; }\r\n        [Description(\"Stomatal Radn response\")]\r\n        public double R50 { get; set; }\r\n        \r\n        [EventSubscribe(\"DoManagement\")]\r\n        private void OnDoManagement(object sender, EventArgs e)\r\n        {\r\n            if (Clock.Today.Date == SowingDate)\r\n            {\r\n                Slurp.Sow(cultivar: CultivarName, population: 1, depth: InitialRootDepth, rowSpacing: 150);\r\n                \r\n\r\n                YKLModifiers = new double[Soil.Thickness.Length];\r\n                XDepth = new double[Soil.Thickness.Length];\r\n                Depth = 0;\r\n                for (int layer = 0; layer < Soil.Thickness.Length; layer++)\r\n                {\r\n                    Depth += Soil.Thickness[layer] / 2;  //Add half of the thickness of the current layer so depth is the mid depth of that layer\r\n                    if (Depth <= KLReductionDepth)\r\n                    {\r\n                        YKLModifiers[layer] = 1;\r\n                        XDepth[layer] = Depth;\r\n                    }\r\n                    else\r\n                    {\r\n                        double KLMod = 1 * Math.Exp(-KLReductionFactor * (Depth - KLReductionDepth));\r\n                        YKLModifiers[layer] = KLMod;\r\n                        XDepth[layer] = Depth;\r\n                    }\r\n                    Depth += Soil.Thickness[layer] / 2;  //Add the other half of the current layer so depth is the top of the next layer\r\n                }\r\n                object KLMods = YKLModifiers;\r\n                zone.Set(\"Slurp.Root.KLModifier.XYPairs.Y\", KLMods);\r\n                object Depths = XDepth;\r\n                zone.Set(\"Slurp.Root.KLModifier.XYPairs.X\", Depths);\r\n\r\n                object RD = RootDepth;\r\n                zone.Set(\"Slurp.Root.MaximumRootDepth.FixedValue\", RD);\r\n                object RV = RFV;\r\n                zone.Set(\"Slurp.Root.RootFrontVelocity.Potential.FixedValue\", RV);\r\n                object GMaxValue = MaxG;\r\n                zone.Set(\"Slurp.Leaf.Gsmax350\", GMaxValue); \r\n                object R50Value = R50; \r\n                zone.Set(\"Slurp.Leaf.R50\", R50Value); \r\n                \r\n            }\r\n        }\r\n    }\r\n}\r\n                \r\n",
+                  "Code": "\r\nusing Models.Soils;\r\nusing APSIM.Shared.Utilities;\r\nusing Models.PMF;\r\nusing Models.Core;\r\nusing System;\r\n        \r\nnamespace Models\r\n{\r\n    [Serializable] \r\n    [System.Xml.Serialization.XmlInclude(typeof(Model))]\r\n    public class Script : Model\r\n    {\r\n        [Link] Plant Slurp;\r\n        [Link] Clock Clock;\r\n        [Link] Soil Soil;\r\n        [Link] Zone zone;\r\n        \r\n        [Description(\"Cultivar\")]\r\n        public string CultivarName { get; set; }\r\n        [Description(\"Initial Root Depth\")]\r\n        public double InitialRootDepth { get; set; }\r\n        [Description(\"Sowing Date\")]\r\n        public DateTime SowingDate { get; set; }\r\n        [Description(\"Maximum Root Depth\")]\r\n        public double RootDepth { get; set; }\r\n        [Description(\"Roof Front Velocity\")]\r\n        public double RFV { get; set; }\r\n\r\n        [Description(\"Factor to change Kl modifier with Depth\")]\r\n        public double KLReductionFactor { get; set; }\r\n        [Description(\"Depth that KL starts to decline\")]\r\n        public double KLReductionDepth { get; set; }\r\n\r\n        public double[] YKLModifiers { get; set; }\r\n        public double[] XDepth { get; set; }\r\n\r\n        private double Depth { get; set; }\r\n\r\n        [Description(\"Maximum Stomatal Conductance\")]\r\n        public double MaxG { get; set; }\r\n        [Description(\"Stomatal Radn response\")]\r\n        public double R50 { get; set; }\r\n        \r\n        [EventSubscribe(\"DoManagement\")]\r\n        private void OnDoManagement(object sender, EventArgs e)\r\n        {\r\n            if (Clock.Today.Date == SowingDate)\r\n            {\r\n                Slurp.Sow(cultivar: CultivarName, population: 1, depth: InitialRootDepth, rowSpacing: 150);\r\n                \r\n\r\n                YKLModifiers = new double[Soil.Thickness.Length];\r\n                XDepth = new double[Soil.Thickness.Length];\r\n                Depth = 0;\r\n                for (int layer = 0; layer < Soil.Thickness.Length; layer++)\r\n                {\r\n                    Depth += Soil.Thickness[layer] / 2;  //Add half of the thickness of the current layer so depth is the mid depth of that layer\r\n                    if (Depth <= KLReductionDepth)\r\n                    {\r\n                        YKLModifiers[layer] = 1;\r\n                        XDepth[layer] = Depth;\r\n                    }\r\n                    else\r\n                    {\r\n                        double KLMod = 1 * Math.Exp(-KLReductionFactor * (Depth - KLReductionDepth));\r\n                        YKLModifiers[layer] = KLMod;\r\n                        XDepth[layer] = Depth;\r\n                    }\r\n                    Depth += Soil.Thickness[layer] / 2;  //Add the other half of the current layer so depth is the top of the next layer\r\n                }\r\n                /*object KLMods = YKLModifiers;\r\n                zone.Set(\"Slurp.Root.KLModifier.XYPairs.Y\", KLMods);\r\n                object Depths = XDepth;\r\n                zone.Set(\"Slurp.Root.KLModifier.XYPairs.X\", Depths);\r\n                */\r\n                object RD = RootDepth;\r\n                zone.Set(\"Slurp.Root.MaximumRootDepth.FixedValue\", RD);\r\n                object RV = RFV;\r\n                zone.Set(\"Slurp.Root.RootFrontVelocity.Potential.FixedValue\", RV);\r\n                object GMaxValue = MaxG;\r\n                zone.Set(\"Slurp.Leaf.Gsmax350\", GMaxValue); \r\n                object R50Value = R50; \r\n                zone.Set(\"Slurp.Leaf.R50\", R50Value); \r\n                \r\n            }\r\n        }\r\n    }\r\n}\r\n                \r\n",
                   "Parameters": [
                     {
                       "Key": "CultivarName",
@@ -573,7 +573,7 @@
                         0.1
                       ],
                       "KL": [
-                        0.055,
+                        0.105,
                         0.1,
                         0.11,
                         0.11,
@@ -1018,7 +1018,7 @@
                   "NO3N": null,
                   "NH4N": null,
                   "SW": [
-                    0.204,
+                    0.11,
                     0.168,
                     0.134,
                     0.11,
@@ -3383,6 +3383,102 @@
                   "ReadOnly": false
                 }
               ],
+              "IncludeInDocumentation": true,
+              "Enabled": true,
+              "ReadOnly": false
+            }
+          ],
+          "IncludeInDocumentation": true,
+          "Enabled": true,
+          "ReadOnly": false
+        },
+        {
+          "$type": "Models.Graph, Models",
+          "Caption": null,
+          "Axis": [
+            {
+              "$type": "Models.Axis, Models",
+              "Type": 3,
+              "Title": null,
+              "Inverted": false,
+              "Minimum": "NaN",
+              "Maximum": "NaN",
+              "Interval": "NaN",
+              "DateTimeAxis": true,
+              "CrossesAtZero": false
+            },
+            {
+              "$type": "Models.Axis, Models",
+              "Type": 0,
+              "Title": null,
+              "Inverted": false,
+              "Minimum": "NaN",
+              "Maximum": "NaN",
+              "Interval": "NaN",
+              "DateTimeAxis": false,
+              "CrossesAtZero": false
+            }
+          ],
+          "LegendPosition": 0,
+          "LegendOrientation": 0,
+          "DisabledSeries": [],
+          "LegendOutsideGraph": false,
+          "Name": "LAI",
+          "Children": [
+            {
+              "$type": "Models.Series, Models",
+              "Type": 1,
+              "XAxis": 3,
+              "YAxis": 0,
+              "ColourArgb": -16777216,
+              "FactorToVaryColours": "SimulationName",
+              "FactorToVaryMarkers": null,
+              "FactorToVaryLines": null,
+              "Marker": 11,
+              "MarkerSize": 0,
+              "Line": 0,
+              "LineThickness": 0,
+              "TableName": "Report",
+              "XFieldName": "Clock.Today",
+              "YFieldName": "LAI",
+              "X2FieldName": null,
+              "Y2FieldName": null,
+              "ShowInLegend": false,
+              "IncludeSeriesNameInLegend": false,
+              "Cumulative": false,
+              "CumulativeX": false,
+              "Filter": null,
+              "Name": "preds",
+              "Children": [],
+              "IncludeInDocumentation": true,
+              "Enabled": true,
+              "ReadOnly": false
+            },
+            {
+              "$type": "Models.Series, Models",
+              "Type": 1,
+              "XAxis": 3,
+              "YAxis": 0,
+              "ColourArgb": -16777216,
+              "FactorToVaryColours": "SimulationName",
+              "FactorToVaryMarkers": null,
+              "FactorToVaryLines": null,
+              "Marker": 0,
+              "MarkerSize": 0,
+              "Line": 4,
+              "LineThickness": 0,
+              "TableName": "Observed",
+              "XFieldName": "Clock.Today",
+              "YFieldName": "LAI",
+              "X2FieldName": null,
+              "Y2FieldName": null,
+              "ShowInLegend": false,
+              "IncludeSeriesNameInLegend": false,
+              "Cumulative": false,
+              "CumulativeX": false,
+              "Filter": null,
+              "Name": "obs",
+              "Children": [],
               "IncludeInDocumentation": true,
               "Enabled": true,
               "ReadOnly": false
