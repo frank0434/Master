@@ -9,6 +9,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
                       fig.align = "center", fig.width = 10, fig.height = 7, dpi = 300)
 options(scipen = 999)
 source("../02scripts/R/packages.R")
+source("R/EditApsimxCalibrateLayers.R")
 ```
 
 # Protocol
@@ -40,6 +41,223 @@ Sys.setenv("SimsDir" = file.path(Sys.getenv("WorkingDir"), "03processed-data/aps
 # list.files(Sys.getenv("SimsDir"))
 
 ```
+
+
+# 20200805 Edit best surface kl back into slurp to do a layer by layer fitting. 
+
+```{r}
+apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
+apsimx_flag <- "/Edit"
+apsimx_Basefile <- file.path("../01raw-data/ApsimxFiles/20200618CalibrateLayersSlurpDev.apsimx")
+sims_path <- "C:/Data/Master/03processed-data/bestfitLayerkl/"
+loadd(info)
+
+```
+
+**2nd layer editing**
+```{r}
+EditApsimxLayers(apsimx, readd(info), readd(SW_DUL_LL), readd(SD_tidied), kls =  readd(info))
+```
+
+**Select the best fit for the 2nd layer**
+```{r}
+system(paste(apsimx, "C:/Data/Master/03processed-data/bestfitLayerkl/*.apsimx"))
+```
+
+```{r}
+files = list.files("c:/Data/Master/03processed-data/bestfitLayerkl/", pattern = "*.db$", full.names = TRUE)[1:18]
+KL_layers = seq(2, 21, 1)
+for( i in files){
+  for(j in KL_layers){
+  
+  # filename = "C:/Data/Master/03processed-data/bestfitLayerkl/LayerKL_0.04RFV_25Iversen12SD2.db"
+  # filename =  gsub(".apsimx$", ".db", newname)
+  filename = i 
+  obs = read_dbtab(filename,
+                   table = "Observed")
+  preds = read_dbtab(filename,
+                     table = "Report")
+
+  nested = preds[, list(data = list(.SD)), by = .(SimulationID, KL)]
+  layerno. = j
+  layer = paste0("SW(", layerno.,")")
+  cols = c("Clock.Today", layer)
+  cols_obs = c("Experiment", "SowingDate", "Clock.Today", layer)
+  nested[, data:= lapply(data, function(x){
+    
+    dt = merge.data.table(x[,..cols], obs[!is.na(SWC),..cols_obs], all.x = TRUE,
+                          by = "Clock.Today")
+    col_pred = paste0(layer, ".x")
+    col_obs = paste0(layer, ".y")
+    m <- hydroGOF::gof(sim = dt[[col_pred]], obs = dt[[col_obs]])
+    # Convert the matrix into a data.table with colnames
+    m <- m %>%
+      as.data.table(keep.rownames = T) %>%
+      transpose(make.names = 'rn')
+    m
+  })]
+  
+  DT = nested[, unlist(data, recursive = FALSE), by = .(SimulationID, KL)
+              ][order(NSE,R2, RMSE, decreasing = TRUE)]
+  bestkl = DT$KL[1]     
+  
+  # Rename the bestfit layer 2 
+  newname = gsub("(LayerKL_)(\\d.\\d{2,4})(RFV_\\d{2})(.+)(\\.db$)",paste0("\\4_\\1",layerno.,"_", bestkl, "\\3.apsimx"), basename(filename))
+  filenameApsimx = gsub("\\.db$", ".apsimx", basename(filename))
+  newname = file.path(sims_path, newname)
+  oldname = file.path(sims_path, filenameApsimx)
+  system(paste("cp", oldname, newname))
+  # Sys.setenv(newname = newname)
+  # Sys.setenv(nextlayer = layerno. + 1L)
+  
+  # Edit the factorial to fit next layer 
+  
+  nextlayer = layerno. + 1L
+  bash = paste0('sed -Ei "s/KL\\[[[:digit:]]\\] =/KL\\[', nextlayer, '\\] = /" ', newname)
+  cat(bash, '\r\n')
+  system(bash)
+  
+  # Edit the soil kl 
+  
+  node = paste0("[Soil].Physical.SlurpSoil.KL[", layerno., ":", 22, "] = ", bestkl)
+  config_file = tempfile(fileext = ".config")
+  f = file(config_file, "w")
+  cat(node, "\r\n", file = f)
+  close(f)
+  system(paste(apsimx, newname, '/Edit', config_file))
+  
+  # Run the new factor for next layer 
+  system(paste(apsimx, newname))
+  }
+  }
+
+```
+```{r}
+finishedClean = list.files("c:/Data/Master/03processed-data/bestfitLayerkl/", pattern = ".+21.+.apsimx$", full.names = TRUE)
+
+file.copy(finishedClean, to = "../03processed-data/apsimxFilesLayers/")
+```
+
+
+**3rd and following will be edited in bash command via a simple `sed` call**
+This is because there is only one place to modify in the factorial. 
+
+```{bash}
+sed -Ei "s/KL\[[[:digit:]]\] =/KL\[$nextlayer\] = /" $newname
+
+```
+**Change the slurp soil kl from 2nd layer downwards**
+
+```{r}
+
+```
+```{r}
+filename =  gsub(".apsimx$", ".db", newname)
+obs = read_dbtab(filename,
+                 table = "Observed")
+preds = read_dbtab(filename,
+                 table = "Report")
+
+nested = preds[, list(data = list(.SD)), by = .(SimulationID, KL)]
+layerno. = Sys.getenv("nextlayer")
+layer = paste0("SW(", layerno.,")")
+cols = c("Clock.Today", layer)
+cols_obs = c("Experiment", "SowingDate", "Clock.Today", layer)
+nested[, data:= lapply(data, function(x){
+  
+  dt = merge.data.table(x[,..cols], obs[!is.na(SWC),..cols_obs], all.x = TRUE,
+                        by = "Clock.Today")
+  col_pred = paste0(layer, ".x")
+  col_obs = paste0(layer, ".y")
+  m <- hydroGOF::gof(sim = dt[[col_pred]], obs = dt[[col_obs]])
+  # Convert the matrix into a data.table with colnames
+  m <- m %>%
+    as.data.table(keep.rownames = T) %>%
+    transpose(make.names = 'rn')
+  m
+})]
+
+DT = nested[, unlist(data, recursive = FALSE), by = .(SimulationID, KL)
+            ][NSE > 0 # Pointless to have NSE value less than 0
+              ][order(NSE,R2, RMSE, decreasing = TRUE)]
+bestkl = DT$KL[1]     
+
+newname = gsub("(LayerKL_)(\\d.\\d{2,4})(RFV_\\d{2})(.+)(\\.db$)",paste0("\\4_\\1",layerno.,"_", bestkl, "\\3.apsimx"), basename(filename))
+filenameApsimx = gsub("\\.db$", ".apsimx", basename(filename))
+newname = file.path(sims_path, newname)
+oldname = file.path(sims_path, filenameApsimx)
+system(paste("cp", oldname, newname))
+Sys.setenv(newname = newname)
+Sys.setenv(nextlayer = layerno. + 1L)
+```
+
+```{r}
+filenames = list.files("c:/Data/Master/03processed-data/apsimxFilesLayers/", pattern = "*.db$", full.names = TRUE)
+sims_path = "c:/Data/Master/03processed-data/apsimxFilesLayers/"
+for( i in filenames){
+
+  # filename = "C:/Data/Master/03processed-data/bestfitLayerkl/LayerKL_0.04RFV_25Iversen12SD2.db"
+  # filename =  gsub(".apsimx$", ".db", newname)
+  filename = i 
+  obs = read_dbtab(filename,
+                   table = "Observed")
+  preds = read_dbtab(filename,
+                     table = "Report")
+
+  nested = preds[, list(data = list(.SD)), by = .(SimulationID, KL)]
+  layerno. = 22
+  layer = paste0("SW(", layerno.,")")
+  cols = c("Clock.Today", layer)
+  cols_obs = c("Experiment", "SowingDate", "Clock.Today", layer)
+  nested[, data:= lapply(data, function(x){
+    
+    dt = merge.data.table(x[,..cols], obs[!is.na(SWC),..cols_obs], all.x = TRUE,
+                          by = "Clock.Today")
+    col_pred = paste0(layer, ".x")
+    col_obs = paste0(layer, ".y")
+    m <- hydroGOF::gof(sim = dt[[col_pred]], obs = dt[[col_obs]])
+    # Convert the matrix into a data.table with colnames
+    m <- m %>%
+      as.data.table(keep.rownames = T) %>%
+      transpose(make.names = 'rn')
+    m
+  })]
+  
+  DT = nested[, unlist(data, recursive = FALSE), by = .(SimulationID, KL)
+              ][order(NSE,R2, RMSE, decreasing = TRUE)]
+  bestkl = DT$KL[1]     
+  
+  # Rename the bestfit layer 2 
+  newname = gsub("(.+)(_LayerKL_)(\\d{1,2}_)(\\d.\\d{2,4})(RFV_\\d{2})(\\.db$)",paste0("\\1\\2",layerno.,"_", bestkl, "\\5.apsimx"), basename(filename))
+  filenameApsimx = gsub("\\.db$", ".apsimx", basename(filename))
+  newname = file.path(sims_path, newname)
+  oldname = file.path(sims_path, filenameApsimx)
+  system(paste("cp", oldname, newname))
+  # Sys.setenv(newname = newname)
+  # Sys.setenv(nextlayer = layerno. + 1L)
+  
+  # Edit the factorial to fit next layer 
+  
+  # nextlayer = layerno. + 1L
+  # bash = paste0('sed -Ei "s/KL\\[[[:digit:]]\\] =/KL\\[', nextlayer, '\\] = /" ', newname)
+  # cat(bash, '\r\n')
+  # system(bash)
+  
+  # Edit the soil kl 
+  
+  node = paste0("[Soil].Physical.SlurpSoil.KL[", layerno., ":", 22, "] = ", bestkl)
+  config_file = tempfile(fileext = ".config")
+  f = file(config_file, "w")
+  cat(node, "\r\n", file = f)
+  close(f)
+  system(paste(apsimx, newname, '/Edit', config_file))
+  
+  # Run the new factor for next layer 
+  system(paste(apsimx, newname))
+
+  }
+```
+
 
 # 20200720 Edit 2nd layer of best slurp to do one layer optimisation 
 
