@@ -1,6 +1,6 @@
 ---
 title: "APSIM_edit_fun"
-author: "Junqi Zhu"
+author: "Junqi Zhu and Jian Liu"
 date: "`r Sys.Date()`"
 output: html_document
 ---
@@ -21,8 +21,7 @@ output: html_document
 
 
 ```{r setup, include=FALSE}
-#  Sys.setenv(R_LIBS_USER  = "H:/Rlibs") 
-# .libPaths( c("H:/Rlibs", .libPaths()))
+options(scipen=999)
   
 
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
@@ -30,7 +29,8 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
                       fig.width = 10, fig.height = 7, dpi = 300)
 #Constants
 outlier.colour = "#ff0000"
-
+source("R/packages.R")
+source("R/EditApsimx.R")
 ```
 
 
@@ -39,158 +39,238 @@ outlier.colour = "#ff0000"
 
 ```{r}
 
-  #path to apsimx 
-  apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
-  apsimx_flag <- "/Edit"
-  apsimx_file <- "C:/Data/Master/02scripts/test/grapevine_base.apsimx"
-  # apsimx_sims_temp <- "C:/Data/Master/03processed-data/tempGrape.apsimx"
-  apsimx_sims_dir <- "C:/Data/Master/03processed-data/"
-  apsimx_config <- "C:/Data/Master/03processed-data/Configure_Grape_"
-  
-par <- c(1)
+#path to apsimx 
+apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
+apsimx_flag <- "/Edit"
+apsimx_file <- "C:/Data/Master/03processed-data/apsimxFiles/ModifiedSKL_0.06Iversen12SD2.apsimx"
+apsimx_sims_dir <- "C:/Data/Master/03processed-data/apsimxFiles/"
+apsimx_config <- "C:/Data/Master/03processed-data/ConfigurationFiles/"
 
-APSIMEditFun <- function(par)
-{
+```
 
-  # Node Path - copied from ApsimX UI
-  RUE_JV <- ".Simulations.Replacements.Grapevine.Leaf.Photosynthesis.RUE.Juvenile.Constant.FixedValue ="
-  
-  # RUE_VE <- ".Simulations.Replacements.Grapevine.Leaf.Photosynthesis.RUE.Vegetative.Constant.FixedValue ="
 
-# Vectorise the values 
-  # for(i in SDs){
-    # Filter the right values 
-    apsimx_RUE_JV <- paste0(RUE_JV, par)
-    # apsimx_RUE_VE <- paste0(RUE_VE, par[2])
-                         # paste(j,collapse = ","))
-    # Open a text file
-    f <- file(paste0(apsimx_config, "RUE", par, ".txt"), "w")
-    # Write values into the file 
-    cat(
-        apsimx_RUE_JV,"\r",
-        # apsimx_RUE_VE,"\r",
-        sep = "\r", 
+# Prepare the configuration file and editting
+
+**HAS BEEN TAKEN CARE IN THE PLAN_CONFIG**
+# Test optimisation 
+## Prepare the configuration on the fly
+The DE optimisation will sample values from the range and 
+change the parameter value on the fly and 
+run the simulation to extract the pred-obs and 
+return the best fit
+Three parameters for configured slurp. 
+```
+config_KL = paste0("[Soil].Physical.SlurpSoil.KL", "[1:", KL_layer,"]"," = ")
+config_iniKLR = "[SlurpSowingRule].Script.KLReductionFactor = "
+config_iniRFV = "[SlurpSowingRule].Script.RFV = "
+```
+```{r}
+# Initial parameter values 
+# par = c(0.005, 0.0005, 10)
+# KL_layers = 22
+
+# Edit fun
+APSIMEditFun <- function(par, nodes = slurpnodes){
+  no.ofPara = length(par)
+  id = paste0(par, collapse = '_')
+  f = file(paste0(apsimx_sims_dir,"temp", id, ".txt"), "w")
+  for(i in seq_len(no.ofPara)){
+    line = paste0(slurpnodes[i] , par[i])
+    cat(line, "\r",
         file = f, 
         append = TRUE)
-    # Close the file and clean it from memory 
-    close(f)
-    rm(f)
-    gc()
-  
+  }
+  # Close the file and clean it from memory 
+  close(f)
+  rm(f)
+  gc()
 }
-
-APSIMRun <- function(par)
+# Run fun 
+APSIMRun = function(par)
 {
   # Create a new name for the apsimx file 
-  newname = paste0(apsimx_sims_dir, "RUE", par, ".apsimx")
-  
+  id <- paste0(par, collapse = '_')
+  # Create a new name for the apsimx file 
+  newname = paste0(apsimx_sims_dir, 'temp', id, ".apsimx")
+ 
   # Copy base apsimx file to its new name 
   system(paste("cp", apsimx_file, newname))
   
   # Modify the apsimx file 
   system(paste(apsimx, newname, apsimx_flag, 
-               paste0(apsimx_config,  "RUE", par, ".txt")))
+               paste0(apsimx_sims_dir,"temp", id, ".txt")))
   
   # Execute the new apsimx file 
   system(paste(apsimx, newname, 
                  "/NumberOfProcessors:8"))
     
 }
-
 library(RSQLite)
-cost.function <- function(par)
-{
-  # Iterate through the parameters 
-  for (i in par){
-    
-    APSIMEditFun(par = i)
-    
-    APSIMRun(par = i)
-  
-  gc()
-  }
-  
-  for (i in par){
+
+cost.function <- function(par, obspara = "SWC"){
+  id <- paste0(par, collapse = '_')
+  print(par)
+  APSIMEditFun(par)
+  APSIMRun(par)
+  db <- RSQLite::dbConnect(RSQLite::SQLite(),
+                           paste0(apsimx_sims_dir, 'temp', id,'.db'))
   
 
-  db <- RSQLite::dbConnect(RSQLite::SQLite(),
-              paste0(apsimx_sims_dir, "RUE", i, '.db'))
+  PredictedObserved <-   RSQLite::dbReadTable(db,"PredictedObserved")
   
-  dbListTables(db)
-  #dbWriteTable(con, "mtcars", mtcars) #add a table into database
-  PredictedObserved <-   dbReadTable(db,"PredictedObserved")
-  
-  shoot.dw <- na.omit(PredictedObserved$Observed.shoot.dw - 
-                      PredictedObserved$Predicted.shoot.dw)
-  
-  cost1 <- sum(shoot.dw^2)
-  
+  # Generate multiple cost depends on user input of observation variables 
+  no.ofobspara = length(obspara)
+  l = vector("list", length = no.ofobspara)
+  names(l) = obspara
+  for (i in seq_len(no.ofobspara)){
+    pre_col = paste0("Predicted.", obspara[i])
+    obs_col = paste0("Observed.", obspara[i])
+    l[[i]] = sum(na.omit(PredictedObserved[[pre_col]]- 
+                         PredictedObserved[[obs_col]])^2)
+  }
+
+  totalCost = 0 
+  totalCost = sum(unlist(l))
+
   RSQLite::dbDisconnect(db)
   
   rm(db)
   gc()
   
-  # system(paste("rm", paste0(apsimx_sims_dir, "tempGrape*")))
+  system(paste("rm", paste0(apsimx_sims_dir, "temp", id, "*")))
   
-  return(cost1)
-  }
+  return(totalCost)
 }
 
 ```
-
+ranges will be 
+kl in between 0.005 and 0.11
+KLR in between 0.0005 and 0.01 
+RFV in between 10 and 35
 
 #run the optim function
 ```{r}
-t1 <- Sys.time()
+t1 = Sys.time()
 #DEoptim
-maxIt <- 1
-n <- 1
+maxIt = 3
+np = 3
+KL_layer = 22
+slurpnodes = c(paste0("[Soil].Physical.SlurpSoil.KL", "[1:", KL_layer,"]"," = "),
+               "[SlurpSowingRule].Script.RFV = ",
+               "[SlurpSowingRule].Script.KLReductionFactor = "
+               )
+lower = c(0.005, 10,  0.0005)
+upper = c(0.11, 35, 0.01)
+# The observaion value that will be used as the benchmark
+obspara = "SWC"
 
-opt.res <-
+opt.res =
   DEoptim::DEoptim(fn=cost.function, 
-                   lower = c(0.8),
-                   upper = c(1.3),
-                   control=list(NP=1, itermax=maxIt, parallelType=1,
+                   lower = lower,
+                   upper = upper,
+                   control=list(NP=np * 10, itermax=maxIt, parallelType=1,
                                 storepopfrom = 1,
                                 packages = c('RSQLite'),
                                 parVar = c(
+                                'slurpnodes',
                                 'apsimx',
                                 'apsimx_flag',
                                 'apsimx_file',
-                                
+                                'obspara',
                                 'apsimx_sims_dir',
-                                'apsimx_config',
+                                
                                 'APSIMEditFun', 
                                 'APSIMRun' ))
   )
 
 
 save(opt.res, file =  file.path(apsimx_sims_dir,
-                                paste0('opt.res', ".RData")))
+                                paste0(Sys.Date(), 'opt.res', ".RData")))
 
-fit.par <- data.frame(estimates = opt.res$optim$bestmem, cost = opt.res$optim$bestval)
+fit.par = data.frame(estimates = opt.res$optim$bestmem, cost = opt.res$optim$bestval)
 
  
 #output the statistical test
-par <- fit.par$estimates
+par = fit.par$estimates
 
-write.csv(par, 'opt.par.csv', row.names = F)
-t2 <- Sys.time()
+write.csv(par, 'C:/Data/Master/03processed-data/opt.par.csv', row.names = F)
+t2 = Sys.time()
 t2-t1
 ```
 
 
-Show in New WindowClear OutputExpand/Collapse Output
-Iteration: 1 bestvalit: 139.576077 bestmemit:    0.806773
-Time difference of 5.29212 mins
 
-Show in New WindowClear OutputExpand/Collapse Output
-Iteration: 1 bestvalit: 139.500441 bestmemit:    0.800606
-Time difference of 2.457922 mins
+# Optimise all 20 sowing dates 
+
+```{r}
+  #path to apsimx 
+apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
+apsimx_flag <- "/Edit"
+# apsimx_file <- "C:/Data/Master/03processed-data/apsimxFiles/ModifiedSKL_0.06Iversen12SD2.apsimx"
+apsimx_sims_dir <- "C:/Data/Master/03processed-data/apsimxFiles/"
+# apsimx_config <- "C:/Data/Master/03processed-data/ConfigurationFiles/"
+apsimxs = list.files(apsimx_sims_dir, pattern = ".apsimx$", full.names = T)
+l_apsimxs = vector("list", length = length(apsimxs))
+names(l_apsimxs) = apsimxs
+t1 = Sys.time()
+#DEoptim
+maxIt = 200
+np = 3
+KL_layer = 22
+slurpnodes = c(paste0("[Soil].Physical.SlurpSoil.KL", "[1:", KL_layer,"]"," = "),
+               "[SlurpSowingRule].Script.RFV = ",
+               "[SlurpSowingRule].Script.KLReductionFactor = "
+               )
+lower = c(0.005, 10,  0.0005)
+upper = c(0.11, 35, 0.01)
+# The observaion value that will be used as the benchmark
+obspara = "SWC"
 
 
+for( i in seq_len(length(l_apsimxs))){
+  # The observaion value that will be used as the benchmark
+  obspara = "SWC"
+  apsimx_file = names(l_apsimxs)[[i]]
+  opt.res = DEoptim::DEoptim(fn=cost.function, 
+                             lower = lower,
+                             upper = upper,
+                             control=list(NP=np * 10, itermax=maxIt, parallelType=1,
+                                          storepopfrom = 1,
+                                          packages = c('RSQLite'),
+                                          parVar = c(
+                                            'slurpnodes',
+                                            'apsimx', 
+                                            'apsimx_flag',
+                                            'apsimx_file',
+                                            'obspara',
+                                            'apsimx_sims_dir',
+                                            'APSIMEditFun', 
+                                            'APSIMRun' ))
+                             )
+  l_apsimxs[[i]] = opt.res
+  filename = gsub("ModifiedSKL_0.06|.apsimx", "", basename(apsimx_file))
+  save(opt.res, file =  file.path(apsimx_sims_dir,
+                                  paste0(filename,'opt.res', ".RData")))
+  fit.par = data.frame(estimates = opt.res$optim$bestmem, cost = opt.res$optim$bestval)
+  #output the statistical test
+  # par = fit.par$estimates 
+  write.csv(fit.par, paste0(apsimx_sims_dir, filename,'opt.par.csv'), row.names = TRUE)
+  }
+t2 = Sys.time()
+t2-t1
 
+```
 
+```{r}
+opsresults = list.files("../03processed-data/apsimxFiles/", pattern = "\\.RData")
+apsimxs = list.files(apsimx_sims_dir, pattern = ".apsimx$", full.names = T)
+l_apsimxs = vector("list", length = length(apsimxs))
+names(l_apsimxs) = apsimxs
+```
+
+```{r}
+plot(opt.res, plot.type = "storepop")
+```
 
 
 ```{r}

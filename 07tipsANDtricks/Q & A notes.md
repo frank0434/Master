@@ -1,3 +1,59 @@
+# 20200805
+
+Catch up with Hamish: 
+1. manual fitting will help understand the logic behind the model 
+2. automated optimisation will make things robust but won't necessary to help understand anything.  
+3. carry on doing the layer by layer fitting. 
+4. might end up with doing both manual fitting and optimisation. 
+5. RFV in slurp has a temperature effects. The value setup is the max rate when temperature is optimal 25 degree.
+	But the air tempareture will be less than 25 most of the time, so it is ok to extend the upper bounary a bit more. 
+6. Apsimx use the decimal places to do simulations but not necessary show up in the UI. UI only displays 3 decimals. 
+
+
+# 20200802  
+As Roberston's paper suggested that RFV was more important
+`This suggests that the most significant determinant of the threshold is the rate at which the crop gains access to water in the profile, which is a function of the root front velocity`
+should i cosider to do the same? 
+
+
+
+# 20200728
+
+Lower k value was observed during the summer 
+
+
+
+# 20200726
+
+1. The problem of inital LAI 5 comes back. Slurp LAI is set to 5 (Rog already taught how to overcame but forgot)
+2. The LAI wasn't sourced correctly because the manager script used wrong variables. 
+3. The LAI wasn't interploate so the prediction is stair case. 
+
+# 20200718
+
+RootFrontVelocity has 3 stages in the current model:
+1. Preemergence  Germination-->Emergence
+2. Early Emergence-->StartFlowering
+3. Late  StartFlowering-->Maturity
+
+1. I should derive RFV by different stages? 
+2. water stress has an effect on it as well? 
+
+Root Depth is definately not correct. 
+How to get it right? 
+re-analysis RFV based on development stages? 
+
+
+something more to try
+1. get the iversen12 orginal kls back
+
+
+
+
+
+
+
+
 ## 20200510
 How to calculate initial soil water and parameterise it? 
 
@@ -226,28 +282,4 @@ Xiumei suggested that the hydrothermal effect could affect the seed germination
 which will have effects on the canopy development for sure. 
 but Changing the `shootlag` in the [Lucerne].Phenology.emergence didn't change any 
 prediction results. 
-
-# 20200718
-
-RootFrontVelocity has 3 stages in the current model:
-1. Preemergence  Germination-->Emergence
-2. Early Emergence-->StartFlowering
-3. Late  StartFlowering-->Maturity
-
-1. I should derive RFV by different stages? 
-2. water stress has an effect on it as well? 
-
-Root Depth is definately not correct. 
-How to get it right? 
-re-analysis RFV based on development stages? 
-
-
-something more to try
-1. get the iversen12 orginal kls back
-
-# 20200726
-
-1. The problem of inital LAI 5 comes back. Slurp LAI is set to 5 (Rog already taught how to overcame but forgot)
-2. The LAI wasn't sourced correctly because the manager script used wrong variables. 
-3. The LAI wasn't interploate so the prediction is stair case. 
 
