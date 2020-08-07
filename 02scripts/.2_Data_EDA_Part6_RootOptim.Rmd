@@ -38,13 +38,42 @@ source("R/EditApsimx.R")
 # Set directory structure
 
 ```{r}
+powerplant = TRUE
+library(RLinuxModules)
 
-#path to apsimx 
-apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
-apsimx_flag <- "/Edit"
-apsimx_file <- "C:/Data/Master/03processed-data/apsimxFiles/ModifiedSKL_0.06Iversen12SD2.apsimx"
-apsimx_sims_dir <- "C:/Data/Master/03processed-data/apsimxFiles/"
-apsimx_config <- "C:/Data/Master/03processed-data/ConfigurationFiles/"
+if(isFALSE(powerplant)){
+  
+  #path to apsimx 
+  apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
+  apsimx_flag <- "/Edit"
+  apsimx_file <- "C:/Data/Master/03processed-data/apsimxFiles/ModifiedSKL_0.06Iversen12SD2.apsimx"
+  apsimx_sims_dir <- "C:/Data/Master/03processed-data/apsimxFiles/"
+  apsimx_config <- "C:/Data/Master/03processed-data/ConfigurationFiles/"
+} else{
+  apsimxsif = "apsimx/2020.08.04.5350"
+  module(paste("load", apsimxsif))
+  module("load openlava")
+  module("load asub/2.1")
+  module ("load R/3.6.3")
+  #Check loaded modules
+  module("list")
+  
+  #Check if singularity working 
+  system("apsimx-2020.08.04.5350.sif")
+  apsimx <- "apsimx-2020.08.04.5350.sif"
+  #Set up directories
+  apsimx_flag <- "/Edit"
+  apsimx_file <- here::here("03processed-data/apsimxFiles/ModifiedSKL_0.06Iversen12SD2.apsimx")
+  apsimx_sims_dir <- here::here("03processed-data/apsimxFiles/")
+  apsimx_config <- here::here("03processed-data/ConfigurationFiles/")
+  apsimx_obs <- here::here("03processed-data/CoverData/")
+  for(i in list(apsimx_sims_dir, apsimx_config,apsimx_obs)){
+    if (!file.exists(i)) {
+      cat("Creating the dir", i, "\r\n")
+      dir.create(i)
+    }
+  }
+}
 
 ```
 
@@ -65,94 +94,19 @@ config_iniKLR = "[SlurpSowingRule].Script.KLReductionFactor = "
 config_iniRFV = "[SlurpSowingRule].Script.RFV = "
 ```
 ```{r}
-# Initial parameter values 
-# par = c(0.005, 0.0005, 10)
-# KL_layers = 22
-
-# Edit fun
-APSIMEditFun <- function(par, nodes = slurpnodes){
-  no.ofPara = length(par)
-  id = paste0(par, collapse = '_')
-  f = file(paste0(apsimx_sims_dir,"temp", id, ".txt"), "w")
-  for(i in seq_len(no.ofPara)){
-    line = paste0(slurpnodes[i] , par[i])
-    cat(line, "\r",
-        file = f, 
-        append = TRUE)
-  }
-  # Close the file and clean it from memory 
-  close(f)
-  rm(f)
-  gc()
-}
-# Run fun 
-APSIMRun = function(par)
-{
-  # Create a new name for the apsimx file 
-  id <- paste0(par, collapse = '_')
-  # Create a new name for the apsimx file 
-  newname = paste0(apsimx_sims_dir, 'temp', id, ".apsimx")
- 
-  # Copy base apsimx file to its new name 
-  system(paste("cp", apsimx_file, newname))
-  
-  # Modify the apsimx file 
-  system(paste(apsimx, newname, apsimx_flag, 
-               paste0(apsimx_sims_dir,"temp", id, ".txt")))
-  
-  # Execute the new apsimx file 
-  system(paste(apsimx, newname, 
-                 "/NumberOfProcessors:8"))
-    
-}
-library(RSQLite)
-
-cost.function <- function(par, obspara = "SWC"){
-  id <- paste0(par, collapse = '_')
-  print(par)
-  APSIMEditFun(par)
-  APSIMRun(par)
-  db <- RSQLite::dbConnect(RSQLite::SQLite(),
-                           paste0(apsimx_sims_dir, 'temp', id,'.db'))
-  
-
-  PredictedObserved <-   RSQLite::dbReadTable(db,"PredictedObserved")
-  
-  # Generate multiple cost depends on user input of observation variables 
-  no.ofobspara = length(obspara)
-  l = vector("list", length = no.ofobspara)
-  names(l) = obspara
-  for (i in seq_len(no.ofobspara)){
-    pre_col = paste0("Predicted.", obspara[i])
-    obs_col = paste0("Observed.", obspara[i])
-    l[[i]] = sum(na.omit(PredictedObserved[[pre_col]]- 
-                         PredictedObserved[[obs_col]])^2)
-  }
-
-  totalCost = 0 
-  totalCost = sum(unlist(l))
-
-  RSQLite::dbDisconnect(db)
-  
-  rm(db)
-  gc()
-  
-  system(paste("rm", paste0(apsimx_sims_dir, "temp", id, "*")))
-  
-  return(totalCost)
-}
-
+source("R/optimisation.R")
 ```
 ranges will be 
 kl in between 0.005 and 0.11
 KLR in between 0.0005 and 0.01 
 RFV in between 10 and 35
 
-#run the optim function
+# Test the optim function
+
 ```{r}
 t1 = Sys.time()
 #DEoptim
-maxIt = 3
+maxIt = 2
 np = 3
 KL_layer = 22
 slurpnodes = c(paste0("[Soil].Physical.SlurpSoil.KL", "[1:", KL_layer,"]"," = "),
@@ -193,9 +147,17 @@ fit.par = data.frame(estimates = opt.res$optim$bestmem, cost = opt.res$optim$bes
 #output the statistical test
 par = fit.par$estimates
 
-write.csv(par, 'C:/Data/Master/03processed-data/opt.par.csv', row.names = F)
+write.csv(par, here::here("03processed-data/opt.par.csv"), row.names = F)
 t2 = Sys.time()
 t2-t1
+```
+
+# Submit to bsub
+
+```{bash}
+bsub -o optimisation_$$.log \
+     -e optimisation_$$.err \
+Rscript R/submitOptimJobs.R
 ```
 
 
