@@ -56,16 +56,16 @@ loadd(info)
 
 **2nd layer editing**
 ```{r}
-EditApsimxLayers(apsimx, readd(info), readd(SW_DUL_LL), readd(SD_tidied), kls =  readd(info))
+# EditApsimxLayers(apsimx, readd(info), readd(SW_DUL_LL), readd(SD_tidied), kls =  readd(info))
 ```
 
 **Select the best fit for the 2nd layer**
 ```{r}
-system(paste(apsimx, "C:/Data/Master/03processed-data/bestfitLayerkl/*.apsimx"))
+# system(paste(apsimx, "C:/Data/Master/03processed-data/bestfitLayerkl/*.apsimx"))
 ```
 
 ```{r}
-files = list.files("c:/Data/Master/03processed-data/bestfitLayerkl/", pattern = "*.db$", full.names = TRUE)[1:18]
+files = list.files("c:/Data/Master/03processed-data/bestfitLayerkl/", pattern = "*.db$", full.names = TRUE)
 KL_layers = seq(2, 21, 1)
 for( i in files){
   for(j in KL_layers){
@@ -78,7 +78,7 @@ for( i in files){
   preds = read_dbtab(filename,
                      table = "Report")
 
-  nested = preds[, list(data = list(.SD)), by = .(SimulationID, KL)]
+  nested = preds[, list(data = list(.SD)), by = .(SimulationID, KL, RFV)]
   layerno. = j
   layer = paste0("SW(", layerno.,")")
   cols = c("Clock.Today", layer)
@@ -97,12 +97,12 @@ for( i in files){
     m
   })]
   
-  DT = nested[, unlist(data, recursive = FALSE), by = .(SimulationID, KL)
+  DT = nested[, unlist(data, recursive = FALSE), by = .(SimulationID, KL, RFV)
               ][order(NSE,R2, RMSE, decreasing = TRUE)]
   bestkl = DT$KL[1]     
-  
+  bestRFV = DT$RFV[1]
   # Rename the bestfit layer 2 
-  newname = gsub("(LayerKL_)(\\d.\\d{2,4})(RFV_\\d{2})(.+)(\\.db$)",paste0("\\4_\\1",layerno.,"_", bestkl, "\\3.apsimx"), basename(filename))
+  newname = gsub("(.+)(LayerKL_)(\\d.\\d{1,4})(RFV_\\d{1,2})(\\.db$)",paste0("\\1\\2",layerno.,"_", bestkl, "RFV_", bestRFV, ".apsimx"), basename(filename))
   filenameApsimx = gsub("\\.db$", ".apsimx", basename(filename))
   newname = file.path(sims_path, newname)
   oldname = file.path(sims_path, filenameApsimx)
@@ -116,13 +116,15 @@ for( i in files){
   bash = paste0('sed -Ei "s/KL\\[[[:digit:]]\\] =/KL\\[', nextlayer, '\\] = /" ', newname)
   cat(bash, '\r\n')
   system(bash)
-  
   # Edit the soil kl 
   
   node = paste0("[Soil].Physical.SlurpSoil.KL[", layerno., ":", 22, "] = ", bestkl)
+  nodeRFV = paste0("[SlurpSowingRule].Script.RFV = ", bestRFV)
+
   config_file = tempfile(fileext = ".config")
   f = file(config_file, "w")
-  cat(node, "\r\n", file = f)
+  cat(node, 
+      nodeRFV, "\r\n", sep = "\r", file = f)
   close(f)
   system(paste(apsimx, newname, '/Edit', config_file))
   
@@ -182,29 +184,29 @@ DT = nested[, unlist(data, recursive = FALSE), by = .(SimulationID, KL)
               ][order(NSE,R2, RMSE, decreasing = TRUE)]
 bestkl = DT$KL[1]     
 
-newname = gsub("(LayerKL_)(\\d.\\d{2,4})(RFV_\\d{2})(.+)(\\.db$)",paste0("\\4_\\1",layerno.,"_", bestkl, "\\3.apsimx"), basename(filename))
-filenameApsimx = gsub("\\.db$", ".apsimx", basename(filename))
-newname = file.path(sims_path, newname)
-oldname = file.path(sims_path, filenameApsimx)
+# newname = gsub("(LayerKL_)(\\d.\\d{2,4})(RFV_\\d{2})(.+)(\\.db$)",paste0("\\4_\\1",layerno.,"_", bestkl, "\\3.apsimx"), basename(filename))
+# filenameApsimx = gsub("\\.db$", ".apsimx", basename(filename))
+# newname = file.path(sims_path, newname)
+# oldname = file.path(sims_path, filenameApsimx)
 system(paste("cp", oldname, newname))
 Sys.setenv(newname = newname)
 Sys.setenv(nextlayer = layerno. + 1L)
 ```
 
+
+**Finish the last layer**
 ```{r}
-filenames = list.files("c:/Data/Master/03processed-data/apsimxFilesLayers/", pattern = "*.db$", full.names = TRUE)
+filenames = list.files("c:/Data/Master/03processed-data/apsimxFilesLayers/", pattern = "*21.*.db$", full.names = TRUE)
 sims_path = "c:/Data/Master/03processed-data/apsimxFilesLayers/"
 for( i in filenames){
 
-  # filename = "C:/Data/Master/03processed-data/bestfitLayerkl/LayerKL_0.04RFV_25Iversen12SD2.db"
-  # filename =  gsub(".apsimx$", ".db", newname)
   filename = i 
   obs = read_dbtab(filename,
                    table = "Observed")
   preds = read_dbtab(filename,
                      table = "Report")
 
-  nested = preds[, list(data = list(.SD)), by = .(SimulationID, KL)]
+  nested = preds[, list(data = list(.SD)), by = .(SimulationID, KL, RFV)]
   layerno. = 22
   layer = paste0("SW(", layerno.,")")
   cols = c("Clock.Today", layer)
@@ -223,41 +225,63 @@ for( i in filenames){
     m
   })]
   
-  DT = nested[, unlist(data, recursive = FALSE), by = .(SimulationID, KL)
+  DT = nested[, unlist(data, recursive = FALSE), by = .(SimulationID, KL, RFV)
               ][order(NSE,R2, RMSE, decreasing = TRUE)]
   bestkl = DT$KL[1]     
-  
+  bestRFV = DT$RFV[1] 
   # Rename the bestfit layer 2 
-  newname = gsub("(.+)(_LayerKL_)(\\d{1,2}_)(\\d.\\d{2,4})(RFV_\\d{2})(\\.db$)",paste0("\\1\\2",layerno.,"_", bestkl, "\\5.apsimx"), basename(filename))
+  node = paste0("[Soil].Physical.SlurpSoil.KL[", layerno., ":", 22, "] = ", bestkl)
+  nodeRFV = paste0("[SlurpSowingRule].Script.RFV = ", bestRFV)
+
+  newname = gsub("(.+)(LayerKL_)(21_)(\\d.\\d{1,4})(RFV_\\d{1,2})(\\.db$)",paste0("\\1\\2",layerno.,"_", bestkl, "RFV_", bestRFV, ".apsimx"), basename(filename))
   filenameApsimx = gsub("\\.db$", ".apsimx", basename(filename))
   newname = file.path(sims_path, newname)
   oldname = file.path(sims_path, filenameApsimx)
   system(paste("cp", oldname, newname))
-  # Sys.setenv(newname = newname)
-  # Sys.setenv(nextlayer = layerno. + 1L)
-  
-  # Edit the factorial to fit next layer 
-  
-  # nextlayer = layerno. + 1L
-  # bash = paste0('sed -Ei "s/KL\\[[[:digit:]]\\] =/KL\\[', nextlayer, '\\] = /" ', newname)
-  # cat(bash, '\r\n')
-  # system(bash)
-  
-  # Edit the soil kl 
-  
-  node = paste0("[Soil].Physical.SlurpSoil.KL[", layerno., ":", 22, "] = ", bestkl)
   config_file = tempfile(fileext = ".config")
   f = file(config_file, "w")
-  cat(node, "\r\n", file = f)
+  cat(node, 
+      nodeRFV, "\r\n", sep = "\r", file = f)
   close(f)
   system(paste(apsimx, newname, '/Edit', config_file))
   
-  # Run the new factor for next layer 
-  system(paste(apsimx, newname))
 
   }
 ```
 
+
+**Get best RFV for each layer back**
+```{r}
+
+apsimxs = list.files("../03processed-data/apsimxFilesLayers/", pattern = "*.apsimx$")
+
+DT = data.table(names = apsimxs)
+layer1 = DT[, tstrsplit(names, split = "_|\\.")
+   ][V2 == 0]
+layer2to21 = DT[, tstrsplit(names, split = "_|\\.")
+   ][V2 != 0]
+layer1[,V2:=1]
+layer1[, V6:=NULL]
+layer2to21[, V3:= NULL]
+setnames(layer2to21, colnames(layer2to21), paste0("V", 1:5))
+DT = rbindlist(list(layer1, layer2to21), use.names = TRUE)
+DT[, ':='(V1 = gsub("LayerKL", "", V1),
+          V2 = as.numeric(V2),
+          V3 = as.numeric(gsub("(\\d{1,4})(RFV)", "0.\\1", V3)),
+          V4 = as.numeric(V4), 
+          V5 = NULL)]
+setnames(DT, c("names", "layer", "KL", "RFV"))
+
+counts = DT[order(names, layer)] %>% 
+  group_by(names, layer) %>% 
+  count()
+counts %>% 
+  filter(n != 1)
+```
+```{r}
+DT[order(names, layer)] %>% 
+  openxlsx::write.xlsx("../03processed-data/LayerByLayberRFVandKL.xlsx")
+```
 
 # 20200720 Edit 2nd layer of best slurp to do one layer optimisation 
 
