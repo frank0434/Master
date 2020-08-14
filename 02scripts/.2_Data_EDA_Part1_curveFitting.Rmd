@@ -40,7 +40,9 @@ h. **1** follow treat in both sites - absolute soil evaporation
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
-                      fig.align = "center", fig.width = 10, fig.height = 7, dpi = 300)
+                      fig.align = "center", fig.width = 10, fig.height = 7, 
+                      dpi = 300)
+options(scipen = 999)
 #Constants
 outlier.colour = "#ff0000"
 source("R/packages.R")
@@ -91,6 +93,56 @@ water[Experiment == "AshleyDene" ] %>%
 dbDisconnect(con)
 
 ```
+
+## 20200814 Try to derive the RFV FROM observed data 
+
+```{r}
+colnames(water)
+water[Experiment == "AshleyDene" & SowingDate == "SD2"]  %>% 
+  ggplot(aes(DAS, `SW(10)`)) +
+  geom_point() +
+  geom_smooth(se = FALSE,  method = "loess")
+```
+```{r}
+
+id_vars <- colnames(water)[!colnames(water) %in% grep("SW\\(\\d.+", colnames(water), value = TRUE)]
+value_vars <- colnames(water)[!colnames(water) %in% id_vars]
+id_vars = c("Experiment","Clock.Today", "Season","SowingDate", "DAS")
+SW_mean <- water[, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = value_vars]
+
+```
+#### Select season one to see which layer the root have been 
+
+```{r}
+season1 = melt(SW_mean[Season == "2010/11"], id.vars = id_vars,
+               variable.name = "Depth", value.name = "SW", 
+               variable.factor = FALSE)
+season1[, Depth := as.integer(gsub("\\D", "", Depth))]
+season1[, SW := mean(SW,na.rm = TRUE), by = .(Experiment, Clock.Today, Season, SowingDate, DAS, Depth) ][]
+
+```
+#### Need to DUL and LL to calculate the relative water 
+**Run chunch 7 to 14 to have the DUL and LL for each layer**
+```{r}
+dul = SW_DUL_LL[,.(Experiment, SowingDate,Depth, DUL)]
+season1 = merge(season1, dul, by = c("Experiment","SowingDate","Depth"),
+                all.x = TRUE, suffixes = c("", "_started"))
+season1[, ':='(relativeSW = SW/100/DUL,
+               Depth = as.factor(Depth))][]
+
+ADSD2 = season1[Experiment == "AshleyDene" & SowingDate == "SD2"]
+ADSD2 %>% 
+  ggplot(aes(DAS, relativeSW, color = Depth, group = Depth)) +
+  # geom_point()+
+  geom_smooth(se = FALSE, span = 0.3) +
+  facet_wrap(~Depth) +
+  geom_hline(yintercept = seq)
+
+```
+```{r}
+ADSD2[, lag := round(c(NA, diff(relativeSW)), digits = 5)][]
+```
+
 
 **Task1:**  
 Grab DUL & LL from each layer. 
@@ -274,12 +326,12 @@ Visulise the data to have a feel.
 SW_mean <- water[, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = value_vars]
 # melt(SW_mean, id.vars = id_vars, variable.factor = FALSE,
 #      variable.name = "Depth",value.name = "SW")
-SD <- "SD5"
+SD <- "SD2"
 Site <- "AshleyDene"
 SW_mean[SowingDate == SD & Experiment == Site] %>% 
   ggplot(aes(Clock.Today, `SW(1)`)) +
   geom_point() +
-  geom_smooth(span = 0.5) +
+  geom_smooth(span = 0.25) +
   scale_x_date(breaks = "2 weeks") +
   theme_classic() +
   geom_text(aes(label = Clock.Today), check_overlap = TRUE) +
