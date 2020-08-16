@@ -1,7 +1,7 @@
 library(data.table)
 library(readxl)
 library(magrittr)
-# library(forcats)
+library(forcats)
 # library(lubridate)
 library(DBI)
 library(RSQLite)

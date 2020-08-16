@@ -1,4 +1,24 @@
 
+
+things to try:
+1. use the conventional data to extract the distrbution functions for each depth for kls.  
+2. use the distrubtion function as a sampling pool to reconstruct the slurp expotential decay method.  
+
+
+log(klc) = log(kl0) - lambdakl*ln(z - z0)
+y = b + ax
+
+dirty quick 
+linear regression 
+
+nls in r add depth as a random effects and it's 
+Day 
+
+try derivate of the klz respect to kl0
+
+
+z = 0, 2300
+
 # 20200811 
 
 Rodelyn: 
