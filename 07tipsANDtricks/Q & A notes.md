@@ -1,3 +1,45 @@
+
+
+things to try:
+1. use the conventional data to extract the distrbution functions for each depth for kls.  
+2. use the distrubtion function as a sampling pool to reconstruct the slurp expotential decay method.  
+
+
+log(klc) = log(kl0) - lambdakl*ln(z - z0)
+y = b + ax
+
+dirty quick 
+linear regression 
+
+nls in r add depth as a random effects and it's 
+Day 
+
+try derivate of the klz respect to kl0
+
+
+z = 0, 2300
+
+# 20200811 
+
+Rodelyn: 
+1. what are the parameters that I tried to optimise
+	Two systems:
+	a, when there are detailed measurements 
+		kl - how fast the plant suck the water out of the soil
+		RFV - how quick the root growth
+	b, when only a overall measurements
+		SKL surface kl 
+		KLreduction - expotential decay rate
+		RFV 
+		
+2. what are the mean and std for these parameters 
+
+3. what is the covoriance between the two
+	
+4. 
+
+
+
 # 20200807
 最大似然估计提供了一种给定观察数据来评估模型参数的方法，即：“模型已定，参数未知”。简单而言，假设我们要统计全国人口的身高，首先假设这个身高服从服从正态分布，但是该分布的均值与方差未知。我们没有人力与物力去统计全国每个人的身高，但是可以通过采样，获取部分人的身高，然后通过最大似然估计来获取上述假设中的正态分布的均值与方差。
 由上可知最大似然估计的一般求解过程：

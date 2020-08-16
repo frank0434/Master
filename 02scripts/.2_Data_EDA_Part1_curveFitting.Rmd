@@ -135,10 +135,41 @@ ADSD2 %>%
   ggplot(aes(DAS, relativeSW, color = Depth, group = Depth)) +
   # geom_point()+
   geom_smooth(se = FALSE, span = 0.3) +
-  facet_wrap(~Depth) +
-  geom_hline(yintercept = seq)
+  facet_wrap(~Depth) 
 
 ```
+
+rolling lm seems not able to detect the true decline trend 
+
+nls probably the only way 
+
+
+```{r}
+data.df <- ADSD2[Depth == 13 & DAS < 140]
+qplot(DAS, SW, data = data.df)
+# Select an approximate $\theta$, since theta must be lower than min(y), and greater than zero
+ll.0 <- min(data.df$SW) * 0.5  
+
+# Estimate the rest parameters using a linear model
+model.0 <- lm(log(SW - ll.0) ~ DAS, data=data.df)  
+pawc.0 <- exp(coef(model.0)[1])
+kl.0 <- coef(model.0)[2]
+
+# Starting parameters
+start <- list( pawc = pawc.0, kl = kl.0, ll = ll.0)
+
+model <- nls(SW ~ pawc * exp(kl * DAS) + ll , data = data.df, start = start)
+
+# Plot fitted curve
+# plot(data.df$t, data.df$mean_SW)
+# lines(data.df$t, predict(model, list(x = data.df$t)), col = 'skyblue', lwd = 3)
+qplot(DAS, SW, data = broom::augment(model)) + geom_line(aes(y = .fitted))
+tidy(model) %>% 
+  dplyr::select(term, estimate) %>% 
+  spread(term, estimate) 
+```
+
+
 ```{r}
 ADSD2[, lag := round(c(NA, diff(relativeSW)), digits = 5)][]
 ```
@@ -162,7 +193,7 @@ p <- ADSD1 %>%
   ggplot(aes(Clock.Today, value, group = Clock.Today)) +
   geom_boxplot(outlier.colour = outlier.colour) +
   facet_grid( variable~.)
-p
+# p
 ADSD1[, lapply(.SD, mean),
       by = .(Experiment, Clock.Today, SowingDate), .SDcol = value_vars
       ][, as.list(unlist(lapply(.SD, max_min))),
@@ -433,7 +464,7 @@ artificial %>%
   ggplot(aes(x = Clock.Today)) +
   geom_point(aes(y = mean_SW)) +
   geom_text(aes(y = mean_SW, label = mean_SW))
-artificial[, start := as.Date("2011-10-21")
+artificial[, start := as.Date("2010-10-21")
            ][, t := as.numeric(difftime(Clock.Today,start, units = "day"))][]
 pawc <- 27
 ll <- 6
@@ -463,7 +494,7 @@ https://rpubs.com/mengxu/exponential-model
  
  
 ```{r}
-artificial <- copy(water_mean)[variable %in% paste0("SW(", 1,")") 
+artificial <- copy(water_mean)[variable %in% paste0("SW(", 9,")") 
                                & SowingDate %in% paste0("SD", 1:5) 
                                & Clock.Today >= "2011-10-21" 
                                & Clock.Today <= "2012-05-15"
@@ -472,7 +503,8 @@ artificial <- copy(water_mean)[variable %in% paste0("SW(", 1,")")
 artificial %>% 
   ggplot(aes(x = Clock.Today)) +
   geom_point(aes(y = mean_SW)) +
-  geom_text(aes(y = mean_SW, label = mean_SW))
+  geom_text(aes(y = mean_SW, label = mean_SW)) +
+  facet_wrap(~ Experiment)
 artificial[, start := as.Date("2011-10-21")
            ][, t := as.numeric(difftime(Clock.Today, start, units = "day"))][]
 # Nested data into a list column
