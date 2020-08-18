@@ -68,7 +68,7 @@ roll3$coefficients %>%
   ggplot(aes(1:22,  x1)) +
   geom_line()
 
-layer3 = ADSD2[Depth == 3]
+layer3 = ADSD2[Depth == 11]
   
   Lines <- "  bo_m          dax             bo_m_lag
  -0.040131270  0.001842860      0.032612438
@@ -120,6 +120,12 @@ coef(summary(lm(SW ~ DAS, layer3[2:4,])))
 coef(summary(lm(SW ~ DAS, layer3[3:5,])))
 coef(summary(lm(SW ~ DAS, layer3[4:6,])))
 coef(summary(lm(SW ~ DAS, layer3[5:7,])))
+coef(summary(lm(SW ~ DAS, layer3[6:8,])))
+coef(summary(lm(SW ~ DAS, layer3[7:9,])))
+coef(summary(lm(SW ~ DAS, layer3[8:10,])))
+coef(summary(lm(SW ~ DAS, layer3[9:11,])))
+
+coef(summary(lm(SW ~ DAS, layer3[10:12,])))
 
 
 roll_coef <- function(x){

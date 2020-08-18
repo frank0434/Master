@@ -104,12 +104,13 @@ water[Experiment == "AshleyDene" & SowingDate == "SD2"]  %>%
   geom_smooth(se = FALSE,  method = "loess")
 ```
 ```{r}
-
+water = rename_cols(DT = water[, `SW(2)`:=NULL])
 id_vars <- colnames(water)[!colnames(water) %in% grep("SW\\(\\d.+", colnames(water), value = TRUE)]
 value_vars <- colnames(water)[!colnames(water) %in% id_vars]
 id_vars = c("Experiment","Clock.Today", "Season","SowingDate", "DAS")
 SW_mean <- water[, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = value_vars]
-
+# Loadd the sw mean from drake cache with the top 2 layers combined
+# loadd(SW_mean)
 ```
 #### Select season one to see which layer the root have been 
 
@@ -124,7 +125,8 @@ season1[, SW := mean(SW,na.rm = TRUE), by = .(Experiment, Clock.Today, Season, S
 #### Need to DUL and LL to calculate the relative water 
 **Run chunch 7 to 14 to have the DUL and LL for each layer**
 ```{r}
-dul = SW_DUL_LL[,.(Experiment, SowingDate,Depth, DUL)]
+loadd(SW_DUL_LL)
+dul = SW_DUL_LL[,.(Experiment, SowingDate,Depth, DUL, LL, PAWC)]
 season1 = merge(season1, dul, by = c("Experiment","SowingDate","Depth"),
                 all.x = TRUE, suffixes = c("", "_started"))
 season1[, ':='(relativeSW = SW/100/DUL,
@@ -139,26 +141,329 @@ ADSD2 %>%
 
 ```
 
-rolling lm seems not able to detect the true decline trend 
 
-nls probably the only way 
+## roll lm
+rolling lm seems not able to detect the true decline trend 
+```{r}
+library(roll)
+lapply(1:23, function(n){
+  X = ADSD2[Depth == n]$DAS
+  y = ADSD2[Depth == n]$SW
+  lms = roll_lm(X, y, width = 4)
+  lmlayer1 = cbind(lms$coefficients, lms$r.squared, lms$std.error, X) 
+  colnames(lmlayer1) = c("Intercept", "coef", "R2", "Intercept_sem", "sem", "DAS")
+  critical = qt(0.05, df = 2) # How to decide this df? totoal df in one treatment?
+  CI = as.data.table(lmlayer1)[, ci := coef - critical * sem]
+  T = t.test(CI$coef)
+  thechooseone = CI[coef < T$conf.int[1]]
+  # thechooseone = lmlayer1[x1<CI][1] # not a good standard
+  # t.test(lmlayer1$x1, mu =  0)
+  plot(X, y)
+  lines(X, y)
+  title(n)
+  abline(v = thechooseone$DAS, col = "red")
+})
+
+# thechooseone
+# hist(CI$coef)
+# length(na.omit(CI$coef))
+# DF = 19 - 2
+# critical = qt(0.05, DF)
+# # S - critial * std
+# sd(CI$coef, na.rm = TRUE)
+# mean(CI$coef, na.rm = TRUE)
+# T = t.test(CI$coef)
+# T$conf.int[1]
+# CI$coef
+```
+
+if the soil moisture can explained well by lm model in one layer,
+it probably indicates that the root had not reached there. 
+
+if the variance is less than a value 
+then it is a strait line
+
+```{r}
+library(segmented)
+n = 10
+out.lm<-lm(relativeSW ~ DAS,data=ADSD2[Depth == n])
+# qplot(DAS, relativeSW, data =broom::augment(out.lm)) + geom_line(aes(y = .fitted))
+
+o<-segmented(out.lm,seg.Z=~DAS,
+             psi=list(DAS = NA),
+             # npsi = 4,
+             control=seg.control(fix.npsi=FALSE, n.boot=0, tol=1e-7, it.max = 50, K=5, display=TRUE))
+ 
+print(summary(o))
+      
+# find slopes and phyllochron
+ s = slope(o)
+ # find breaks
+ b = o$psi[,2]
+b
+plot(ADSD2[Depth == n]$DAS,ADSD2[Depth == n]$relativeSW, cex=1.8, pch=01, family= "serif", xlab="", ylab="")
+plot(o,lwd=3, add=TRUE)
+
+par(mfrow=c(1,2))
+draw.history(o, "DAS")
+# draw.history(o, "z")
+plot(o, conf.level=0.95, shade=TRUE)
+```
+## Try production with `segmented` 
+```{r}
+lapply(1:22, function(n){
+  out.lm<-lm(relativeSW ~ DAS,data=ADSD2[Depth == n])
+# qplot(DAS, relativeSW, data =broom::augment(out.lm)) + geom_line(aes(y = .fitted))
+
+o<-segmented(out.lm,seg.Z=~DAS,
+             psi=list(DAS = NA),
+             # npsi = 4,
+             control=seg.control(fix.npsi=FALSE, n.boot=0, tol=1e-7, it.max = 50, K=5, display=TRUE))
+ 
+# print(summary(o))
+      
+# find slopes and phyllochron
+ s = slope(o)
+ # find breaks
+ b = o$psi[,2]
+
+plot(ADSD2[Depth == n]$DAS,ADSD2[Depth == n]$relativeSW, cex=1.8, pch=01, family= "serif", xlab="", ylab="")
+plot(o,lwd=3, add=TRUE)
+title(n)
+})
+
+```
+
+
+## Test `mcp`
+
+the term i looked for detecting the time of RFV is called **change point` analysis
+
+`mcp` seems the most advanced package in thi field with a nice github page. 
+https://lindeloev.github.io/mcp/index.html
+
+[more comparison](https://www.marinedatascience.co/blog/2019/09/28/comparison-of-change-point-detection-methods/)
+
+Formula format for segments
+The format of each segment is generally response ~ changepoint ~ predictors + sigma(variance_predictors), except for the first segment where there is no change point (response ~ predictors + sigma(variance_predictors)). Here is a simple and a complex formula
+
+The response is just the name of a column in your data.
+The change point can be 1 for a population-level change point or 1 + (1|group) varying change points sampled around the population-level change point.
+The predictors can be 0 (no change in intercept), 1 (change in intercept), and any column in your data which you want to model a slope on.
+The variance predictors has it’s own article, but they follow the same rules as the predictors.
+```{r}
+library(mcp)
+# simple test
+n = 11
+dt = ADSD2[Depth == n]
+
+# Build the model
+model = list(
+  relativeSW ~ 1 ,  # plateau (int_1)
+   ~ 0 + DAS,       # joined slope (time_2) at cp_1, could be a exp decay function.
+   ~ 0  ,            # joined slope (int_3, time_3) at cp_2 - plateau
+   ~ 0 + DAS        # joined slope at cp_3 - infiltration front
+  )
+
+# Fit it.
+fit = mcp(model, data = dt)
+plot(fit) + 
+  geom_vline(xintercept = summary(fit)$mean[1])
+# l = summary(fit)
+cp_1_est = as.data.table(summary(fit))
+# cp_1_est
+int_range = cp_1_est[name == "int_1"]
+(int_range$upper - int_range$lower) < 0.05
+
+setkey(dt, DAS)
+dt = dt[dt[J(cp_1_est$mean[1]), roll = 'nearest', which = TRUE]]
+close_das = dt$DAS
+P = plot(fit) +
+  geom_vline(xintercept = c(cp_1_est$mean[1],close_das), color =  c("red","black"))  +
+  theme_water()
+
+P
+
+```
+
+
+#### WHY THE CHANGE POINT IS GIVEN IN THAT PARTICULAR DATE? 
+BEST FIT? 
+MINIMUM COST? 
 
 
 ```{r}
-data.df <- ADSD2[Depth == 13 & DAS < 140]
+# plot_pars(fit)
+
+# varying the change points - this is a linear mixed effect model. probably not
+# applicable in this case
+# ADSD2[, Depth := as.integer(Depth)]
+# # options(mc.cores = 2)
+model = list(
+  relativeSW ~ 1,  # plateau (int_1)
+  1 + (1|Depth) ~ 0 + DAS,    # joined slope (time_2) at cp_1
+  (1|Depth) ~ 0,
+  (1|Depth) ~ 0 + DAS
+
+)
+
+# Fit it. The `ex_demo` dataset is included in mcp
+fit = mcp(model, data = ADSD2)
+plot(fit, facet_by = "Depth")
+summary(fit)
+
+```
+
+## Test `mcp` in one sowing date
+```{r}
+# Build the model
+model = list(
+  relativeSW ~ 1 ,  # plateau (int_1)
+   ~ 0 + DAS,       # joined slope (time_2) at cp_1, could be a exp decay function.
+   ~ 0  ,            # joined slope (int_3, time_3) at cp_2 - plateau
+   ~ 0 + DAS        # joined slope at cp_3 - infiltration front
+  )
+set.seed(42)
+ldpeth = lapply(2:22, function(n){
+ dt = ADSD2[Depth == n]
+ # range = max(dt$relativeSW, na.rm = TRUE) - min(dt$relativeSW, na.rm = TRUE)
+ 
+   
+  # Fit it. 
+  fit = mcp(model, data = dt, cores = 3)
+  # Extract the cp one 
+  cp_1_est = as.data.table(summary(fit))
+  int_range = cp_1_est[name == "int_1"]
+  if((int_range$upper - int_range$lower) > 0.05){
+    setkey(dt, DAS)
+  
+  close_das = dt[dt[J(cp_1_est$mean[1]), roll = 'nearest', which = TRUE]]$DAS
+  P = plot(fit) +
+    geom_vline(xintercept = c(cp_1_est$mean[1],close_das), 
+               color =  c("red","black")) +
+    ggtitle(n)+
+    theme_water()
+  
+  
+  return(P)
+  } else(
+   cat("Layer", n, "has less than 0.05 changes. Ignored. \r\n")
+ )
+  
+})
+ldpeth
+# Check the top 
+DT = ADSD2[Depth ==11 & DAS < 145 ]
+fit = mcp(model, data = DT, cores = 3, sample = 'both' )
+# Extract the cp one 
+cp_1_est = as.data.table(summary(fit ))
+plot(fit) + geom_vline(xintercept = cp_1_est$mean[1])
+plot_pars(fit) 
+int_range = cp_1_est[name == "int_1"]
+
+  
+```
+## Top layer 0-20cm are better to use indenpended model
+
+summary.mcpfit returns the quantiles specified in the "width" argument. So for summary(fit, width = 0.95) it returns the 2.5% and 97.5% quantiles of the distributions you see as blue curves in the bottom of your plot.
+
+Other comments: In your case, you have very little data to inform around 7 parameters, so I would guess that the prior excerts quite an influence on the results. Try doing mcp(model, data, sample = "both") and then compare plot(fit, prior = FALSE) with plot(fit, prior = TRUE). If they are somewhat similar, try explicitly setting the prior as basically anything will be better than the default, which merely serves to make the model run in most scenarios. Read more on the website. https://lindeloev.github.io/mcp/
+
+```{r}
+I12SD2 = season1[Experiment != "AshleyDene" & SowingDate == "SD2"]
+ldpethi12=lapply(2:22, function(n){
+  dt = I12SD2[Depth == n]
+ # range = max(dt$relativeSW, na.rm = TRUE) - min(dt$relativeSW, na.rm = TRUE)
+ 
+   
+  # Fit it. 
+  fit = mcp(model, data = dt, cores = 3)
+  # Extract the cp one 
+  cp_1_est = as.data.table(summary(fit))
+  int_range = cp_1_est[name == "int_1"]
+  if((int_range$upper - int_range$lower) > 0.05){
+    setkey(dt, DAS)
+  
+  close_das = dt[dt[J(cp_1_est$mean[1]), roll = 'nearest', which = TRUE]]$DAS
+  P = plot(fit) +
+    geom_vline(xintercept = c(cp_1_est$mean[1],close_das), 
+               color =  c("red","black")) +
+    ggtitle(n)+
+    theme_water()
+  
+  
+  return(P)
+  } else(
+   cat("Layer", n, "has less than 0.05 changes. Ignored. \r\n")
+ )
+  
+})
+ldpethi12
+  
+```
+
+
+```{r}
+n = 4
+# lapply(1:23, function(n){
+  df=ADSD2[Depth == n]
+  lms = lm(SW ~ DAS, df)
+  summary(lms) 
+  qplot(DAS, SW, data = broom::augment(lms)) + geom_line(aes(y = .fitted))
+
+# })
+```
+WHAT ABOUT I12
+```{r}
+I12SD2 = season1[Experiment != "AshleyDene" & SowingDate == "SD2"]
+lapply(1:23, function(n){
+  X = I12SD2[Depth == n]$DAS
+  y = I12SD2[Depth == n]$SW
+  lms = roll_lm(X, y, width = 4)
+  lmlayer1 = cbind(lms$coefficients, lms$r.squared, lms$std.error, X) 
+  colnames(lmlayer1) = c("Intercept", "coef", "R2", "Intercept_sem", "sem", "DAS")
+  critical = qt(0.05, df = 2) # How to decide this df? totoal df in one treatment?
+  CI = as.data.table(lmlayer1)[, ci := coef - critical * sem]
+  thechooseone = CI[coef < 0 & coef < ci & ci < 0]
+  # thechooseone = lmlayer1[x1<CI][1] # not a good standard
+  # t.test(lmlayer1$x1, mu =  0)
+  plot(X, y)
+  lines(X, y)
+  title(n)
+  abline(v = thechooseone$DAS, col = "red")
+})
+```
+
+
+nls probably the only way? is it?
+NLS can estimate the rate of the decay 
+But not necessary gives the DAS that the decay started.
+NLS assumed that the decay started from day 0 
+
+
+
+Regarding starting values:
+
+Take logs of both sides and fit with a linear model.
+The parameters should be of similar magnitude to avoid numerical problems so use Level/1e9 in place of Level. This just changes the units in which Level is measured.
+Using starting values from the linear model, nls should be sufficient.
+[helpNLS start](https://stackoverflow.com/questions/61344966/self-starting-functions-for-exponential-decay-model-in-r)
+```{r}
+data.df <- ADSD2[Depth == 5 & DAS < 140]
 qplot(DAS, SW, data = data.df)
+# nls(SW ~ SS)
 # Select an approximate $\theta$, since theta must be lower than min(y), and greater than zero
 ll.0 <- min(data.df$SW) * 0.5  
 
 # Estimate the rest parameters using a linear model
-model.0 <- lm(log(SW - ll.0) ~ DAS, data=data.df)  
+model.0 <- lm(log(SW) ~ DAS, data=data.df)  
 pawc.0 <- exp(coef(model.0)[1])
 kl.0 <- coef(model.0)[2]
 
 # Starting parameters
-start <- list( pawc = pawc.0, kl = kl.0, ll = ll.0)
+start <- list( PAWC = pawc.0, kl = kl.0, LL = ll.0)
 
-model <- nls(SW ~ pawc * exp(kl * DAS) + ll , data = data.df, start = start)
+model <- nls(SW ~ PAWC * exp(kl * DAS) + LL , data = data.df, start = start)
 
 # Plot fitted curve
 # plot(data.df$t, data.df$mean_SW)
