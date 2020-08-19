@@ -1,4 +1,13 @@
 
+# 20200818
+Slurp model results show there could be different RFV for each layer. 
+A change point analysis could verify the model results?!
+
+plan to go ahead:
+1. examine the simulation set up is correct. 
+2. finalise the change point analysis. 
+
+
 
 things to try:
 1. use the conventional data to extract the distrbution functions for each depth for kls.  
