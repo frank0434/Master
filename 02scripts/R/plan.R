@@ -129,7 +129,7 @@ plan_analysis <- drake::drake_plan(
                             ][order(NSE, R2,RMSE)
                               ][, .SD[1], by = .(Experiment, SowingDate)
                                 ][, data:=NULL],
-                       file_out(!!paste0(Sys.getenv("WorkingDir"), "/03processed-data/",
+                       file_out(!!paste0(here::here("03processed-data/") ,
                                          .id_chr, ".csv"))),
     transform = map(data = c(top5))
   )
