@@ -27,6 +27,7 @@ library(here)
 library(drake)
 # Stats
 library(hydroGOF)
+library(visNetwork) 
 
 # Customised package
 library(autoapsimx)
