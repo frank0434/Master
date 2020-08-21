@@ -34,7 +34,6 @@ stats_key_SW_extra <- c(stats_key_SW, "NSE", "R2", "RMSE")
 # Run all apsimx files - take long time 
 drake::make(plan_config, lock_envir = F, memory_strategy = "autoclean", 
             garbage_collection = TRUE)
-library(visNetwork) 
 vis_drake_graph(
   plan_config, targets_only = TRUE,
   font_size = 25,
@@ -49,7 +48,7 @@ vis_drake_graph(
 
 # Process all simulation output 
 # Identify the best fit parameters for SKL, KLR and RFV regarding to soil water
-# profile
+# profile 
 # Draw graphs of top 3 best fit 
 # Output a table of real best fit 
 vis_drake_graph(
