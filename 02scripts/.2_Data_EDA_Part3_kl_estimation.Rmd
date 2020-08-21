@@ -98,7 +98,7 @@ dbDisconnect(conn = con_eda)
 ## Subset the preds
 
 ```{r}
-pred_swc_SD2 <- report[,.(Date = as.Date(Date), SimulationID,KLR, RFV, SKL, k, LAI, PSWC)][order(SimulationID)]
+pred_swc_SD2 <- report[,.(Date = as.Date(Clock.Today), SimulationID,KLR, RFV, SKL, k, LAI, PSWC)][order(SimulationID)]
 ```
 
 ## Browse the preds
@@ -132,7 +132,7 @@ obs_SD2 <- water[, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = "SWC
 pred_obs <- pred_swc_SD2[obs_SD2, on = c(  "Date" = "Clock.Today" )][order(SimulationID)]
  # obs_SD2[pred_swc_SD2, on = c(  "Clock.Today" = "Date"), by = "SimulationID"]
 # pred_obs[complete.cases(pred_obs)]
-NSE(pred_obs$PSWC, pred_obs$SWC)
+# NSE(pred_obs$PSWC, pred_obs$SWC)
 ```
 
 ## Stats
@@ -199,7 +199,7 @@ what are the necessary bits in the `for`
 
 ```{r}
 dbs <- list.files(path = "../03processed-data/apsimxFiles/", pattern = ".db$", full.names = TRUE)
-i = dbs[10]
+i = dbs[5]
   con <- dbConnect(RSQLite::SQLite(), i)
   df <- dbReadTable(con, "Report", check.names = FALSE)
   dbDisconnect(con)
@@ -479,29 +479,107 @@ I12sd9and10[SowingDate == "SD9"]$data[[1]] %>%
 # What about each layers 
 
 ```{r}
-SW_obs = readd(SW_mean)
-SW_obs
-DT_stats = readd(DT_stats)
-DT_stats$data[[3]]
-readd(dt)
-DT = readd(pred_swc)
-cols <- c("CheckpointID", "Experiment", "FolderName")
-DT[, (cols) :=  NULL
-   ][order(SimulationID)]
 
-DT <- readd(pred_sw)
-DT_STATS <- sims_stats(DT, col_pred = "SW(1)", col_obs = "i.SW(1)")
-DT_STATS$data[[1]]
-DT[, Zone := NULL]
-grep("^(!?SW)", names(DT), value = TRUE)
-setkeyv(DT, c("Date","Experiment", "SimulationID", "SowingDate",
-              "KLR","RFV","SKL"))
-key(DT)
+layer = paste0("SW(", 1, ")")
 
-DT %>% melt(id.vars = key(DT))
+SD = "SD4"
+l = vector("list", length = 20)
+ct = 1
+for (i in unique(SW_mean$Experiment)){
+  for (j in unique(SW_mean$SowingDate)) {
+    
+    cat(i , j , "\r\n")
+    cols <- c("CheckpointID", "Experiment", "FolderName","Clock.Today","SowingDate", layer)
+    SW_obs = readd(SW_mean)
+    SW_obs = SW_obs[SowingDate == j & Experiment == i , colnames(SW_obs) %in% cols, with = FALSE]
+    DT_stats = readd(DT_stats)
+    DT = DT_stats[SowingDate == j & Experiment == i]
+    
+    
+    DT = DT[, unlist(data, recursive = FALSE), by = .(Experiment,SowingDate, SimulationID, KLR, RFV, SKL)]
+    DT_merged = merge(DT, SW_obs, by = c("Experiment","Clock.Today","SowingDate"))
+    # Join two layers 
+    stats = autoapsimx::sims_stats(DT_merged, col_pred = "SW(1).x", col_obs = "SW(1).y")
+    stats_unnested = stats[, unlist(stats, recursive = FALSE), by = .(Experiment, SowingDate, SimulationID, KLR, RFV,SKL)]
+    
+    # maxNSE = max(stats_unnested$NSE)
+    # minRMSE = min(stats_unnested$RMSE)
+    # maxR2 = max(stats_unnested$R2)
+    # zeroPbias = 0.0
+    # best_fit = stats_unnested[NSE == maxNSE & RMSE == minRMSE & R2 == maxR2 & `PBIAS %`==zeroPbias]
+    stats_sorted = stats_unnested[J(0), on = "PBIAS %", roll = "nearest"]
+    setorder(stats_sorted, -NSE, -R2, RMSE)
+    
+    pred_obs_best = DT_merged[stats_sorted, on = c("Experiment", "SowingDate", "SimulationID", "KLR", "RFV","SKL")
+                              ][, BestComb := paste0("SKL = ", SKL,
+                                                     " KLR = ", KLR,
+                                                     " RFV = ", RFV)]
+    pred_obs_best[, beststats := paste0("NSE = ", NSE,
+                                        " R.square = ", R2,
+                                        " RMSE = ", RMSE)]
+    # IF i or j is invalid -> skip
+    if(isTRUE(dim(pred_obs_best)[1] == 0)){
+      stats_sorted
+      
+    } else{
+      P = pred_obs_best %>% 
+        ggplot(aes(`SW(1).x`, `SW(1).y`)) + 
+        geom_point() +
+        facet_wrap( ~ BestComb + beststats) + 
+        geom_abline(color = "red") + 
+        theme_water() +
+        # geom_text(aes(x = mean(pred_obs_best[["SW(1).x"]], na.rm = TRUE), 
+        #               y = mean(pred_obs_best[["SW(1).y"]], na.rm = TRUE),
+        #               vjust = 0,
+        #               label = paste0("NSE = ", NSE,
+        #                              "\r\nR.square = ", R2,
+        #                              "\r\nRMSE = ", RMSE)),inherit.aes = FALSE) +
+        labs(x = "Observation", y = "Predication", title = paste(i, j))
+      l[[ct]] = P
+    }
 
-
+ct = ct + 1
+}
+}
+# DT_STATS <- sims_stats(DT, col_pred = "SW(1)", col_obs = "i.SW(1)")
+# DT_STATS$data[[1]]
+# DT[, Zone := NULL]
+# grep("^(!?SW)", names(DT), value = TRUE)
+# setkeyv(DT, c("Date","Experiment", "SimulationID", "SowingDate",
+#               "KLR","RFV","SKL"))
+# key(DT)
+# 
+# DT %>% melt(id.vars = key(DT))
+# stats[SimulationID ==4]
+l[[10]]$data
+l[[10]]
+l
 ```
+## Strip off the bset skl and klr and rfv for the top layer
+```{r}
+l_bestcomb = lapply(l, function(x){
+  DT = unique(x$data[,.(Experiment, SowingDate, KLR, SKL,RFV, NSE, R2, RMSE,`PBIAS %`)])
+  DT
+})
+bestcomb = rbindlist(l_bestcomb)
+fwrite(bestcomb, "../03processed-data/20200821bestcomb.csv")
+melt(bestcomb, 
+     id.vars = c("Experiment", "SowingDate", "NSE", "R2", "RMSE","PBIAS %")) %>% 
+  ggplot(aes(variable, value)) +
+  geom_point() +
+  facet_wrap( ~ Experiment)
+unique(bestcomb[,.(Experiment, SKL)]) %>% 
+  ggplot(aes(Experiment)) +
+  geom_point(aes(y = SKL))+
+  geom_boxplot(aes(y = SKL), alpha = 0.5) 
+unique(bestcomb[,.(Experiment, RFV)]) %>% 
+  ggplot(aes(Experiment)) +
+  geom_point(aes(y = RFV))
+  # geom_boxplot(aes(y = RFV), alpha = 0.5) 
+```
+
+
+
 
 Might be easier to melt first and then join 
 ```{r}
