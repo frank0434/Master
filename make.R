@@ -83,6 +83,11 @@ vis_drake_graph(
 
 # Calibrate layer by layer ------------------------------------------------
 
+# STEPS
+
+## Execute this plan first
+## 
+
 # Constant
 source(file.path(kRpath, "EditApsimxCalibrateLayers.R"))
 source(file.path(kRpath, "plan_LayerCalibr.R"))

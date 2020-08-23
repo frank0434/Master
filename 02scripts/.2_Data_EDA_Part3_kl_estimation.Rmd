@@ -5,6 +5,13 @@ date: "`r Sys.Date()`"
 output: html_document
 ---
 
+# Important chunks
+
+\ref{What about each layers}
+
+
+
+
 # Protocol
 
 - Input data ready: met, cover and slurp `.apsimx`  
@@ -284,7 +291,7 @@ rbindlist(l_stats)
 because the regex was wrong and subset ob failed. 
 
 ```{r}
-l_stats[220]
+# l_stats[220]
 ```
 
 # EDA on loadding stats from cache FOR 1 SKL
@@ -552,19 +559,19 @@ ct = ct + 1
 # DT %>% melt(id.vars = key(DT))
 # stats[SimulationID ==4]
 l[[10]]$data
-l[[10]]
+# l[[10]]
 l
 ```
 ## Strip off the bset skl and klr and rfv for the top layer
 ```{r}
 l_bestcomb = lapply(l, function(x){
-  DT = unique(x$data[,.(Experiment, SowingDate, KLR, SKL,RFV, NSE, R2, RMSE,`PBIAS %`)])
+  DT = unique(x$data[,.(Experiment, SowingDate, KLR, SimulationID, SKL,RFV, NSE, R2, RMSE,`PBIAS %`)])
   DT
 })
 bestcomb = rbindlist(l_bestcomb)
 fwrite(bestcomb, "../03processed-data/20200821bestcomb.csv")
 melt(bestcomb, 
-     id.vars = c("Experiment", "SowingDate", "NSE", "R2", "RMSE","PBIAS %")) %>% 
+     id.vars = c("Experiment", "SowingDate", "SimulationID","NSE", "R2", "RMSE","PBIAS %")) %>% 
   ggplot(aes(variable, value)) +
   geom_point() +
   facet_wrap( ~ Experiment)

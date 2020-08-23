@@ -217,7 +217,7 @@ for (i in Sites) {
       # Edit the base apsimx file and save it to a new name
       ## modify the apsimx file
       modifiedName <- paste0(apsimx_sims_dir, 
-                             "/", i, j,"LayerKL_", replacement_KL, "RFV_", replacement_RFV, ".apsimx")
+                             "/", i, j,"LayerKL_1_", replacement_KL, "RFV_", replacement_RFV, ".apsimx")
       system(paste("cp", apsimx_Basefile, modifiedName))
       system(paste(apsimx, modifiedName, apsimx_flag, paste0(apsimx_config,  replacement_KL, "RFV_", replacement_RFV,  i, j,".txt")))
       

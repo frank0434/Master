@@ -1,4 +1,19 @@
 
+
+
+# 20200821
+
+output the 3rd round of slurp analysis 
+the best surface kl with other parameters --> manually put them into a 
+new apsimx file called `20200820BestSKL`
+This version still has the AD sowingdate 1 unchanged in terms of initial waters.
+
+Observations:   
+1. Calibration against different component will yield different best fit stats. 
+  For example, only calibrate the top layer will select the poor performance 
+  of overview predictions in general.
+  
+
 # 20200818
 Slurp model results show there could be different RFV for each layer. 
 A change point analysis could verify the model results?!
