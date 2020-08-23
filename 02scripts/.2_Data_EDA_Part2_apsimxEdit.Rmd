@@ -64,15 +64,27 @@ loadd(info)
 # system(paste(apsimx, "C:/Data/Master/03processed-data/bestfitLayerkl/*.apsimx"))
 ```
 
+`Error: no such table: Observed` always pop up to stop the process
+because I12 SD9 and SD10 have empty observation values. 
+
+
 ```{r}
-files = list.files("c:/Data/Master/03processed-data/bestfitLayerkl/", pattern = "*.db$", full.names = TRUE)
+# Test one SD
+files = list.files("c:/Data/Master/03processed-data/bestfitLayerkl/", pattern = "Iversen12SD1Lay.+_1{1}_.+db$", full.names = TRUE)
+# All treatments 
+
 KL_layers = seq(2, 21, 1)
+statslist = vector("list", length = length(files[1]) * length(KL_layers))
+expandnames = expand.grid(basename(files), KL_layers)
+
+names(statslist) = paste0(expandnames$Var1, "toLayer_", expandnames$Var2)
+pos = 1
 for( i in files){
   for(j in KL_layers){
   
   # filename = "C:/Data/Master/03processed-data/bestfitLayerkl/LayerKL_0.04RFV_25Iversen12SD2.db"
   # filename =  gsub(".apsimx$", ".db", newname)
-  filename = i 
+  filename = i
   obs = read_dbtab(filename,
                    table = "Observed")
   preds = read_dbtab(filename,
@@ -97,12 +109,17 @@ for( i in files){
     m
   })]
   
-  DT = nested[, unlist(data, recursive = FALSE), by = .(SimulationID, KL, RFV)
-              ][order(NSE,R2, RMSE, decreasing = TRUE)]
+  DT = nested[, unlist(data, recursive = FALSE), by = .(SimulationID, KL, RFV)]
+  setorder(DT, -NSE, -R2, RMSE, `PBIAS %`)
+   
   bestkl = DT$KL[1]     
   bestRFV = DT$RFV[1]
+  # Output the stats for subsequent analysis? 
+  statslist[[pos]] = DT[, layer := layerno.]
+  pos = pos + 1 
   # Rename the bestfit layer 2 
-  newname = gsub("(.+)(LayerKL_)(\\d.\\d{1,4})(RFV_\\d{1,2})(\\.db$)",paste0("\\1\\2",layerno.,"_", bestkl, "RFV_", bestRFV, ".apsimx"), basename(filename))
+  newname = gsub("(.+)(LayerKL_)(\\d{1,2}_)(\\d.\\d{1,4})(RFV_\\d{1,2})(\\.db$)",
+                 paste0("\\1\\2",layerno.,"_", bestkl, "RFV_", bestRFV, ".apsimx"), basename(filename))
   filenameApsimx = gsub("\\.db$", ".apsimx", basename(filename))
   newname = file.path(sims_path, newname)
   oldname = file.path(sims_path, filenameApsimx)
@@ -110,12 +127,7 @@ for( i in files){
   # Sys.setenv(newname = newname)
   # Sys.setenv(nextlayer = layerno. + 1L)
   
-  # Edit the factorial to fit next layer 
   
-  nextlayer = layerno. + 1L
-  bash = paste0('sed -Ei "s/KL\\[[[:digit:]]\\] =/KL\\[', nextlayer, '\\] = /" ', newname)
-  cat(bash, '\r\n')
-  system(bash)
   # Edit the soil kl 
   
   node = paste0("[Soil].Physical.SlurpSoil.KL[", layerno., ":", 22, "] = ", bestkl)
@@ -127,7 +139,12 @@ for( i in files){
       nodeRFV, "\r\n", sep = "\r", file = f)
   close(f)
   system(paste(apsimx, newname, '/Edit', config_file))
+  # Edit the factorial to fit next layer 
   
+  nextlayer = layerno. + 1L
+  bash = paste0('sed -Ei "s/KL\\[[[:digit:]]\\] =/KL\\[', nextlayer, '\\] = /" ', newname)
+  cat(bash, '\r\n')
+  system(bash)
   # Run the new factor for next layer 
   system(paste(apsimx, newname))
   }
@@ -135,6 +152,7 @@ for( i in files){
 
 ```
 ```{r}
+saveRDS(statslist, "../03processed-data/I12statForEachLayer.rds")
 finishedClean = list.files("c:/Data/Master/03processed-data/bestfitLayerkl/", pattern = ".+21.+.apsimx$", full.names = TRUE)
 
 file.copy(finishedClean, to = "../03processed-data/apsimxFilesLayers/")
@@ -152,6 +170,139 @@ sed -Ei "s/KL\[[[:digit:]]\] =/KL\[$nextlayer\] = /" $newname
 
 ```{r}
 
+```
+
+
+**Finish the last layer**
+```{r}
+filenames = list.files("c:/Data/Master/03processed-data/bestfitLayerkl/", pattern = ".+21.+.db$", full.names = TRUE)
+sims_path = "c:/Data/Master/03processed-data/bestfitLayerkl/"
+for( i in filenames){
+
+  filename = i 
+  obs = read_dbtab(filename,
+                   table = "Observed")
+  preds = read_dbtab(filename,
+                     table = "Report")
+
+  nested = preds[, list(data = list(.SD)), by = .(SimulationID, KL, RFV)]
+  layerno. = 22
+  layer = paste0("SW(", layerno.,")")
+  cols = c("Clock.Today", layer)
+  cols_obs = c("Experiment", "SowingDate", "Clock.Today", layer)
+  nested[, data:= lapply(data, function(x){
+    
+    dt = merge.data.table(x[,..cols], obs[!is.na(SWC),..cols_obs], all.x = TRUE,
+                          by = "Clock.Today")
+    col_pred = paste0(layer, ".x")
+    col_obs = paste0(layer, ".y")
+    m <- hydroGOF::gof(sim = dt[[col_pred]], obs = dt[[col_obs]])
+    # Convert the matrix into a data.table with colnames
+    m <- m %>%
+      as.data.table(keep.rownames = T) %>%
+      transpose(make.names = 'rn')
+    m
+  })]
+  
+  DT = nested[, unlist(data, recursive = FALSE), by = .(SimulationID, KL, RFV)
+              ]
+  setorder(DT, -NSE, -R2, RMSE, `PBIAS %`)
+   
+  bestkl = DT$KL[1]     
+  bestRFV = DT$RFV[1]
+  
+  # Rename the bestfit layer 2 
+  node = paste0("[Soil].Physical.SlurpSoil.KL[", layerno., ":", 22, "] = ", bestkl)
+  nodeRFV = paste0("[SlurpSowingRule].Script.RFV = ", bestRFV)
+
+  newname = gsub("(.+)(LayerKL_)(21_)(\\d.\\d{1,4})(RFV_\\d{1,2})(\\.db$)",paste0("\\1\\2",layerno.,"_", bestkl, "RFV_", bestRFV, ".apsimx"), basename(filename))
+  filenameApsimx = gsub("\\.db$", ".apsimx", basename(filename))
+  newname = file.path(sims_path, newname)
+  oldname = file.path(sims_path, filenameApsimx)
+  system(paste("cp", oldname, newname))
+  config_file = tempfile(fileext = ".config")
+  f = file(config_file, "w")
+  cat(node, 
+      nodeRFV, "\r\n", sep = "\r", file = f)
+  close(f)
+  system(paste(apsimx, newname, '/Edit', config_file))
+  system(paste(apsimx, newname))
+
+  }
+```
+
+```{r}
+filenames = list.files("c:/Data/Master/03processed-data/bestfitLayerkl/", pattern = ".+22.+.db$", full.names = TRUE)
+sims_path = "c:/Data/Master/03processed-data/bestfitLayerkl/"
+lastlayer = vector("list", length = length(filenames))
+pos = 1
+for( i in filenames){
+
+  filename = i 
+  obs = read_dbtab(filename,
+                   table = "Observed")
+  preds = read_dbtab(filename,
+                     table = "Report")
+
+  nested = preds[, list(data = list(.SD)), by = .(SimulationID, KL, RFV)]
+  layerno. = 22
+  layer = paste0("SW(", layerno.,")")
+  cols = c("Clock.Today", layer)
+  cols_obs = c("Experiment", "SowingDate", "Clock.Today", layer)
+  nested[, data:= lapply(data, function(x){
+    
+    dt = merge.data.table(x[,..cols], obs[!is.na(SWC),..cols_obs], all.x = TRUE,
+                          by = "Clock.Today")
+    col_pred = paste0(layer, ".x")
+    col_obs = paste0(layer, ".y")
+    m <- hydroGOF::gof(sim = dt[[col_pred]], obs = dt[[col_obs]])
+    # Convert the matrix into a data.table with colnames
+    m <- m %>%
+      as.data.table(keep.rownames = T) %>%
+      transpose(make.names = 'rn')
+    m
+  })]
+  
+  DT = nested[, unlist(data, recursive = FALSE), by = .(SimulationID, KL, RFV)
+              ]
+  setorder(DT, -NSE, -R2, RMSE, `PBIAS %`)
+   
+  bestkl = DT$KL[1]     
+  bestRFV = DT$RFV[1]
+  lastlayer[[pos]] = DT
+  pos = pos + 1
+
+}
+names(lastlayer) = filenames
+
+# saveRDS(lastlayer, "../03processed-data/lastlayer.rds")
+```
+
+**Get best RFV for each layer back**
+```{r}
+
+apsimxs = list.files("../03processed-data/bestfitLayerkl/", pattern = "*.apsimx$")
+
+DT = data.table(names = apsimxs)
+DT = DT[, tstrsplit(names, split = "_|\\.")
+   ][, c("V3", "V6"):=NULL]
+DT[]
+DT[, ':='(V1 = gsub("LayerKL", "", V1),
+          V2 = as.integer(V2),
+          V4 = as.numeric(gsub("(\\d{1,4})(RFV)", "0.\\1", V4)),
+          V5 = as.numeric(V5)
+          )]
+setnames(DT, c("names", "layer", "KL", "RFV"))
+
+counts = DT[order(names, layer)] %>% 
+  group_by(names) %>% 
+  count()
+counts %>% 
+  filter(n != 1)
+```
+```{r}
+DT[order(names, layer)] %>% 
+  openxlsx::write.xlsx("../03processed-data/LayerByLayberRFVandKL.xlsx")
 ```
 ```{r}
 filename =  gsub(".apsimx$", ".db", newname)
@@ -191,96 +342,6 @@ bestkl = DT$KL[1]
 system(paste("cp", oldname, newname))
 Sys.setenv(newname = newname)
 Sys.setenv(nextlayer = layerno. + 1L)
-```
-
-
-**Finish the last layer**
-```{r}
-filenames = list.files("c:/Data/Master/03processed-data/apsimxFilesLayers/", pattern = "*21.*.db$", full.names = TRUE)
-sims_path = "c:/Data/Master/03processed-data/apsimxFilesLayers/"
-for( i in filenames){
-
-  filename = i 
-  obs = read_dbtab(filename,
-                   table = "Observed")
-  preds = read_dbtab(filename,
-                     table = "Report")
-
-  nested = preds[, list(data = list(.SD)), by = .(SimulationID, KL, RFV)]
-  layerno. = 22
-  layer = paste0("SW(", layerno.,")")
-  cols = c("Clock.Today", layer)
-  cols_obs = c("Experiment", "SowingDate", "Clock.Today", layer)
-  nested[, data:= lapply(data, function(x){
-    
-    dt = merge.data.table(x[,..cols], obs[!is.na(SWC),..cols_obs], all.x = TRUE,
-                          by = "Clock.Today")
-    col_pred = paste0(layer, ".x")
-    col_obs = paste0(layer, ".y")
-    m <- hydroGOF::gof(sim = dt[[col_pred]], obs = dt[[col_obs]])
-    # Convert the matrix into a data.table with colnames
-    m <- m %>%
-      as.data.table(keep.rownames = T) %>%
-      transpose(make.names = 'rn')
-    m
-  })]
-  
-  DT = nested[, unlist(data, recursive = FALSE), by = .(SimulationID, KL, RFV)
-              ][order(NSE,R2, RMSE, decreasing = TRUE)]
-  bestkl = DT$KL[1]     
-  bestRFV = DT$RFV[1] 
-  # Rename the bestfit layer 2 
-  node = paste0("[Soil].Physical.SlurpSoil.KL[", layerno., ":", 22, "] = ", bestkl)
-  nodeRFV = paste0("[SlurpSowingRule].Script.RFV = ", bestRFV)
-
-  newname = gsub("(.+)(LayerKL_)(21_)(\\d.\\d{1,4})(RFV_\\d{1,2})(\\.db$)",paste0("\\1\\2",layerno.,"_", bestkl, "RFV_", bestRFV, ".apsimx"), basename(filename))
-  filenameApsimx = gsub("\\.db$", ".apsimx", basename(filename))
-  newname = file.path(sims_path, newname)
-  oldname = file.path(sims_path, filenameApsimx)
-  system(paste("cp", oldname, newname))
-  config_file = tempfile(fileext = ".config")
-  f = file(config_file, "w")
-  cat(node, 
-      nodeRFV, "\r\n", sep = "\r", file = f)
-  close(f)
-  system(paste(apsimx, newname, '/Edit', config_file))
-  
-
-  }
-```
-
-
-**Get best RFV for each layer back**
-```{r}
-
-apsimxs = list.files("../03processed-data/apsimxFilesLayers/", pattern = "*.apsimx$")
-
-DT = data.table(names = apsimxs)
-layer1 = DT[, tstrsplit(names, split = "_|\\.")
-   ][V2 == 0]
-layer2to21 = DT[, tstrsplit(names, split = "_|\\.")
-   ][V2 != 0]
-layer1[,V2:=1]
-layer1[, V6:=NULL]
-layer2to21[, V3:= NULL]
-setnames(layer2to21, colnames(layer2to21), paste0("V", 1:5))
-DT = rbindlist(list(layer1, layer2to21), use.names = TRUE)
-DT[, ':='(V1 = gsub("LayerKL", "", V1),
-          V2 = as.numeric(V2),
-          V3 = as.numeric(gsub("(\\d{1,4})(RFV)", "0.\\1", V3)),
-          V4 = as.numeric(V4), 
-          V5 = NULL)]
-setnames(DT, c("names", "layer", "KL", "RFV"))
-
-counts = DT[order(names, layer)] %>% 
-  group_by(names, layer) %>% 
-  count()
-counts %>% 
-  filter(n != 1)
-```
-```{r}
-DT[order(names, layer)] %>% 
-  openxlsx::write.xlsx("../03processed-data/LayerByLayberRFVandKL.xlsx")
 ```
 
 # 20200720 Edit 2nd layer of best slurp to do one layer optimisation 
