@@ -33,8 +33,8 @@ season1[, ':='(relativeSW = SW/100/DUL,
                Depth = as.factor(Depth))][]
 # Get other data  ---------------------------------------------------------
 
-biomass = read_dbtab("../03processed-data/Richard.sqlite3", "biomass")
-met = read_dbtab("../03processed-data/Richard.sqlite3", "met_Iversen12")
+biomass = read_dbtab(here::here("03processed-data/Richard.sqlite3"), "biomass")
+met = read_dbtab(here::here("03processed-data/Richard.sqlite3"), "met_Iversen12")
 
 
 # mcp I12 --------------------------------------------------------------------
@@ -52,14 +52,17 @@ prior = list(
   int_1 = "dnorm(0.5, 1) T(, 1)" 
 )
 
-site = "AshleyDene"
-SD = "SD5"
+
+# max layer with more than 5% std ---------------------------------------------------------------
+
+maxDepthS1 = I12SD[, .(sd(relativeSW)), by = .(Depth)
+                   ][V1 > 0.05][, .N]
 for(site in c("AshleyDene", "Iversen12")){
   for(SD in paste0("SD", 1:5)){
     
 
   I12SD = season1[Experiment == site & SowingDate == SD]
-  ldpethi12=lapply(1:22, function(n){
+  ldpethi12=lapply(1:maxDepthS1, function(n){
     # Cut the data before the rain fall
     dt = I12SD[Depth == n & DAS < 150]
     # Fit it. 
@@ -100,10 +103,7 @@ for(site in c("AshleyDene", "Iversen12")){
   })
 
 
-# max layer with more than 5% std ---------------------------------------------------------------
 
-    maxDepthS1 = I12SD[, .(sd(relativeSW)), by = .(Depth)
-    ][V1 > 0.05][, .N]
     
     DT_fit = rbindlist(I12SD_fit, use.names = TRUE, idcol = "Depth")
     DT_fit[, variance := upper - lower]
@@ -120,18 +120,18 @@ for(site in c("AshleyDene", "Iversen12")){
                    .(Experiment, Clock.Today, Season, Rotation.No.,SowingDate, DAS )]
     
     cuts_SD = unique(cuts)[, .SD[.N], by = .(Rotation.No., Season)]
-    I12SD_RFV_CUT = I12SD2_RFV +
+    I12SD_RFV_CUT = I12SD_RFV +
       geom_vline(data = cuts_SD[Season == "2010/11" ], aes(xintercept = DAS), color = "red")  +
       annotate("text", x = 75 + 1, y = 25 , label = "Red Lines were cutting dates", size = 10) 
     
     met_SD = met[year >=2010 & year < 2013
                  ][, Clock.Today := as.Date(day, origin = paste0(year, "-01-01"))
-                   ][Clock.Today %between% range(I12SD2$Clock.Today)]
+                   ][Clock.Today %between% range(I12SD$Clock.Today)]
     rain_SD = met_SD[, DAS:= seq(3, nrow(met_SD) + 2, 1)][,.(DAS, rain)]
     I12SD_RFV_CUT+
       geom_col(data = rain_SD, aes(x = DAS, y = rain, fill = "Rainfall"), alpha= 0.5)+
       scale_fill_manual(name = "", values = (Rainfall = "blue"), ) +
-      ggtitle(paste0(unique(cuts_SD$Experiment), " ", unique(cuts_SD2$SowingDate)))+
+      ggtitle(paste0(unique(cuts_SD$Experiment), " ", unique(cuts_SD$SowingDate)))+
       theme(panel.grid.major.y = element_line(colour = "grey50"),
             panel.grid.minor.y = element_line(colour = "grey80"))
     

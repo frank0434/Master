@@ -56,7 +56,8 @@ water[Experiment == "AshleyDene" ] %>%
   ggplot(aes(Clock.Today, SWC, group = Clock.Today)) +
   # geom_point()+
   geom_boxplot(outlier.colour = outlier.colour, outlier.size = 5) +
-  geom_text(aes(label = SowingDate), check_overlap = TRUE, size = 3)
+  geom_text(aes(label = SowingDate), check_overlap = TRUE, size = 3) +
+  theme_water()
 dbDisconnect(con)
 
 ```
@@ -340,7 +341,7 @@ prior = list(
   ## Evidence in the hist above
   int_1 = "dnorm(0.5, 1) T(, 1)" 
 )
-I12SD2 = season1[Experiment != "AshleyDene" & SowingDate == "SD2"]
+I12SD2 = season1[Experiment == "AshleyDene" & SowingDate == "SD2"]
 ldpethi12=lapply(1:22, function(n){
   # Cut the data before the rain fall
   dt = I12SD2[Depth == n & DAS < 150]

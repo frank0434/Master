@@ -10,9 +10,9 @@ This version still has the AD sowingdate 1 unchanged in terms of initial waters.
 
 Observations:   
 1. Calibration against different component will yield different best fit stats. 
-  For example, only calibrate the top layer will select the poor performance 
-  of overview predictions in general.
-  
+  For example, only calibrate the top layer will decrease the performance 
+  of overview predictions for soil water profile in general.
+2. stats are not looking good if use s
 
 # 20200818
 Slurp model results show there could be different RFV for each layer. 
