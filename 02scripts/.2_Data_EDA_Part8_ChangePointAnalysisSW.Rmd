@@ -448,6 +448,10 @@ SW_long[Experiment == "Iversen12"] %>%
    ggplot(aes(DAS, SW, color = Depth)) + 
   geom_point() +
   facet_wrap(~ Experiment+SowingDate)
+SW_long[Experiment != "Iversen12"] %>% 
+   ggplot(aes(DAS, SW, color = Depth)) + 
+  geom_point() +
+  facet_wrap(~ Experiment+SowingDate)
 
 ```
 
