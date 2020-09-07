@@ -476,7 +476,11 @@ n = 4
 # })
 ```
 WHAT ABOUT I12
+
+## roll lm
+rolling lm seems not able to detect the true decline trend 
 ```{r}
+library(roll)
 I12SD2 = season1[Experiment != "AshleyDene" & SowingDate == "SD2"]
 lapply(1:23, function(n){
   X = I12SD2[Depth == n]$DAS
@@ -489,38 +493,18 @@ lapply(1:23, function(n){
   thechooseone = CI[coef < 0 & coef < ci & ci < 0]
   # thechooseone = lmlayer1[x1<CI][1] # not a good standard
   # t.test(lmlayer1$x1, mu =  0)
-  plot(X, y)
+
+  if(nrow(thechooseone) > 0) {
+      plot(X, y)
   lines(X, y)
   title(n)
   abline(v = thechooseone$DAS, col = "red")
+  }
 })
 ```
 
 
 
-## roll lm
-rolling lm seems not able to detect the true decline trend 
-```{r}
-library(roll)
-lapply(1:23, function(n){
-  X = ADSD2[Depth == n]$DAS
-  y = ADSD2[Depth == n]$SW
-  lms = roll_lm(X, y, width = 4)
-  lmlayer1 = cbind(lms$coefficients, lms$r.squared, lms$std.error, X) 
-  colnames(lmlayer1) = c("Intercept", "coef", "R2", "Intercept_sem", "sem", "DAS")
-  critical = qt(0.05, df = 2) # How to decide this df? totoal df in one treatment?
-  CI = as.data.table(lmlayer1)[, ci := coef - critical * sem]
-  T = t.test(CI$coef)
-  thechooseone = CI[coef < T$conf.int[1]]
-  # thechooseone = lmlayer1[x1<CI][1] # not a good standard
-  # t.test(lmlayer1$x1, mu =  0)
-  plot(X, y)
-  lines(X, y)
-  title(n)
-  abline(v = thechooseone$DAS, col = "red")
-})
-
-```
 
 if the soil moisture can explained well by lm model in one layer,
 it probably indicates that the root had not reached there. 
@@ -558,6 +542,7 @@ plot(o, conf.level=0.95, shade=TRUE)
 
  
 ```{r}
+ADSD2 = season1[Experiment == "AshleyDene" & SowingDate == "SD2"]
 lapply(1:22, function(n){
   out.lm<-lm(relativeSW ~ DAS,data=ADSD2[Depth == n])
 # qplot(DAS, relativeSW, data =broom::augment(out.lm)) + geom_line(aes(y = .fitted))
@@ -570,13 +555,19 @@ o<-segmented(out.lm,seg.Z=~DAS,
 # print(summary(o))
       
 # find slopes and phyllochron
- s = slope(o)
- # find breaks
- b = o$psi[,2]
+tryCatch(
+  {
 
-plot(ADSD2[Depth == n]$DAS,ADSD2[Depth == n]$relativeSW, cex=1.8, pch=01, family= "serif", xlab="", ylab="")
-plot(o,lwd=3, add=TRUE)
-title(n)
+    b = o$psi[,2]
+    print(n)
+    plot(ADSD2[Depth == n]$DAS,ADSD2[Depth == n]$relativeSW, cex=1.8, pch=01, family= "serif", xlab="", ylab="")
+    plot(o,lwd=3, add=TRUE)
+    title(n)
+    },
+  finally = cat(n,"is not reached yet.")
+  
+  )
+
 })
 
 ```
