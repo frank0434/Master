@@ -1,4 +1,9 @@
 
+# 20200908
+
+Hamish suggested that the slurp model supply the water by evenly distributed the
+demand to each layer.
+try to setup the below layer as 0 so it doesn't give the feedback to supply. 
 
 
 # 20200821

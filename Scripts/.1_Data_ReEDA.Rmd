@@ -1,0 +1,190 @@
+---
+title: "Data_acquisition"
+author: "jian (AKA Frank) liu"
+date: "04/10/2019"
+output:
+  html_document: 
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+---
+
+```{r setup, include=FALSE,warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+source("R/packages.R")
+source("R/functions.R")
+```
+
+# Aim:  
+
+1. Investigate the input parameter distributions. 
+2. Ask Rodelyn
+
+```{r}
+dbpath = "../03processed-data/Richard.sqlite3"
+water = read_dbtab(path = dbpath)
+long = melt(water[Experiment == "AshleyDene"][,SWC:=NULL], 
+     id.vars = c("Experiment", "Clock.Today", "SowingDate", "DAS","Rep", "Plot","Season", "Seed"),variable.factor = FALSE)
+long[, variable:= as.numeric(gsub("\\D","",variable))][]
+long%>% 
+  ggplot(aes(DAS, value)) +
+  geom_point() +
+  facet_wrap(~ Experiment + variable, scales = "free") +
+  geom_smooth(method = "loess", span = 0.25)
+```
+```{r}
+
+```
+
+```{r}
+water %>% 
+  ggplot(aes(SWC))+ 
+  geom_histogram() +
+  facet_grid(~Experiment)
+swvar = grep("SW\\(", x = colnames(water), value = TRUE)
+for(i in swvar){
+  i = paste0('`',i,'`')
+  p = water %>% 
+    ggplot(aes_string(i))+ 
+    geom_histogram() +
+    facet_grid(~Experiment)
+  print(p)
+}
+
+for(i in swvar){
+  i = paste0('`',i,'`')
+  p = water[SowingDate == "SD1"] %>% 
+    ggplot(aes_string("Clock.Today",i, group = "Clock.Today"))+ 
+    geom_boxplot(outlier.colour = "red") +
+    facet_grid(~Experiment)
+  print(p)
+}
+```
+```{r, fig.width= 10}
+rainI12 = read_dbtab(dbpath, "met_Iversen12")
+rainAD = read_dbtab(dbpath, "met_AshleyDene")
+rainI12 = rainI12[year >= 2010 & year <=2012 & day >=151
+                  ][,Clock.Today := as.Date(day, origin = paste0(year, "-01-01"))]
+no_rain = rainI12[,.(Clock.Today, rain)][rain == 0]
+swvar = c(swvar, "SWC")
+I12_no_rain = water[Experiment == "Iversen12" 
+                    # & Clock.Today %in% no_rain$Clock.Today
+                    ][, lapply(.SD, mean), 
+                      by = .(Clock.Today, Experiment, SowingDate), 
+                      .SDcols = swvar]
+
+for(i in swvar){
+  i = paste0('`',i,'`')
+  p = I12_no_rain[SowingDate == "SD1"] %>% 
+  ggplot(aes_string("Clock.Today", i)) +
+  geom_point() +
+  geom_line() +
+    scale_x_date(date_breaks = "4 weeks", date_labels = "%b %d")
+  print(p)
+}
+cf = max(I12_no_rain$SWC)/max(rainI12$rain)
+I12_no_rain[SowingDate == "SD1"] %>% 
+  ggplot(aes(Clock.Today, SWC/cf )) +
+  geom_point() +
+  geom_line() +
+  scale_x_date(date_breaks = "4 weeks", date_labels = "%b %d") +
+  geom_col(data = rainI12[Clock.Today > "2010-10-01" & 
+                            Clock.Today < "2012-07-31"], aes(Clock.Today, rain))+
+   scale_y_continuous(limits = c(0, 60), 
+                     sec.axis = sec_axis(~. , name = "Rain"))
+
+```
+
+```{r}
+biomass = read_dbtab("../03processed-data/Richard.sqlite3",table = "biomass")
+biomass = biomass[Seed == "CS"]
+biomass %>% 
+  ggplot(aes(LAImod)) +
+  geom_histogram() +
+  facet_grid(~Experiment)
+```
+# The visulisation for the RFV and kl for layerby layer calibration
+
+```{r}
+library(readxl)
+optimisedKLRFV = read_excel("../03processed-data/LayerByLayberRFVandKL.xlsx") %>% 
+  as.data.table()
+optimisedKLRFV[names %like% "AshleyDeneSD2"] %>% 
+  ggplot(aes(layer))+
+  geom_point(aes(y = KL), col = "#0000FF", size = 0.8)+ 
+  geom_line(aes(y = KL), col = "#0000FF", size = 0.8) +
+  coord_flip() +
+  scale_x_reverse() +
+  theme_classic() +
+  # theme_transparent() + 
+  theme(axis.text = element_text(colour = "black"))+
+  scale_y_continuous(position = "right")
+optimisedKLRFV[names %like% "AshleyDeneSD2"] %>% 
+  ggplot(aes(layer))+
+  geom_point(aes(y = RFV), col = "#0000FF", size = 0.8)+ 
+  geom_line(aes(y = RFV), col = "#0000FF", size = 0.8) +
+  coord_flip() +
+  scale_x_reverse() +
+  theme_classic() +
+  # theme_transparent() + 
+  theme(axis.text = element_text(colour = "black"))+
+  scale_y_continuous(position = "right")
+```
+```{r}
+ADkl = optimisedKLRFV[names %like% 'Ashley'] %>% 
+  ggplot(aes(layer,color = names))+
+  geom_point(aes(y = KL))+ 
+  geom_line(aes(y = KL)) +
+  coord_flip() +
+  scale_x_reverse() +
+  theme_classic() +
+  # theme_transparent() + 
+  theme(axis.text = element_text(colour = "black"))+
+  scale_y_continuous(position = "right") +
+  facet_wrap(~ names)
+
+ADRFV = optimisedKLRFV[names %like% 'Ashley'] %>% 
+  ggplot(aes(layer,color = names, shape = names))+
+  geom_point(aes(y = RFV))+ 
+  # geom_line(aes(y = RFV)) +
+  coord_flip() +
+  scale_x_reverse() +
+  theme_classic() + scale_shape_manual(values=1:10)+
+  # theme_transparent() + 
+  theme(axis.text = element_text(colour = "black"))+
+  scale_y_continuous(position = "right")  +
+  facet_wrap(~ names)
+I12kl = optimisedKLRFV[names %like% 'Iversen12'] %>% 
+  ggplot(aes(layer,color = names))+
+  geom_point(aes(y = KL))+ 
+  geom_line(aes(y = KL)) +
+  coord_flip() +
+  scale_x_reverse() +
+  theme_classic() +
+  # scale_shape_manual(values=1:10)+
+  # theme_transparent() + 
+  theme(axis.text = element_text(colour = "black"))+
+  scale_y_continuous(position = "right") +
+  facet_wrap(~ names)
+
+
+I12RFV = optimisedKLRFV[names %like% 'Iversen12'] %>% 
+  ggplot(aes(layer,color = names, shape = names))+
+  geom_point(aes(y = RFV))+ 
+  # geom_line(aes(y = RFV)) +
+  coord_flip() +
+  scale_x_reverse() +
+  theme_classic() + scale_shape_manual(values=1:10)+
+  # theme_transparent() + 
+  theme(axis.text = element_text(colour = "black"))+
+  scale_y_continuous(position = "right")  +
+  facet_wrap(~ names)
+
+for(i in c("ADkl", "ADRFV", "I12kl", "I12RFV")){
+  print(i)
+  ggsave(paste0("../05figures/optimised_", i, ".png"), plot = get(i), width = 8, dpi = 300)
+}
+
+
+```
+

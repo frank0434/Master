@@ -1,10 +1,11 @@
 
 #configurations
 
-kRpath <- here::here("02scripts/R")
-path_sql <- here::here("03processed-data/Richard.sqlite3")
-path_sims <- here::here("03processed-data/apsimxFiles/")
+kRpath <- here::here("Scripts/R")
+path_sql <- here::here("Data/ProcessedData/Richard.sqlite3")
+path_sims <- here::here("Data/ProcessedData/apsimxFiles/")
 path_EDAfigures <- here::here("05figures/klEDA/")
+path_apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
 #plan 
 source(file.path(kRpath, "functions.R"))
 source(file.path(kRpath, "packages.R"))
@@ -13,7 +14,7 @@ source(file.path(kRpath, "EditApsimx.R"))
 source(file.path(kRpath, "plan.R"))
 source(file.path(kRpath, "plan_SW.R"))
 source(file.path(kRpath, "plan_config.R"))
-
+use_python("c:/python")
 # Constant
 
 id_vars <- c("Experiment", "SowingDate", "Clock.Today")
@@ -32,8 +33,12 @@ stats_key_SW_extra <- c(stats_key_SW, "NSE", "R2", "RMSE")
 # Create CoverData as slurp input 
 # Create apsimx files 
 # Run all apsimx files - take long time 
-drake::make(plan_config, lock_envir = F, memory_strategy = "autoclean", 
-            garbage_collection = TRUE)
+# Run apsimx ----------------------------------------
+
+
+drake::r_make(plan_config,  memory_strategy = "autoclean", 
+              garbage_collection = TRUE)
+
 vis_drake_graph(
   plan_config, targets_only = TRUE,
   font_size = 25,
@@ -42,6 +47,7 @@ vis_drake_graph(
   # parallelism = "clustermq",
   # jobs = 16
 )
+
 
 # # Analysis plan will  ---------------------------------------------------
 
