@@ -36,8 +36,8 @@ stats_key_SW_extra <- c(stats_key_SW, "NSE", "R2", "RMSE")
 # Run apsimx ----------------------------------------
 
 
-drake::r_make(plan_config,  memory_strategy = "autoclean", 
-              garbage_collection = TRUE)
+make(plan_config,  memory_strategy = "autoclean", 
+     garbage_collection = TRUE)
 
 vis_drake_graph(
   plan_config, targets_only = TRUE,
