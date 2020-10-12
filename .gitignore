@@ -20,6 +20,8 @@ test*
 *.db
 *.RData
 *.met
+*settings.dcf
+
 
 03processed-data/*/*.apsimx
 #notebook checkout points
@@ -28,3 +30,5 @@ test*
 .drake/
 .drake_history/
 *CloseSimDBs.ipynb
+*library*
+*staging*
