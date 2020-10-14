@@ -378,6 +378,13 @@
       "Repository": "CRAN",
       "Hash": "e00975f4b32ee1bb3caf0249f8707c1e"
     },
+    "ggfittext": {
+      "Package": "ggfittext",
+      "Version": "0.9.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "1c658d36302cf96a331c0059587fae70"
+    },
     "ggplot2": {
       "Package": "ggplot2",
       "Version": "3.3.2",
@@ -482,6 +489,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "7b1f856410253d56ea67ad808f7cdff6"
+    },
+    "inspectdf": {
+      "Package": "inspectdf",
+      "Version": "0.0.9",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "baf721b266c1be16a4ee595ffc322e71"
     },
     "intervals": {
       "Package": "intervals",
@@ -832,6 +846,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "3838071b66e0c566d55cc26bd6e27bf4"
+    },
+    "shades": {
+      "Package": "shades",
+      "Version": "1.4.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "3a2cf5eecb2cbca814d01d56bfb51494"
     },
     "sp": {
       "Package": "sp",
