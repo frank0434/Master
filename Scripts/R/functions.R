@@ -1,6 +1,136 @@
 
 
 
+##' .. content for \description{} (no empty lines) ..
+##'
+##' .. content for \details{} ..
+##'
+##' @title doDUL_LL
+##' @description conventional approach to calculate DUL and LL, mean max value
+##'   for DUL; mean min values for LL.
+##' @import data.table
+
+##' @return
+##' @author frank0434
+##' @export
+doDUL_LL <- function(SW_mean, value_vars) {
+
+  DUL_LL= SW_mean[, unlist(lapply(.SD, max_min), recursive = FALSE), 
+                  by = .(Experiment, SowingDate), .SDcols = value_vars]
+  # Tidy up DUL AND LL
+  melted_DUL_LL = data.table::melt(DUL_LL, 
+                                   id.var = c("Experiment","SowingDate"), 
+                                   variable.factor = FALSE)
+  melted_DUL_LL = melted_DUL_LL[, (c("Depth", "variable")) := tstrsplit(variable, "\\.")
+                             ] 
+  DUL_LL_SDs = data.table::dcast.data.table(data = melted_DUL_LL, 
+                                           Experiment +  SowingDate + Depth ~ variable)
+  
+  DUL_LL_SDsVWC = DUL_LL_SDs[, ':='(DUL = round(DUL, digits = 3),
+                                    LL = round(LL, digits = 3))
+                             ][, PAWC := DUL - LL]
+}
+
+
+
+##' .. content for \description{} (no empty lines) ..
+##'
+##' .. content for \details{} ..
+##'
+##' @initialSWC
+##' @description Join aggregated soil water data with sowing dates to get the
+##'   initial soil water content
+
+##' @param DT 
+##'
+##' @import data.table
+##' @return
+##' @author frank0434
+##' @export
+initialSWC <- function(DT, sowingDates, id_vars) {
+  SW_initials = SW_mean[sowingDates, 
+                        on = c("Experiment", "SowingDate", "Clock.Today"),
+                        roll = "nearest"]
+  SW_initials_tidied = data.table::melt.data.table(
+    SW_initials, 
+    id.vars = id_vars, 
+    variable.factor = FALSE,
+    variable.name = "Depth",
+    value.name = "SW"
+  )[, ':='(SW = round(SW, digits = 3))]
+  
+}
+
+
+#' read_Sims
+#'  @description Read Sims PhD data from excel. It tailors to this excel file. 
+#'
+#' @param path The path to the excel file.
+#' @param source A string vector to declare which data source. Default is
+#'   `Soil Water`
+#'
+#' @return a data.table
+#' 
+#' @import data.table
+#'         readxl
+#' 
+#' @export
+#'
+#' @examples
+read_Sims <- function(path, source = "Soil Water"){
+  dt = readxl::read_excel(path, guess_max = 10300, sheet = 2,
+                  .name_repair ="universal",
+                  skip = 9 )%>% # fix the names 
+    data.table::as.data.table() 
+  data.table::setnames(dt, old = c("Site", "Date", "Sowing.Date"), 
+                       new = c("Experiment", "Clock.Today", "SowingDate"))
+  dt[, ...119 := NULL]
+  col_type =  inspectdf::inspect_types(dt)
+  col_date = col_type$col_name[[3]]
+  dt[, (col_date) := lapply(.SD, function(x) as.Date(x,  tz = "Pacific/Auckland")),
+     .SDcol = col_date]
+  
+  if(source == "Soil Water"){
+    SoilWater = dt[Data == "Soil water"]
+    
+    col_good = choose_cols(SoilWater) # identify the right cols 
+    SoilWater <- SoilWater[,..col_good]
+    # Fix the colnames here 
+    # Fix the layer 
+    
+    SoilWater[, Data:=NULL 
+              ][, SWC.0.2 := NULL] # Drop the second layer
+    # New model separate the top 20 cm 
+    # Fix the name to match APSIM soil
+    swc_vars = grep("SWC", colnames(SoilWater), value = TRUE)
+    setnames(SoilWater, swc_vars[-length(swc_vars)], paste0("SW(", seq(1, 22, 1), ")"))
+    setnames(SoilWater, "SWC.2.3.m..mm.", "SWC")
+    return(SoilWater)
+  }
+  if(source == "sowingDate"){ # need to add a patial match
+    sowingDate <- dt[,...120 : I12][!is.na(...120)]
+    setnames(sowingDate, "...120", "SowingDate", skip_absent = TRUE)
+    SD = sowingDate[, (c("AD", "I12")) := lapply(.SD, as.Date), 
+                     .SDcols = c("AD", "I12")] %>% 
+      data.table::melt.data.table(id.vars = "SowingDate", 
+                       variable.name = "Experiment", value.name = "Clock.Today",
+                       variable.factor = FALSE) 
+    SD_tidied = SD[, Experiment := ifelse(Experiment == "AD", 
+                                          "AshleyDene",  
+                                          "Iversen12")]
+    return(SD_tidied)
+  }
+  if(source == "biomass"){
+    biomass <- dt[Data == "Biomass"]
+    
+    col_good <- choose_cols(biomass) # identify the right cols 
+    
+    biomass <- biomass[,..col_good]
+    biomass[, c("...120", "AD", "I12") := NULL]
+    return(biomass)
+    
+  }
+  }
 
 #' chop_dates
 #'
@@ -196,7 +326,7 @@ exam_xlsxs <- function(path_apX, filename){
 # fun2 --------------------------------------------------------------------
 
 #' choose_cols
-#' @description calculate the number of NAs and nrows, select only the unequal numbers 
+#' @description calculate the number of NAs and nrows, drop the columns are all NAs
 #'
 #' @param dt a data.table or data.frame
 #'
