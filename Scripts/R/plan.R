@@ -1,15 +1,8 @@
 # plan.R
 plan_analysis <- drake::drake_plan(
   # Data input
-  water = autoapsimx::read_dbtab(path = path_sql, 
-                                 table = "SoilWater"),
-  # SowingDates = autoapsimx::read_dbtab(path = path_sql, 
-  #                                      table = "SowingDates"),
-  # Process data
-  ## SoilWater
-  # Actual measurements are 22 layers 
-  water_22layers = rename_cols(DT = water[, `SW(2)`:=NULL]),
-  value_vars = grep("SW\\(\\d.+", colnames(water_22layers), value = TRUE),
+  water = read_Sims(path_richard),
+  value_vars = grep("SW\\(\\d.+", colnames(water), value = TRUE),
   SWC_mean = water[,lapply(.SD, mean, na.rm = TRUE), 
                    by = id_vars, 
                    .SDcols = "SWC"],
@@ -17,6 +10,7 @@ plan_analysis <- drake::drake_plan(
   SW_mean = water_22layers[, lapply(.SD, function(x) mean(x, na.rm = TRUE)/100), 
                   by = id_vars,
                   .SDcols = value_vars],
+  SowingDates = read_Sims(path_richard, "sowingDate"),
   
   # kl ----------------------------------------------------------------------
   ## Prepare the slurp model input 
