@@ -19,12 +19,11 @@ source(here::here("Scripts/R/functions.R"))
 
 ```{r richard}
 path_richard = "c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
-file_richard = read_excel(path_richard, guess_max = 10300, sheet = 2,
-                          skip = 9)
+dt = read_excel(path_richard, guess_max = 10300, sheet = 2,
+                          .name_repair ="universal",
+                          skip = 9 )%>% # fix the names 
+  as.data.table() 
 
-dt <- file_richard %>% 
-  as_tibble(.name_repair = "universal") %>% # use tibble format to fix the names 
-  as.data.table() # change it back to data.table
 
 setnames(dt, c("Site", "Date", "Sowing.Date"), c("Experiment", "Clock.Today", "SowingDate"))
 ```
@@ -48,11 +47,10 @@ _Solution_ manually save it to `.txt`, `fread` can handle the type of variables
 
 ```{r main table}
 colnames(dt)
-inspect_na(dt)
+# inspect_na(dt)
 dt[, ...119 := NULL]
 
-tbl <- inspect_cat(dt) %>% 
-  arrange(desc(cnt)) 
+tbl <- inspect_cat(dt)
 head(tbl)
 
 # inspect the type of cols
@@ -164,9 +162,9 @@ SoilWater <- SoilWater[,..col_good]
 # Fix the colnames here 
 # Fix the layer 
 
-SoilWater[, Data:=NULL]
-           # [, SWC.0.1:= SWC.0.1 + SWC.0.2 # Add up the first two layers together to match APSIM soil 
-#         ][, SWC.0.2 := NULL] # Drop the second layer
+SoilWater[, Data:=NULL
+          ][, SWC.0.1:= SWC.0.1 + SWC.0.2 # Add up the first two layers together to match APSIM soil
+            ][, SWC.0.2 := NULL] # Drop the second layer
 
 # New model separate the top 20 cm 
 
