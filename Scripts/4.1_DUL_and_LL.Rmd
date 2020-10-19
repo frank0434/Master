@@ -104,15 +104,15 @@ SW_mean <- water[, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = valu
 SW_initials <- SW_mean[SD, on = c("Experiment", "SowingDate == SD", "Clock.Today"), roll = "nearest"]
 SW_initials <- melt(SW_initials, 
                     id.vars = id_vars, variable.factor = FALSE,
-                    variable.name = "Depth", value.name = "SW"
+                    variable.name = "Depth", value.name = "PAWC"
                     )
 # [, ':='(SW = round(SW / 100, digits = 3))]
 
 SW_DUL_LL <- SW_initials[DUL_LL_SDs, on = c("Experiment", "SowingDate", "Depth")]
 
 # Check if anything unusual 
-SW_DUL_LL[DUL<SW]
-SW_DUL_LL[LL>SW]
+SW_DUL_LL[DUL<PAWC]
+SW_DUL_LL[LL>PAWC]
 
 # Order the layers
 SW_DUL_LL[, ':='(Depth = as.integer(gsub("\\D", "", Depth)),
@@ -136,6 +136,12 @@ _Note_: apsimx is not working properly in the bash env.
 "./R/20200513outputSoilWatParasByEdit.R"
 ```
 
+```{r}
+water[,.(Experiment, Clock.Today, `SW(1)`)] %>% 
+  ggplot(aes(Clock.Today, `SW(1)`)) +
+  geom_point() +
+  facet_grid(~ Experiment)
+```
 
 ## Examine the DUL and LL with original observations 
 
@@ -170,6 +176,18 @@ SW_DUL_LL %>%
 
 ```
 
+```{r}
+intial_long = melt(SW_DUL_LL, id.vars = c(id_vars, "Depth"), variable.factor = FALSE)
+
+intial_long %>% 
+  ggplot()+ 
+  geom_point(aes(Depth, value, color = SowingDate), size = 3) +
+  geom_line(aes(Depth, value,group = SowingDate, color = SowingDate)) +
+  facet_wrap(~Experiment + variable) +
+  coord_flip()+
+  scale_x_reverse() +
+  theme_water()
+```
 
 
 ## 20200513 kls
