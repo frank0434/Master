@@ -1,6 +1,106 @@
 
 
 
+
+##' .. content for \description{} (no empty lines) ..
+##'
+##' .. content for \details{} ..
+##'
+##' @title
+
+##' @param CoverData 
+##'
+##' @param output 
+##'
+##' @return
+##' @author frank0434
+##' @export
+outputCoverData <- function(CoverData, biomass,  
+                            output = "Data/ProcessedData/CoverData/"){
+  # OUPUT CONFIG
+  dir <- here::here(output)
+  if(!dir.exists(dir)){
+    dir.create(dir)
+  }
+
+  Sites <- unique(CoverData$Experiment)
+  SDs <- unique(CoverData$SowingDate)
+  # Output observation 
+  for(i in Sites){
+    for( j in SDs){
+      sitesd  <-  biomass[Experiment == i & SowingDate == j]
+                          
+      
+      # Create a Pandas Excel writer using XlsxWriter as the engine.
+      write.xlsx(x = sitesd, file = file.path(dir, paste0("Observed", i, j, ".xlsx")), 
+                 sheet = "Observed")
+
+    }
+  }
+    
+  # Output daily LAI with k
+  for(i in Sites){
+    for( j in SDs){
+      DT <- CoverData[Experiment == i & SowingDate == j
+                ][, .(Clock.Today, LAI, k)]
+      data.table::fwrite(x = DT, file.path(dir, paste0("LAI", i, j, ".csv")))
+    }
+    }
+  
+}
+
+
+
+
+
+
+##' .. content for \description{} (no empty lines) ..
+##'
+##' .. content for \details{} ..
+##'
+##' @title trans_biomass
+##' @description only works for Richard Sim's PhD data 
+
+##' @param biomass 
+##'
+##' @param sowingDates 
+##' @param accumTT 
+##'
+##' @return
+##' @author frank0434
+##' @export
+trans_biomass <- function(biomass, sowingDates, accumTT) {
+  
+  LAI_Height_SD <- merge.data.table(biomass, sowingDates, 
+                                    by = c("Experiment", "Clock.Today" , "SowingDate"), 
+                                    all= TRUE)[,
+                                               ':='(LAImod = ifelse(is.na(LAImod), 0, LAImod),
+                                                    Height = ifelse(is.nan(Height), NA, Height))]
+  
+  LAI_wide <- dcast.data.table(LAI_Height_SD, 
+                               Experiment + Clock.Today ~ SowingDate, 
+                               value.var = "LAImod" )
+
+  DT <- merge.data.table(accumTT, LAI_wide, by = c("Experiment", "Clock.Today"), 
+                         all.x = TRUE)
+  
+  DT <- melt.data.table(data = DT, 
+                        id.vars = c("Experiment", "Clock.Today", "AccumTT"), 
+                        value.name = "LAI",
+                        variable.name = "SowingDate", variable.factor = FALSE)
+  
+  DT[, LAI:= na.approx(LAI, AccumTT, na.rm = FALSE) , by = .(Experiment, SowingDate) ]
+  
+  DT[, ':='(k = 0.94)
+     ][Experiment == "AshleyDene" & Clock.Today %between% c( '2011-11-30','2012-03-01'),
+       k:= 0.66][, LI := 1 - exp(-k * LAI) ]
+  
+  return(DT)
+}
+
+
+
+
 ##' .. content for \description{} (no empty lines) ..
 ##'
 ##' .. content for \details{} ..

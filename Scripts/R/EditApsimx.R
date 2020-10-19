@@ -16,14 +16,14 @@
 
 # File structure 
 
-EditApsimx <- function(SW_DUL_LL, SD_tidied){
+EditApsimx <- function(SW_DUL_LL, SD_tidied, CoverDataDir){
 
 # Environmental variables to control file paths
 Sys.setenv("WorkingDir" = here::here())
 Sys.setenv("BaseApsimxDir" = file.path(Sys.getenv("WorkingDir"), "Data/ApsimxFiles/"))
 Sys.setenv("MetDir" = file.path(Sys.getenv("WorkingDir"), "Data/ClimateAndObserved/"))
 Sys.setenv("ConfigFileDir" = file.path(Sys.getenv("WorkingDir"), "Data/ProcessedData/ConfigurationFiles/"))
-Sys.setenv("CoverDataDir" = file.path(Sys.getenv("WorkingDir"), "Data/ProcessedData/CoverData/"))
+# Sys.setenv("CoverDataDir" = file.path(Sys.getenv("WorkingDir"), "Data/ProcessedData/CoverData/"))
 Sys.setenv("SimsDir" = file.path(Sys.getenv("WorkingDir"), "Data/ProcessedData/apsimxFiles/"))
 ## Verifcation
 # Sys.getenv("MetDir")
@@ -103,7 +103,7 @@ for (i in sites) {
     ## ClockStart
     replacement_ClockStart <- paste0(replacement_SD, "T00:00:00")
     ## User provide light interception data 
-    replacement_CoverData <- file.path(Sys.getenv("CoverDataDir"),paste0("LAI", i, j, ".csv"))
+    replacement_CoverData <- file.path(CoverDataDir,paste0("LAI", i, j, ".csv"))
     ## Soil parameters 
     replacement_initialSW <- SW_DUL_LL[Experiment == i & SowingDate == j]$SW
     replacement_DUL <- SW_DUL_LL[Experiment == i & SowingDate == j]$DUL

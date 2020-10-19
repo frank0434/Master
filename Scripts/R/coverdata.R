@@ -14,26 +14,16 @@ LAI_Height <-  biomass[Seed== 'CS' & Harvest.No.!= "Post"
                            .SDcols = c("Height", "LAImod")]
 LAI_Height_SD <- merge.data.table(LAI_Height, sowingDates, 
                                   by = c("Experiment", "Clock.Today" , "SowingDate"), 
-                                  all= TRUE)
-LAI_Height_SD[, ':='(LAImod = ifelse(is.na(LAImod), 0, LAImod),
-                     Height = ifelse(is.nan(Height), NA, Height),
-                     k = 0.94)
-              ][Experiment == "AshleyDene" & Clock.Today %between% c( '2011-11-30','2012-03-01'),
-                k:= 0.66][, LI := 1 - exp(-k * LAImod) ]
-# LAI_Height_SD %>% 
-#   ggplot(aes(Clock.Today, k)) +
-#   geom_point() +
-#   facet_wrap(~ Experiment)
+                                  all= TRUE)[,
+                                             ':='(LAImod = ifelse(is.na(LAImod), 0, LAImod),
+                                                  Height = ifelse(is.nan(Height), NA, Height))]
+
 LAI_wide <- dcast.data.table(LAI_Height_SD, 
                              Experiment + Clock.Today ~ SowingDate, 
                              value.var = "LAImod" )
-LI_wide <- dcast.data.table(LAI_Height_SD, 
-                             Experiment + Clock.Today ~ SowingDate, 
-                             value.var = "LI" )
 
-met <- rbindlist(list(met_Iversen12[, Experiment := "Iversen12"],
-                      met_AshleyDene), use.names = TRUE)
-accumTT <- met[,.(Experiment, Clock.Today, AccumTT)]
+accumTT <- rbindlist(list(met_Iversen12[, Experiment := "Iversen12"],
+                      met_AshleyDene), use.names = TRUE)[,.(Experiment, Clock.Today, AccumTT)]
 DT <- merge.data.table(accumTT, LAI_wide, by = c("Experiment", "Clock.Today"), 
                  all.x = TRUE)
 
@@ -43,6 +33,22 @@ DT <- melt.data.table(data = DT,
                       variable.name = "SowingDate", variable.factor = FALSE)
 
 DT[, LAI:= na.approx(LAI, AccumTT, na.rm = FALSE) , by = .(Experiment, SowingDate) ]
+
+DT[, ':='(k = 0.94)
+   ][Experiment == "AshleyDene" & Clock.Today %between% c( '2011-11-30','2012-03-01'),
+     k:= 0.66][, LI := 1 - exp(-k * LAI) ]
+
+
+
+DT %>%
+  ggplot(aes(Clock.Today, k)) +
+  geom_point() +
+  facet_wrap(~ Experiment)
+
+DT %>%
+  ggplot(aes(Clock.Today, LI, color = SowingDate)) +
+  geom_point() +
+  facet_wrap(~ Experiment)
 
 # slurp need LAI WITH k
 
