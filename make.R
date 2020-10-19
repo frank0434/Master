@@ -1,10 +1,11 @@
 
 #configurations
-
+path_richard = "c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
 kRpath <- here::here("Scripts/R")
-path_sql <- here::here("Data/ProcessedData/Richard.sqlite3")
+
 path_sims <- here::here("Data/ProcessedData/apsimxFiles/")
 path_EDAfigures <- here::here("05figures/klEDA/")
+path_cover <-  "Data/ProcessedData/CoverData/"
 path_apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
 #plan 
 source(file.path(kRpath, "functions.R"))
@@ -14,12 +15,12 @@ source(file.path(kRpath, "EditApsimx.R"))
 source(file.path(kRpath, "plan.R"))
 source(file.path(kRpath, "plan_SW.R"))
 source(file.path(kRpath, "plan_config.R"))
-use_python("c:/python")
 # Constant
 
 id_vars <- c("Experiment", "SowingDate", "Clock.Today")
 Sites <- c("AshleyDene", "Iversen12")
-
+biomass_cols <- c('Experiment', 'Clock.Today', 'SowingDate', 'Rep',
+                  'Plot', 'Rotation.No.', 'Harvest.No.', 'Height','LAImod')
 stats_key <- c("Experiment", "SowingDate", "SimulationID", "KLR", "RFV", "SKL")
 stats_key_SW <- c("Experiment", "SowingDate", "SimulationID", "KLR", "RFV", "SKL", "Depth")
 
@@ -43,7 +44,7 @@ vis_drake_graph(
   plan_config, targets_only = TRUE,
   font_size = 25,
   # file = "05figures/dependency.png",
-  navigationButtons = FALSE
+  navigationButtons = TRUE
   # parallelism = "clustermq",
   # jobs = 16
 )
