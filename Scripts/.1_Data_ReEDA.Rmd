@@ -20,8 +20,8 @@ source("R/functions.R")
 1. Investigate the input parameter distributions. 
 2. Ask Rodelyn
 
-```{r}
-dbpath = "../03processed-data/Richard.sqlite3"
+```{r fig.height=10, fig.width=18}
+dbpath = "../Data/ProcessedData//Richard.sqlite3"
 water = read_dbtab(path = dbpath)
 long = melt(water[Experiment == "AshleyDene"][,SWC:=NULL], 
      id.vars = c("Experiment", "Clock.Today", "SowingDate", "DAS","Rep", "Plot","Season", "Seed"),variable.factor = FALSE)
@@ -31,6 +31,16 @@ long%>%
   geom_point() +
   facet_wrap(~ Experiment + variable, scales = "free") +
   geom_smooth(method = "loess", span = 0.25)
+
+long = melt(water[Experiment != "AshleyDene"][,SWC:=NULL], 
+     id.vars = c("Experiment", "Clock.Today", "SowingDate", "DAS","Rep", "Plot","Season", "Seed"),variable.factor = FALSE)
+long[, variable:= as.numeric(gsub("\\D","",variable))][]
+long[variable %in% 1:3]%>% 
+  ggplot(aes(DAS, value)) +
+  geom_point() +
+  facet_grid(variable ~ Experiment , scales = "free") +
+  geom_smooth(method = "loess", color = "#ff0000", span = 0.25, se = FALSE)+ 
+  theme_water()
 ```
 ```{r}
 

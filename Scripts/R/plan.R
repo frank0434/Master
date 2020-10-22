@@ -1,16 +1,16 @@
 # plan.R
 plan_analysis <- drake::drake_plan(
   # Data input
-  water = read_Sims(path_richard),
-  value_vars = grep("SW\\(\\d.+", colnames(water), value = TRUE),
-  SWC_mean = water[,lapply(.SD, mean, na.rm = TRUE), 
+  # water = read_Sims(path_richard),
+  # value_vars = grep("SW\\(\\d.+", colnames(water), value = TRUE),
+  SWC_mean = readd(water)[,lapply(.SD, mean, na.rm = TRUE), 
                    by = id_vars, 
                    .SDcols = "SWC"],
   # mean divided by 100 to have vwc
-  SW_mean = water_22layers[, lapply(.SD, function(x) mean(x, na.rm = TRUE)/100), 
-                  by = id_vars,
-                  .SDcols = value_vars],
-  SowingDates = read_Sims(path_richard, "sowingDate"),
+  # SW_mean = water_22layers[, lapply(.SD, function(x) mean(x, na.rm = TRUE)/100), 
+  #                 by = id_vars,
+  #                 .SDcols = value_vars],
+  # SowingDates = readd(SowingDates),
   
   # kl ----------------------------------------------------------------------
   ## Prepare the slurp model input 
@@ -50,80 +50,80 @@ plan_analysis <- drake::drake_plan(
                           on = stats_key],
   top5 = DT_stats_sub[, unlist(data, recursive = FALSE), 
                       by = stats_key_extra],
-  Site_SD = target(
-    autoapsimx::subsetByTreatment(DT = top5, mode = "prediction",
-                            treatment1 = sites ,
-                            treatment2 = sds),
-    transform = cross(sites = c("AshleyDene", "Iversen12"),
-                      sds = c("SD1",  "SD2", "SD3",  "SD4",  "SD5",
-                              "SD6",  "SD7",  "SD8",  "SD9",  "SD10"))
-  ),
-  plot = target(
-    plot_params(DT = Site_SD, file_out(!!paste0(path_EDAfigures,"/",.id_chr)), format = "png"),
-    transform = map(Site_SD),
-    trigger = trigger(condition = TRUE, mode = "blacklist")
-  ), 
-
-  
-  ## SW layer
- 
-  obs_SW = target(
-    autoapsimx::subsetByTreatment(DT = SW_mean, mode = "observation",
-                           treatment1 = sites ,
-                           treatment2 = sds),
-    transform = cross(sites = c("AshleyDene", "Iversen12"),
-                      sds = c("SD1",  "SD2", "SD3",  "SD4",  "SD5",
-                              "SD6",  "SD7",  "SD8",  "SD9",  "SD10"))
-    ),
-  pred_SW = target(
-    data.table::melt(Site_SD,
-                     value.name = "pred_VWC",
-                     measure.vars = value_vars,
-                     variable.name = "Depth",
-                     variable.factor = FALSE),
-    transform = map(Site_SD)
-  ),
-  long = target(
-    data.table::melt(obs_SW,
-                     value.name = "obs_VWC",
-                     measure.vars =value_vars,
-                     variable.name = "Depth",
-                     variable.factor = FALSE),
-    transform = map(obs_SW)
-  ),
-  # Joining the prediction and observation for Soil water in each layer
-  pred_obs = target(
-    merge.data.table(pred_SW, long, 
-                     by.x = c("Clock.Today", "Depth","Experiment", "SowingDate"), 
-                     by.y = c("Clock.Today", "Depth","Experiment", "SowingDate"), 
-                     all.x = TRUE )[, Depth := forcats::fct_relevel(as.factor(Depth), paste0("SW(",1:22, ")"))],
-    transform = map(pred_SW, long)
-  ),
-  plot_Root = target(
-    plot_root(DT = Site_SD, 
-              title = file_out(!!paste0(path_EDAfigures,"/",
-                                        gsub("pred_obs_pre_SW.+SW", 
-                                             "" ,.id_chr))), 
-              point_size = 5,
-              height = 6, width = 9, format = "png"),
-    transform = map(pred_obs),
-    trigger = trigger(condition = TRUE, mode = "blacklist")
-  ), 
-  plot_SW = target(
-    plot_params(DT = pred_obs, 
-                col_pred = "pred_VWC", col_obs = "obs_VWC",
-                Depth = "Depth",
-                height = 16, width = 9,
-                title = file_out(!!paste0(path_EDAfigures,"/",.id_chr)),format = "png"),
-    transform = map(pred_obs),
-    trigger = trigger(condition = TRUE, mode = "blacklist")
-  ),
+  # Site_SD = target(
+  #   autoapsimx::subsetByTreatment(DT = top5, mode = "prediction",
+  #                           treatment1 = sites ,
+  #                           treatment2 = sds),
+  #   transform = cross(sites = c("AshleyDene", "Iversen12"),
+  #                     sds = c("SD1",  "SD2", "SD3",  "SD4",  "SD5",
+  #                             "SD6",  "SD7",  "SD8",  "SD9",  "SD10"))
+  # ),
+  # plot = target(
+  #   plot_params(DT = Site_SD, file_out(!!paste0(path_EDAfigures,"/",.id_chr)), format = "png"),
+  #   transform = map(Site_SD),
+  #   trigger = trigger(condition = TRUE, mode = "blacklist")
+  # ), 
+  # 
+  # 
+  # ## SW layer
+  # 
+  # obs_SW = target(
+  #   autoapsimx::subsetByTreatment(DT = SW_mean, mode = "observation",
+  #                          treatment1 = sites ,
+  #                          treatment2 = sds),
+  #   transform = cross(sites = c("AshleyDene", "Iversen12"),
+  #                     sds = c("SD1",  "SD2", "SD3",  "SD4",  "SD5",
+  #                             "SD6",  "SD7",  "SD8",  "SD9",  "SD10"))
+  #   ),
+  # pred_SW = target(
+  #   data.table::melt(Site_SD,
+  #                    value.name = "pred_VWC",
+  #                    measure.vars = value_vars,
+  #                    variable.name = "Depth",
+  #                    variable.factor = FALSE),
+  #   transform = map(Site_SD)
+  # ),
+  # long = target(
+  #   data.table::melt(obs_SW,
+  #                    value.name = "obs_VWC",
+  #                    measure.vars =value_vars,
+  #                    variable.name = "Depth",
+  #                    variable.factor = FALSE),
+  #   transform = map(obs_SW)
+  # ),
+  # # Joining the prediction and observation for Soil water in each layer
+  # pred_obs = target(
+  #   merge.data.table(pred_SW, long, 
+  #                    by.x = c("Clock.Today", "Depth","Experiment", "SowingDate"), 
+  #                    by.y = c("Clock.Today", "Depth","Experiment", "SowingDate"), 
+  #                    all.x = TRUE )[, Depth := forcats::fct_relevel(as.factor(Depth), paste0("SW(",1:22, ")"))],
+  #   transform = map(pred_SW, long)
+  # ),
+  # plot_Root = target(
+  #   plot_root(DT = Site_SD, 
+  #             title = file_out(!!paste0(path_EDAfigures,"/",
+  #                                       gsub("pred_obs_pre_SW.+SW", 
+  #                                            "" ,.id_chr))), 
+  #             point_size = 5,
+  #             height = 6, width = 9, format = "png"),
+  #   transform = map(pred_obs),
+  #   trigger = trigger(condition = TRUE, mode = "blacklist")
+  # ), 
+  # plot_SW = target(
+  #   plot_params(DT = pred_obs, 
+  #               col_pred = "pred_VWC", col_obs = "obs_VWC",
+  #               Depth = "Depth",
+  #               height = 16, width = 9,
+  #               title = file_out(!!paste0(path_EDAfigures,"/",.id_chr)),format = "png"),
+  #   transform = map(pred_obs),
+  #   trigger = trigger(condition = TRUE, mode = "blacklist")
+  # ),
   best_fit = target(
     data.table::fwrite(top5[, list(Experiment, SowingDate, SimulationID, SKL,KLR, RFV, NSE, R2, RMSE)
                             ][order(NSE, R2,RMSE)
                               ][, .SD[1], by = .(Experiment, SowingDate)
                                 ][, data:=NULL],
-                       file_out(!!paste0(here::here("03processed-data/") ,
+                       file_out(!!paste0(here::here(),
                                          .id_chr, ".csv"))),
     transform = map(data = c(top5))
   )

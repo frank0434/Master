@@ -69,7 +69,7 @@ outputCoverData <- function(CoverData, biomass,
 ##' @return
 ##' @author frank0434
 ##' @export
-trans_biomass <- function(biomass, sowingDates, accumTT) {
+interp_LAI <- function(biomass, sowingDates, accumTT) {
   
   LAI_Height_SD <- merge.data.table(biomass, sowingDates, 
                                     by = c("Experiment", "Clock.Today" , "SowingDate"), 

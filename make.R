@@ -44,7 +44,8 @@ vis_drake_graph(
   plan_config, targets_only = TRUE,
   font_size = 25,
   # file = "05figures/dependency.png",
-  navigationButtons = TRUE
+  navigationButtons = TRUE,
+  build_times = "none"
   # parallelism = "clustermq",
   # jobs = 16
 )
@@ -59,10 +60,10 @@ vis_drake_graph(
 # Draw graphs of top 3 best fit 
 # Output a table of real best fit 
 vis_drake_graph(
-  plan_analysis, targets_only = TRUE,
+  plan_analysis
   
   # file = "05figures/dependency.png",
-  navigationButtons = FALSE
+
   # parallelism = "clustermq",
   # jobs = 16
 )

@@ -31,13 +31,13 @@ plan_config <- drake::drake_plan(
   
   
   # Transformation
-  # SWC_mean = water[,lapply(.SD, mean, na.rm = TRUE), 
-  #                  by = id_vars, 
+  # SWC_mean = water[,lapply(.SD, mean, na.rm = TRUE),
+  #                  by = id_vars,
   #                  .SDcols = "SWC"],
-  accumTT = rbindlist(list(met_Iversen12, met_AshleyDene),
+  cumTT = rbindlist(list(met_Iversen12, met_AshleyDene),
                        use.names = TRUE)[,.(Experiment, Clock.Today, AccumTT)],
   CoverData = trans_biomass(biomass = LAI_Height, 
-                            sowingDates, accumTT),
+                            sowingDates, cumTT),
   outputCover = target(
     outputCoverData(CoverData = CoverData, 
                     biomass = LAI_Height, 
@@ -51,26 +51,26 @@ plan_config <- drake::drake_plan(
                            .SDcols = value_vars],
 
   # Joinning for initial soil water conditions 
-  # SW_initials = initialSWC(SW_mean, sowingDates, id_vars),
+  SW_initials = initialSWC(SW_mean, sowingDates, id_vars),
   
   # DUL AND LL 
   DUL_LL = doDUL_LL(SW_mean, value_vars),
 
   # Joinning all 
-  # SW_DUL_LL = SW_initials[DUL_LL, 
-  #                         on = c("Experiment", "SowingDate", "Depth")
-  #                         ][,':='(Depth = as.integer(gsub("\\D", "", Depth)))
-  #                           ][order(Experiment,SowingDate, Depth, Clock.Today)],
+  SW_DUL_LL = SW_initials[DUL_LL,
+                          on = c("Experiment", "SowingDate", "Depth")
+                          ][,':='(Depth = as.integer(gsub("\\D", "", Depth)))
+                            ][order(Experiment,SowingDate, Depth, Clock.Today)],
   # 
   # kl ----------------------------------------------------------------------
   ## Prepare the slurp model input 
 
   ## Prepare the configuration file and create multiple slurp simulations 
   # .2_Data_EDA_Part2_apsimxEdit.Rmd
-  # apsimxs = target(
-  #   EditApsimx(SW_DUL_LL, sowingDates, file_in(!!path_cover)),
-  #   trigger = trigger(condition =  length(dir("Data/ProcessedData/apsimxFiles/")) == 0,
-  #                     mode = "condition"))
+  apsimxs = target(
+    EditApsimx(SW_DUL_LL, sowingDates, file_in(!!path_cover)),
+    trigger = trigger(condition =  length(dir("Data/ProcessedData/apsimxFiles/")) == 0,
+                      mode = "condition"))
   # 
 )
 

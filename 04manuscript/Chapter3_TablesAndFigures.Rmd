@@ -154,6 +154,26 @@ raw_temp_rad %>%
 
 
 
+# Illustrate mcp
+
+```{r}
+source("../Scripts/R/packages.R")
+source("../Scripts/R/functions.R")
+dbpath = "../Data/ProcessedData//Richard.sqlite3"
+water = read_dbtab(path = dbpath)
+long = melt(water[,SWC:=NULL], 
+     id.vars = c("Experiment", "Clock.Today", "SowingDate", "DAS","Rep", "Plot","Season", "Seed"),variable.factor = FALSE)
+long[, variable:= as.numeric(gsub("\\D","",variable))][]
+
+long %>% 
+    ggplot(aes(DAS, value)) +
+  geom_point(color = "grey80") +
+  facet_grid(variable ~ Experiment , scales = "free") +
+  geom_smooth(method = "loess", color = "#ff0000", span = 0.25, se = FALSE)+ 
+  theme_water() +
+  ylab("Soil Water Content (mm)")
+ggsave("../05figures/DecideNumberofCPs.png", dpi = 300, height = 5, width = 7)
+```
 
 
 
