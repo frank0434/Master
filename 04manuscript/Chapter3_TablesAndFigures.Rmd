@@ -169,6 +169,20 @@ water[, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = "SWC" # average
 ```
 
 
+# Illustrate simulation - observation
+
+```{r}
+library(drake)
+plan <- drake_plan(
+  Simulation = NULL, 
+  Observation = NULL, 
+  stats = Simulation - Observation, 
+  Top3stats = stats
+)
+make(plan)
+vis_drake_graph(plan, build_times = "none")
+```
+
 # Illustrate mcp
 
 ```{r}
