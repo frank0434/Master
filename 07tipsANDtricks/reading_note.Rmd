@@ -450,4 +450,8 @@ Catch up with Harris:
 design the directory first 
 the workflow will come naturely. 
 
+#### 20201026
+
+a new package to do segementation for time series 
+https://cran.r-project.org/web/packages/dpseg/vignettes/dpseg.html
 

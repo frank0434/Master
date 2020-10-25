@@ -153,6 +153,21 @@ raw_temp_rad %>%
 ```
 
 
+# Calculate the bucket size for each site
+
+```{r}
+source("../Scripts/R/packages.R")
+source("../Scripts/R/functions.R")
+id_vars <- c("Experiment", "SowingDate", "Clock.Today")
+
+loadd(water)
+loadd(starts_with("SW"))
+loadd(value_vars)
+water[, lapply(.SD, mean, na.rm = TRUE), by = id_vars, .SDcols = "SWC" # average 4 reps
+                   ][, unlist(lapply(.SD, max_min), recursive = FALSE), by = .(Experiment), .SDcols = "SWC"
+                     ][, PAWC := SWC.DUL - SWC.LL][]
+```
+
 
 # Illustrate mcp
 

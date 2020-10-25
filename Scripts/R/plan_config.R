@@ -36,7 +36,7 @@ plan_config <- drake::drake_plan(
   #                  .SDcols = "SWC"],
   cumTT = rbindlist(list(met_Iversen12, met_AshleyDene),
                        use.names = TRUE)[,.(Experiment, Clock.Today, AccumTT)],
-  CoverData = trans_biomass(biomass = LAI_Height, 
+  CoverData = interp_LAI(biomass = LAI_Height, 
                             sowingDates, cumTT),
   outputCover = target(
     outputCoverData(CoverData = CoverData, 
