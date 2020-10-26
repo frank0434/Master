@@ -13,16 +13,16 @@ plan_config <- drake::drake_plan(
   sowingDates = read_Sims(path_richard, source =  "sowingDate"), 
   value_vars = grep("SW\\(\\d.+", colnames(water), value = TRUE),
   
-  climate_units = read_met_col(here::here("Data/ClimateAndObserved/lincoln.met"), skip = 6),
+  climate_units = read_met_col(path_lincoln, skip = 6),
   
-  met_Iversen12 = read_met(here::here("Data/ClimateAndObserved/lincoln.met"), 
+  met_Iversen12 = read_met(path_lincoln, 
                            skip_unit =  7, skip_meta = 6
                            )[, Clock.Today := as.Date(day, origin = paste0(year, "-01-01"))
                              ][Clock.Today > "2010-10-01" & Clock.Today < "2012-08-01"
                                ][, AccumTT := cumsum(mean)
                                  ][, Experiment := "Iversen12"],
   
-  met_AshleyDene = read_met(here::here("Data/ClimateAndObserved/AshleyDene.met"), 
+  met_AshleyDene = read_met(path_AD, 
                             skip_unit = 10, skip_meta = 8
                             )[, Clock.Today := as.Date(day, origin = paste0(year, "-01-01"))
                               ][Clock.Today > "2010-10-01" & Clock.Today < "2012-08-01"
@@ -41,8 +41,8 @@ plan_config <- drake::drake_plan(
   outputCover = target(
     outputCoverData(CoverData = CoverData, 
                     biomass = LAI_Height, 
-                    output = file_out(!!path_cover)),
-    trigger = trigger(condition =  length(dir(path_cover)) == 0,
+                    output = file_out(!!Sys.getenv("CoverDataDir"))),
+    trigger = trigger(condition =  length(dir(Sys.getenv("CoverDataDir"))) == 0,
                       mode = "condition")
     ),
   # mean divided by 100 to have vwc
@@ -61,6 +61,9 @@ plan_config <- drake::drake_plan(
                           on = c("Experiment", "SowingDate", "Depth")
                           ][,':='(Depth = as.integer(gsub("\\D", "", Depth)))
                             ][order(Experiment,SowingDate, Depth, Clock.Today)],
+  # template_var = readLines("01Data/ApsimxFiles/SlurpBaseConfigTemplate.txt"),
+  # template_value = 
+  
   # 
   # kl ----------------------------------------------------------------------
   ## Prepare the slurp model input 
@@ -68,8 +71,8 @@ plan_config <- drake::drake_plan(
   ## Prepare the configuration file and create multiple slurp simulations 
   # .2_Data_EDA_Part2_apsimxEdit.Rmd
   apsimxs = target(
-    EditApsimx(SW_DUL_LL, sowingDates, file_in(!!path_cover)),
-    trigger = trigger(condition =  length(dir("Data/ProcessedData/apsimxFiles/")) == 0,
+    EditApsimx(SW_DUL_LL, sowingDates, file_in(!!Sys.getenv("CoverDataDir"))),
+    trigger = trigger(condition =  length(dir("01Data/ProcessedData/apsimxFiles/")) == 0,
                       mode = "condition"))
   # 
 )

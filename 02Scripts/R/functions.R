@@ -1,6 +1,35 @@
+#' template_slurp
+#'
+#' @param outpath 
+#' @param template_var 
+#' @param template_value 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' 
 
-
-
+config_slurp <- function(template_var, template_value, outpath){
+  # template = readLines("01Data/ApsimxFiles/SlurpBaseConfigTemplate.txt")
+  # loadd(SW_DUL_LL)
+  # template_value = c(path_AD, 
+  #                    390,
+  #                    DB_AshleyDene,
+  #                    "2010-10-21",
+  #                    paste0("2010-10-21", "T00:00:00"),
+  #                    file.path(CoverDataDir,paste0("LAI", i, j, ".csv")),
+  #                    replacement_initialSW <- SW_DUL_LL[Experiment == i & SowingDate == j]$SW
+  #                    replacement_DUL <- SW_DUL_LL[Experiment == i & SowingDate == j]$DUL
+  #                    replacement_SAT <- replacement_DUL
+  #                    replacement_AirDry <- replacement_LL
+  #                    replacement_LL15 <- replacement_LL
+  #                    replacement_LL <- SW_DUL_LL[Experiment == i & SowingDate == j]$LL
+  #                    replacement_KL <- skl
+  #                    )
+  
+  
+}
 
 ##' .. content for \description{} (no empty lines) ..
 ##'
@@ -18,9 +47,9 @@
 outputCoverData <- function(CoverData, biomass,  
                             output = "Data/ProcessedData/CoverData/"){
   # OUPUT CONFIG
-  dir <- here::here(output)
-  if(!dir.exists(dir)){
-    dir.create(dir)
+
+  if(!dir.exists(output)){
+    dir.create(output)
   }
 
   Sites <- unique(CoverData$Experiment)
@@ -29,10 +58,9 @@ outputCoverData <- function(CoverData, biomass,
   for(i in Sites){
     for( j in SDs){
       sitesd  <-  biomass[Experiment == i & SowingDate == j]
-                          
       
       # Create a Pandas Excel writer using XlsxWriter as the engine.
-      write.xlsx(x = sitesd, file = file.path(dir, paste0("Observed", i, j, ".xlsx")), 
+      write.xlsx(x = sitesd, file = file.path(output, paste0("Observed", i, j, ".xlsx")), 
                  sheet = "Observed")
 
     }
@@ -42,8 +70,9 @@ outputCoverData <- function(CoverData, biomass,
   for(i in Sites){
     for( j in SDs){
       DT <- CoverData[Experiment == i & SowingDate == j
-                ][, .(Clock.Today, LAI, k)]
-      data.table::fwrite(x = DT, file.path(dir, paste0("LAI", i, j, ".csv")))
+                ][, .(Clock.Today, LAI, k)
+                  ][, LAI := ifelse(is.na(LAI) | is.null(LAI), 0, LAI)]
+      data.table::fwrite(x = DT, file.path(output, paste0("LAI", i, j, ".csv")))
     }
     }
   

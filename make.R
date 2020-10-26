@@ -1,20 +1,29 @@
 
+drake::clean(destroy = TRUE)
 #configurations
 path_richard = "c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
-kRpath <- here::here("Scripts/R")
-
-path_sims <- here::here("Data/ProcessedData/apsimxFiles/")
+kRpath <- here::here("02Scripts/R")
 path_EDAfigures <- here::here("05figures/klEDA/")
-path_cover <-  "Data/ProcessedData/CoverData/"
 path_apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
+path_lincoln <- here::here("01Data/ClimateAndObserved/lincoln.met")
+path_AD <- here::here("01Data/ClimateAndObserved/AshleyDene.met")
+
+# Environmental variables to control file paths
+Sys.setenv("WorkingDir" = here::here("01Data/"))
+Sys.setenv("BaseApsimxDir" = file.path(Sys.getenv("WorkingDir"), "ApsimxFiles/"))
+Sys.setenv("MetDir" = file.path(Sys.getenv("WorkingDir"), "ClimateAndObserved/"))
+Sys.setenv("ConfigFileDir" = file.path(Sys.getenv("WorkingDir"), "ProcessedData/ConfigurationFiles/"))
+Sys.setenv("CoverDataDir" = file.path(Sys.getenv("WorkingDir"), "ProcessedData/CoverData/"))
+Sys.setenv("SimsDir" = file.path(Sys.getenv("WorkingDir"), "ProcessedData/apsimxFiles/"))
+
 #plan 
 source(file.path(kRpath, "functions.R"))
 source(file.path(kRpath, "packages.R"))
 
 source(file.path(kRpath, "EditApsimx.R"))
 source(file.path(kRpath, "plan.R"))
-source(file.path(kRpath, "plan_SW.R"))
 source(file.path(kRpath, "plan_config.R"))
+
 # Constant
 
 id_vars <- c("Experiment", "SowingDate", "Clock.Today")
@@ -70,67 +79,4 @@ vis_drake_graph(
 drake::make(plan_analysis, lock_envir = F, memory_strategy = "autoclean", 
             garbage_collection = TRUE)
 
-# # Soil water plan will  -------------------------------------------------
-
-# Process all simulation output 
-# Identify the best fit parameters for SKL, KLR and RFV regarding to soil water
-# in each layer
-# Draw graphs of top 3 best fit for each layer 
-# Output a table of real best fit 
-drake::make(plan_SW, lock_envir = F, memory_strategy = "autoclean", 
-            garbage_collection = TRUE)
-
-vis_drake_graph(
-  plan_SW, targets_only = TRUE,
-  
-  # file = "05figures/dependency.png",
-  navigationButtons = FALSE
-  # parallelism = "clustermq",
-  # jobs = 16
-)
-
-# Calibrate layer by layer ------------------------------------------------
-
-# STEPS
-
-## Execute this plan first
-## 
-
-# Constant
-source(file.path(kRpath, "EditApsimxCalibrateLayers.R"))
-source(file.path(kRpath, "plan_LayerCalibr.R"))
-apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
-KL_layers <- as.integer(seq(2, 22, by = 1))
-KL_range <- seq(0.005, 0.11, by = 0.005)
-path_sims2 <- here::here("03processed-data/apsimxFilesLayers")
-path_layerkl <- here::here("05figures/kl_LayerByLayerCalibrationEDA/")
-drake::make(plan_LayerCalibr, lock_envir = F, memory_strategy = "autoclean", 
-            garbage_collection = TRUE)
-
-
-
-vis_drake_graph(
-  plan_LayerCalibr, targets_only = TRUE,
-  
-  # file = "05figures/dependency.png",
-  navigationButtons = FALSE
-  # parallelism = "clustermq",
-  # jobs = 16
-)
-
-
-# Best fit layer kls  -----------------------------------------------------
-path_sims3 <- here::here("03processed-data/bestfitLayerkl/")
-path_layerkl <- here::here("05figures/kl_LayerByLayerCalibrationEDA/")
-source(file.path(kRpath, "EditApsimxCalibrateLayers.R"))
-
-source(file.path(kRpath, "plan_bestfitlayerkl.R"))
-
-vis_drake_graph(
-  plan_bestfitlayerkl, targets_only = TRUE
-)
-
-
-drake::make(plan_bestfitlayerkl, lock_envir = F, memory_strategy = "autoclean", 
-            garbage_collection = TRUE)
 
