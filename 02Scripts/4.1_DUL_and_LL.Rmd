@@ -45,21 +45,10 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
 options(scipen = 999)
 #Constants
 outlier.colour = "#ff0000"
-source(here::here("Scripts/R/packages.R"))
-source(here::here("Scripts/R/functions.R"))
-con <- dbConnect(SQLite(), here::here("Data/ProcessedData/Richard.sqlite3"))
-dbListTables(con)
-SowingDates <- dbReadTable(con, "SowingDates") %>% 
-  as.data.table()
-water <- dbReadTable(con, "SoilWater", check.names = FALSE) %>% 
-  as.data.table()
-
-dbDisconnect(con)
-
-
-water = rename_cols(DT = water[, `SW(2)`:=NULL])
-water[, Clock.Today:= as.Date(Clock.Today)]
+source(here::here("02Scripts/R/packages.R"))
+source(here::here("02Scripts/R/functions.R"))
 ```
+
 
 |		  |AD        | I12|
 |:----|:-----|:------|
@@ -73,6 +62,24 @@ water[, Clock.Today:= as.Date(Clock.Today)]
 |SD8	|9-Dec-11|	9-Dec-11|
 |SD9	|10-Jan-12	|10-Jan-12|
 |SD10|	17-Feb-12	|17-Feb-12|
+
+
+```{r}
+loadd(SW_mean)
+SW_mean
+loadd(DUL_LL)
+DUL_LL
+```
+```{r}
+SW_mean %>% 
+  ggplot(aes(Clock.Today, `SW(1)`)) +
+  geom_point()+ 
+  facet_wrap(SowingDate ~ Experiment)
+SW_mean %>% 
+  ggplot(aes(`SW(1)`)) + 
+  geom_histogram() + facet_wrap( ~ Experiment)
+
+```
 
 ## The final version workflow for DUL, LL and SW via average max and min. 
 
