@@ -1,0 +1,71 @@
+---
+title: "1. Debug targets"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+source("R/packages.R")
+source("r/functions.R")
+library(targets)
+```
+
+
+# Debug couldn't find objects
+
+```{r}
+tar_load("data_SW")
+tar_load("value_vars")
+tar_load("id_vars")
+doDUL_LL_range(SW = data_SW)
+filter_datemax(SW_mean = tar_read("SW_mean"), "max", id.vars = id_vars)
+```
+# Inspect ranges
+
+```{r fig.height=10}
+tar_load("DUL_LL_range")
+tar_load("data_SW")
+tar_load("value_vars")
+tar_load("id_vars")
+DUL_LL_range
+tar_load("SW_mean")
+SW_mean
+
+
+range_check <- function(DT, range, layer, boundry = c("DUL","LL")){
+  cols <- c("Experiment", "Clock.Today", "SowingDate", layer)
+  DT <- DT[,..cols]
+  yval <- paste0("`",layer,"`")
+  P <- DT[,..cols] %>% 
+    ggplot(aes_string("Clock.Today", yval)) + 
+    geom_point() +
+    facet_grid(SowingDate  ~ Experiment) 
+  if(boundry =="LL"){
+    P <- P + 
+      geom_point(data = range[Depth ==layer], aes(Clock.Today.LL, SW.mean.LL),  color ="red", size = 5)
+  } else if (boundry == "DUL"){
+    P <- P + 
+      geom_point(data = range[Depth ==layer], aes(Clock.Today.DUL, SW.mean.DUL),  color ="red", size = 5)
+  } else{
+    print("Don't know what to draw. DUL or LL")
+  }
+  return(P)
+  
+}
+range_check(SW_mean, DUL_LL_range, "SW(2)", boundry = "DUL")
+range_check(SW_mean, DUL_LL_range, "SW(2)", boundry = "LL")
+
+
+
+```
+It is not ideal to have a DUL from the end of the experiments. 
+need to constrain the period 
+**action** - modify the DUL and LL finder to lock the period. 
+
+LL seems not the lowest since we constrian the period. 
+maybe the end of June is good?
+```{r fig.height=10}
+
+
+range_check(SW_mean, DUL_LL_range, "SW(1)", boundry = "LL")
+```
+
