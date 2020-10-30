@@ -455,3 +455,10 @@ the workflow will come naturely.
 a new package to do segementation for time series 
 https://cran.r-project.org/web/packages/dpseg/vignettes/dpseg.html
 
+#### 20201028
+
+Sensitivity analysis to fix all the less sensitive parameters and 
+focus on the big ones. 
+
+
+
