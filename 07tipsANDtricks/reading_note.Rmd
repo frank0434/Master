@@ -455,3 +455,19 @@ the workflow will come naturely.
 a new package to do segementation for time series 
 https://cran.r-project.org/web/packages/dpseg/vignettes/dpseg.html
 
+#### 20201031
+
+should only use the first 5 sowing dates to decide the range of DUL and LL
+
+```
+Morris error: Number of parameter values from R is not equal to num paths * (N + 1).
+Number of parameters from R = 42
+NumPaths=32
+Parameters.Count=1
+```
+This is because identical parameter values have been removed. 
+Warning messages
+"keeping r' repetitions out of r"
+when generating the design of experiments, identical repetitions are removed, leading to a lower number than requested.
+
+
