@@ -1,4 +1,41 @@
 
+
+#' read_met
+#'
+#' @param path A character string. The path to access the met files.
+#' @param skip_unit An integer. The number of rows for skipping the unit line in met files.
+#' @param skip_meta An integer. The number of rows for skipping the meta data before the column names start.
+#' @param startd
+#' @param endd
+#' @param site
+#'
+#' @return A data .table and .frame is returned.
+#'
+#' @import data.table
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' read_met("path", skip_unit = 9, skip_meta = 7)
+#' }
+read_met <- function(path = path_met, skip_unit = 9, skip_meta = 7,
+                     startd = "2010-10-01", endd = "2012-08-01",
+                     site = "AshleyDene"){
+  start_date <- as.Date(startd)
+  end_date <- as.Date(endd)
+  met_LN <- data.table::fread(input = path,skip = skip_unit, fill = TRUE)
+  met_col <- read_met_col(path = path, skip = skip_meta)
+  colnames(met_LN) <- colnames(met_col)
+  
+  met_LN <- met_LN[, Clock.Today := as.Date(day, origin = paste0(year, "-01-01"))
+  ][Clock.Today > start_date & Clock.Today < end_date
+  ][, AccumTT := cumsum(mean)
+  ][, Experiment:=site]
+  
+  return(met_LN)
+}
+
+
 ##' .. content for \description{column wise mean calculation, mm SW will be
 ##' converted to VWC} 
 ##'
@@ -159,40 +196,55 @@ config_slurp <- function(template_var, template_value, outpath){
 ##' @return
 ##' @author frank0434
 ##' @export
-outputCoverData <- function(CoverData, biomass,  
-                            output = "Data/ProcessedData/CoverData/"){
+outputLAIobserved <- function(biomass, site, SD,
+                              output = "Data/ProcessedData/CoverData/"){
   # OUPUT CONFIG
-
+  
   if(!dir.exists(output)){
     dir.create(output)
   }
+ 
+    # Output observation 
+    sitesd  <-  biomass[Experiment == site & SowingDate == SD]
+    # Create a Pandas Excel writer using XlsxWriter as the engine.
+    output <- file.path(output, paste0("Observed", site, SD, ".xlsx"))
+    write.xlsx(x = sitesd, file = output, sheet = "Observed")
 
-  Sites <- unique(CoverData$Experiment)
-  SDs <- unique(CoverData$SowingDate)
-  # Output observation 
-  for(i in Sites){
-    for( j in SDs){
-      sitesd  <-  biomass[Experiment == i & SowingDate == j]
-      
-      # Create a Pandas Excel writer using XlsxWriter as the engine.
-      write.xlsx(x = sitesd, file = file.path(output, paste0("Observed", i, j, ".xlsx")), 
-                 sheet = "Observed")
+  return(output)
 
-    }
-  }
-    
-  # Output daily LAI with k
-  for(i in Sites){
-    for( j in SDs){
-      DT <- CoverData[Experiment == i & SowingDate == j
-                ][, .(Clock.Today, LAI, k)
-                  ][, LAI := ifelse(is.na(LAI) | is.null(LAI), 0, LAI)]
-      data.table::fwrite(x = DT, file.path(output, paste0("LAI", i, j, ".csv")))
-    }
-    }
   
 }
 
+#' outputLAIinput
+#'
+#' @param CoverData 
+#' @param site 
+#' @param SD 
+#' @param output 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+outputLAIinput <- function(CoverData, site, SD,
+                           output = "Data/ProcessedData/CoverData/"){
+  # OUPUT CONFIG
+  
+  if(!dir.exists(output)){
+    dir.create(output)
+  }
+  
+  # Output daily LAI with k
+  DT <- CoverData[Experiment == site & SowingDate == SD
+                  ][, .(Clock.Today, LAI, k)
+                    ][, LAI := ifelse(is.na(LAI) | is.null(LAI), 0, LAI)]
+  output <- file.path(output, paste0("LAI", site, SD, ".csv"))
+  data.table::fwrite(x = DT, output)
+  
+  return(output)
+  
+  
+}
 
 
 
@@ -209,7 +261,7 @@ outputCoverData <- function(CoverData, biomass,
 ##'
 ##' @param sowingDates 
 ##' @param accumTT 
-##'
+##' @import zoo
 ##' @return
 ##' @author frank0434
 ##' @export
@@ -233,9 +285,9 @@ interp_LAI <- function(biomass, sowingDates, accumTT) {
                         value.name = "LAI",
                         variable.name = "SowingDate", variable.factor = FALSE)
   
-  DT[, LAI:= na.approx(LAI, AccumTT, na.rm = FALSE) , by = .(Experiment, SowingDate) ]
+  DT <- DT[, LAI:= zoo::na.approx(LAI, AccumTT, na.rm = FALSE) , by = .(Experiment, SowingDate) ]
   
-  DT[, ':='(k = 0.94)
+  DT <- DT[, ':='(k = 0.94)
      ][Experiment == "AshleyDene" & Clock.Today %between% c( '2011-11-30','2012-03-01'),
        k:= 0.66][, LI := 1 - exp(-k * LAI) ]
   
@@ -366,12 +418,21 @@ read_Sims <- function(path, source = "Soil Water"){
     return(SD_tidied)
   }
   if(source == "biomass"){
+    biomass_cols <- c('Experiment', 'Clock.Today', 'SowingDate', 'Rep',
+                      'Plot', 'Rotation.No.', 'Harvest.No.', 'Height','LAImod')
+    
     biomass <- dt[Data == "Biomass"]
     
     col_good <- choose_cols(biomass) # identify the right cols 
     
     biomass <- biomass[,..col_good]
-    biomass[, c("...120", "AD", "I12") := NULL]
+    biomass <- biomass[, c("...120", "AD", "I12") := NULL
+                       ][Seed== 'CS' & Harvest.No.!= "Post"
+                         ][,..biomass_cols
+                           ][, unlist(list(lapply(.SD, mean, na.rm = TRUE)),
+                                      recursive = FALSE),
+                             by = .(Experiment, SowingDate, Clock.Today),
+                             .SDcols = c("Height", "LAImod")]
     return(biomass)
     
   }

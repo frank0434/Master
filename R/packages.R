@@ -22,10 +22,8 @@ library(kableExtra)
 library(here)
 library(fnmate)
 # Workflow control 
-library(drake)
-library(visNetwork) 
 # Stats
-library(hydroGOF)
+
 library(mcp)
 # Customised package
 library(autoapsimx)
