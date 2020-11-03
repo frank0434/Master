@@ -69,3 +69,53 @@ maybe the end of June is good?
 range_check(SW_mean, DUL_LL_range, "SW(1)", boundry = "LL")
 ```
 
+```{r, fig.height=14, fig.width=9}
+Soil_char <- DUL_LL_range[,Depth:= as.integer(gsub("\\D", "", Depth))
+             ][, .(Experiment, SowingDate, Depth, SW.mean.DUL, SW.mean.LL,
+                   Low.DUL, High.DUL, Low.LL, High.LL)] 
+
+
+DUL_LL_range[SowingDate %in% paste0("SD", 1:5)]%>% 
+  ggplot(aes(y = Depth))+
+  geom_point(aes(x = SW.mean.DUL)) +
+  geom_point(aes(x = SW.mean.LL)) +
+  geom_errorbar(aes(xmin = SW.mean.DUL - SW.sd.DUL, xmax = SW.mean.DUL + SW.sd.DUL))+
+  geom_point(aes(x = Low.DUL), color = "red") +
+  geom_point(aes(x = High.DUL), color = "blue") +
+  geom_errorbar(aes(xmin = SW.mean.LL - SW.sd.LL, xmax = SW.mean.LL + SW.sd.LL))+
+  geom_point(aes(x = Low.LL), color = "red") +
+  geom_point(aes(x = High.LL), color = "blue") +
+  facet_grid(  SowingDate ~ Experiment , scales = "free_x") +
+  scale_y_reverse() +
+  theme_water()
+  
+
+
+DUL_LL_range[SowingDate %in% paste0("SD", 1:5)]%>% 
+  ggplot(aes(x = Depth))+
+  geom_point(aes(y = SW.mean.DUL))+
+  geom_line(aes(y = SW.mean.DUL)) +
+   geom_line(aes(y = SW.mean.LL))+
+  # geom_point()+
+  scale_x_reverse() +
+  coord_flip() +
+  geom_point(aes(y = SW.mean.LL)) +
+  geom_errorbar(aes(ymin = SW.mean.DUL - SW.sd.DUL, ymax = SW.mean.DUL + SW.sd.DUL))+
+  geom_point(aes(y = Low.DUL), color = "red") +
+  geom_point(aes(y = High.DUL), color = "blue") +
+  geom_errorbar(aes(ymin = SW.mean.LL - SW.sd.LL, ymax = SW.mean.LL + SW.sd.LL))+
+  geom_point(aes(y = Low.LL), color = "red") +
+  geom_point(aes(y = High.LL), color = "blue") +
+  facet_grid(  SowingDate ~ Experiment , scales = "free_x") +
+  theme_water()
+```
+# check met files 
+```{r}
+tar_load(starts_with("met"))
+met_AshleyDene
+met_Iversen12
+tar_read("cumTT")
+```
+
+.Simulations.Slurp
+.Simulations.SlurpMorris
