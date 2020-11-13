@@ -143,6 +143,8 @@ doDUL_LL_range <- function(SW, id.vars = id_vars,
   ranges <- merge.data.table(DUL_range, LL_range, 
                              by = c("Experiment", "SowingDate", "Depth"),
                              suffixes = c(".DUL", ".LL"))
+  ranges <- ranges[, Depth := as.integer(gsub("\\D", "", Depth))
+                   ][order(Experiment, SowingDate, Depth)]
   return(ranges)
   
 }
@@ -189,10 +191,13 @@ config_slurp <- function(template_var, template_value, outpath){
 ##'
 ##' @title
 
-##' @param CoverData 
-##'
 ##' @param output 
 ##'
+##' @param biomass 
+##' @param site 
+##' @param SD 
+##' 
+##' @import openxlsx
 ##' @return
 ##' @author frank0434
 ##' @export
@@ -207,12 +212,39 @@ outputLAIobserved <- function(biomass, site, SD,
     # Output observation 
     sitesd  <-  biomass[Experiment == site & SowingDate == SD]
     # Create a Pandas Excel writer using XlsxWriter as the engine.
-    output <- file.path(output, paste0("Observed", site, SD, ".xlsx"))
-    write.xlsx(x = sitesd, file = output, sheet = "Observed")
+    output <- file.path(output, paste0("ObservedLAI", site, SD, ".xlsx"))
+    openxlsx::write.xlsx(x = sitesd, file = output, sheetName = "Observed")
 
   return(output)
 
   
+}
+
+#' outputSWobserved
+#'
+#' @param SW 
+#' @param site 
+#' @param SD 
+#' @param output 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+outputSWobserved <- function(SW, site, SD,
+                             output = "Data/ProcessedData/CoverData/"){
+  # OUPUT CONFIG
+  
+  if(!dir.exists(output)){
+    dir.create(output)
+  }
+  
+  # Output observation 
+  sitesd  <-  SW[Experiment == site & SowingDate == SD]
+  output <- file.path(output, paste0("ObservedSW", site, SD, ".xlsx"))
+  openxlsx::write.xlsx(x = sitesd, file = output, sheetName = "Observed")
+  
+  return(output)
 }
 
 #' outputLAIinput
