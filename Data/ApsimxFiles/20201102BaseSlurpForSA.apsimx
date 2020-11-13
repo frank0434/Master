@@ -131,7 +131,7 @@
                     },
                     {
                       "Key": "KLReductionFactor",
-                      "Value": "-0.002"
+                      "Value": "0.002"
                     },
                     {
                       "Key": "KLReductionDepth",
@@ -443,7 +443,7 @@
                     1.95
                   ],
                   "AirDry": [
-                    0.063,
+                    0.033,
                     0.08,
                     0.074,
                     0.076,
@@ -467,7 +467,7 @@
                     0.1
                   ],
                   "LL15": [
-                    0.063,
+                    0.033,
                     0.08,
                     0.074,
                     0.076,
@@ -515,7 +515,7 @@
                     0.147
                   ],
                   "SAT": [
-                    0.27,
+                    0.285,
                     0.194,
                     0.158,
                     0.135,
@@ -538,7 +538,9 @@
                     0.128,
                     0.147
                   ],
-                  "KS": null,
+                  "KS": [
+                    "NaN"
+                  ],
                   "BDMetadata": null,
                   "AirDryMetadata": null,
                   "LL15Metadata": null,
@@ -1135,31 +1137,32 @@
               "$type": "Models.Report, Models",
               "VariableNames": [
                 "[Clock].Today",
-                "[Soil].Physical.SlurpSoil.KL[1] as SKL",
-                "//[SetCropVariables].Script.Ext_coef as k",
-                "[Slurp].Leaf.ExtinctionCoefficient as k ",
-                "[Slurp].Leaf.CoverTotal as Cover",
-                "[Slurp].Leaf.LAI as LAI",
-                "[Slurp].Leaf.Height as Height",
-                "[Slurp].Root.Depth as RootDepth",
-                "[Soil].SoilWater.SW as SW",
-                "[Soil].Physical.DUL as DUL",
-                "[Soil].Physical.LL15 as LL",
-                "sum([Soil].SoilWater.SWmm) as PSWC",
-                "sum([Soil].Physical.DULmm) as DULmm",
-                "sum([Soil].Physical.LL15mm) as LLmm",
-                "[Soil].SoilWater.Eo as PET",
-                "[Soil].SoilWater.Es as PETactual",
-                "[Soil].SoilWater.Drainage as Drainage",
-                "[Slurp].Root.WaterUptake as RootWaterUptake",
-                "[Weather].Rain as Rain",
-                "sum([Soil].SoilWater.SWmm) - sum([Soil].Physical.DULmm) as SoilWaterDeficit",
-                "[Slurp].Leaf.Live.Wt as LeafWt",
-                "[Slurp].Root.Live.Wt as RootWt",
-                "[Slurp].Leaf.Transpiration as T",
-                "[Slurp].Leaf.WaterDemand as WaterDemand",
-                "[Slurp].Leaf.CoverDead as CoverDead",
-                "[Slurp].Leaf.Fw as Fw"
+                "[Clock].Today.Year",
+                "[Soil].SoilWater.SW[1] as SW1",
+                "//*[Soil].Physical.SlurpSoil.KL[1] as SKL",
+                "//[Slurp].Leaf.ExtinctionCoefficient as k ",
+                "//[Slurp].Leaf.CoverTotal as Cover",
+                "//[Slurp].Leaf.LAI as LAI",
+                "//[Slurp].Leaf.Height as Height",
+                "//[Slurp].Root.Depth as RootDepth",
+                "//[Soil].SoilWater.SW as SW",
+                "//[Soil].Physical.DUL as DUL",
+                "//[Soil].Physical.LL15 as LL",
+                "//sum([Soil].SoilWater.SWmm) as PSWC",
+                "//sum([Soil].Physical.DULmm) as DULmm",
+                "//sum([Soil].Physical.LL15mm) as LLmm",
+                "//[Soil].SoilWater.Eo as PET",
+                "//[Soil].SoilWater.Es as PETactual",
+                "//[Soil].SoilWater.Drainage as Drainage",
+                "//[Slurp].Root.WaterUptake as RootWaterUptake",
+                "//[Weather].Rain as Rain",
+                "//sum([Soil].SoilWater.SWmm) - sum([Soil].Physical.DULmm) as SoilWaterDeficit",
+                "//[Slurp].Leaf.Live.Wt as LeafWt",
+                "//[Slurp].Root.Live.Wt as RootWt",
+                "//[Slurp].Leaf.Transpiration as T",
+                "//[Slurp].Leaf.WaterDemand as WaterDemand",
+                "//[Slurp].Leaf.CoverDead as CoverDead",
+                "//[Slurp].Leaf.Fw as Fw"
               ],
               "EventNames": [
                 "[Clock].DoReport"
@@ -1168,6 +1171,29 @@
               "Name": "Report",
               "Children": [],
               "IncludeInDocumentation": false,
+              "Enabled": true,
+              "ReadOnly": false
+            },
+            {
+              "$type": "Models.Report, Models",
+              "VariableNames": [
+                "[Clock].Today ",
+                "[SlurpSowingRule].Script.CultivarName as CropNameCheck",
+                "[Soil].Physical.SlurpSoil.KL as kl",
+                "[SlurpSowingRule].Script.KLReductionFactor as KLRCheck",
+                "[SlurpSowingRule].Script.RootDepth as RDpCheck",
+                "[SlurpSowingRule].Script.RFV as RFVCheck",
+                "[SlurpSowingRule].Script.YKLModifiers as KLmodCheck",
+                "[SlurpSowingRule].Script.XDepth as KLdepCheck",
+                "[SetCropVariables].Script.Ext_coef as CoverCheck"
+              ],
+              "EventNames": [
+                "[Clock].EndOfSimulation"
+              ],
+              "GroupByVariableName": null,
+              "Name": "SummaryNumbers",
+              "Children": [],
+              "IncludeInDocumentation": true,
               "Enabled": true,
               "ReadOnly": false
             }
