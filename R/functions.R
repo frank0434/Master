@@ -1,5 +1,44 @@
 
 
+
+#' morrisEE
+#' @description Calculate elementary effect for all input parameter to one output.
+#' Copied the method from the apsimx buildin Morris method (OAT). 
+#' 
+#' @param Output a data.table
+#' @param variable string. variable name for the output column
+#' @param apsimMorris pre-defined morris sampling model
+#' @param path integer. how many iterations, same as the one in morris model definition.
+#' @param parameters charater strings. the parameter names used in morris model.
+#'
+#' @return a list has two data.frame. one for path analysis one for statistics. 
+#' @export
+#'
+#' @examples
+morrisEE <- function(Output, variable = "SW1", apsimMorris, 
+                     path = paths, parameters = params){
+  
+  allEE <- data.frame()
+  allStats <- data.frame()
+  apsimMorris$y <-  Output[[variable]]
+  
+  tell(apsimMorris)
+  ee <- data.frame(apsimMorris$ee)
+  ee$variable <-variable
+  ee$path <- seq_len(path)
+  allEE <- rbind(allEE, ee)
+  mu <- apply(apsimMorris$ee, 2, mean)
+  mustar <- apply(apsimMorris$ee, 2, function(x) mean(abs(x)))
+  sigma <- apply(apsimMorris$ee, 2, sd)
+  stats <- data.frame(mu, mustar, sigma)
+  stats$param <- parameters
+  stats$variable <- variable
+  allStats <- rbind(allStats, stats)
+  l <- list(allStats, allEE)
+  names(l) <- c("stats", "pathanalysis")
+  return(l)
+  
+}
 #' read_met
 #'
 #' @param path A character string. The path to access the met files.

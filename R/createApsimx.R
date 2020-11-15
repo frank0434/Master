@@ -187,30 +187,6 @@ year2012 <- Output[Clock.Today.Year == 2012][, .(SW1_2012 = SW1)]
 
 # Calculate ee and stats --------------------------------------------------
 
-morrisEE <- function(Output, variable = "SW1", apsimMorris, 
-                     path = paths, parameters = params){
-
-  allEE <- data.frame()
-  allStats <- data.frame()
-  apsimMorris$y <-  Output[[variable]]
-
-  tell(apsimMorris)
-  ee <- data.frame(apsimMorris$ee)
-  ee$variable <-variable
-  ee$path <- seq_len(path)
-  allEE <- rbind(allEE, ee)
-  mu <- apply(apsimMorris$ee, 2, mean)
-  mustar <- apply(apsimMorris$ee, 2, function(x) mean(abs(x)))
-  sigma <- apply(apsimMorris$ee, 2, sd)
-  stats <- data.frame(mu, mustar, sigma)
-  stats$param <- parameters
-  stats$variable <- variable
-  allStats <- rbind(allStats, stats)
-  l <- list(allStats, allEE)
-  names(l) <- c("stats", "pathanalysis")
-  return(l)
-
-}
 
 year2010_allstats <- morrisEE(Output = year2010, variable = "SW1_2010",apsimMorris = apsimMorris)
 
