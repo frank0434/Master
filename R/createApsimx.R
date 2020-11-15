@@ -193,9 +193,19 @@ year2010_allstats <- morrisEE(Output = year2010, variable = "SW1_2010",apsimMorr
 year2011_allstats <- morrisEE(Output = year2011, variable = "SW1_2011",apsimMorris = apsimMorris)
 year2012_allstats <- morrisEE(Output = year2012, variable = "SW1_2012",apsimMorris = apsimMorris)
 
-ggplot(year2010_allstats, aes(mustar, sigma, color = param)) + 
+ggplot(year2010_allstats$stats, aes(mustar, sigma, color = param)) + 
   geom_point(size = 5) +
   ggtitle("SW1_2010")
+paramsNos <- length(params)
+pallete <- palette("R3")[1:paramsNos]
+names(pallete) <- params
+setDT(year2010_allstats$pathanalysis) %>% 
+  melt.data.table(id.vars = c("variable", "path"),
+                  value.name = "mu.star",
+                  variable.factor = FALSE, 
+                  variable.name = "parameters") %>% 
+  ggplot(aes(path, mu.star, color = parameters)) +
+  geom_point(size = 5)
 
 ggplot(year2011_allstats, aes(mustar, sigma, color = param)) + 
   geom_point(size = 5)+
