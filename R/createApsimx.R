@@ -181,12 +181,12 @@ for( i in seq_len(simNo)){
   
 }
 Output <- data.table::rbindlist(list, use.names = TRUE)
-year2010 <- Output[Clock.Today.Year == 2010][, .(SW1_2010 = SW1)]
-year2011 <- Output[Clock.Today.Year == 2011][, .(SW1_2011 = SW1)]
-year2012 <- Output[Clock.Today.Year == 2012][, .(SW1_2012 = SW1)]
 
 # Calculate ee and stats --------------------------------------------------
 
+year2010 <- Output[Clock.Today.Year == 2010][, .(SW1_2010 = SW1)]
+year2011 <- Output[Clock.Today.Year == 2011][, .(SW1_2011 = SW1)]
+year2012 <- Output[Clock.Today.Year == 2012][, .(SW1_2012 = SW1)]
 
 year2010_allstats <- morrisEE(Output = year2010, variable = "SW1_2010",apsimMorris = apsimMorris)
 
@@ -205,7 +205,8 @@ setDT(year2010_allstats$pathanalysis) %>%
                   variable.factor = FALSE, 
                   variable.name = "parameters") %>% 
   ggplot(aes(path, mu.star, color = parameters)) +
-  geom_point(size = 5)
+  geom_point(size = 5)+
+  geom_line(size = 1)
 
 ggplot(year2011_allstats, aes(mustar, sigma, color = param)) + 
   geom_point(size = 5)+
@@ -221,4 +222,34 @@ allStats <- morrisEE(Output = Output, variable = "SW1",apsimMorris = apsimMorris
 
 ggplot(allStats, aes(mustar, sigma, color = param)) + 
   geom_point(size = 5)
+# Calculate ee and stats seasonal basis ---------------------------------
+Output <- group_in_season(Output[, Date:=Clock.Today])
+Output[]
+season1 <- morrisEE(Output = Output[Season == "2010/2011"], variable = "SW1",apsimMorris = apsimMorris)
+season2 <- morrisEE(Output = Output[Season == "2011/2012"], variable = "SW1",apsimMorris = apsimMorris)
+season3 <- morrisEE(Output = Output[Season == "2012/2013"], variable = "SW1",apsimMorris = apsimMorris)
 
+ggplot(season1$stats, aes(mustar, sigma, color = param)) + 
+  geom_point(size = 5) +
+  ggtitle("SW1 Season 2010/2011")
+ggplot(season2$stats, aes(mustar, sigma, color = param)) + 
+  geom_point(size = 5) +
+  ggtitle("SW1 Season 2011/2012")
+
+setDT(season1$pathanalysis) %>% 
+  melt.data.table(id.vars = c("variable", "path"),
+                  value.name = "mu.star",
+                  variable.factor = FALSE, 
+                  variable.name = "parameters") %>% 
+  ggplot(aes(path, mu.star, color = parameters)) +
+  geom_point(size = 5)+
+  geom_line(size = 1)
+
+setDT(season2$pathanalysis) %>% 
+  melt.data.table(id.vars = c("variable", "path"),
+                  value.name = "mu.star",
+                  variable.factor = FALSE, 
+                  variable.name = "parameters") %>% 
+  ggplot(aes(path, mu.star, color = parameters)) +
+  geom_point(size = 5)+
+  geom_line(size = 1)
