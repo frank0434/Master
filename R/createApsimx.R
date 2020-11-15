@@ -207,7 +207,10 @@ morrisEE <- function(Output, variable = "SW1", apsimMorris,
   stats$param <- parameters
   stats$variable <- variable
   allStats <- rbind(allStats, stats)
-  return(allStats)
+  l <- list(allStats, allEE)
+  names(l) <- c("stats", "pathanalysis")
+  return(l)
+
 }
 
 year2010_allstats <- morrisEE(Output = year2010, variable = "SW1_2010",apsimMorris = apsimMorris)
