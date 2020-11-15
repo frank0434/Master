@@ -555,7 +555,7 @@ group_in_season <- function(DT){
   
   # Build a cmd to do conditional evaluation 
   
-  for(i in 0:(noofseason-1)){
+  for(i in 0:(noofseason)){
     # Key condition
     v <- paste0("Date >= \"" , startyear + i, startmd,"\"","&",
                 "Date <= \"", startyear + i + 1, endmd, "\"",",",
