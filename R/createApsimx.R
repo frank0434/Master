@@ -1,7 +1,6 @@
 
-library(sensitivity)
-
-
+source("R/packages.R")
+source("R/functions.R")
 # Define directories ------------------------------------------------------
 
 dir_tempalte <- here::here("Data/ApsimxFiles/MorrisSlurpTemplate.txt")
@@ -9,6 +8,7 @@ dir_met <- here::here("Data/ClimateAndObserved")
 dir_cover <- here::here("Data/ProcessedData/CoverData")
 dir_config <- here::here("Data/ProcessedData/ConfigurationFiles/")
 dir_Sensitivity <- here::here("Data/ProcessedData/Sensitivity")
+
 ## Apsimx executable
 apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
 ## The flag
@@ -93,11 +93,16 @@ apsimMorris<-morris(model=NULL
 
 # Extract the sampled values  ---------------------------------------------
 sampledValus <- as.data.frame(apsimMorris$X)
+simNo <- nrow(sampledValus)
 
+
+# Simulation switch -------------------------------------------------------
+Run_generator <- FALSE # If TRUE, Run create apsimx files
+Run_simulation <- FALSE # If TRUE, Run simulation files
 
 # Build configuration files & Modify apsimx to new ones -------------------
 ## Read the template
-template <- readLines(dir_tempalte)
+if(isTRUE(Run_generator)){template <- readLines(dir_tempalte)
 replacementA_met <- file.path(dir_met, paste0(Site,".met"))
 
 # Sowing date level 
@@ -132,7 +137,6 @@ replacementN_LL <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$SW.
 Layber.no <- 1L
 replacedLayer <- c(rep("", 14), rep(paste0("[", Layber.no, "]"), 3))
 
-simNo <- nrow(sampledValus)
 for( i in seq_len(simNo)){
   
   replacementF_KRL <- sampledValus[i,]$KLR 
@@ -158,7 +162,7 @@ for( i in seq_len(simNo)){
   ## Modify base to generate new apsimx files 
   system(paste("cp", apsimx_Basefile, modifiedName))
   system(paste(apsimx, modifiedName, apsimx_flag,outputpath))
-}
+}}
 
 # Run simulations  --------------------------------------------------------
 ## Run simulations in power shell or powerplant might be a good option
@@ -166,11 +170,6 @@ for( i in seq_len(simNo)){
 
 # Extract simulation results  ---------------------------------------------
 
-sims <- autoapsimx::read_dbtab(file.path(dir_Sensitivity, paste0(basename, ".db")), table = "Report")
-library(data.table)
-year2010 <- sims[Clock.Today.Year == 2010][, .(SW1_2010 = SW1)]
-year2011 <- sims[Clock.Today.Year == 2011][, .(SW1_2011 = SW1)]
-year2012 <- sims[Clock.Today.Year == 2012][, .(SW1_2012 = SW1)]
 
 list <- vector("list", length = simNo)
 for( i in seq_len(simNo)){
