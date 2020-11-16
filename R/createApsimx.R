@@ -1,6 +1,6 @@
 
 source("R/packages.R")
-source("R/functions.R")
+source("R/functions/functions.R")
 # Define directories ------------------------------------------------------
 
 dir_tempalte <- here::here("Data/ApsimxFiles/MorrisSlurpTemplate.txt")
@@ -17,12 +17,10 @@ apsimx_flag <- "/Edit"
 apsimx_Basefile <- here::here("Data/ApsimxFiles/20201102BaseSlurpForSA.apsimx")
 
 # Define parameters -------------------------------------------------------
-para1 <- "BD1"
-para2 <- "DUL1"
-para3 <- "LL1"
-para4 <- "SKL"
-para5 <- "KLR"
-para6 <- "RFV"
+
+## CAUTIONS - Order matters
+params <- c("BD1","DUL1","LL1","SKL","KLR","RFV")
+names(params) <- paste0("param", seq(1, length(params)))
 
 # Define morris path ------------------------------------------------------
 
@@ -67,7 +65,7 @@ para6.High <- 70
 
 # Build up the parameters  ------------------------------------------------
 
-params <- sapply(grep("para\\d$", x = ls(), value = TRUE), get, simplify = TRUE)
+# params <- sapply(grep("para\\d$", x = ls(), value = TRUE), get, simplify = TRUE)
 
 names(params)
 # Define the range for feeding into morris --------------------------------
