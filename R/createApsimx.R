@@ -8,6 +8,7 @@ dir_met <- here::here("Data/ClimateAndObserved")
 dir_cover <- here::here("Data/ProcessedData/CoverData")
 dir_config <- here::here("Data/ProcessedData/ConfigurationFiles/")
 dir_Sensitivity <- here::here("Data/ProcessedData/Sensitivity")
+path_BD <- here::here("Data/BulkDensity.xlsx")
 
 ## Apsimx executable
 apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
@@ -29,9 +30,9 @@ paths <- 5L
 targets::tar_load("DUL_LL_range")
 
 ## BD ranges from Graham et al 2019
-
-para1.Low <- c("1.21")
-para1.High <- "1.67"
+bulkDensity <- as.data.table(read_excel(path = path_BD))
+para1.Low <- bulkDensity[Experiment == Site & Depth == Layer][['Low']]/1000
+para1.High <- bulkDensity[Experiment == Site & Depth == Layer][['High']]/1000
 
 ## Treatments 
 
@@ -95,12 +96,14 @@ simNo <- nrow(sampledValus)
 
 
 # Simulation switch -------------------------------------------------------
+
 Run_generator <- FALSE # If TRUE, Run create apsimx files
 Run_simulation <- FALSE # If TRUE, Run simulation files
 
 # Build configuration files & Modify apsimx to new ones -------------------
 ## Read the template
-if(isTRUE(Run_generator)){template <- readLines(dir_tempalte)
+if(isTRUE(Run_generator)){
+  template <- readLines(dir_tempalte)
 replacementA_met <- file.path(dir_met, paste0(Site,".met"))
 
 # Sowing date level 
@@ -131,9 +134,13 @@ replacementM_DUL <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$SW
                           collapse = ",")
 replacementN_LL <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$SW.mean.LL, 
                          collapse = ",")
+BD_prifle <- (bulkDensity[Experiment == Site]$BD_kg.m3)/1000
+replacementO_BD <- paste(BD_prifle, 
+                         collapse = ",")
+
 ## Soil parameters 
 Layber.no <- 1L
-replacedLayer <- c(rep("", 14), rep(paste0("[", Layber.no, "]"), 3))
+replacedLayer <- c(rep("", 15), rep(paste0("[", Layber.no, "]"), 3))
 
 for( i in seq_len(simNo)){
   
@@ -141,9 +148,9 @@ for( i in seq_len(simNo)){
   replacementG_RFV <- sampledValus[i,]$RFV
   replacementH_SKL <- sampledValus[i,]$SKL
   
-  replacementO_BD <- sampledValus[i,]$BD1
-  replacementP_DUL <- sampledValus[i,]$DUL1
-  replacementQ_LL <- sampledValus[i,]$LL1
+  replacementP_BD <- sampledValus[i,]$BD1
+  replacementQ_DUL <- sampledValus[i,]$DUL1
+  replacementR_LL <- sampledValus[i,]$LL1
 
  
   replacevalues <- grep("replacement.+", ls(), value = TRUE)
