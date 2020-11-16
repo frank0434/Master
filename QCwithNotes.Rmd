@@ -114,12 +114,42 @@ DUL_LL_range[SowingDate %in% paste0("SD", 1:5)]%>%
 tar_load(starts_with("met"))
 met_AshleyDene
 met_Iversen12
-tar_read("cumTT")
+tar_load("cumTT")
+cumTT %>% 
+  ggplot(aes(Clock.Today, AccumTT)) +
+  geom_point() +
+  facet_grid( Experiment ~ . ) +
+  theme_water()
+
 ```
 
 .Simulations.Slurp
 .Simulations.SlurpMorris
 
+# Check BDs
+
+```{r}
+tar_load(BDs)
+BDs %>% 
+  ggplot(aes(x = Depth))+
+  geom_point(aes(y = Low))+
+  geom_line(aes(y = Low)) +
+  geom_line(aes(y = High))+
+  geom_point(aes(y = High)) +
+  scale_x_reverse() +
+  coord_flip() +
+  facet_grid(  ~ Experiment , scales = "free_x") +
+  theme_water()
+```
+
+# Check LAI_input 
+
+```{r}
+tar_load(LAI_input)
+LAI_input
+```
+
+# Check 
 
 # Check parameter ranges 
 
@@ -132,7 +162,10 @@ names(params_ranges)[1:2]
 
 ```{r}
 
-tar_load(MorrisModels)
+tar_read(MorrisModels_0008acad)
+tar_load(MorrisModels_0008acad)
+
+MorrisModels_0008acad$meta
 lapply(MorrisModels, function(x){length(unique(x))})
 unique(MorrisModels$RFV)
 unique(MorrisModels$SKL)

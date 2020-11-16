@@ -67,9 +67,11 @@ read_met <- function(path = path_met, skip_unit = 9, skip_meta = 7,
   colnames(met_LN) <- colnames(met_col)
   
   met_LN <- met_LN[, Clock.Today := as.Date(day, origin = paste0(year, "-01-01"))
-  ][Clock.Today > start_date & Clock.Today < end_date
-  ][, AccumTT := cumsum(mean)
-  ][, Experiment:=site]
+                   ][Clock.Today > start_date & Clock.Today < end_date
+                     ][,Date := Clock.Today]
+  met_LN <- group_in_season(met_LN)[, AccumTT := cumsum(mean),
+                                    by = Season
+                                    ][, Experiment:=site]
   
   return(met_LN)
 }
