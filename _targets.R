@@ -1,30 +1,29 @@
 library(targets)
 
 # Source functions
-source("R/functions.R")
+invisible(lapply(list.files("R/functions/", pattern = "R", full.names = TRUE),
+                 source))
 source("R/packages.R")
 # Set constants 
 path_richard <- "C:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
 path_apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
+path_BD <- here::here("Data/BulkDensity.xlsx")
+dir_tempalte <- here::here("Data/ApsimxFiles/MorrisSlurpTemplate.txt")
+dir_met <- here::here("Data/ClimateAndObserved")
+dir_cover <- here::here("Data/ProcessedData/CoverData")
+dir_config <- here::here("Data/ProcessedData/ConfigurationFiles/")
+dir_Sensitivity <- here::here("Data/ProcessedData/Sensitivity")
+
+## The flag
+apsimx_flag <- "/Edit"
+## The base apsimx file 
+apsimx_Basefile <- here::here("Data/ApsimxFiles/20201102BaseSlurpForSA.apsimx")
 path_lincoln <- here::here("Data/ClimateAndObserved/lincoln.met")
 path_AD <- here::here("Data/ClimateAndObserved/AshleyDene.met")
 
-Sys.setenv("WorkingDir" = 
-             here::here("Data/"))
-Sys.setenv("BaseApsimxDir" = 
-             file.path(Sys.getenv("WorkingDir"), "ApsimxFiles/"))
-Sys.setenv("MetDir" = 
-             file.path(Sys.getenv("WorkingDir"), "ClimateAndObserved/"))
-Sys.setenv("ConfigFileDir" = 
-             file.path(Sys.getenv("WorkingDir"), "ProcessedData/ConfigurationFiles/"))
-Sys.setenv("CoverDataDir" = 
-             file.path(Sys.getenv("WorkingDir"), "ProcessedData/CoverData/"))
-Sys.setenv("SimsDir" = 
-             file.path(Sys.getenv("WorkingDir"), "ProcessedData/apsimxFiles/"))
-
 # Set target-specific options such as packages.
-tar_option_set(packages = c("data.table", "magrittr", "readxl", 
-                            "ggplot2", "here", "autoapsimx"))
+tar_option_set(packages = c("data.table", "magrittr", "readxl", "openxlsx",
+                            "ggplot2", "here", "autoapsimx", "sensitivity"))
 
 
 # Define targets
@@ -32,8 +31,13 @@ targets <- list(
   # Define keys and treatments
   tar_target(Sites, unique(CoverData$Experiment)),
   tar_target(SD, unique(CoverData$SowingDate)),
+  tar_target(No.ofLayers, seq(1, 22)),
+  tar_target(parameters,  c("BD1","DUL1","LL1","SKL","KLR","RFV")),
   tar_target(id_vars, c("Experiment", "SowingDate", "Clock.Today")),
   tar_target(value_vars, grep("SW\\(\\d.+", colnames(data_SW), value = TRUE)),
+  # tar_target(combos, data.frame(Experiment = Sites, SowingDate = SD,
+  #                               Layer = No.ofLayers),
+  #            pattern = cross(Sites, SD, No.ofLayers)),
   
   # Read data
   tar_target(data_SW, read_Sims(path = path_richard)),
@@ -42,6 +46,7 @@ targets <- list(
   tar_target(met_AshleyDene, read_met(path_AD, skip_unit = 10, skip_meta = 8)),
   tar_target(met_Iversen12, read_met(path_lincoln, skip_unit = 8, skip_meta = 6,
                                      site = "Iversen12")),
+  tar_target(BDs, as.data.table(read_excel(path = path_BD))),
   
   # Do calculation
   tar_target(SW_mean, colwise_meanSW(data_SW = data_SW, id.vars = id_vars, col.vars = value_vars)),
@@ -71,7 +76,17 @@ targets <- list(
              pattern = cross(Sites, SD), 
              cue = tar_cue(depend = TRUE)),
   tar_target(DUL_LL_range, doDUL_LL_range(SW = data_SW, id.vars = id_vars,
-                                          value.vars = value_vars))
+                                          value.vars = value_vars)),
+  # Build parameters for testing their sensitivity
+  tar_target(params_ranges, build_params(params = parameters, 
+                                         Site = Sites, 
+                                         SDs = SD, 
+                                         Layer = No.ofLayers, 
+                                         DT = DUL_LL_range, 
+                                         blukdensity = BDs),
+             pattern = cross(Sites, SD, No.ofLayers)) 
+  
+  
 )
 
 # End with a call to tar_pipeline() to wrangle the targets together.
