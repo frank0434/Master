@@ -5,7 +5,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 source("R/packages.R")
-source("r/functions.R")
+source("r/functions/functions.R")
 library(targets)
 ```
 
@@ -119,3 +119,23 @@ tar_read("cumTT")
 
 .Simulations.Slurp
 .Simulations.SlurpMorris
+
+
+# Check parameter ranges 
+
+```{r}
+tar_load(params_ranges)
+names(params_ranges)[1:2]
+```
+
+# Check morris model sampled values 
+
+```{r}
+
+tar_load(MorrisModels)
+lapply(MorrisModels, function(x){length(unique(x))})
+unique(MorrisModels$RFV)
+unique(MorrisModels$SKL)
+targets::tar_read(MorrisModels_9f4ac55e)
+```
+
