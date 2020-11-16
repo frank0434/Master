@@ -13,9 +13,9 @@ build_params <- function(params, Site, SDs, Layer, DT, blukdensity = BDs) {
   stopifnot(data.table::is.data.table(blukdensity))
   # BD 
   para1.Low <<- blukdensity[Experiment == Site & 
-                              Depth == Layer][["Low"]]
+                              Depth == Layer][["Low"]]/1000
   para1.High <<- blukdensity[Experiment == Site & 
-                               Depth == Layer][["High"]]
+                               Depth == Layer][["High"]]/1000
   
   ## Treatments 
 

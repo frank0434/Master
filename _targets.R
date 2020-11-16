@@ -24,6 +24,7 @@ path_AD <- here::here("Data/ClimateAndObserved/AshleyDene.met")
 # Set target-specific options such as packages.
 tar_option_set(packages = c("data.table", "magrittr", "readxl", "openxlsx",
                             "ggplot2", "here", "autoapsimx", "sensitivity"))
+path <- 100
 
 
 # Define targets
@@ -84,7 +85,13 @@ targets <- list(
                                          Layer = No.ofLayers, 
                                          DT = DUL_LL_range, 
                                          blukdensity = BDs),
-             pattern = cross(Sites, SD, No.ofLayers)) 
+             pattern = cross(Sites, SD, No.ofLayers)),
+  # Build the morris models
+  tar_target(MorrisModels, build_models(params = parameters,paths = 100,
+                                        para.low = params_ranges[[1]], 
+                                        para.high = params_ranges[[2]],
+                                        meta = names(params_ranges)),
+             pattern = map(params_ranges))
   
   
 )
