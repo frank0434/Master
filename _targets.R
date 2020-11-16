@@ -48,6 +48,7 @@ targets <- list(
   tar_target(met_Iversen12, read_met(path_lincoln, skip_unit = 8, skip_meta = 6,
                                      site = "Iversen12")),
   tar_target(BDs, as.data.table(read_excel(path = path_BD))),
+  tar_target(template, readLines(dir_tempalte)),
   
   # Do calculation
   tar_target(SW_mean, colwise_meanSW(data_SW = data_SW, id.vars = id_vars, col.vars = value_vars)),
@@ -60,19 +61,19 @@ targets <- list(
   # Output apsimx input and observed
   tar_target(observed_LAI, outputLAIobserved(biomass = LAI_Height,
                                          Sites, SD,
-                                         output = Sys.getenv("CoverDataDir")), 
+                                         output = dir_cover), 
              format = "file", 
              pattern = cross(Sites, SD), 
              cue = tar_cue(depend = TRUE)),
   tar_target(observed_SW, outputSWobserved(SW = SW_mean,
                                          Sites, SD,
-                                         output = Sys.getenv("CoverDataDir")), 
+                                         output = dir_cover), 
              format = "file", 
              pattern = cross(Sites, SD), 
              cue = tar_cue(depend = TRUE)),
   
   tar_target(LAI_input, outputLAIinput(CoverData, Sites, SD, 
-                                      output = Sys.getenv("CoverDataDir")),
+                                      output = dir_cover),
              format = "file", 
              pattern = cross(Sites, SD), 
              cue = tar_cue(depend = TRUE)),
@@ -91,7 +92,9 @@ targets <- list(
                                         para.low = params_ranges[[1]], 
                                         para.high = params_ranges[[2]],
                                         meta = names(params_ranges)),
-             pattern = map(params_ranges))
+             pattern = map(params_ranges)),
+  tar_target(sampledvalues, extract_samples(MorrisModels),
+             pattern = map(MorrisModels))
   
   
 )
