@@ -358,7 +358,7 @@ interp_LAI <- function(biomass, sowingDates, accumTT) {
                         value.name = "LAI",
                         variable.name = "SowingDate", variable.factor = FALSE)
   
-  DT <- DT[, LAI:= zoo::na.approx(LAI, AccumTT, na.rm = FALSE) , by = .(Experiment, SowingDate) ]
+  DT <- DT[, LAI:= zoo::na.approx(LAI, na.rm = FALSE) , by = .(Experiment, SowingDate) ]
   
   DT <- DT[, ':='(k = 0.94)
      ][Experiment == "AshleyDene" & Clock.Today %between% c( '2011-11-30','2012-03-01'),

@@ -139,12 +139,70 @@ CoverData[ SowingDate == "SD2"] %>%
   geom_point() +
   facet_grid( Experiment ~ . ) +
   theme_water()
-CoverData[ SowingDate == "SD2"] %>% 
+CoverData[ SowingDate == "SD2" & Experiment == "AshleyDene"] %>% 
    ggplot(aes(Clock.Today, LAI)) +
   geom_point() +
   geom_line() +
   facet_grid( Experiment ~ . ) +
   theme_water()
+
+# BRING IN THE RAW VALUES 
+sd2LAI <- read_excel("C:/Data/Master/Data/ProcessedData/CoverData/ObservedLAIAshleyDeneSD2.xlsx")
+sd2LAI %>% 
+  ggplot(aes(Clock.Today, LAImod)) +
+  geom_point() +
+  geom_line() +
+  facet_grid( Experiment ~ . ) +
+  theme_water() +
+  ggtitle("AshleyDene SD2")
+
+```
+```{r}
+tar_load(LAI_Height)
+tar_load(sowingDates)
+tar_load(cumTT)
+LAI_Height
+sowingDates
+cumTT
+interp_LAI(biomass = LAI_Height, sowingDates, cumTT)[]
+# observation <- LAI_Height[Experiment == "AshleyDene" & SowingDate == "SD2"]
+
+
+LAI_Height_SD <- merge.data.table(LAI_Height, sowingDates,
+                                  by = c("Experiment", "Clock.Today" , "SowingDate"), 
+                                    all= TRUE)[,':='(LAImod = ifelse(is.na(LAImod), 0, LAImod),
+                                                     Height = ifelse(is.nan(Height), NA, Height))]
+  
+  LAI_wide <- dcast.data.table(LAI_Height_SD, 
+                               Experiment + Clock.Today ~ SowingDate, 
+                               value.var = "LAImod" )
+
+  
+  
+  DT <- merge.data.table(cumTT, LAI_wide, by = c("Experiment", "Clock.Today"), 
+                         all.x = TRUE)
+  # DT[, SD2:= zoo::na.approx(SD2, na.rm =FALSE)]
+  
+  
+  DT <- melt.data.table(data = DT, 
+                        id.vars = c("Experiment", "Clock.Today", "AccumTT"), 
+                        value.name = "LAI",
+                        variable.name = "SowingDate", variable.factor = FALSE)
+  
+  DT <- DT[, LAI:= zoo::na.approx(LAI,  na.rm = FALSE) , by = .(Experiment, SowingDate) ]
+  
+  DT <- DT[, LAI:= zoo::na.approx(LAImod, na.rm = FALSE) ]
+  DT %>% 
+    ggplot(aes(Clock.Today, LAI)) +
+  geom_point() +
+  geom_line() +
+  facet_grid( Experiment ~ . ) +
+  theme_water() +
+  ggtitle("AshleyDene SD2")
+  DT <- DT[, ':='(k = 0.94)
+     ][Experiment == "AshleyDene" & Clock.Today %between% c( '2011-11-30','2012-03-01'),
+       k:= 0.66][, LI := 1 - exp(-k * LAI) ]
+  
 ```
 
 
