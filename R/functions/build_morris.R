@@ -35,11 +35,13 @@ build_models <- function(params = parameters,
 
 ##' @return
 ##' @author frank0434
+##' @import data.table
 ##' @export
 ##' 
 extract_samples <- function(morrisModel){
   sampledValus <- as.data.frame(morrisModel$X)
   sampledValus$meta <- morrisModel$meta
+  sampledValus <- as.data.table(sampledValus)
   return(sampledValus)
   
 }

@@ -12,42 +12,42 @@ build_params <- function(params, Site, SDs, Layer, DT, blukdensity = BDs) {
   stopifnot(data.table::is.data.table(DT))
   stopifnot(data.table::is.data.table(blukdensity))
   # BD 
-  para1.Low <<- blukdensity[Experiment == Site & 
+  para1.Low <- blukdensity[Experiment == Site & 
                               Depth == Layer][["Low"]]/1000
-  para1.High <<- blukdensity[Experiment == Site & 
+  para1.High <- blukdensity[Experiment == Site & 
                                Depth == Layer][["High"]]/1000
   
   ## Treatments 
 
   ## DUL and LL - From Richard PhD Expt
-  para2.Low <<- DT[Experiment == Site & 
+  para2.Low <- DT[Experiment == Site & 
                     SowingDate == SDs & 
                     Depth == Layer][["Low.DUL"]]
-  para2.High <<- DT[Experiment == Site & 
+  para2.High <- DT[Experiment == Site & 
                      SowingDate == SDs & 
                      Depth == Layer][["High.DUL"]]
   
-  para3.Low <<- DT[Experiment == Site & 
+  para3.Low <- DT[Experiment == Site & 
                     SowingDate == SDs & 
                     Depth == Layer][["Low.LL"]]
-  para3.High <<- DT[Experiment == Site & 
+  para3.High <- DT[Experiment == Site & 
                      SowingDate == SDs & 
                      Depth == Layer][["High.LL"]]
   ## SKL, KLR and RFV # From Edmar et al 2018
-  para4.Low <<- 0.01 
-  para4.High <<- 0.11
+  para4.Low <- 0.01 
+  para4.High <- 0.11
   
-  para5.Low <<- 0.0005 
-  para5.High <<- 0.01
+  para5.Low <- 0.0005 
+  para5.High <- 0.01
   
-  para6.Low <<- 5
-  para6.High <<- 70
+  para6.Low <- 5
+  para6.High <- 70
   
-  para.low <<- as.numeric(sapply(grep(".+Low$", x = ls(envir = .GlobalEnv), 
-                                     value = TRUE),get, simplify = TRUE))
+  low <- ls(pattern = ".+Low$")
+  high <- ls(pattern = ".+High$")
+  para.low <- as.numeric(unlist(mget(low)))
   
-  para.high <<- as.numeric(sapply(grep(".+High$", x = ls(envir = .GlobalEnv),
-                                      value = TRUE),get, simplify = TRUE))
+  para.high <- as.numeric(unlist(mget(high)))
   para.list <- list(para.low, para.high)
   names(para.list) <- paste0(paste0(Site,"_", SDs, "_", "Layer", Layer),
                              c(".Low", ".High"))
