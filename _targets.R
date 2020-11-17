@@ -1,5 +1,6 @@
 library(targets)
-
+library(future)
+plan(multisession)
 # Source functions
 invisible(lapply(list.files("R/functions/", pattern = "R", full.names = TRUE),
                  source))
