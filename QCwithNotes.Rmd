@@ -157,6 +157,8 @@ sd2LAI %>%
   ggtitle("AshleyDene SD2")
 
 ```
+## Debug for LAI interpolatation 
+
 ```{r}
 tar_load(LAI_Height)
 tar_load(sowingDates)
@@ -191,7 +193,7 @@ LAI_Height_SD <- merge.data.table(LAI_Height, sowingDates,
   
   DT <- DT[, LAI:= zoo::na.approx(LAI,  na.rm = FALSE) , by = .(Experiment, SowingDate) ]
   
-  DT <- DT[, LAI:= zoo::na.approx(LAImod, na.rm = FALSE) ]
+  DT <- DT[, LAI:= zoo::na.approx(LAI, na.rm = FALSE) ]
   DT %>% 
     ggplot(aes(Clock.Today, LAI)) +
   geom_point() +
@@ -202,6 +204,20 @@ LAI_Height_SD <- merge.data.table(LAI_Height, sowingDates,
   DT <- DT[, ':='(k = 0.94)
      ][Experiment == "AshleyDene" & Clock.Today %between% c( '2011-11-30','2012-03-01'),
        k:= 0.66][, LI := 1 - exp(-k * LAI) ]
+  
+
+```
+# Check SW_INITIALS
+```{r}
+tar_load(SW_initials)
+SW_initials[, Depth:=as.integer(gsub("\\D", "", Depth))] %>% 
+   ggplot(aes(x = Depth, color = SowingDate))+
+  geom_point(aes(y = SW))+
+  geom_line(aes(y = SW)) +
+  scale_x_reverse() +
+  coord_flip() +
+  facet_grid(  ~ Experiment , scales = "free_x") +
+  theme_water()
   
 ```
 
@@ -241,7 +257,7 @@ tar_load(params_ranges)
 names(params_ranges)[1:2]
 ```
 
-# Check morris model sampled values 
+# Check morris model & sampled values 
 
 ```{r}
 
@@ -249,9 +265,10 @@ tar_read(MorrisModels_0008acad)
 tar_load(MorrisModels_0008acad)
 
 MorrisModels_0008acad$meta
-lapply(MorrisModels, function(x){length(unique(x))})
-unique(MorrisModels$RFV)
-unique(MorrisModels$SKL)
-targets::tar_read(MorrisModels_9f4ac55e)
+
+tar_load(sampledvalues)
+nrow(sampledvalues)
+lapply(sampledvalues, function(x){length(unique(x))})
+
 ```
 
