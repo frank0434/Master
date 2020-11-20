@@ -82,7 +82,8 @@ build_apsimx <- function(template = template, sampledValus = sampledvalues,
     ## Modify base to generate new apsimx files 
     system(paste("cp", apsimx_Basefile, modifiedName))
     system(paste(apsimx, modifiedName, "/Edit",outputpath))
-    return(modifiedName)
+    # return(modifiedName)
+    cat(modifiedName, "\r\n")
   }
 
   
