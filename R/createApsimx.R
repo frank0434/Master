@@ -3,7 +3,7 @@ source("R/packages.R")
 source("R/functions/functions.R")
 # Define directories ------------------------------------------------------
 
-dir_tempalte <- here::here("Data/ApsimxFiles/MorrisSlurpTemplate.txt")
+dir_tempalte <- here::here("Data/ApsimxFiles/MorrisSlurpTemplateFirstPhase.txt")
 dir_met <- here::here("Data/ClimateAndObserved")
 dir_cover <- here::here("Data/ProcessedData/CoverData")
 dir_config <- here::here("Data/ProcessedData/ConfigurationFiles/")
@@ -29,16 +29,17 @@ paths <- 5L
 # Load the range of DUL and LL --------------------------------------------
 targets::tar_load("DUL_LL_range")
 
-## BD ranges from Graham et al 2019
-bulkDensity <- as.data.table(read_excel(path = path_BD))
-para1.Low <- bulkDensity[Experiment == Site & Depth == Layer][['Low']]/1000
-para1.High <- bulkDensity[Experiment == Site & Depth == Layer][['High']]/1000
-
 ## Treatments 
 
 Site <- "AshleyDene"
 SD <- "SD2"
 Layer <- 1L
+## BD ranges from Graham et al 2019
+bulkDensity <- as.data.table(read_excel(path = path_BD))
+para1.Low <- bulkDensity[Experiment == Site & Depth == Layer][['Low']]/1000
+para1.High <- bulkDensity[Experiment == Site & Depth == Layer][['High']]/1000
+
+
 
 ## DUL and LL - From Richard PhD Expt
 para2.Low <- DUL_LL_range[Experiment == Site & 
@@ -77,32 +78,9 @@ para.low <- as.numeric(sapply(grep(".+Low$", x = ls(), value = TRUE),get, simpli
 para.high <- as.numeric(sapply(grep(".+High$", x = ls(), value = TRUE),get, simplify = TRUE))
 
 
-# Build the morris model  -------------------------------------------------
-
-
-apsimMorris<-morris(model=NULL
-                    ,params #string vector of parameter names
-                    ,paths #no of paths within the total parameter space
-                    ,design=list(type="oat",levels=21,grid.jump=5)
-                    ,binf=para.low #min for each parameter
-                    ,bsup=para.high #max for each parameter
-                    ,scale=T
-)
-
-
-# Extract the sampled values  ---------------------------------------------
-sampledValus <- as.data.frame(apsimMorris$X)
-simNo <- nrow(sampledValus)
-
-
-# Simulation switch -------------------------------------------------------
-
-Run_generator <- FALSE # If TRUE, Run create apsimx files
-Run_simulation <- FALSE # If TRUE, Run simulation files
-
-# Build configuration files & Modify apsimx to new ones -------------------
+# Build basic configuration files & Modify apsimx to new ones -------------------
 ## Read the template
-if(isTRUE(Run_generator)){
+
   template <- readLines(dir_tempalte)
 replacementA_met <- file.path(dir_met, paste0(Site,".met"))
 
@@ -138,6 +116,43 @@ BD_prifle <- (bulkDensity[Experiment == Site]$BD_kg.m3)/1000
 replacementO_BD <- paste(BD_prifle, 
                          collapse = ",")
 
+replacevalues <- grep("replacement.+", ls(), value = TRUE)
+values <- sapply(replacevalues, get, simplify = TRUE, USE.NAMES = FALSE)
+config <- paste0(template, "=", values)
+
+basename <- paste0(Site, SD)
+outputpath <- file.path(dir_config, paste0(basename, ".txt"))
+
+writeLines(text = config, con = outputpath)  
+cat("Configuration file write into", outputpath, "\r\n")
+modifiedName <- file.path(dir_Sensitivity, paste0(basename, ".apsimx"))
+## Modify base to generate new apsimx files 
+system(paste("cp", apsimx_Basefile, modifiedName))
+system(paste(apsimx, modifiedName, apsimx_flag,outputpath))
+
+# Build the morris model  -------------------------------------------------
+
+
+apsimMorris<-morris(model=NULL
+                    ,params #string vector of parameter names
+                    ,paths #no of paths within the total parameter space
+                    ,design=list(type="oat",levels=21,grid.jump=5)
+                    ,binf=para.low #min for each parameter
+                    ,bsup=para.high #max for each parameter
+                    ,scale=T
+)
+
+
+# Extract the sampled values  ---------------------------------------------
+sampledValus <- as.data.frame(apsimMorris$X)
+simNo <- nrow(sampledValus)
+
+
+# Simulation switch -------------------------------------------------------
+
+Run_generator <- FALSE # If TRUE, Run create apsimx files
+Run_simulation <- FALSE # If TRUE, Run simulation files
+if(isTRUE(Run_generator)){
 ## Soil parameters 
 Layber.no <- 1L
 replacedLayer <- c(rep("", 15), rep(paste0("[", Layber.no, "]"), 3))
