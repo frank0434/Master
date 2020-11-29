@@ -7,9 +7,8 @@
 ##' @return
 ##' @author frank0434
 ##' @export
-build_apsimx <- function(template = template, sampledValus = sampledvalues,
+build_config <- function(template = template, sampledValus = sampledvalues,
                          dir_metfile, dir_cover, dir_config,dir_Sensitivity,
-                         apsimx,apsimx_Basefile,
                          DUL_LL_range = DUL_LL_range,
                          bulkDensity = bulkDensity, 
                          SowingDates, SW_initial) {
@@ -78,12 +77,12 @@ build_apsimx <- function(template = template, sampledValus = sampledvalues,
     writeLines(text = config, con = outputpath)  
     cat("Configuration file write into", outputpath, "\r\n")
     ## New name
-    modifiedName <- file.path(dir_Sensitivity, paste0(basename, ".apsimx"))
+    # modifiedName <- file.path(dir_Sensitivity, paste0(basename, ".apsimx"))
     ## Modify base to generate new apsimx files 
-    system(paste("cp", apsimx_Basefile, modifiedName))
-    system(paste(apsimx, modifiedName, "/Edit",outputpath))
+    # system(paste("cp", apsimx_Basefile, modifiedName))
+    # system(paste(apsimx, modifiedName, "/Edit",outputpath))
     # return(modifiedName)
-    cat(modifiedName, "\r\n")
+    # cat(modifiedName, "\r\n")
   }
 
   

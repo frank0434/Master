@@ -385,10 +385,10 @@
     },
     "future": {
       "Package": "future",
-      "Version": "1.19.1",
+      "Version": "1.20.1",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "224cbc34a2c97606b0e6311e3bd19e05"
+      "Hash": "ba8048a1641465f807c52b78d1eae18a"
     },
     "future.apply": {
       "Package": "future.apply",
@@ -704,6 +704,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "406db947a3721d059635aaa04e6d051a"
+    },
+    "parallelly": {
+      "Package": "parallelly",
+      "Version": "1.21.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "bbf1e5cf8653a539e4659c8c40f17b72"
     },
     "patchwork": {
       "Package": "patchwork",
