@@ -109,6 +109,7 @@ targets <- list(
                                   SowingDates = sowingDates,
                                   SW_initial = SW_initials
                                   ), 
+             format = "file", cue = tar_cue(mode = "always"),
              pattern = cross(Sites, SD))
   
   

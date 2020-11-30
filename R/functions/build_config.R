@@ -102,3 +102,4 @@ build_config <- function(template = template, Site, SD,apsimx,apsimx_Basefile,
   
 }
 
+build_apsimx <- function(sampledValus, template, apsimx,apsimx_Basefile)
