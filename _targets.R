@@ -9,7 +9,7 @@ source("R/packages.R")
 path_richard <- "C:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
 path_apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
 path_BD <- here::here("Data/BulkDensity.xlsx")
-dir_tempalte <- here::here("Data/ApsimxFiles/MorrisSlurpTemplate.txt")
+dir_tempalte <- here::here("Data/ApsimxFiles/MorrisSlurpTemplateFirstPhase.txt")
 dir_met <- here::here("Data/ClimateAndObserved")
 dir_cover <- here::here("Data/ProcessedData/CoverData")
 dir_config <- here::here("Data/ProcessedData/ConfigurationFiles/")
@@ -96,20 +96,20 @@ targets <- list(
              pattern = map(params_ranges)),
   tar_target(sampledvalues, extract_samples(MorrisModels),
              pattern = map(MorrisModels)),
-  tar_target(apsimx, build_apsimx(template = template, 
+  tar_target(apsimxPhase1, build_config(template = template, 
                                   dir_metfile = dir_met,
                                   dir_cover = dir_cover,
                                   dir_config = dir_config,
                                   dir_Sensitivity = dir_Sensitivity,
-                                  sampledValus = sampledvalues, 
-                                  apsimx = path_apsimx,
+                                  apsimx = path_apsimx, 
                                   apsimx_Basefile = apsimx_Basefile,
+                                  Site = Sites, SD = SD,
                                   DUL_LL_range = DUL_LL_range, 
                                   bulkDensity = BDs,
                                   SowingDates = sowingDates,
                                   SW_initial = SW_initials
                                   ), 
-             pattern = map(sampledvalues))
+             pattern = cross(Sites, SD))
   
   
 )
