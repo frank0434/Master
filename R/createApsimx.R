@@ -4,6 +4,7 @@ source("R/functions/functions.R")
 # Define directories ------------------------------------------------------
 
 dir_tempalte <- here::here("Data/ApsimxFiles/MorrisSlurpTemplateFirstPhase.txt")
+dir_tempalte2 <- here::here("Data/ApsimxFiles/MorrisSlurpTemplateSecondPhase.txt")
 dir_met <- here::here("Data/ClimateAndObserved")
 dir_cover <- here::here("Data/ProcessedData/CoverData")
 dir_config <- here::here("Data/ProcessedData/ConfigurationFiles/")
@@ -25,7 +26,7 @@ names(params) <- paste0("param", seq(1, length(params)))
 
 # Define morris path ------------------------------------------------------
 
-paths <- 5L
+paths <- 50L
 # Load the range of DUL and LL --------------------------------------------
 targets::tar_load("DUL_LL_range")
 
@@ -153,48 +154,54 @@ simNo <- nrow(sampledValus)
 Run_generator <- FALSE # If TRUE, Run create apsimx files
 Run_simulation <- FALSE # If TRUE, Run simulation files
 if(isTRUE(Run_generator)){
+  
+  template2 <- readLines(dir_tempalte2)
 ## Soil parameters 
 Layber.no <- 1L
-replacedLayer <- c(rep("", 15), rep(paste0("[", Layber.no, "]"), 3))
+replacedLayer <- c(rep("", 3), rep(paste0("[", Layber.no, "]"), 3))
 
 for( i in seq_len(simNo)){
   
-  replacementF_KRL <- sampledValus[i,]$KLR 
-  replacementG_RFV <- sampledValus[i,]$RFV
-  replacementH_SKL <- sampledValus[i,]$SKL
+  secondPhaseF_KRL <- sampledValus[i,]$KLR 
+  secondPhaseG_RFV <- sampledValus[i,]$RFV
+  secondPhaseH_SKL <- sampledValus[i,]$SKL
   
-  replacementP_BD <- sampledValus[i,]$BD1
-  replacementQ_DUL <- sampledValus[i,]$DUL1
-  replacementR_LL <- sampledValus[i,]$LL1
+  secondPhaseP_BD <- sampledValus[i,]$BD1
+  secondPhaseQ_DUL <- sampledValus[i,]$DUL1
+  secondPhaseR_LL <- sampledValus[i,]$LL1
 
  
-  replacevalues <- grep("replacement.+", ls(), value = TRUE)
+  replacevalues <- grep("secondPhase.+", ls(), value = TRUE)
   values <- sapply(replacevalues, get, simplify = TRUE, USE.NAMES = FALSE)
-  config <- paste0(template,replacedLayer, "=", values)
+  config <- paste0(template2,replacedLayer, "=", values)
   
-  basename <- paste0(Site, SD,"Layer", Layer, "Path",i)
-  outputpath <- file.path(dir_config, paste0(basename, ".txt"))
+  basename2nd <- paste0(Site, SD,"Layer", Layer, "Path",i)
+  outputpath <- file.path(dir_config, paste0(basename2nd, ".txt"))
 
   writeLines(text = config, con = outputpath)  
   cat("Configuration file write into", outputpath, "\r\n")
   ## New name
-  modifiedName <- file.path(dir_Sensitivity, paste0(basename, ".apsimx"))
+  dir_2nd <- file.path(dir_Sensitivity, basename)
+  dir.create(dir_2nd, showWarnings = FALSE)
+  modifiedName2nd <- file.path(dir_2nd, paste0(basename2nd, ".apsimx"))
   ## Modify base to generate new apsimx files 
-  system(paste("cp", apsimx_Basefile, modifiedName))
-  system(paste(apsimx, modifiedName, apsimx_flag,outputpath))
-}}
+  system(paste("cp", modifiedName, modifiedName2nd))
+  system(paste(apsimx, modifiedName2nd, apsimx_flag,outputpath))
+}
+
+}
 
 # Run simulations  --------------------------------------------------------
 ## Run simulations in power shell or powerplant might be a good option
 
 
 # Extract simulation results  ---------------------------------------------
-
+file.info(path = file.path(dir_Sensitivity, paste0(Site, SD)), pattern = ".db$")
 
 list <- vector("list", length = simNo)
 for( i in seq_len(simNo)){
   basename <- paste0(Site, SD,"Layer", Layer, "Path",i)
-  sims <- autoapsimx::read_dbtab(file.path(dir_Sensitivity, paste0(basename, ".db")), table = "Report")
+  sims <- autoapsimx::read_dbtab(file.path(dir_Sensitivity, paste0(Site, SD),paste0(basename, ".db")), table = "Report")
   sims <- sims[, SimulationID := i]
   list[[i]] <- sims
   
@@ -245,9 +252,9 @@ ggplot(allStats, aes(mustar, sigma, color = param)) +
 # Calculate ee and stats seasonal basis ---------------------------------
 Output <- group_in_season(Output[, Date:=Clock.Today])
 Output[]
-season1 <- morrisEE(Output = Output[Season == "2010/2011"], variable = "SW1",apsimMorris = apsimMorris)
-season2 <- morrisEE(Output = Output[Season == "2011/2012"], variable = "SW1",apsimMorris = apsimMorris)
-season3 <- morrisEE(Output = Output[Season == "2012/2013"], variable = "SW1",apsimMorris = apsimMorris)
+season1 <- morrisEE(Output = Output[Season == "2010/2011"], variable = "SWmm(1)",apsimMorris = apsimMorris)
+season2 <- morrisEE(Output = Output[Season == "2011/2012"], variable = "SWmm(1)",apsimMorris = apsimMorris)
+season3 <- morrisEE(Output = Output[Season == "2012/2013"], variable = "SWmm(1)",apsimMorris = apsimMorris)
 
 ggplot(season1$stats, aes(mustar, sigma, color = param)) + 
   geom_point(size = 5) +
@@ -256,14 +263,16 @@ ggplot(season2$stats, aes(mustar, sigma, color = param)) +
   geom_point(size = 5) +
   ggtitle("SW1 Season 2011/2012")
 
+linesize <- 0.5
 setDT(season1$pathanalysis) %>% 
   melt.data.table(id.vars = c("variable", "path"),
                   value.name = "mu.star",
                   variable.factor = FALSE, 
                   variable.name = "parameters") %>% 
   ggplot(aes(path, mu.star, color = parameters)) +
-  geom_point(size = 5)+
-  geom_line(size = 1)
+  geom_point(size = 1)+
+  geom_line(size = linesize)+theme_water()+
+  ggtitle("SW1 Season 2010/2011")
 
 setDT(season2$pathanalysis) %>% 
   melt.data.table(id.vars = c("variable", "path"),
@@ -271,5 +280,6 @@ setDT(season2$pathanalysis) %>%
                   variable.factor = FALSE, 
                   variable.name = "parameters") %>% 
   ggplot(aes(path, mu.star, color = parameters)) +
-  geom_point(size = 5)+
-  geom_line(size = 1)
+  geom_point(size = 1)+
+  geom_line(size = linesize)+theme_water()+
+  ggtitle("SW1 Season 2011/2012")
