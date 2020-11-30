@@ -1,6 +1,10 @@
 ---
 title: "1. Debug targets"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2 
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
