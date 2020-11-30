@@ -1,7 +1,7 @@
 {
   "$type": "Models.Core.Simulations, Models",
   "ExplorerWidth": 300,
-  "Version": 122,
+  "Version": 126,
   "ApsimVersion": "0.0.0.0",
   "Name": "Simulations",
   "Children": [
@@ -32,6 +32,7 @@
         },
         {
           "$type": "Models.Climate.Weather, Models",
+          "ConstantsFile": null,
           "FileName": "%root%\\Examples\\WeatherFiles\\lincoln.met",
           "ExcelWorkSheetName": null,
           "Name": "Weather",
@@ -656,7 +657,6 @@
                   "CN2Bare": 68.0,
                   "CNRed": 20.0,
                   "CNCov": 0.8,
-                  "Slope": "NaN",
                   "DischargeWidth": "NaN",
                   "CatchmentArea": "NaN",
                   "Thickness": [
@@ -1138,7 +1138,8 @@
               "VariableNames": [
                 "[Clock].Today",
                 "[Clock].Today.Year",
-                "[Soil].SoilWater.SW[1] as SW1",
+                "[Soil].SoilWater.SWmm as SWmm",
+                "sum([Soil].SoilWater.SWmm) as PSWCmm",
                 "//*[Soil].Physical.SlurpSoil.KL[1] as SKL",
                 "//[Slurp].Leaf.ExtinctionCoefficient as k ",
                 "//[Slurp].Leaf.CoverTotal as Cover",
