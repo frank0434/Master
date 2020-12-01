@@ -48,8 +48,8 @@ build_config <- function(template = template, Site, SD,apsimx,apsimx_Basefile,
                             collapse = ",")
   replacementN_LL <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$SW.mean.LL, 
                            collapse = ",")
-  BD_prifle <- (bulkDensity[Experiment == Site]$BD_kg.m3)/1000
-  replacementO_BD <- paste(BD_prifle, 
+  BD_profile <- (bulkDensity[Experiment == Site]$BD_kg.m3)/1000
+  replacementO_BD <- paste(BD_profile, 
                            collapse = ",")
   replacevalues <- grep("replacement.+", ls(), value = TRUE)
   values <- mget(replacevalues)
@@ -102,4 +102,55 @@ build_config <- function(template = template, Site, SD,apsimx,apsimx_Basefile,
   
 }
 
-build_apsimx <- function(sampledValus, template, apsimx,apsimx_Basefile)
+build_apsimx <- function(template, apsimx, apsimx_Basefile,
+                         Site, SD, weather, cover,
+                         bulkdensity,SowingDates,SW_initial,
+                         dir_simulations){
+  replacementA_met <- weather
+  
+  # Sowing date level 
+  ## SD
+  replacementC_SD <- as.character(SowingDates[Experiment == Site & 
+                                                SowingDate == SD ]$Clock.Today)
+  
+  replacementB_ClockStart <- paste0(replacementC_SD, "T00:00:00")
+  
+  ## Height
+  replacementD_MaxHeight <- ifelse(Site == "AshleyDene", 390L, 595L)
+  
+  
+  ## ClockStart
+  ## User provide light interception data 
+  replacementE_CoverData <- cover
+  
+  replacementI_initialSW <- paste(SW_initial[Experiment == Site & SowingDate == SD]$SW, 
+                                  collapse = ",")
+  replacementJ_SAT <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$High.DUL, 
+                            collapse = ",")
+  replacementK_AirDry <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$Low.LL, 
+                               collapse = ",")
+  replacementL_LL15 <- replacementK_AirDry
+  replacementM_DUL <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$SW.mean.DUL, 
+                            collapse = ",")
+  replacementN_LL <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$SW.mean.LL, 
+                           collapse = ",")
+  BD_profile <- (bulkDensity[Experiment == Site]$BD_kg.m3)/1000
+  replacementO_BD <- paste(BD_profile, 
+                           collapse = ",")
+  replacevalues <- grep("replacement.+", ls(), value = TRUE)
+  values <- mget(replacevalues)
+  config <- paste0(template, "=", values)
+  
+  basename <- paste0(Site, SD)
+  outputpath <- file.path(dir_config, paste0(basename, ".txt"))
+  
+  writeLines(text = config, con = outputpath)  
+  cat("Configuration file write into", outputpath, "\r\n")
+  ## New name
+  modifiedName <- file.path(dir_simulations, paste0(basename, ".apsimx"))
+  ## Modify base to generate new apsimx files 
+  system(paste("cp", apsimx_Basefile, modifiedName))
+  system(paste(apsimx, modifiedName, "/Edit",outputpath))
+  return(modifiedName)
+  
+}
