@@ -1,0 +1,54 @@
+---
+title: "equations"
+author: "jian (AKA Frank) liu"
+date: "07/04/2020"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Basic equations
+
+Potential Evapotranspiration from weather station, calculated by Peman evapotranspiration potential (**EP**).
+
+Potential soil water deficit (**PSMD**)
+
+$$PSMD_i = PSMD_{i-1} + EP_i - rainfall_i$$
+
+Vapour pressure deficit (**VDP**)
+
+Soil water content (**SWC**) 
+
+$$SWC = \sum_{bot}^{top} θ * d$$
+
+Where θ is the volumetric water content (VWC) of individual layers as measured in Section 6.2.1.2, d is the depth of the layer, top is the 0 to 0.2 m 
+layer and bot is the 2.2 to 2.3 m layer.
+
+water use (**WU**, mm per period)
+
+$$WU = P_R – (SWC_E – SWC_S)$$
+
+Where PR is the sum of rainfall for the same period, SWCS and SWCE represent the actual soil water content of the profile as measured (Section 6.2.1.2) for the start and end of the period, respectively. This equation assumes no rainfall is lost as drainage or runoff.
+
+
+Daily water use ($WU_{daily}$)
+
+$$WU_{daily} = (WU/EP) * EP_{daily}$$
+
+
+Soil water deficit (**SWD**)
+
+$$SWD = SWD_i + WU_{daily} - R$$
+
+$$ET = R - \Delta SWC - D$$
+$$ET_d = (ET/P_{ET}) * P_{ETd}$$
+$$DUL = max(SWC)$$
+$$DUL = min(SWC)$$
+
+$$\theta = \theta_u \text{  } t \le t_c$$
+$$\theta = \theta_1 + ((\theta_u - \theta_1)*exp(-kl*(t - t_c))) \text{ } t > t_c$$
+
+$$T_D = VPD*R_i*Θ_T \text{ } (Θ_T=0.45mm MJ^{-1} kPa^{-1})$$ 
+$$Fw = T/T_D$$
+$$f_{obs/pred} = (Observed \text{ } measurements)/(Potential \text{  } values)$$
