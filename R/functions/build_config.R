@@ -160,3 +160,41 @@ build_apsimx <- function(template, apsimx, apsimx_Basefile,
   return(modifiedName)
   
 }
+
+
+#' build_optimSlurp
+#' @description for modifying the slurp only regarding to surface kl.
+#'
+#' @param template 
+#' @param dir_optim 
+#' @param dir_config 
+#' @param KL_range 
+#' @param apsimx 
+#' @param apsimx_Basefile 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+build_optimSlurp <- function(template = templatePhase2, 
+                 dir_optim = dir_simulations, 
+                 dir_config = dir_config, 
+                 KL_range = SKL_Range,
+                 apsimx = path_apsimx, 
+                 apsimx_Basefile = apsimxPhase1){
+  
+  name <- gsub("\\.apsimx", "", apsimx_Basefile)
+  for (skl in KL_range){
+    
+    config <- paste0(template, "=", skl)
+    output <-  paste0(dir_config,"/ConfigSKL_", skl[1], name, ".txt")
+    # Edit the base apsimx file and save it to a new name
+    ## modify the apsimx file
+    modifiedName <- paste0(dir_optim, "/ModifiedSKL_", skl, name, ".apsimx")
+    system(paste("cp", apsimx_Basefile, modifiedName))
+    system(paste(apsimx, modifiedName, "/Edit", output))
+    system(paste(apsimx, modifiedName))
+  }
+  
+  
+}
