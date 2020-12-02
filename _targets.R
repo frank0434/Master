@@ -1,6 +1,6 @@
 library(targets)
 library(future)
-plan(multisession)
+# plan(multisession)
 # Source functions
 invisible(lapply(list.files("R/functions/", pattern = "R", full.names = TRUE),
                  source))
@@ -13,20 +13,18 @@ dir_tempalte <- here::here("Data/ApsimxFiles/MorrisSlurpTemplateFirstPhase.txt")
 dir_met <- here::here("Data/ClimateAndObserved")
 dir_cover <- here::here("Data/ProcessedData/CoverData")
 dir_config <- here::here("Data/ProcessedData/ConfigurationFiles/")
-dir_Sensitivity <- here::here("Data/ProcessedData/Sensitivity")
+dir_simulations <- here::here("Data/ProcessedData/apsimxFiles/")
 
 ## The flag
 apsimx_flag <- "/Edit"
 ## The base apsimx file 
-apsimx_Basefile <- here::here("Data/ApsimxFiles/20201102BaseSlurpForSA.apsimx")
+apsimx_Basefile <- here::here("Data/ApsimxFiles/20200517BaseSlurp.apsimx")
 path_lincoln <- here::here("Data/ClimateAndObserved/lincoln.met")
 path_AD <- here::here("Data/ClimateAndObserved/AshleyDene.met")
 
 # Set target-specific options such as packages.
 tar_option_set(packages = c("data.table", "magrittr", "readxl", "openxlsx",
                             "ggplot2", "here", "autoapsimx", "sensitivity"))
-path <- 100
-
 
 # Define targets
 targets <- list(
@@ -37,10 +35,7 @@ targets <- list(
   tar_target(parameters,  c("BD1","DUL1","LL1","SKL","KLR","RFV")),
   tar_target(id_vars, c("Experiment", "SowingDate", "Clock.Today")),
   tar_target(value_vars, grep("SW\\(\\d.+", colnames(data_SW), value = TRUE)),
-  # tar_target(combos, data.frame(Experiment = Sites, SowingDate = SD,
-  #                               Layer = No.ofLayers),
-  #            pattern = cross(Sites, SD, No.ofLayers)),
-  
+
   # Read data
   tar_target(data_SW, read_Sims(path = path_richard)),
   tar_target(sowingDates, read_Sims(path_richard, source =  "sowingDate")),
@@ -60,15 +55,10 @@ targets <- list(
   
   tar_target(SW_initials, initialSWC(SW_mean, sowingDates, id_vars)),
   # Output apsimx input and observed
-  tar_target(observed_LAI, outputLAIobserved(biomass = LAI_Height,
-                                         Sites, SD,
-                                         output = dir_cover), 
-             format = "file", 
-             pattern = cross(Sites, SD), 
-             cue = tar_cue(depend = TRUE)),
-  tar_target(observed_SW, outputSWobserved(SW = SW_mean,
-                                         Sites, SD,
-                                         output = dir_cover), 
+  tar_target(observed, outputobserved(biomass = LAI_Height,
+                                      SW = SW_mean, 
+                                      site = Sites,SD = SD,
+                                      output = dir_cover), 
              format = "file", 
              pattern = cross(Sites, SD), 
              cue = tar_cue(depend = TRUE)),
@@ -80,37 +70,21 @@ targets <- list(
              cue = tar_cue(depend = TRUE)),
   tar_target(DUL_LL_range, doDUL_LL_range(SW = data_SW, id.vars = id_vars,
                                           value.vars = value_vars)),
-  # Build parameters for testing their sensitivity
-  tar_target(params_ranges, build_params(params = parameters, 
-                                         Site = Sites, 
-                                         SDs = SD, 
-                                         Layer = No.ofLayers, 
-                                         DT = DUL_LL_range, 
-                                         blukdensity = BDs),
-             pattern = cross(Sites, SD, No.ofLayers)),
-  # Build the morris models
-  tar_target(MorrisModels, build_models(params = parameters,paths = 100,
-                                        para.low = params_ranges[[1]], 
-                                        para.high = params_ranges[[2]],
-                                        meta = names(params_ranges)),
-             pattern = map(params_ranges)),
-  tar_target(sampledvalues, extract_samples(MorrisModels),
-             pattern = map(MorrisModels)),
-  tar_target(apsimxPhase1, build_config(template = template, 
-                                  dir_metfile = dir_met,
-                                  dir_cover = dir_cover,
-                                  dir_config = dir_config,
-                                  dir_Sensitivity = dir_Sensitivity,
-                                  apsimx = path_apsimx, 
-                                  apsimx_Basefile = apsimx_Basefile,
-                                  Site = Sites, SD = SD,
-                                  DUL_LL_range = DUL_LL_range, 
-                                  bulkDensity = BDs,
-                                  SowingDates = sowingDates,
-                                  SW_initial = SW_initials
+  # Build the apsimx 
+  tar_target(apsimxPhase1, build_apsimx(template = template, 
+                                        dir_metfile = dir_met, 
+                                        cover = LAI_input,
+                                        observed = observed, 
+                                        dir_simulations,
+                                        apsimx = path_apsimx, 
+                                        apsimx_Basefile = apsimx_Basefile,
+                                        DUL_LL_range = DUL_LL_range, 
+                                        bulkDensity = BDs,
+                                        SowingDates = sowingDates,
+                                        SW_initial = SW_initials
                                   ), 
              format = "file", cue = tar_cue(mode = "always"),
-             pattern = cross(Sites, SD))
+             pattern =  map(LAI_input,observed))
   
   
 )
