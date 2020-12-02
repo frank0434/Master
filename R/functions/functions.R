@@ -230,19 +230,20 @@ config_slurp <- function(template_var, template_value, outpath){
 ##'
 ##' .. content for \details{} ..
 ##'
-##' @title
+##' @title outputobserved
 
 ##' @param output 
 ##'
 ##' @param biomass 
 ##' @param site 
 ##' @param SD 
+##' @param SW 
 ##' 
 ##' @import openxlsx
 ##' @return
 ##' @author frank0434
 ##' @export
-outputLAIobserved <- function(biomass, site, SD,
+outputobserved <- function(biomass, SW, site, SD,
                               output = "Data/ProcessedData/CoverData/"){
   # OUPUT CONFIG
   
@@ -252,41 +253,46 @@ outputLAIobserved <- function(biomass, site, SD,
  
     # Output observation 
     sitesd  <-  biomass[Experiment == site & SowingDate == SD]
+    sitesdSW <- SW[Experiment == site & SowingDate == SD]
+    DT <- merge.data.frame(sitesd, sitesdSW,
+                           by = c("Experiment","SowingDate",	"Clock.Today"), 
+                           all = TRUE)
     # Create a Pandas Excel writer using XlsxWriter as the engine.
-    output <- file.path(output, paste0("ObservedLAI", site, SD, ".xlsx"))
-    openxlsx::write.xlsx(x = sitesd, file = output, sheetName = "Observed")
+    output <- file.path(output, paste0("Observed", site, SD, ".xlsx"))
+    openxlsx::write.xlsx(x = DT, file = output, sheetName = "Observed")
 
   return(output)
 
   
 }
 
-#' outputSWobserved
-#'
-#' @param SW 
-#' @param site 
-#' @param SD 
-#' @param output 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-outputSWobserved <- function(SW, site, SD,
-                             output = "Data/ProcessedData/CoverData/"){
-  # OUPUT CONFIG
-  
-  if(!dir.exists(output)){
-    dir.create(output)
-  }
-  
-  # Output observation 
-  sitesd  <-  SW[Experiment == site & SowingDate == SD]
-  output <- file.path(output, paste0("ObservedSW", site, SD, ".xlsx"))
-  openxlsx::write.xlsx(x = sitesd, file = output, sheetName = "Observed")
-  
-  return(output)
-}
+##' outputSWobserved
+##'
+##' @param SW 
+##' @param site 
+##' @param SD 
+##' @param output 
+##'
+##' @return
+##' @export
+##'
+##' @examples
+#outputSWobserved <- function(SW, site, SD,
+#                             output = "Data/ProcessedData/CoverData/"){
+#  # OUPUT CONFIG
+#  
+#  if(!dir.exists(output)){
+#    dir.create(output)
+#  }
+#  
+#  # Output observation 
+#  sitesd  <-  SW[Experiment == site & SowingDate == SD]
+#  output <- file.path(output, paste0("ObservedSW", site, SD, ".xlsx"))
+#  openxlsx::write.xlsx(x = sitesd, file = output, sheetName = "Observed")
+#  
+#  return(output)
+#}
+
 
 #' outputLAIinput
 #'
@@ -311,7 +317,7 @@ outputLAIinput <- function(CoverData, site, SD,
   DT <- CoverData[Experiment == site & SowingDate == SD
                   ][, .(Clock.Today, LAI, k)
                     ][, LAI := ifelse(is.na(LAI) | is.null(LAI), 0, LAI)]
-  output <- file.path(output, paste0("LAI", site, SD, ".csv"))
+  output <- file.path(output, paste0("LAI_", site, "_", SD, ".csv"))
   data.table::fwrite(x = DT, output)
   
   return(output)

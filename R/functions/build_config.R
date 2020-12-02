@@ -103,10 +103,15 @@ build_config <- function(template = template, Site, SD,apsimx,apsimx_Basefile,
 }
 
 build_apsimx <- function(template, apsimx, apsimx_Basefile,
-                         Site, SD, weather, cover,
-                         bulkdensity,SowingDates,SW_initial,
+                         dir_metfile, cover, observed, 
+                         bulkDensity,SowingDates,SW_initial,DUL_LL_range,
                          dir_simulations){
-  replacementA_met <- weather
+  # Process the sampledvalues to get the correct meta
+  meta <- unlist(strsplit(cover, split = "_"))
+  Site <- meta[2]
+  SD <- gsub(".csv", "", meta[3])
+  
+  replacementA_met <- file.path(dir_metfile, paste0(Site,".met"))
   
   # Sowing date level 
   ## SD
@@ -137,6 +142,7 @@ build_apsimx <- function(template, apsimx, apsimx_Basefile,
   BD_profile <- (bulkDensity[Experiment == Site]$BD_kg.m3)/1000
   replacementO_BD <- paste(BD_profile, 
                            collapse = ",")
+  replacementP_observation <- observed
   replacevalues <- grep("replacement.+", ls(), value = TRUE)
   values <- mget(replacevalues)
   config <- paste0(template, "=", values)
