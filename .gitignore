@@ -32,3 +32,5 @@ test*
 *CloseSimDBs.ipynb
 *library*
 *staging*
+Data/
+_targets/
