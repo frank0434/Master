@@ -9,7 +9,8 @@ source("R/packages.R")
 path_richard <- "C:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
 path_apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
 path_BD <- here::here("Data/BulkDensity.xlsx")
-dir_tempalte <- here::here("Data/ApsimxFiles/MorrisSlurpTemplateFirstPhase.txt")
+dir_tempalte <- here::here("Data/ApsimxFiles/SlurpTemplateFirstPhase.txt")
+dir_tempalte2 <- here::here("Data/ApsimxFiles/SlurpTemplateSecondPhase.txt")
 dir_met <- here::here("Data/ClimateAndObserved")
 dir_cover <- here::here("Data/ProcessedData/CoverData")
 dir_config <- here::here("Data/ProcessedData/ConfigurationFiles/")
@@ -31,11 +32,9 @@ targets <- list(
   # Define keys and treatments
   tar_target(Sites, unique(CoverData$Experiment)),
   tar_target(SD, unique(CoverData$SowingDate)),
-  tar_target(No.ofLayers, seq(1, 22)),
-  tar_target(parameters,  c("BD1","DUL1","LL1","SKL","KLR","RFV")),
   tar_target(id_vars, c("Experiment", "SowingDate", "Clock.Today")),
   tar_target(value_vars, grep("SW\\(\\d.+", colnames(data_SW), value = TRUE)),
-
+  tar_target(SKL_Range, seq(0.005, 0.11, by = 0.005)),
   # Read data
   tar_target(data_SW, read_Sims(path = path_richard)),
   tar_target(sowingDates, read_Sims(path_richard, source =  "sowingDate")),
@@ -45,9 +44,11 @@ targets <- list(
                                      site = "Iversen12")),
   tar_target(BDs, as.data.table(read_excel(path = path_BD))),
   tar_target(template, readLines(dir_tempalte)),
-  
+  tar_target(templatePhase2, readLines(dir_tempalte2)),
   # Do calculation
-  tar_target(SW_mean, colwise_meanSW(data_SW = data_SW, id.vars = id_vars, col.vars = value_vars)),
+  tar_target(SW_mean, colwise_meanSW(data_SW = data_SW, 
+                                     id.vars = id_vars, 
+                                     col.vars = value_vars)),
   
   tar_target(cumTT, rbindlist(list(met_Iversen12, met_AshleyDene),
                               use.names = TRUE)[,.(Experiment, Clock.Today, AccumTT)]),
@@ -71,20 +72,31 @@ targets <- list(
   tar_target(DUL_LL_range, doDUL_LL_range(SW = data_SW, id.vars = id_vars,
                                           value.vars = value_vars)),
   # Build the apsimx 
-  tar_target(apsimxPhase1, build_apsimx(template = template, 
-                                        dir_metfile = dir_met, 
+  tar_target(apsimxPhase1, build_apsimx(template = template,
+                                        dir_metfile = dir_met,
                                         cover = LAI_input,
-                                        observed = observed, 
-                                        dir_simulations,
-                                        apsimx = path_apsimx, 
+                                        observed = observed,
+                                        dir_simulations = dir_simulations ,
+                                        dir_config = dir_config,
+                                        apsimx = path_apsimx,
                                         apsimx_Basefile = apsimx_Basefile,
-                                        DUL_LL_range = DUL_LL_range, 
+                                        DUL_LL_range = DUL_LL_range,
                                         bulkDensity = BDs,
                                         SowingDates = sowingDates,
                                         SW_initial = SW_initials
-                                  ), 
-             format = "file", cue = tar_cue(mode = "always"),
+                                  ),
+             format = "file",
+             cue = tar_cue(file = TRUE),
              pattern =  map(LAI_input,observed))
+  # tar_target(apsimxPhase2, build_optimSlurp(template = templatePhase2, 
+  #                                           dir_optim = dir_simulations, 
+  #                                           dir_config = dir_config, 
+  #                                           KL_range = SKL_Range,
+  #                                           apsimx = path_apsimx, 
+  #                                           apsimx_Basefile = apsimxPhase1
+  #                                           ), 
+  #            cue = tar_cue(mode = "always"),
+  #            pattern =  map(apsimxPhase1))
   
   
 )

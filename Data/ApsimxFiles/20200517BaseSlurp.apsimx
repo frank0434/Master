@@ -1190,11 +1190,11 @@
                     "[Slurp].AboveGround as AboveGroundBiomass",
                     "[Slurp].Root.Depth as RootDepth",
                     "[Soil].SoilWater.SWmm as SWmm",
-                    "[Soil].Physical.DUL as DUL",
-                    "[Soil].Physical.LL15 as LL",
+                    "[Soil].Physical.DULmm as DULmm",
+                    "[Soil].Physical.LLmm as LLmm",
                     "sum([Soil].SoilWater.SWmm) as PSWC",
                     "sum([Soil].Physical.DULmm) as DULmm",
-                    "sum([Soil].Physical.LL15mm) as LLmm"
+                    "sum([Soil].Physical.LLmm) as LLmm"
                   ],
                   "EventNames": [
                     "[Clock].DoReport"
