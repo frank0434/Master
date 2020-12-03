@@ -423,17 +423,20 @@ doDUL_LL <- function(SW_mean, value_vars) {
 ##' @author frank0434
 ##' @export
 initialSWC <- function(DT, sowingDates, id_vars) {
-  SW_initials = SW_mean[sowingDates, 
+  SW_initials = DT[sowingDates, 
                         on = c("Experiment", "SowingDate", "Clock.Today"),
                         roll = "nearest"]
+  SW_initials = SW_initials[, ':='(`SW(1)` = round(`SW(1)`/200, digits = 3))
+                            ]
+  SW_initials[, (paste0("SW(",2:22, ")")) := lapply(.SD, function(x) round(x/100, digits = 3)),
+              by = c("Experiment", "SowingDate", "Clock.Today", "SW(1)")][]
   SW_initials_tidied = data.table::melt.data.table(
     SW_initials, 
     id.vars = id_vars, 
     variable.factor = FALSE,
     variable.name = "Depth",
     value.name = "SW" )
-  SW_initials_tidied[Depth == "SW(1)", SW:=round(SW/200, digits = 3)]
-  SW_initials_tidied[Depth != "SW(1)", ':='(SW = round(SW/100, digits = 3))]
+  
   return(SW_initials_tidied)
   
 }
