@@ -94,7 +94,7 @@ read_met <- function(path = path_met, skip_unit = 9, skip_meta = 7,
 ##' @export
 colwise_meanSW <- function(data_SW, id.vars = id_vars, col.vars = value_vars){
   
-  SW_mean = data_SW[, lapply(.SD, function(x) mean(x, na.rm = TRUE)/100), 
+  SW_mean = data_SW[, lapply(.SD, function(x) mean(x, na.rm = TRUE)), 
                     by = id.vars,
                     .SDcols = col.vars]
   return(SW_mean)
@@ -431,8 +431,10 @@ initialSWC <- function(DT, sowingDates, id_vars) {
     id.vars = id_vars, 
     variable.factor = FALSE,
     variable.name = "Depth",
-    value.name = "SW"
-  )[, ':='(SW = round(SW, digits = 3))]
+    value.name = "SW" )
+  SW_initials_tidied[Depth == "SW(1)", SW:=round(SW/200, digits = 3)]
+  SW_initials_tidied[Depth != "SW(1)", ':='(SW = round(SW/100, digits = 3))]
+  return(SW_initials_tidied)
   
 }
 
@@ -475,7 +477,8 @@ read_Sims <- function(path, source = "Soil Water"){
     # Fix the layer 
     
     SoilWater[, Data:=NULL 
-              ][, SWC.0.2 := NULL] # Drop the second layer
+              ][, SWC.0.1 := SWC.0.1 + SWC.0.2
+                ][, SWC.0.2 := NULL] # Drop the second layer
     # New model separate the top 20 cm 
     # Fix the name to match APSIM soil
     swc_vars = grep("SWC", colnames(SoilWater), value = TRUE)

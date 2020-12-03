@@ -103,7 +103,7 @@ build_config <- function(template = template, Site, SD,apsimx,apsimx_Basefile,
 }
 
 build_apsimx <- function(template, apsimx, apsimx_Basefile,
-                         dir_metfile, cover, observed, 
+                         dir_metfile, cover, observed, dir_config = dir_config,
                          bulkDensity,SowingDates,SW_initial,DUL_LL_range,
                          dir_simulations){
   # Process the sampledvalues to get the correct meta
@@ -183,11 +183,13 @@ build_optimSlurp <- function(template = templatePhase2,
                  apsimx = path_apsimx, 
                  apsimx_Basefile = apsimxPhase1){
   
-  name <- gsub("\\.apsimx", "", apsimx_Basefile)
+  name <- gsub("\\.apsimx", "", basename(apsimx_Basefile))
   for (skl in KL_range){
     
     config <- paste0(template, "=", skl)
     output <-  paste0(dir_config,"/ConfigSKL_", skl[1], name, ".txt")
+    writeLines(text = config, con = output)  
+    
     # Edit the base apsimx file and save it to a new name
     ## modify the apsimx file
     modifiedName <- paste0(dir_optim, "/ModifiedSKL_", skl, name, ".apsimx")
