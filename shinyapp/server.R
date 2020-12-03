@@ -73,7 +73,7 @@ server <- function(input, output, session) {
   })
   
   report <- reactive({
-    DT = DBI::dbReadTable(conn = pool(), "Report")
+    DT = DBI::dbReadTable(conn = pool(), "Report", check.names = FALSE)
     # DBI::dbDisconnect(pool())
     DT = data.table::as.data.table(DT)
     DT = DT[order(SimulationID)][, ':='(Clock.Today =as.Date(Clock.Today))]
@@ -146,8 +146,8 @@ server <- function(input, output, session) {
     palette_named
   
     })
-  
-  # diff of rasters
+# line chase dots ---------------------------------------------------------
+
   output$SKL_withAll <- renderPlot({
     point_size <- 6
     boundaries <- c(unique(report()$DULmm), unique(report()$LL15mm))
@@ -172,9 +172,10 @@ server <- function(input, output, session) {
       scale_color_manual(name = "", label = c("Simulation", "Observation"), 
                          values = c("grey", "red")) 
   })
+
+# sims vs obs -------------------------------------------------------------
   output$obs_withAll <- renderPlot({
     point_size <- 2
-    
     cols <- c(keys(), "Clock.Today","PSWC", "DULmm", "LL15mm")
     DT <- merge.data.table(report()[, ..cols], obs(),
                            by = c( "Clock.Today"), 
@@ -190,4 +191,48 @@ server <- function(input, output, session) {
             axis.text = element_text(angle = 30, hjust = 1,size = 14),
             text = element_text(size = 20)) 
   })
+  
+
+# surface  ----------------------------------------------------------------
+  output$surface <- renderPlot({
+    point_size <- 6
+    SE1 <- DUL_LL_range[Experiment == expt() & SowingDate == sd() & Depth == 1]
+    setnames(SE1, "Clock.Today.DUL", "Clock.Today")
+    report()[,.(Clock.Today, `SWmm(1)`, `DULmm(1)`, `LL15mm(1)`, SKL, KLR, RFV)] %>% 
+      ggplot(aes(Clock.Today)) +
+      geom_hline(aes(yintercept = `DULmm(1)`), color = "blue") +
+      geom_hline(aes(yintercept = `LL15mm(1)`), color = "blue") +
+      geom_line(aes(y = `SWmm(1)`), color = "grey",  alpha = 0.5) +
+      geom_point(data = obs(), aes(y = `SW(1)`), color = "red",size = point_size) +
+      geom_errorbar(data = SE1,aes(ymin = DUL - SE, ymax = DUL + SE), 
+                    show.legend = TRUE, width = 8, size = 1.5) + 
+      ggtitle(paste0(expt(), sd())) +
+      scale_x_date(date_labels = "%Y %b", date_breaks = "4 weeks") +
+      
+      # scale_color_manual(name = "", values = palette()) +
+      scale_color_manual(name = "", label = c("Simulation", "Observation"), 
+                         values = c("grey", "red")) +
+      theme_classic() +
+      theme(legend.position =  c(.5, .2),
+            axis.text = element_text(angle = 30, hjust = 1,size = 14),
+            text = element_text(size = 16))
+  })
+  output$surface_ObsVSSims <- renderPlot({
+    point_size <- 3
+    DT <- merge.data.table(report()[,.(Clock.Today, `SWmm(1)`, `DULmm(1)`, `LL15mm(1)`, SKL, KLR, RFV)], 
+                           obs(),
+                           by = c( "Clock.Today"), 
+                           all = TRUE)
+    DT %>% 
+      ggplot(aes(x = `SW(1)`,y = `SWmm(1)` )) +
+      geom_point(color = "grey", size = point_size, alpha = 0.5) +
+      geom_smooth(method = "lm", color = "red") + 
+      geom_abline()+
+      ggtitle(paste0(expt(), sd())) +
+      theme_classic() +
+      theme(legend.position =  c(.5, .2),
+            axis.text = element_text(angle = 30, hjust = 1,size = 14),
+            text = element_text(size = 20)) 
+  })
+
 }

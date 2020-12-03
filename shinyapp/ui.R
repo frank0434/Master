@@ -44,7 +44,9 @@ ui <- fluidPage(
                # textOutput("factors")
                plotOutput("obs_withAll")
                ), 
-      tabPanel("Top layer", verbatimTextOutput("summary")), 
+      tabPanel("0-20cm",
+               plotOutput("surface"),
+               plotOutput("surface_ObsVSSims")), 
       tabPanel("DataTables", 
                DT::dataTableOutput("observation"),
                DT::dataTableOutput("simulation")
