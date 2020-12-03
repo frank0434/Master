@@ -1191,10 +1191,10 @@
                     "[Slurp].Root.Depth as RootDepth",
                     "[Soil].SoilWater.SWmm as SWmm",
                     "[Soil].Physical.DULmm as DULmm",
-                    "[Soil].Physical.LLmm as LLmm",
+                    "[Soil].Physical.LL15mm as LL15mm",
                     "sum([Soil].SoilWater.SWmm) as PSWC",
                     "sum([Soil].Physical.DULmm) as DULmm",
-                    "sum([Soil].Physical.LLmm) as LLmm"
+                    "sum([Soil].Physical.LL15mm) as LL15mm"
                   ],
                   "EventNames": [
                     "[Clock].DoReport"
