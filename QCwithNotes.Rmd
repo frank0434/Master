@@ -111,7 +111,8 @@ DUL_LL_range[SowingDate %in% paste0("SD", 1:5)]%>%
   geom_point(aes(y = Low.LL), color = "red") +
   geom_point(aes(y = High.LL), color = "blue") +
   facet_grid(  SowingDate ~ Experiment , scales = "free_x") +
-  theme_water()
+  theme_water() 
+ggsave("Data/images/DUL_LL.png", width = 9, height = 12, dpi = 320)
 ```
 # check met files and cumTT
 ```{r}
@@ -215,15 +216,19 @@ LAI_Height_SD <- merge.data.table(LAI_Height, sowingDates,
 ```{r}
 tar_load(SW_initials)
 SW_initials[]
-SW_initials[, Depth:=as.integer(gsub("\\D", "", Depth))] %>% 
+cbp1 <- c("#FF0000", "#00FF00", "#0000FF", "#fab80a",
+          "#8c06ff")
+p_initialSW <- SW_initials[, Depth:=as.integer(gsub("\\D", "", Depth))][SowingDate%in%paste0("SD",1:5)] %>% 
    ggplot(aes(x = Depth, color = SowingDate))+
   geom_point(aes(y = SW))+
   geom_line(aes(y = SW)) +
   scale_x_reverse() +
   coord_flip() +
   facet_grid(  ~ Experiment , scales = "free_x") +
-  theme_water()
-  
+  theme_water() +
+  scale_color_manual(values = cbp1)
+ggsave("Data/images/initialSW.png",plot = p_initialSW, width = 7, height =6, dpi = 320)
+
 ```
 
 
@@ -234,7 +239,7 @@ SW_initials[, Depth:=as.integer(gsub("\\D", "", Depth))] %>%
 
 ```{r}
 tar_load(BDs)
-BDs %>% 
+p_BD <- BDs %>% 
   ggplot(aes(x = Depth))+
   geom_point(aes(y = Low))+
   geom_line(aes(y = Low)) +
@@ -244,6 +249,8 @@ BDs %>%
   coord_flip() +
   facet_grid(  ~ Experiment , scales = "free_x") +
   theme_water()
+ggsave("Data/images/p_BD.png",plot = p_BD, width = 7, height =6, dpi = 320)
+
 ```
 
 # Check LAI_input 
