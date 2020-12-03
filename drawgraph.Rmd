@@ -11,13 +11,15 @@ output:
 source("R/packages.R")
 source("r/functions/functions.R")
 library(targets)
+filelsit <- list.files("Data/ProcessedData/apsimxFiles/", pattern = "^Modified.+.db",
+                       full.names = TRUE)
 ```
 
 
 ```{r}
-filelsit <- list.files("Data/ProcessedData/apsimxFiles/")
-Report <- read_dbtab("Data/ProcessedData/apsimxFiles/ModifiedSKL_0.005AshleyDeneSD1.db", "Report")
-obs <- read_dbtab("Data/ProcessedData/apsimxFiles/ModifiedSKL_0.005AshleyDeneSD1.db", "Observed")
+
+Report <- read_dbtab(filelsit[3], "Report")
+obs <- read_dbtab(filelsit[3], "Observed")
 
 ```
 
@@ -40,5 +42,58 @@ Report[, ..cols
       theme(legend.position = "none",
             axis.text = element_text(angle = 30, hjust = 1,size = 14),
             text = element_text(size = 16))
+```
+# Add standard error? 
+```{r}
+tar_load(DUL_LL_range)
+DUL_LL_range[Depth == 1,':='(DUL = SW.mean.DUL * 200,
+                             SE = SW.sd.DUL * 200 / SW.n.DUL)
+             ][Depth != 1, ':='(DUL = SW.mean.DUL * 100,
+                             SE = SW.sd.DUL * 100 / SW.n.DUL)]
+
+sums <- DUL_LL_range[, .(PDUL = sum(DUL)), by = .(Experiment, SowingDate)]
+
+```
+
+# Layer 1
+```{r}
+Report <- read_dbtab(filelsit[3], "Report")
+obs <- read_dbtab(filelsit[3], "Observed")
+expt <- unique(obs$Experiment)
+sd <- unique(obs$SowingDate)
+SE1 <- DUL_LL_range[Experiment == expt & SowingDate == sd & Depth == 1]
+setnames(SE1, "Clock.Today.DUL", "Clock.Today")
+
+Report[,.(Clock.Today, `SWmm(1)`, `DULmm(1)`, `LL15mm(1)`, SKL, KLR, RFV)] %>% 
+  ggplot(aes(Clock.Today)) +
+  geom_hline(aes(yintercept = `DULmm(1)`), color = "blue") +
+  geom_hline(aes(yintercept = `LL15mm(1)`), color = "blue") +
+  geom_line(aes(y = `SWmm(1)`), color = "grey",  alpha = 0.5) +
+  geom_point(data = obs, aes(y = `SW(1)`), color = "red",size = point_size) +
+  geom_errorbar(data = SE1,aes(ymin = DUL - SE, ymax = DUL + SE), show.legend = TRUE, width = 8) + 
+  ggtitle(paste0(expt, sd)) +
+  scale_x_date(date_labels = "%Y %b", date_breaks = "4 weeks") +
+  
+  # scale_color_manual(name = "", values = palette()) +
+   scale_color_manual(name = "", label = c("Simulation", "Observation"), 
+                         values = c("grey", "red")) +
+  theme_classic() +
+  theme(legend.position =  c(.5, .2),
+        axis.text = element_text(angle = 30, hjust = 1,size = 14),
+        text = element_text(size = 16))
+# cols <- c(keys(), "Clock.Today","PSWC", "DULmm", "LL15mm")
+DT <- merge.data.table(Report[, .(Clock.Today, `SWmm(1)`, `DULmm(1)`, `LL15mm(1)`, SKL, KLR, RFV)], 
+                       obs,
+                       by = c( "Clock.Today"))
+DT %>% 
+  ggplot(aes(x = `SW(1)`,y = `SWmm(1)` )) +
+  geom_point(color = "grey", size = 3, alpha = 0.5) +
+  geom_smooth(method = "lm", color = "#FF0000") + 
+  geom_abline()+
+  # ggtitle(paste0(expt(), sd())) +
+  theme_classic() +
+  theme(legend.position =  c(.5, .2),
+        axis.text = element_text(angle = 30, hjust = 1,size = 14),
+        text = element_text(size = 20)) 
 ```
 
