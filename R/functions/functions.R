@@ -94,12 +94,16 @@ read_met <- function(path = path_met, skip_unit = 9, skip_meta = 7,
 ##' @export
 colwise_meanSW <- function(data_SW, id.vars = id_vars, col.vars = value_vars){
   
-  SW_mean = data_SW[, lapply(.SD, function(x) mean(x, na.rm = TRUE)), 
+  SW_mean = data_SW[, unlist(lapply(.SD, function(x) list(mean=mean(x),
+                                                          sd = sd(x),
+                                                          n = .N,
+                                                          range = list(range(x)))),
+                             recursive = FALSE), 
                     by = id.vars,
                     .SDcols = col.vars]
   return(SW_mean)
 
-  
+
 }
 
 
