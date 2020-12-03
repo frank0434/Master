@@ -87,16 +87,16 @@ targets <- list(
                                   ),
              format = "file",
              cue = tar_cue(file = TRUE),
-             pattern =  map(LAI_input,observed))
-  # tar_target(apsimxPhase2, build_optimSlurp(template = templatePhase2, 
-  #                                           dir_optim = dir_simulations, 
-  #                                           dir_config = dir_config, 
-  #                                           KL_range = SKL_Range,
-  #                                           apsimx = path_apsimx, 
-  #                                           apsimx_Basefile = apsimxPhase1
-  #                                           ), 
-  #            cue = tar_cue(mode = "always"),
-  #            pattern =  map(apsimxPhase1))
+             pattern =  map(LAI_input,observed)),
+  tar_target(apsimxPhase2, build_optimSlurp(template = templatePhase2,
+                                            dir_optim = dir_simulations,
+                                            dir_config = dir_config,
+                                            KL_range = SKL_Range,
+                                            apsimx = path_apsimx,
+                                            apsimx_Basefile = apsimxPhase1
+                                            ),
+             cue = tar_cue(mode = "never"),
+             pattern =  map(apsimxPhase1))
   
   
 )
