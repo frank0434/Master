@@ -1,0 +1,44 @@
+---
+title: "1. Debug targets"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2 
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+source("R/packages.R")
+source("r/functions/functions.R")
+library(targets)
+```
+
+
+```{r}
+filelsit <- list.files("Data/ProcessedData/apsimxFiles/")
+Report <- read_dbtab("Data/ProcessedData/apsimxFiles/ModifiedSKL_0.005AshleyDeneSD1.db", "Report")
+obs <- read_dbtab("Data/ProcessedData/apsimxFiles/ModifiedSKL_0.005AshleyDeneSD1.db", "Observed")
+
+```
+
+```{r}
+cols1 <- paste0("SW(", 1:22, ")")
+obs$PSWC <- rowSums(obs[,..cols1])
+point_size <- 2
+boundaries <- c(unique(Report$DULmm), unique(Report$LL15mm))
+cols <- c( "SimulationID", "KLR", "RFV", "SKL", "Clock.Today","PSWC", "DULmm", "LL15mm")
+Report[, ..cols
+       ] %>% 
+      ggplot(aes(Clock.Today)) +
+      geom_line(aes(y = PSWC), color = "grey",  alpha = 0.5) +
+      geom_point(data = obs, aes(y = PSWC), color = "red",size = point_size) +
+      # ggtitle(paste0(expt(), sd())) +
+      scale_x_date(date_labels = "%Y %b", date_breaks = "4 weeks") +
+      geom_hline(yintercept = boundaries, color = "blue") + 
+      # scale_color_manual(name = "", values = palette()) +
+      theme_classic() +
+      theme(legend.position = "none",
+            axis.text = element_text(angle = 30, hjust = 1,size = 14),
+            text = element_text(size = 16))
+```
+

@@ -149,7 +149,7 @@ server <- function(input, output, session) {
   
   # diff of rasters
   output$SKL_withAll <- renderPlot({
-    point_size <- 2
+    point_size <- 6
     boundaries <- c(unique(report()$DULmm), unique(report()$LL15mm))
     cols <- c(keys(), "Clock.Today","PSWC", "DULmm", "LL15mm")
     report()[, ..cols
@@ -159,7 +159,8 @@ server <- function(input, output, session) {
       # geom_line(data = report()[SimulationID == best_comb()$SimulationID], 
       #           aes(y = PSWC),
       #           color = "red",size = point_size,  alpha = 0.7) +
-      geom_point(data = obs(), aes(y = PSWC, color = "red"), size = 2, alpha = 0.9) +
+      geom_point(data = obs(), aes(y = PSWC, color = "red"), size = point_size, 
+                 alpha = 0.9) +
       ggtitle(paste0(expt(), sd())) +
       scale_x_date(date_labels = "%Y %b", date_breaks = "6 weeks") +
       geom_hline(yintercept = boundaries, color = "blue") + 
