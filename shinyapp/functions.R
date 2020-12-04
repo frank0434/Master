@@ -83,12 +83,16 @@ linechasedot <- function(DTsims, DTobs, DUL_LL_range,
                         SowingDate == SD & 
                         Depth == Layer]
   setnames(SE1, "Clock.Today.DUL", "Clock.Today")
-  p <- DTsims[,.(Clock.Today, `SWmm(1)`, `DULmm(1)`, `LL15mm(1)`, SKL, KLR, RFV)] %>% 
+  cols <- c("Clock.Today", "SKL", "KLR", "RFV",
+            paste0("SWmm.", Layer, "."),
+            paste0("DULmm.", Layer, "."),
+            paste0("LL15mm.", Layer, "."))
+  p <- DTsims[,..cols] %>% 
     ggplot(aes(Clock.Today)) +
-    geom_hline(aes(yintercept = `DULmm(1)`), color = "blue") +
-    geom_hline(aes(yintercept = `LL15mm(1)`), color = "blue") +
-    geom_line(aes(y = `SWmm(1)`), color = "grey",  alpha = 0.5) +
-    geom_point(data = DTobs, aes(y = `SW(1)`), color = "red",size = point_size) +
+    geom_hline(aes_string(yintercept = paste0("DULmm.", Layer, ".")), color = "blue") +
+    geom_hline(aes_string(yintercept = paste0(" LL15mm.", Layer, ".")), color = "blue") +
+    geom_line(aes_string(y = paste0("SWmm.", Layer, ".")), color = "grey",  alpha = 0.5) +
+    geom_point(data = DTobs, aes_string(y = paste0("SW.", Layer, ".")), color = "red",size = point_size) +
     geom_errorbar(data = SE1, aes(ymin = DUL - SE, ymax = DUL + SE), 
                   show.legend = TRUE, width = 8, size = 1.5) + 
     ggtitle(paste0(Expt, SD)) +
@@ -101,5 +105,29 @@ linechasedot <- function(DTsims, DTobs, DUL_LL_range,
     theme(legend.position =  c(.5, .2),
           axis.text = element_text(angle = 30, hjust = 1,size = 14),
           text = element_text(size = 16))
+  return(p)
+}
+
+obsVSsims <- function(DTsims, DTobs, DUL_LL_range, 
+                      Expt, SD, Layer){
+  point_size <- 3
+  cols <- c("Clock.Today", "SKL", "KLR", "RFV",
+            paste0("SWmm.", Layer, "."),
+            paste0("DULmm.", Layer, "."),
+            paste0("LL15mm.", Layer, "."))
+  DT <- merge.data.table(DTsims[,..cols], 
+                         DTobs,
+                         by = c( "Clock.Today"), 
+                         all = TRUE)
+  p <- DT %>% 
+    ggplot(aes_string(x = paste0("SW.", Layer, "."),y = paste0("SWmm.", Layer, "."))) +
+    geom_point(color = "grey", size = point_size, alpha = 0.5) +
+    geom_smooth(method = "lm", color = "red") + 
+    geom_abline()+
+    ggtitle(paste0(Expt, SD)) +
+    theme_classic() +
+    theme(legend.position =  c(.5, .2),
+          axis.text = element_text(angle = 30, hjust = 1,size = 14),
+          text = element_text(size = 20)) 
   return(p)
 }
