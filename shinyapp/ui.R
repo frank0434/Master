@@ -44,9 +44,41 @@ ui <- fluidPage(
                # textOutput("factors")
                plotOutput("obs_withAll")
                ), 
+
+# Detail in each layer ----------------------------------------------------
+
       tabPanel("0-20cm",
                plotOutput("surface"),
-               plotOutput("surface_ObsVSSims")), 
+               plotOutput("surface_ObsVSSims")
+               ),
+      # tabPanel("10-30cm",
+      #          plotOutput("surface2"),
+      #          plotOutput("surface_ObsVSSims2")), 
+      # tabPanel("20-30cm",
+      #          plotOutput("surface3"),
+      #          plotOutput("surface_ObsVSSims3")), 
+      # tabPanel("30-40cm",
+      #          plotOutput("surface4"),
+      #          plotOutput("surface_ObsVSSims4")), 
+      # tabPanel("40-50cm",
+      #          plotOutput("surface5"),
+      #          plotOutput("surface_ObsVSSims5")), 
+      # tabPanel("50-60cm",
+      #          plotOutput("surface6"),
+      #          plotOutput("surface_ObsVSSims6")), 
+      # tabPanel("60-70cm",
+      #          plotOutput("surface7"),
+      #          plotOutput("surface_ObsVSSims7")), 
+      # tabPanel("70-80cm",
+      #          plotOutput("surface8"),
+      #          plotOutput("surface_ObsVSSims8")), 
+      # tabPanel("80-90cm",
+      #          plotOutput("surface9"),
+      #          plotOutput("surface_ObsVSSims9")), 
+      # tabPanel("90-100cm",
+      #          plotOutput("surface10"),
+      #          plotOutput("surface_ObsVSSims10")), 
+
       tabPanel("DataTables", 
                DT::dataTableOutput("observation"),
                DT::dataTableOutput("simulation")

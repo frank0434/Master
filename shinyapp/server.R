@@ -195,27 +195,8 @@ server <- function(input, output, session) {
 
 # surface  ----------------------------------------------------------------
   output$surface <- renderPlot({
-    point_size <- 6
-    SE1 <- DUL_LL_range[Experiment == expt() & SowingDate == sd() & Depth == 1]
-    setnames(SE1, "Clock.Today.DUL", "Clock.Today")
-    report()[,.(Clock.Today, `SWmm(1)`, `DULmm(1)`, `LL15mm(1)`, SKL, KLR, RFV)] %>% 
-      ggplot(aes(Clock.Today)) +
-      geom_hline(aes(yintercept = `DULmm(1)`), color = "blue") +
-      geom_hline(aes(yintercept = `LL15mm(1)`), color = "blue") +
-      geom_line(aes(y = `SWmm(1)`), color = "grey",  alpha = 0.5) +
-      geom_point(data = obs(), aes(y = `SW(1)`), color = "red",size = point_size) +
-      geom_errorbar(data = SE1,aes(ymin = DUL - SE, ymax = DUL + SE), 
-                    show.legend = TRUE, width = 8, size = 1.5) + 
-      ggtitle(paste0(expt(), sd())) +
-      scale_x_date(date_labels = "%Y %b", date_breaks = "4 weeks") +
-      
-      # scale_color_manual(name = "", values = palette()) +
-      scale_color_manual(name = "", label = c("Simulation", "Observation"), 
-                         values = c("grey", "red")) +
-      theme_classic() +
-      theme(legend.position =  c(.5, .2),
-            axis.text = element_text(angle = 30, hjust = 1,size = 14),
-            text = element_text(size = 16))
+    linechasedot(report(), obs(), DUL_LL_range, 
+                 Expt = expt(), SD = sd(), Layer = 1)
   })
   output$surface_ObsVSSims <- renderPlot({
     point_size <- 3
