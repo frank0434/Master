@@ -216,17 +216,25 @@ LAI_Height_SD <- merge.data.table(LAI_Height, sowingDates,
 ```{r}
 tar_load(SW_initials)
 SW_initials[]
-cbp1 <- c("#FF0000", "#00FF00", "#0000FF", "#fab80a",
-          "#8c06ff")
-p_initialSW <- SW_initials[, Depth:=as.integer(gsub("\\D", "", Depth))][SowingDate%in%paste0("SD",1:5)] %>% 
+cbp1 <- c("#FF0000", "#00FF00", "#0000FF", "#fab80a","#8c06ff", 
+          "#dceeff", "#c6deff", "#a7ccff", "#85a8e3","#6c9bd0")
+p_initialSW <- SW_initials[SowingDate%in%paste0("SD",1:5) & Stats == "mean"] %>% 
    ggplot(aes(x = Depth, color = SowingDate))+
   geom_point(aes(y = SW))+
   geom_line(aes(y = SW)) +
   scale_x_reverse() +
   coord_flip() +
-  facet_grid(  ~ Experiment , scales = "free_x") +
+  facet_grid(  ~ Experiment ) +
   theme_water() +
   scale_color_manual(values = cbp1)
+SW_initials[SowingDate%in%paste0("SD",1:5) & Stats %in% c("mean", "sd")]
+errorbar <- dcast.data.table(SW_initials[SowingDate%in%paste0("SD",1:5)],Experiment + SowingDate + Clock.Today + Depth ~ Stats, value.var = "SW")
+errorbar[Depth == 1, se := sd/200/2
+         ][Depth != 1, se:= sd/100/2]
+p_initialSW <- p_initialSW + 
+  geom_errorbar(data = errorbar,
+                aes(ymin = mean - se, ymax = mean + se), color = "grey")
+p_initialSW
 ggsave("Data/images/initialSW.png",plot = p_initialSW, width = 7, height =6, dpi = 320)
 
 ```
