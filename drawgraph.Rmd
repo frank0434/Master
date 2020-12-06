@@ -112,25 +112,58 @@ simsUcona= autoapsimx::read_dbtab(path = path, "Report")
 ```{r}
 
 simsMaxG %>% 
-  ggplot(aes(Clock.Today, `SWmm(1)`))+
+  ggplot(aes(Clock.Today, SWmm.1.))+
   geom_line()
 
 
 simsUcona%>% 
-  ggplot(aes(Clock.Today, `SWmm(1)`))+
+  ggplot(aes(Clock.Today, SWmm.1.))+
   geom_line()
 simsMaxG %>% 
-  ggplot(aes(Clock.Today, `SWmm(2)`))+
+  ggplot(aes(Clock.Today, SWmm.2.))+
   geom_line()
 simsUcona%>% 
-  ggplot(aes(Clock.Today, `SWmm(2)`))+
+  ggplot(aes(Clock.Today, SWmm.2.))+
   geom_line()
 
 simsMaxG %>% 
-  ggplot(aes(Clock.Today, `SWmm(3)`))+
+  ggplot(aes(Clock.Today, SWmm.3.))+
   geom_line()
 simsUcona%>% 
-  ggplot(aes(Clock.Today, `SWmm(3)`))+
+  ggplot(aes(Clock.Today, SWmm.3.))+
   geom_line()
+```
+
+
+# JUST KLR RFV
+
+```{r}
+path = "C:/Data/Master/Data/ApsimxFiles/20200517BaseSlurp.db"
+sims = autoapsimx::read_dbtab(path = path, "Report")
+
+sims%>% 
+  ggplot(aes(Clock.Today, SWmm.1.))+
+  geom_line()
+```
+
+```{r}
+path = "C:/Data/Master/Data/ApsimxFiles/20201205BaseSlurpGsmax50.db"
+con <- DBI::dbConnect(RSQLite::SQLite(), path)
+dt <- DBI::dbReadTable(con, name = "Report", check.names = TRUE)
+dbDisconnect(con)
+dt %>% 
+  ggplot(aes(Clock.Today, SWmm.1.))+
+  geom_line()
+```
+
+```{r}
+path = "C:/Data/Master/Data/ApsimxFiles/20201205BaseSlurp.db"
+con <- DBI::dbConnect(RSQLite::SQLite(), path)
+dt <- DBI::dbReadTable(con, name = "Report", check.names = TRUE)
+dbDisconnect(con)
+dt%>% 
+  ggplot(aes(Clock.Today, SWmm.2.))+
+  geom_line()
+
 ```
 
