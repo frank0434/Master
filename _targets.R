@@ -33,7 +33,7 @@ targets <- list(
   tar_target(Sites, unique(CoverData$Experiment)),
   tar_target(SD, unique(CoverData$SowingDate)),
   tar_target(id_vars, c("Experiment", "SowingDate", "Clock.Today")),
-  tar_target(value_vars, grep("SWmm\\.\\d\\.", colnames(data_SW), value = TRUE)),
+  tar_target(value_vars, grep("SWmm\\.\\d.", colnames(data_SW), value = TRUE)),
   tar_target(SKL_Range, seq(0.005, 0.11, by = 0.005)),
   # Read data
   tar_target(data_SW, read_Sims(path = path_richard)),

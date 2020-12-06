@@ -94,7 +94,7 @@ read_met <- function(path = path_met, skip_unit = 9, skip_meta = 7,
 ##' @export
 colwise_meanSW <- function(data_SW, id.vars = id_vars, col.vars = value_vars){
   
-  SW_mean = data_SW[, unlist(lapply(.SD, function(x) list(mean=mean(x, na.rm = TRUE),
+  SW_mean <- data_SW[, unlist(lapply(.SD, function(x) list(mean=mean(x, na.rm = TRUE),
                                                           sd = sd(x, na.rm = TRUE),
                                                           n = .N,
                                                           Upper = max(x, na.rm = TRUE),
@@ -102,6 +102,10 @@ colwise_meanSW <- function(data_SW, id.vars = id_vars, col.vars = value_vars){
                              recursive = FALSE), 
                     by = id.vars,
                     .SDcols = col.vars]
+  meancols <- grep("mean", colnames(SW_mean), value = TRUE)
+  SW_mean[, ':='(SW.1.= round(SWmm.1..mean/200, digits = 3))
+            ][, (paste0("SW.",2:22, ".")) := lapply(.SD, function(x) round(x/100, digits = 3)),
+              .SDcols = meancols[-1]][]
   return(SW_mean)
 
 
@@ -162,8 +166,8 @@ doDUL_LL_range <- function(SW, id.vars = id_vars,
                            startd = "2011-01-01", endd = "2012-06-30") {
 
   SW <- SW[Clock.Today %between% c(as.Date(startd), as.Date(endd))]
-  SW = SW[, ':='(`SW(1)` = round(`SW(1)`/200, digits = 3))
-          ][, (paste0("SW(",2:22, ")")) := lapply(.SD, function(x) round(x/100, digits = 3)),
+  SW = SW[, ':='(SWmm.1. = round(SWmm.1./200, digits = 3))
+          ][, (paste0("SWmm.",2:22, ".")) := lapply(.SD, function(x) round(x/100, digits = 3)),
             .SDcols = value.vars[-1]][]
   # should only choose first 5 sowing dates for this 
   SW_mean <- colwise_meanSW(data_SW = SW, id.vars = id.vars, col.vars = value.vars)
