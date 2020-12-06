@@ -495,8 +495,8 @@ read_Sims <- function(path, source = "Soil Water"){
     # New model separate the top 20 cm 
     # Fix the name to match APSIM soil
     swc_vars = grep("SWC", colnames(SoilWater), value = TRUE)
-    data.table::setnames(SoilWater, swc_vars[-length(swc_vars)], paste0("SW(", seq(1, 22, 1), ")"))
-    data.table::setnames(SoilWater, "SWC.2.3.m..mm.", "SWC")
+    data.table::setnames(SoilWater, swc_vars[-length(swc_vars)], paste0("SWmm.", seq(1, 22, 1), "."))
+    data.table::setnames(SoilWater, "SWC.2.3.m..mm.", "PSWC")
     return(SoilWater)
   }
   if(source == "sowingDate"){ # need to add a patial match
