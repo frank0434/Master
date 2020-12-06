@@ -128,7 +128,9 @@ build_apsimx <- function(template, apsimx, apsimx_Basefile,
   ## User provide light interception data 
   replacementE_CoverData <- cover
   
-  replacementI_initialSW <- paste(SW_initial[Experiment == Site & SowingDate == SD]$SW, 
+  replacementI_initialSW <- paste(SW_initial[Experiment == Site &
+                                               SowingDate == SD & 
+                                               Stats == "mean"]$SW, 
                                   collapse = ",")
   replacementJ_SAT <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$High.DUL, 
                             collapse = ",")

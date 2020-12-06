@@ -94,10 +94,11 @@ read_met <- function(path = path_met, skip_unit = 9, skip_meta = 7,
 ##' @export
 colwise_meanSW <- function(data_SW, id.vars = id_vars, col.vars = value_vars){
   
-  SW_mean = data_SW[, unlist(lapply(.SD, function(x) list(mean=mean(x),
-                                                          sd = sd(x),
+  SW_mean = data_SW[, unlist(lapply(.SD, function(x) list(mean=mean(x, na.rm = TRUE),
+                                                          sd = sd(x, na.rm = TRUE),
                                                           n = .N,
-                                                          range = list(range(x)))),
+                                                          Upper = max(x, na.rm = TRUE),
+                                                          Lower = min(x, na.rm = TRUE))),
                              recursive = FALSE), 
                     by = id.vars,
                     .SDcols = col.vars]
@@ -434,17 +435,18 @@ initialSWC <- function(DT, sowingDates, id_vars) {
   SW_initials = DT[sowingDates, 
                         on = c("Experiment", "SowingDate", "Clock.Today"),
                         roll = "nearest"]
-  SW_initials = SW_initials[, ':='(`SW(1)` = round(`SW(1)`/200, digits = 3))
-                            ]
-  SW_initials[, (paste0("SW(",2:22, ")")) := lapply(.SD, function(x) round(x/100, digits = 3)),
-              by = c("Experiment", "SowingDate", "Clock.Today", "SW(1)")][]
-  SW_initials_tidied = data.table::melt.data.table(
+
+  SW_initials_melted = data.table::melt.data.table(
     SW_initials, 
     id.vars = id_vars, 
     variable.factor = FALSE,
     variable.name = "Depth",
     value.name = "SW" )
-  
+  SW_initials_melted = SW_initials_melted[, (c("Depth", "Stats")) := tstrsplit(Depth, split = "\\.")
+                                          ][, Depth := as.integer(gsub("\\D", "", Depth))
+                                            ][order(Experiment, SowingDate, Depth)]
+  SW_initials_tidied = SW_initials_melted[Stats == "mean" & Depth == 1, ':='(SW = round(SW/200, digits = 3))]
+  SW_initials_tidied = SW_initials_tidied[Stats == "mean" & Depth != 1, ':='(SW = round(SW/100, digits = 3))]
   return(SW_initials_tidied)
   
 }
