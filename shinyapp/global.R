@@ -18,6 +18,7 @@ poolConnection <- NULL
 
 meta <- data.table::fread(here::here("Data/ProcessedData/best_fit.csv")) 
 meta <- meta[, filenames:= paste0(here::here(), "/Data/ProcessedData/apsimxFiles/", (basename(filenames)))]
+# meta[Experiment =="AshleyDene" & SowingDate == "SD1", filenames := "C:/Data/Master/Data/ApsimxFiles/20200517BaseSlurp.db"]
 experiments <- unique(meta$Experiment)
 SowingDate <- sort(unique(meta$SowingDate))
 DUL_LL_range <- fread(here::here("Data/dul_ll_stats.csv")
