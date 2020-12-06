@@ -97,3 +97,40 @@ DT %>%
         text = element_text(size = 20)) 
 ```
 
+# Check U and cona
+
+```{r}
+path = "C:/Data/Master/Data/ApsimxFiles/20201205BaseSlurpGsmax50.db"
+simsMaxG = autoapsimx::read_dbtab(path = path, "Report")
+path = "C:/Data/Master/Data/ApsimxFiles/20201205BaseSlurp.db"
+simsUcona= autoapsimx::read_dbtab(path = path, "Report")
+# sims$SimulationID %>% unique() %>% length()
+
+
+
+```
+```{r}
+
+simsMaxG %>% 
+  ggplot(aes(Clock.Today, `SWmm(1)`))+
+  geom_line()
+
+
+simsUcona%>% 
+  ggplot(aes(Clock.Today, `SWmm(1)`))+
+  geom_line()
+simsMaxG %>% 
+  ggplot(aes(Clock.Today, `SWmm(2)`))+
+  geom_line()
+simsUcona%>% 
+  ggplot(aes(Clock.Today, `SWmm(2)`))+
+  geom_line()
+
+simsMaxG %>% 
+  ggplot(aes(Clock.Today, `SWmm(3)`))+
+  geom_line()
+simsUcona%>% 
+  ggplot(aes(Clock.Today, `SWmm(3)`))+
+  geom_line()
+```
+
