@@ -47,6 +47,8 @@ options(scipen = 999)
 outlier.colour = "#ff0000"
 source(here::here("R/packages.R"))
 source(here::here("R/functions/functions.R"))
+path_richard <- "C:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
+
 ```
 
 
@@ -65,7 +67,11 @@ source(here::here("R/functions/functions.R"))
 
 
 ```{r}
+id_vars <- c("Experiment", "SowingDate", "Clock.Today")
+
 data_sw <- read_Sims(path = path_richard)
+
+value_vars <-  grep("SWmm\\.\\d.", colnames(data_sw), value = TRUE)
 sw_mean_new <- colwise_meanSW(data_sw)
 
 ```
@@ -80,8 +86,57 @@ sw_mean_new %>%
 
 ```
 ```{r}
+VWC <- grep("VWC", x = colnames(sw_mean_new), value = TRUE)
+VWCcols <- c(id_vars, VWC)
+DT_VWC <- sw_mean_new[,..VWCcols] %>% 
+  melt.data.table(id.vars = id_vars, 
+                  value.name = "SW",
+                  variable.name = "Depth",
+                  variable.factor = FALSE)
+DT_VWC[, Depth:= as.integer(gsub("\\D","",Depth))]
+DT_VWC[, DUL := max(SW), by = .(Experiment, SowingDate, Depth)
+       ][, relativeSW:= SW/DUL][]
+
+
+DT_VWC %>% 
+  ggplot(aes(Clock.Today, relativeSW)) +
+  geom_point() +
+  scale_x_date(date_breaks = "8 weeks") +
+  geom_smooth()
 
 ```
+**Subset** the autum rain
+
+```{r}
+AD <- sw_long[Stats == "mean" & Experiment == "AshleyDene" &
+          Clock.Today %between% c("2011-04-01", "2011-10-31")]
+
+AD[order(SW, decreasing = TRUE), .SD[1] , by = c(id_vars, "Depth")]
+
+doDUL_LL_range(SW = sw_mean_new)
+AD %>% 
+  ggplot(aes(Clock.Today, SW, group = Depth)) +
+  geom_point() +
+  scale_x_date(date_breaks = "8 weeks") +
+  geom_smooth(span = 0.25)
+```
+**Define a model**
+
+```{r}
+model = list(
+  relativeSW ~ 1 + sigma(1),  # plateau (int_1)
+  ~ 0 + DAS ,       # joined slope (time_2) at cp_1, could be a exp decay function.
+  ~ 0  
+)
+# Define the prior
+prior = list(
+  # Intercept should be between 0.5 and 1; less than 1
+  ## Evidence in the hist above
+  int_1 = "dnorm(0.5, 1) T(, 1)" 
+)
+```
+
+
 
 ## The final version workflow for DUL, LL and SW via average max and min. 
 
