@@ -20,7 +20,7 @@ library(targets)
 tar_load("data_SW")
 tar_load("value_vars")
 tar_load("id_vars")
-doDUL_LL_range(SW = data_SW)
+doDUL_LL_range(SW = tar_read(SW_mean))
 filter_datemax(SW_mean = tar_read("SW_mean"), "max", id.vars = id_vars)
 ```
 # Inspect ranges
@@ -35,28 +35,31 @@ tar_load("SW_mean")
 SW_mean
 
 data_SW
-range_check <- function(DT, range, layer, boundry = c("DUL","LL")){
-  cols <- c("Experiment", "Clock.Today", "SowingDate", layer)
+range_check <- function(DT,  layer, boundry = c("DUL","LL")){
+  yval <-  paste0("SWmm.",layer, "..mean")
+  cols <- c("Experiment", "Clock.Today", "SowingDate",yval)
   DT <- DT[,..cols]
-  yval <- paste0("`",layer,"`")
+  # yval <- paste0("`",layer,"`")
   P <- DT[,..cols] %>% 
     ggplot(aes_string("Clock.Today", yval)) + 
     geom_point() +
     facet_grid(SowingDate  ~ Experiment) 
   if(boundry =="LL"){
+    dt_sub <- DT[order(SWmm.1..mean), .SD[1], by = .(Experiment, SowingDate)]
     P <- P + 
-      geom_point(data = range[Depth ==layer], aes(Clock.Today.LL, SW.mean.LL),  color ="red", size = 5)
+      geom_point(data = dt_sub , aes_string("Clock.Today", yval),  color ="red", size = 5)
   } else if (boundry == "DUL"){
+    dt_sub <- DT[order(SWmm.1..mean, decreasing = TRUE), .SD[1], by = .(Experiment, SowingDate)]
     P <- P + 
-      geom_point(data = range[Depth ==layer], aes(Clock.Today.DUL, SW.mean.DUL),  color ="red", size = 5)
+      geom_point(data =dt_sub, aes_string("Clock.Today", yval),  color ="red", size = 5)
   } else{
     print("Don't know what to draw. DUL or LL")
   }
   return(P)
   
 }
-range_check(SW_mean, DUL_LL_range, "SW(2)", boundry = "DUL")
-range_check(SW_mean, DUL_LL_range, "SW(2)", boundry = "LL")
+range_check(SW_mean, 1, boundry = "DUL")
+range_check(SW_mean, 1, boundry = "LL")
 
 
 
@@ -70,47 +73,51 @@ maybe the end of June is good?
 ```{r fig.height=10}
 
 
-range_check(SW_mean, DUL_LL_range, "SW(1)", boundry = "LL")
+range_check(SW_mean, 1, boundry = "LL")
 ```
 
 ```{r, fig.height=14, fig.width=9}
-Soil_char <- DUL_LL_range[,Depth:= as.integer(gsub("\\D", "", Depth))
-             ][, .(Experiment, SowingDate, Depth, SW.mean.DUL, SW.mean.LL,
-                   Low.DUL, High.DUL, Low.LL, High.LL)] 
+sdcols <- grep("sd", colnames(SW_mean), value = TRUE)
+neededcols <- c(id_vars, sdcols)
+DT_sd <- SW_mean[,..neededcols
+                 ][, SWmm.1..sd := SWmm.1..sd /200
+                   ][, (paste0("SWmm.", 2:22,"..sd")) := lapply(.SD, function(x) x/100),
+                     by = id_vars]
+
+tar_load(DUL_LL_range)
 
 
-DUL_LL_range[SowingDate %in% paste0("SD", 1:5)]%>% 
-  ggplot(aes(y = Depth))+
-  geom_point(aes(x = SW.mean.DUL)) +
-  geom_point(aes(x = SW.mean.LL)) +
-  geom_errorbar(aes(xmin = SW.mean.DUL - SW.sd.DUL, xmax = SW.mean.DUL + SW.sd.DUL))+
-  geom_point(aes(x = Low.DUL), color = "red") +
-  geom_point(aes(x = High.DUL), color = "blue") +
-  geom_errorbar(aes(xmin = SW.mean.LL - SW.sd.LL, xmax = SW.mean.LL + SW.sd.LL))+
-  geom_point(aes(x = Low.LL), color = "red") +
-  geom_point(aes(x = High.LL), color = "blue") +
-  facet_grid(  SowingDate ~ Experiment , scales = "free_x") +
-  scale_y_reverse() +
-  theme_water()
-  
+DUL_sd <- DT_sd %>% 
+  melt.data.table(id.vars = id_vars, value.name = "SW.sd.DUL",
+                  variable.name = "Depth",
+                  variable.factor = FALSE)
+DUL_sd[, Depth := as.integer(gsub("\\D", "", Depth))]
+LL_sd <- DT_sd %>% 
+  melt.data.table(id.vars = id_vars, value.name = "SW.sd.LL",
+                  variable.name = "Depth",
+                  variable.factor = FALSE)
+LL_sd[, Depth := as.integer(gsub("\\D", "", Depth))]
+
+DUL_LL_range <- DUL_sd[DUL_LL_range, on = c("Experiment", "SowingDate", "Depth"," Clock.Today == Clock.Today.DUL")] 
+DUL_LL_range <- LL_sd[DUL_LL_range, on = c("Experiment", "SowingDate", "Depth"," Clock.Today == Clock.Today.LL")] 
 
 
 DUL_LL_range[SowingDate %in% paste0("SD", 1:5)]%>% 
   ggplot(aes(x = Depth))+
-  geom_point(aes(y = SW.mean.DUL))+
-  geom_line(aes(y = SW.mean.DUL)) +
-   geom_line(aes(y = SW.mean.LL))+
+  geom_point(aes(y = SW.DUL))+
+  geom_line(aes(y = SW.DUL)) +
+   geom_line(aes(y = SW.LL))+
   # geom_point()+
   scale_x_reverse() +
   coord_flip() +
-  geom_point(aes(y = SW.mean.LL)) +
-  geom_errorbar(aes(ymin = SW.mean.DUL - SW.sd.DUL, ymax = SW.mean.DUL + SW.sd.DUL))+
-  geom_point(aes(y = Low.DUL), color = "red") +
-  geom_point(aes(y = High.DUL), color = "blue") +
-  geom_errorbar(aes(ymin = SW.mean.LL - SW.sd.LL, ymax = SW.mean.LL + SW.sd.LL))+
-  geom_point(aes(y = Low.LL), color = "red") +
-  geom_point(aes(y = High.LL), color = "blue") +
-  facet_grid(  SowingDate ~ Experiment , scales = "free_x") +
+  geom_point(aes(y = SW.LL)) +
+  geom_errorbar(aes(ymin = SW.DUL - SW.sd.DUL, ymax = SW.DUL + SW.sd.DUL))+
+  # geom_point(aes(y = Low.DUL), color = "red") +
+  # geom_point(aes(y = High.DUL), color = "blue") +
+  geom_errorbar(aes(ymin = SW.LL - SW.sd.LL, ymax = SW.LL + SW.sd.LL))+
+  # geom_point(aes(y = Low.LL), color = "red") +
+  # geom_point(aes(y = High.LL), color = "blue") +
+  facet_grid(  SowingDate ~ Experiment) +
   theme_water() 
 ggsave("Data/images/DUL_LL.png", width = 9, height = 12, dpi = 320)
 ```
