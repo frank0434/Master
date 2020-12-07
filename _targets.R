@@ -69,8 +69,7 @@ targets <- list(
              format = "file", 
              pattern = cross(Sites, SD), 
              cue = tar_cue(depend = TRUE)),
-  tar_target(DUL_LL_range, doDUL_LL_range(SW = data_SW, id.vars = id_vars,
-                                          value.vars = value_vars)),
+  tar_target(DUL_LL_range, doDUL_LL_range(SW = SW_mean, id.vars = id_vars)),
   # Build the apsimx 
   tar_target(apsimxPhase1, build_apsimx(template = template,
                                         dir_metfile = dir_met,

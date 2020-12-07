@@ -103,8 +103,8 @@ colwise_meanSW <- function(data_SW, id.vars = id_vars, col.vars = value_vars){
                     by = id.vars,
                     .SDcols = col.vars]
   meancols <- grep("mean", colnames(SW_mean), value = TRUE)
-  SW_mean[, ':='(SW.1.= round(SWmm.1..mean/200, digits = 3))
-            ][, (paste0("SW.",2:22, ".")) := lapply(.SD, function(x) round(x/100, digits = 3)),
+  SW_mean[, ':='(SW.1..VWC= round(SWmm.1..mean/200, digits = 3))
+            ][, (paste0("SW.",2:22, "..VWC")) := lapply(.SD, function(x) round(x/100, digits = 3)),
               .SDcols = meancols[-1]][]
   return(SW_mean)
 
@@ -161,38 +161,27 @@ filter_datemax <- function(SW_mean, mode = c("max", "min"), id.vars = id_vars){
 ##' @return
 ##' @author frank0434
 ##' @export
-doDUL_LL_range <- function(SW, id.vars = id_vars, 
-                           value.vars = value_vars, 
+doDUL_LL_range <- function(SW, id.vars = id_vars,  
                            startd = "2011-01-01", endd = "2012-06-30") {
 
   SW <- SW[Clock.Today %between% c(as.Date(startd), as.Date(endd))]
-  SW = SW[, ':='(SWmm.1. = round(SWmm.1./200, digits = 3))
-          ][, (paste0("SWmm.",2:22, ".")) := lapply(.SD, function(x) round(x/100, digits = 3)),
-            .SDcols = value.vars[-1]][]
-  # should only choose first 5 sowing dates for this 
-  SW_mean <- colwise_meanSW(data_SW = SW, id.vars = id.vars, col.vars = value.vars)
- 
-  Dates_max <- filter_datemax(SW_mean = SW_mean, id.vars = id.vars, mode = "max")
-  Dates_min <- filter_datemax(SW_mean = SW_mean, id.vars = id.vars, mode = "min")
+  # should only choose first 5 sowing dates for this
+  needed <- grep("VWC", colnames(SW), value = TRUE)
+  needed <- c(id.vars, needed)
+  VWC <- SW[,..needed]
 
-  DT <- data.table::melt.data.table(SW, id.vars = id.vars, 
-                                    measure.vars = value.vars,
+  Dates_max <- filter_datemax(SW_mean = VWC, id.vars = id.vars, mode = "max")
+  Dates_min <- filter_datemax(SW_mean = VWC, id.vars = id.vars, mode = "min")
+
+  DT <- data.table::melt.data.table(VWC, id.vars = id.vars, 
+                                    # measure.vars = value.vars,
                                     variable.name = "Depth",
                                     variable.factor = FALSE,
                                     value.name = "SW")
   
-  DT_stats <- DT[, unlist(lapply(.SD, function(x) list(mean=mean(x),
-                                                       sd = sd(x),
-                                                       n = .N,
-                                                       range = list(range(x)))),
-                          recursive = FALSE),
-                 by = .(Experiment, SowingDate,Depth, Clock.Today), .SDcols = "SW"
-                 ][, c("Low", "High") := data.table::tstrsplit(SW.range, split = ",")
-                   ][, ':='( Low = as.numeric(gsub("c\\(", "", Low)),
-            High = as.numeric(gsub("\\)", "", High)))]
-  DUL_range <- DT_stats[setDT(Dates_max), on = c("Experiment", "SowingDate", "Depth", 
+  DUL_range <- DT[setDT(Dates_max), on = c("Experiment", "SowingDate", "Depth", 
                                              "Clock.Today")]
-  LL_range <- DT_stats[setDT(Dates_min), on = c("Experiment", "SowingDate", "Depth", 
+  LL_range <- DT[setDT(Dates_min), on = c("Experiment", "SowingDate", "Depth", 
                                             "Clock.Today")]
   ranges <- merge.data.table(DUL_range, LL_range, 
                              by = c("Experiment", "SowingDate", "Depth"),
@@ -436,9 +425,11 @@ doDUL_LL <- function(SW_mean, value_vars) {
 ##' @author frank0434
 ##' @export
 initialSWC <- function(DT, sowingDates, id_vars) {
-  SW_initials = DT[sowingDates, 
-                        on = c("Experiment", "SowingDate", "Clock.Today"),
-                        roll = "nearest"]
+  needed <- grep("SW.\\d.", colnames(DT), value = TRUE)
+  needed <- c(id_vars, needed)
+  SW_initials = DT[,..needed][sowingDates, 
+                              on = c("Experiment", "SowingDate", "Clock.Today"),
+                              roll = "nearest"]
 
   SW_initials_melted = data.table::melt.data.table(
     SW_initials, 
@@ -446,11 +437,10 @@ initialSWC <- function(DT, sowingDates, id_vars) {
     variable.factor = FALSE,
     variable.name = "Depth",
     value.name = "SW" )
-  SW_initials_melted = SW_initials_melted[, (c("Depth", "Stats")) := tstrsplit(Depth, split = "\\.")
-                                          ][, Depth := as.integer(gsub("\\D", "", Depth))
-                                            ][order(Experiment, SowingDate, Depth)]
-  SW_initials_tidied = SW_initials_melted[Stats == "mean" & Depth == 1, ':='(SW = round(SW/200, digits = 3))]
-  SW_initials_tidied = SW_initials_tidied[Stats == "mean" & Depth != 1, ':='(SW = round(SW/100, digits = 3))]
+  SW_initials_tidied = SW_initials_melted[, Depth := as.integer(gsub("\\D", "", Depth))
+                                          ][order(Experiment, SowingDate, Depth)]
+  # SW_initials_tidied = SW_initials_melted[Stats == "mean" & Depth == 1, ':='(SW = round(SW/200, digits = 3))]
+  # SW_initials_tidied = SW_initials_tidied[Stats == "mean" & Depth != 1, ':='(SW = round(SW/100, digits = 3))]
   return(SW_initials_tidied)
   
 }

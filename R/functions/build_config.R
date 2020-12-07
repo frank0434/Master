@@ -132,14 +132,14 @@ build_apsimx <- function(template, apsimx, apsimx_Basefile,
                                                SowingDate == SD & 
                                                Stats == "mean"]$SW, 
                                   collapse = ",")
-  replacementJ_SAT <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$High.DUL, 
+  replacementJ_SAT <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$SW.DUL, 
                             collapse = ",")
-  replacementK_AirDry <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$Low.LL, 
+  replacementK_AirDry <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$SW.LL, 
                                collapse = ",")
   replacementL_LL15 <- replacementK_AirDry
-  replacementM_DUL <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$SW.mean.DUL, 
+  replacementM_DUL <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$SW.DUL, 
                             collapse = ",")
-  replacementN_LL <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$SW.mean.LL, 
+  replacementN_LL <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$SW.LL, 
                            collapse = ",")
   BD_profile <- (bulkDensity[Experiment == Site]$BD_kg.m3)/1000
   replacementO_BD <- paste(BD_profile, 
