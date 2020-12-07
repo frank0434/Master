@@ -67,7 +67,7 @@ path_richard <- "C:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
 
 
 ```{r}
-id_vars <- c("Experiment", "SowingDate", "Clock.Today")
+id_vars <- c("Experiment", "SowingDate", "Clock.Today", "DAS")
 
 data_sw <- read_Sims(path = path_richard)
 
@@ -99,8 +99,9 @@ DT_VWC[, DUL := max(SW), by = .(Experiment, SowingDate, Depth)
 
 
 DT_VWC %>% 
-  ggplot(aes(Clock.Today, relativeSW)) +
+  ggplot(aes(Clock.Today, relativeSW, color = SowingDate)) +
   geom_point() +
+  geom_line()+
   scale_x_date(date_breaks = "8 weeks") +
   geom_smooth()
 
@@ -108,17 +109,23 @@ DT_VWC %>%
 **Subset** the autum rain
 
 ```{r}
-AD <- sw_long[Stats == "mean" & Experiment == "AshleyDene" &
-          Clock.Today %between% c("2011-04-01", "2011-10-31")]
+AD <- DT_VWC[ Experiment == "AshleyDene" &
+          Clock.Today %between% c("2011-04-01", "2012-04-30")]
 
 AD[order(SW, decreasing = TRUE), .SD[1] , by = c(id_vars, "Depth")]
 
-doDUL_LL_range(SW = sw_mean_new)
+
 AD %>% 
-  ggplot(aes(Clock.Today, SW, group = Depth)) +
+  ggplot(aes(Clock.Today, relativeSW, group = Depth)) +
   geom_point() +
   scale_x_date(date_breaks = "8 weeks") +
-  geom_smooth(span = 0.25)
+  geom_smooth(span = 0.25, se = FALSE)
+
+
+AD %>% 
+  ggplot(aes(relativeSW)) +
+  geom_histogram()+
+  geom_density()
 ```
 **Define a model**
 
@@ -126,14 +133,105 @@ AD %>%
 model = list(
   relativeSW ~ 1 + sigma(1),  # plateau (int_1)
   ~ 0 + DAS ,       # joined slope (time_2) at cp_1, could be a exp decay function.
-  ~ 0  
+  ~ 0
+
 )
 # Define the prior
 prior = list(
   # Intercept should be between 0.5 and 1; less than 1
   ## Evidence in the hist above
-  int_1 = "dnorm(0.5, 1) T(, 1)" 
+  int_1 = "dnorm(0.7, 1) T(, 1)" 
 )
+dt <- AD[SowingDate == "SD1" & Depth == 1]
+# Fit it. 
+fit = mcp(model, data = dt, cores = 3, prior = prior)
+    # Extract the cp one 
+cp_1_est = as.data.table(summary(fit))
+setkey(dt, DAS)
+close_das = dt[dt[J(cp_1_est$mean[1]), roll = 'nearest', which = TRUE]]$DAS
+
+P = plot(fit) +
+      geom_vline(xintercept = c(cp_1_est$mean[1],close_das), 
+                 color =  c("red","black")) +
+      ggtitle(paste0("Layer ",1))+
+  theme_water()
+P
+
+cp_1_est[name =="int_1"]
+
+
+dt <- AD[SowingDate == "SD1" & Depth == 2]
+# Fit it. 
+fit = mcp(model, data = dt, cores = 3, prior = prior)
+    # Extract the cp one 
+cp_1_est = as.data.table(summary(fit))
+setkey(dt, DAS)
+close_das = dt[dt[J(cp_1_est$mean[1]), roll = 'nearest', which = TRUE]]$DAS
+
+P = plot(fit) +
+      geom_vline(xintercept = c(cp_1_est$mean[1],close_das), 
+                 color =  c("red","black")) +
+      ggtitle(paste0("Layer ",2))+
+  theme_water()
+P
+
+cp_1_est[name =="int_1"]
+dt <- AD[SowingDate == "SD1" & Depth == 13]
+# Fit it. 
+fit = mcp(model, data = dt, cores = 3, prior = prior)
+    # Extract the cp one 
+cp_1_est = as.data.table(summary(fit))
+setkey(dt, DAS)
+close_das = dt[dt[J(cp_1_est$mean[1]), roll = 'nearest', which = TRUE]]$DAS
+
+P = plot(fit) +
+      geom_vline(xintercept = c(cp_1_est$mean[1],close_das), 
+                 color =  c("red","black")) +
+      ggtitle(paste0("Layer ",3))+
+  theme_water()
+P
+
+cp_1_est[name =="int_1"]
+```
+# Forming a function
+```{r}
+estimate_DUL <- function(DT, sowingdate, layer){
+  dt <- AD[SowingDate == sowingdate & Depth == layer]
+  # Fit it. 
+  fit = mcp(model, data = dt, cores = 3, prior = prior)
+  # Extract the cp one 
+  cp_1_est = as.data.table(summary(fit))
+  setkey(dt, DAS)
+  close_das = dt[dt[J(cp_1_est$mean[1]), roll = 'nearest', which = TRUE]
+                 ]
+  l <- list(fit,cp_1_est, close_das)
+  names(l) <- c("model","cp1", "nearDAS")
+  return(l)
+}
+
+ADSD1 <- estimate_DUL(AD, "SD1", 1)
+cp1_mean <- ADSD1$cp1$mean[1]
+cp1_nearDAS <- ADSD1$nearDAS$DAS
+cp1_int1 <- ADSD1$cp1$mean[4]
+plot(ADSD1$model) +
+  geom_vline(xintercept = c(cp1_mean,cp1_nearDAS), 
+             color =  c("red","black")) +
+  geom_hline(yintercept = cp1_int1, color = "blue") +
+  annotate(geom = "text", 
+           x = cp1_mean * 1.03, 
+           y = cp1_int1 * 1.02, label = round(cp1_int1, digits = 3)) +
+  ggtitle(paste0("Layer ",1))+
+  theme_water()
+
+```
+
+
+```{r}
+DUL_LL[Experiment == "AshleyDene" &
+         SowingDate == "SD1" &
+         Depth == 1]$SW.DUL
+
+cp_1_est[name =="int_1"]$mean * 0.266
 ```
 
 
