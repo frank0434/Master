@@ -78,10 +78,11 @@ range_check(SW_mean, 1, boundry = "LL")
 
 ```{r, fig.height=14, fig.width=9}
 sdcols <- grep("sd", colnames(SW_mean), value = TRUE)
-neededcols <- c(id_vars, sdcols)
+neededcols <- c(tar_read(id_vars), sdcols)
 DT_sd <- SW_mean[,..neededcols
                  ][, SWmm.1..sd := SWmm.1..sd /200
                    ][, (paste0("SWmm.", 2:22,"..sd")) := lapply(.SD, function(x) x/100),
+                     .SDcols = paste0("SWmm.", 2:22,"..sd"),
                      by = id_vars]
 
 tar_load(DUL_LL_range)
