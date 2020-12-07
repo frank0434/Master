@@ -129,8 +129,7 @@ build_apsimx <- function(template, apsimx, apsimx_Basefile,
   replacementE_CoverData <- cover
   
   replacementI_initialSW <- paste(SW_initial[Experiment == Site &
-                                               SowingDate == SD & 
-                                               Stats == "mean"]$SW, 
+                                               SowingDate == SD ]$SW, 
                                   collapse = ",")
   replacementJ_SAT <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$SW.DUL, 
                             collapse = ",")
