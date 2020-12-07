@@ -46,7 +46,7 @@ targets <- list(
   tar_target(template, readLines(dir_tempalte)),
   tar_target(templatePhase2, readLines(dir_tempalte2)),
   # Do calculation
-  tar_target(SW_mean, colwise_meanSW(data_SW = data_SW, 
+  tar_target(SW_mean_new, colwise_meanSW(data_SW = data_SW, 
                                      id.vars = id_vars, 
                                      col.vars = value_vars)),
   
@@ -54,10 +54,10 @@ targets <- list(
                               use.names = TRUE)[,.(Experiment, Clock.Today, AccumTT)]),
   tar_target(CoverData, interp_LAI(biomass = LAI_Height, sowingDates, cumTT)),
   
-  tar_target(SW_initials, initialSWC(SW_mean, sowingDates, id_vars)),
+  tar_target(SW_initials, initialSWC(SW_mean_new, sowingDates, id_vars)),
   # Output apsimx input and observed
   tar_target(observed, outputobserved(biomass = LAI_Height,
-                                      SW = SW_mean, 
+                                      SW = SW_mean_new, 
                                       site = Sites,SD = SD,
                                       output = dir_cover), 
              format = "file", 
@@ -69,7 +69,7 @@ targets <- list(
              format = "file", 
              pattern = cross(Sites, SD), 
              cue = tar_cue(depend = TRUE)),
-  tar_target(DUL_LL_range, doDUL_LL_range(SW = SW_mean, id.vars = id_vars)),
+  tar_target(DUL_LL_range, doDUL_LL_range(SW = SW_mean_new, id.vars = id_vars)),
   # Build the apsimx 
   tar_target(apsimxPhase1, build_apsimx(template = template,
                                         dir_metfile = dir_met,
