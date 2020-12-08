@@ -200,7 +200,7 @@ estimate_DUL <- function(DT, sowingdate, layer){
   # Fit it. 
   fit = mcp(model, data = dt, cores = 3, prior = prior)
   # Extract the cp one 
-  cp_1_est = as.data.table(summary(fit))
+  cp_1_est = as.data.table(summary(fit,))
   setkey(dt, DAS)
   close_das = dt[dt[J(cp_1_est$mean[1]), roll = 'nearest', which = TRUE]
                  ]
@@ -208,7 +208,10 @@ estimate_DUL <- function(DT, sowingdate, layer){
   names(l) <- c("model","cp1", "nearDAS")
   return(l)
 }
+```
+# Test the function
 
+```{r}
 ADSD1 <- estimate_DUL(AD, "SD1", 1)
 cp1_mean <- ADSD1$cp1$mean[1]
 cp1_nearDAS <- ADSD1$nearDAS$DAS
@@ -222,7 +225,108 @@ plot(ADSD1$model) +
            y = cp1_int1 * 1.02, label = round(cp1_int1, digits = 3)) +
   ggtitle(paste0("Layer ",1))+
   theme_water()
+```
+# Make a loop
+```{r}
+list_AD <- AD[, list(data=list(.SD)), by = .(Experiment, SowingDate, Depth)]
+list_AD$data[1]
 
+list_AD_models <- list_AD[, esti := list(apply(.SD, 1, function(x){
+  l <- estimate_DUL(x[["data"]], x[["SowingDate"]], x[["Depth"]])
+  return(l)
+})), by = .(Experiment)]
+# list_AD[, .SD[1]]
+
+plot(list_AD_models$esti[[1]]$model )
+
+TEST <- list_AD_models[,.SD[1]][, graphs := list(lapply(esti, function(x){
+  cp1_mean <- x$cp1$mean[1]
+  cp1_nearDAS <- x$nearDAS$DAS
+  cp1_int1 <- x$cp1$mean[4]
+  depth <- x$nearDAS$Depth
+  p <- plot(x$model) +
+    geom_vline(xintercept = c(cp1_mean,cp1_nearDAS), 
+               color =  c("red","black")) +
+    geom_hline(yintercept = cp1_int1, color = "blue") +
+    annotate(geom = "text", 
+             x = cp1_mean * 1.03, 
+             y = cp1_int1 * 1.02, label = round(cp1_int1, digits = 3)) +
+    ggtitle(paste0("Layer ", depth))+
+    theme_water()
+  return(p)
+})) ]
+
+```
+
+
+```{r}
+list_AD_models_graphs <- list_AD_models[, graphs := list(lapply(esti, function(x){
+ 
+  cp1_mean <- x$cp1$mean[1]
+  cp1_nearDAS <- x$nearDAS$DAS
+  cp1_int1 <- x$cp1$mean[4]
+  depth <- x$nearDAS$Depth
+  sd <- x$nearDAS$SowingDate
+
+   cat("Process layer", depth, "\r\n")
+  p <- plot(x$model) +
+    geom_vline(xintercept = c(cp1_mean,cp1_nearDAS), 
+               color =  c("red","black")) +
+    geom_hline(yintercept = cp1_int1, color = "blue") +
+    annotate(geom = "text", 
+             x = cp1_mean * 1.03, 
+             y = cp1_int1 * 1.02, label = round(cp1_int1, digits = 3)) +
+    ggtitle(paste0("Layer ", depth, "-", sd))+
+    theme_water()
+  return(p)
+})) ]
+```
+
+```{r}
+list_AD_models_graphs$esti[[5]]$nearDAS
+list_AD_models_graphs$esti[[5]]$cp1
+list_AD_models_graphs$graphs[[5]]
+```
+
+# WHAT IS MY ESTIMATED DULs?
+
+```{r}
+list_AD_models[, results:= lapply(esti, function(x){
+  cp1_int1 <- x$cp1$mean[4]
+  DT = x$nearDAS[, esti_DUL := cp1_int1]
+  return(DT)
+  })]
+
+estimates <- rbindlist(list_AD_models$results)
+
+estimates[, posterior_DUL := DUL * esti_DUL][]
+
+```
+
+# How much different it made? 
+
+```{r}
+estimates %>% 
+  ggplot(aes(Depth)) +
+  geom_point(aes(y = DUL, color = "DUL")) + 
+  geom_smooth(aes(y = DUL, color = "DUL")) +
+  geom_point(aes(y = posterior_DUL, color = "POSTDUL")) + 
+  geom_smooth(aes(y = posterior_DUL, color = "POSTDUL")) +
+  coord_flip()+
+  
+  scale_x_reverse()
+```
+
+# OUTPUT ALL THE GRAPHS
+
+```{r}
+lapply(list_AD_models$graphs, function(X){
+   name <- unique(x$data[,c("Experiment", "SowingDate", "Depth")]) %>%
+    unlist() %>%
+    paste(., collapse = "-")
+  ggsave(filename = here::here("/Data/images", paste0(name, ".png")), plot = x, 
+         dpi = 300)
+})
 ```
 
 
