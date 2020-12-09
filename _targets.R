@@ -31,7 +31,7 @@ tar_option_set(packages = c("data.table", "magrittr", "readxl", "openxlsx",
 targets <- list(
   # Define keys and treatments
   tar_target(Sites, unique(CoverData$Experiment)),
-  tar_target(SD, unique(CoverData$SowingDate)),
+  tar_target(SD, paste0("SD", 1:5)),
   tar_target(id_vars, c("Experiment", "SowingDate", "Clock.Today")),
   tar_target(value_vars, grep("SWmm\\.\\d.", colnames(data_SW), value = TRUE)),
   tar_target(SKL_Range, seq(0.005, 0.11, by = 0.005)),
@@ -69,33 +69,33 @@ targets <- list(
              format = "file", 
              pattern = cross(Sites, SD), 
              cue = tar_cue(depend = TRUE)),
-  tar_target(DUL_LL_range, doDUL_LL_range(SW = SW_mean_new, id.vars = id_vars)),
+  tar_target(DUL_LL_range, doDUL_LL_range(SW = SW_mean_new, id.vars = id_vars))
   # Build the apsimx 
-  tar_target(apsimxPhase1, build_apsimx(template = template,
-                                        dir_metfile = dir_met,
-                                        cover = LAI_input,
-                                        observed = observed,
-                                        dir_simulations = dir_simulations ,
-                                        dir_config = dir_config,
-                                        apsimx = path_apsimx,
-                                        apsimx_Basefile = apsimx_Basefile,
-                                        DUL_LL_range = DUL_LL_range,
-                                        bulkDensity = BDs,
-                                        SowingDates = sowingDates,
-                                        SW_initial = SW_initials
-                                  ),
-             format = "file",
-             cue = tar_cue(file = TRUE),
-             pattern =  map(LAI_input,observed)),
-  tar_target(apsimxPhase2, build_optimSlurp(template = templatePhase2,
-                                            dir_optim = dir_simulations,
-                                            dir_config = dir_config,
-                                            KL_range = SKL_Range,
-                                            apsimx = path_apsimx,
-                                            apsimx_Basefile = apsimxPhase1
-                                            ),
-             cue = tar_cue(mode = "never"),
-             pattern =  map(apsimxPhase1))
+  # tar_target(apsimxPhase1, build_apsimx(template = template,
+  #                                       dir_metfile = dir_met,
+  #                                       cover = LAI_input,
+  #                                       observed = observed,
+  #                                       dir_simulations = dir_simulations ,
+  #                                       dir_config = dir_config,
+  #                                       apsimx = path_apsimx,
+  #                                       apsimx_Basefile = apsimx_Basefile,
+  #                                       DUL_LL_range = DUL_LL_range,
+  #                                       bulkDensity = BDs,
+  #                                       SowingDates = sowingDates,
+  #                                       SW_initial = SW_initials
+  #                                 ),
+  #            format = "file",
+  #            cue = tar_cue(file = TRUE),
+  #            pattern =  map(LAI_input,observed))
+  # tar_target(apsimxPhase2, build_optimSlurp(template = templatePhase2,
+  #                                           dir_optim = dir_simulations,
+  #                                           dir_config = dir_config,
+  #                                           KL_range = SKL_Range,
+  #                                           apsimx = path_apsimx,
+  #                                           apsimx_Basefile = apsimxPhase1
+  #                                           ),
+  #            cue = tar_cue(mode = "never"),
+  #            pattern =  map(apsimxPhase1))
   
   
 )
