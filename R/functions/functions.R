@@ -73,7 +73,49 @@ relativeSW <- function(DT, col_pattern = "VWC", id_vars){
   
 }
 
-
+#' window_DT
+#' @description A subset function for data.table object. similar to `window` 
+#' function for `ts`object. 
+#'
+#' @param DT 
+#' @param startd 
+#' @param endd 
+#'
+#' @import data.table
+#' @return
+#' @export
+#'
+#' @examples
+window_DT <- function(DT, Site, startd = "2011-04-01", endd = "2012-04-30"){
+  DT <- DT[ Experiment == Site & Clock.Today %between% c(startd, endd)]
+  return(DT)
+}
+#' estimate_DUL
+#' @description use the change point analysis to estimate the DUL from their
+#' relative soil water content in each layer
+#'
+#' @param DT 
+#' @param sowingdate 
+#' @param layer 
+#' @param mcpmodel 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+estimate_DUL <- function(DT, sowingdate, layer, mcpmodel = model){
+  dt <- AD[SowingDate == sowingdate & Depth == layer]
+  # Fit it. 
+  fit = mcp(model, data = dt, cores = 3, prior = prior)
+  # Extract the cp one 
+  cp_1_est = as.data.table(fixef(fit,))
+  setkey(dt, DAS)
+  close_das = dt[dt[J(cp_1_est$mean[1]), roll = 'nearest', which = TRUE]
+  ]
+  l <- list(fit,cp_1_est, close_das)
+  names(l) <- c("model","cp1", "nearDAS")
+  return(l)
+}
 
 
 ##' .. content for \description{column wise mean calculation, mm SW will be

@@ -20,8 +20,8 @@ library(targets)
 tar_load("data_SW")
 tar_load("value_vars")
 tar_load("id_vars")
-doDUL_LL_range(SW = tar_read(SW_mean))
-filter_datemax(SW_mean = tar_read("SW_mean"), "max", id.vars = id_vars)
+doDUL_LL_range(SW = tar_read(SW_mean_new))
+filter_datemax(SW_mean = tar_read("SW_mean_new"), "max", id.vars = id_vars)
 ```
 # Inspect ranges
 
@@ -226,7 +226,7 @@ tar_load(SW_initials)
 SW_initials[]
 cbp1 <- c("#FF0000", "#00FF00", "#0000FF", "#fab80a","#8c06ff", 
           "#dceeff", "#c6deff", "#a7ccff", "#85a8e3","#6c9bd0")
-p_initialSW <- SW_initials[SowingDate%in%paste0("SD",1:5) & Stats == "mean"] %>% 
+p_initialSW <- SW_initials %>% 
    ggplot(aes(x = Depth, color = SowingDate))+
   geom_point(aes(y = SW))+
   geom_line(aes(y = SW)) +
@@ -235,7 +235,9 @@ p_initialSW <- SW_initials[SowingDate%in%paste0("SD",1:5) & Stats == "mean"] %>%
   facet_grid(  ~ Experiment ) +
   theme_water() +
   scale_color_manual(values = cbp1)
-SW_initials[SowingDate%in%paste0("SD",1:5) & Stats %in% c("mean", "sd")]
+SW_initials
+
+
 errorbar <- dcast.data.table(SW_initials[SowingDate%in%paste0("SD",1:5)],Experiment + SowingDate + Clock.Today + Depth ~ Stats, value.var = "SW")
 errorbar[Depth == 1, se := sd/200/2
          ][Depth != 1, se:= sd/100/2]
@@ -276,7 +278,32 @@ tar_load(LAI_input)
 LAI_input
 ```
 
-# Check 
+# Check relativeSW
+```{r}
+tar_load(relativeSW)
+
+relativeSW %>% 
+  ggplot(aes(Clock.Today, relativeSW, color = SowingDate)) +
+  geom_point() +
+  geom_line()+
+  scale_x_date(date_breaks = "8 weeks") +
+  geom_smooth() + 
+  facet_grid( Experiment ~.)
+
+```
+
+
+# Check winter_AD/I12
+```{r}
+tar_load(winter_AD)
+tar_load(winter_I12)
+winter_AD
+winter_I12
+tar_read(list_AD)
+tar_read(list_I12)
+
+```
+
 
 # Check parameter ranges 
 
