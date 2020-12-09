@@ -39,42 +39,41 @@ morrisEE <- function(Output, variable = "SW1", apsimMorris,
   return(l)
   
 }
-#' read_met
+
+
+# critical functions  -----------------------------------------------------
+
+#' relativeSW
+#' @description calculate the relative soil water content for each observation
+#' baseline is the maximum soil water content value
 #'
-#' @param path A character string. The path to access the met files.
-#' @param skip_unit An integer. The number of rows for skipping the unit line in met files.
-#' @param skip_meta An integer. The number of rows for skipping the meta data before the column names start.
-#' @param startd
-#' @param endd
-#' @param site
+#' @param DT a data table has mean value for each measurement 
+#' @param col_pattern a character string to help extract all columns
+#' @param id_vars a character string to define the id columns
 #'
-#' @return A data .table and .frame is returned.
-#'
+#' @return data.table
 #' @import data.table
+#'  
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' read_met("path", skip_unit = 9, skip_meta = 7)
-#' }
-read_met <- function(path = path_met, skip_unit = 9, skip_meta = 7,
-                     startd = "2010-10-01", endd = "2012-08-01",
-                     site = "AshleyDene"){
-  start_date <- as.Date(startd)
-  end_date <- as.Date(endd)
-  met_LN <- data.table::fread(input = path,skip = skip_unit, fill = TRUE)
-  met_col <- read_met_col(path = path, skip = skip_meta)
-  colnames(met_LN) <- colnames(met_col)
+#' 
+relativeSW <- function(DT, col_pattern = "VWC", id_vars){
+  VWC <- grep(pattern = col_pattern, x = colnames(DT), value = TRUE)
+  VWCcols <- c(id_vars, VWC)
+  DT_VWC <- DT[,..VWCcols] %>% 
+    melt.data.table(id.vars = id_vars, 
+                    value.name = "SW",
+                    variable.name = "Depth",
+                    variable.factor = FALSE)
+  DT_VWC[, Depth:= as.integer(gsub("\\D","",Depth))]
+  DT_VWC[, DUL := max(SW), by = .(Experiment, SowingDate, Depth)
+         ][, relativeSW:= SW/DUL]
+  return(DT_VWC)
   
-  met_LN <- met_LN[, Clock.Today := as.Date(day, origin = paste0(year, "-01-01"))
-                   ][Clock.Today > start_date & Clock.Today < end_date
-                     ][,Date := Clock.Today]
-  met_LN <- group_in_season(met_LN)[, AccumTT := cumsum(mean),
-                                    by = Season
-                                    ][, Experiment:=site]
-  
-  return(met_LN)
 }
+
+
 
 
 ##' .. content for \description{column wise mean calculation, mm SW will be
@@ -268,34 +267,6 @@ outputobserved <- function(biomass, SW, site, SD,
   
 }
 
-##' outputSWobserved
-##'
-##' @param SW 
-##' @param site 
-##' @param SD 
-##' @param output 
-##'
-##' @return
-##' @export
-##'
-##' @examples
-#outputSWobserved <- function(SW, site, SD,
-#                             output = "Data/ProcessedData/CoverData/"){
-#  # OUPUT CONFIG
-#  
-#  if(!dir.exists(output)){
-#    dir.create(output)
-#  }
-#  
-#  # Output observation 
-#  sitesd  <-  SW[Experiment == site & SowingDate == SD]
-#  output <- file.path(output, paste0("ObservedSW", site, SD, ".xlsx"))
-#  openxlsx::write.xlsx(x = sitesd, file = output, sheetName = "Observed")
-#  
-#  return(output)
-#}
-
-
 #' outputLAIinput
 #'
 #' @param CoverData 
@@ -377,39 +348,6 @@ interp_LAI <- function(biomass, sowingDates, accumTT) {
 
 
 
-
-##' .. content for \description{} (no empty lines) ..
-##'
-##' .. content for \details{} ..
-##'
-##' @title doDUL_LL
-##' @description conventional approach to calculate DUL and LL, mean max value
-##'   for DUL; mean min values for LL.
-##' @import data.table
-
-##' @return
-##' @author frank0434
-##' @export
-doDUL_LL <- function(SW_mean, value_vars) {
-
-  DUL_LL= SW_mean[, unlist(lapply(.SD, max_min), recursive = FALSE), 
-                  by = .(Experiment, SowingDate), .SDcols = value_vars]
-  # Tidy up DUL AND LL
-  melted_DUL_LL = data.table::melt(DUL_LL, 
-                                   id.var = c("Experiment","SowingDate"), 
-                                   variable.factor = FALSE)
-  melted_DUL_LL = melted_DUL_LL[, (c("Depth", "variable")) := tstrsplit(variable, "\\.")
-                             ] 
-  DUL_LL_SDs = data.table::dcast.data.table(data = melted_DUL_LL, 
-                                           Experiment +  SowingDate + Depth ~ variable)
-  
-  # DUL_LL_SDsVWC = DUL_LL_SDs[, ':='(DUL = round(DUL, digits = 3),
-  #                                   LL = round(LL, digits = 3))
-  #                            ][, PAWC := DUL - LL]
-}
-
-
-
 ##' .. content for \description{} (no empty lines) ..
 ##'
 ##' .. content for \details{} ..
@@ -443,6 +381,46 @@ initialSWC <- function(DT, sowingDates, id_vars) {
   # SW_initials_tidied = SW_initials_tidied[Stats == "mean" & Depth != 1, ':='(SW = round(SW/100, digits = 3))]
   return(SW_initials_tidied)
   
+}
+
+
+# read functions ----------------------------------------------------------
+
+#' read_met
+#'
+#' @param path A character string. The path to access the met files.
+#' @param skip_unit An integer. The number of rows for skipping the unit line in met files.
+#' @param skip_meta An integer. The number of rows for skipping the meta data before the column names start.
+#' @param startd
+#' @param endd
+#' @param site
+#'
+#' @return A data .table and .frame is returned.
+#'
+#' @import data.table
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' read_met("path", skip_unit = 9, skip_meta = 7)
+#' }
+read_met <- function(path = path_met, skip_unit = 9, skip_meta = 7,
+                     startd = "2010-10-01", endd = "2012-08-01",
+                     site = "AshleyDene"){
+  start_date <- as.Date(startd)
+  end_date <- as.Date(endd)
+  met_LN <- data.table::fread(input = path,skip = skip_unit, fill = TRUE)
+  met_col <- read_met_col(path = path, skip = skip_meta)
+  colnames(met_LN) <- colnames(met_col)
+  
+  met_LN <- met_LN[, Clock.Today := as.Date(day, origin = paste0(year, "-01-01"))
+  ][Clock.Today > start_date & Clock.Today < end_date
+  ][,Date := Clock.Today]
+  met_LN <- group_in_season(met_LN)[, AccumTT := cumsum(mean),
+                                    by = Season
+  ][, Experiment:=site]
+  
+  return(met_LN)
 }
 
 
@@ -718,7 +696,7 @@ exam_xlsxs <- function(path_apX, filename){
 
 
 
-# fun2 --------------------------------------------------------------------
+# choose_cols --------------------------------------------------------------------
 
 #' choose_cols
 #' @description calculate the number of NAs and nrows, drop the columns are all NAs
