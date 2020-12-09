@@ -32,7 +32,7 @@ targets <- list(
   # Define keys and treatments --------------
   tar_target(Sites, unique(CoverData$Experiment)),
   tar_target(SD, paste0("SD", 1:5)),
-  tar_target(id_vars, c("Experiment", "SowingDate", "Clock.Today")),
+  tar_target(id_vars, c("Experiment", "SowingDate", "Clock.Today", "DAS")),
   tar_target(value_vars, grep("SWmm\\.\\d.", colnames(data_SW), value = TRUE)),
   tar_target(SKL_Range, seq(0.005, 0.11, by = 0.005)),
   # Read data --------------
@@ -61,13 +61,15 @@ targets <- list(
              list(relativeSW ~ 1 + sigma(1),  # plateau (int_1)
                   ~ 0 + DAS ,       # joined slope (time_2) at cp_1, could be a exp decay function.
                   ~ 0)),
+  tar_target(prior, list(int_1 = "dnorm(0.7, 1) T(, 1)")),
   tar_target(winter_AD, window_DT(relativeSW,Site = "AshleyDene")),
   tar_target(winter_I12, window_DT(relativeSW, Site = "Iversen12")),
   tar_target(list_AD, winter_AD[, list(data=list(.SD)), 
                                 by = .(Experiment, SowingDate, Depth)]),
   tar_target(list_I12, winter_I12[, list(data=list(.SD)), 
                                   by = .(Experiment, SowingDate, Depth)]),
-  # tar_target(esti_DUL_AD, estimate_DUL()),
+  tar_target(esti_DUL_AD, process_esti(list_AD, mcpmodel, priorinfo = prior)),
+  tar_target(esti_DUL_I12, process_esti(list_I12, mcpmodel, priorinfo = prior)),
   # Output apsimx input and observed --------------
   tar_target(observed, outputobserved(biomass = LAI_Height,
                                       SW = SW_mean_new, 

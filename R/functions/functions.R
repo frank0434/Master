@@ -103,18 +103,38 @@ window_DT <- function(DT, Site, startd = "2011-04-01", endd = "2012-04-30"){
 #' @export
 #'
 #' @examples
-estimate_DUL <- function(DT, sowingdate, layer, mcpmodel = model){
-  dt <- AD[SowingDate == sowingdate & Depth == layer]
+estimate_DUL <- function(DT, mcpmodel = model, priorinfo = prior){
   # Fit it. 
-  fit = mcp(model, data = dt, cores = 3, prior = prior)
+  fit = mcp(mcpmodel, data = DT, cores = 3, prior = priorinfo)
   # Extract the cp one 
-  cp_1_est = as.data.table(fixef(fit,))
-  setkey(dt, DAS)
-  close_das = dt[dt[J(cp_1_est$mean[1]), roll = 'nearest', which = TRUE]
+  cp_1_est = as.data.table(fixef(fit))
+  setkey(DT, DAS)
+  close_das = DT[DT[J(cp_1_est$mean[1]), roll = 'nearest', which = TRUE]
   ]
   l <- list(fit,cp_1_est, close_das)
   names(l) <- c("model","cp1", "nearDAS")
   return(l)
+}
+
+#' Title
+#'
+#' @param DT 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+process_esti <- function(DT, model = mcpmodel, priorinfo = prior){
+  DT <- DT[, esti := list(apply(.SD, 1, function(x){
+    l <- estimate_DUL(x[["data"]], mcpmodel = model, priorinfo = priorinfo)
+    return(l)
+    })), by = .(Experiment)
+    ][, results:= lapply(esti, function(x){
+      cp1_int1 <- x$cp1$mean[4]
+      dt = x$nearDAS[, esti_DUL := cp1_int1]
+      return(dt)
+      })]
+  return(DT)
 }
 
 
