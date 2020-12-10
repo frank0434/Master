@@ -1,6 +1,6 @@
 library(targets)
 library(future)
-# plan(multisession)
+plan(multisession)
 # Source functions
 invisible(lapply(list.files("R/functions/", pattern = "R", full.names = TRUE),
                  source))
@@ -16,16 +16,26 @@ dir_cover <- here::here("Data/ProcessedData/CoverData")
 dir_config <- here::here("Data/ProcessedData/ConfigurationFiles/")
 dir_simulations <- here::here("Data/ProcessedData/apsimxFiles/")
 
+if(dir.exists(dir_simulations)){
+  timestamp <- gsub("\\D",".",Sys.time())
+  dir_simulations <- paste0(here::here("Data/ProcessedData/apsimxFiles"), timestamp)
+  dir.create(path = dir_simulations)
+  
+} else{
+  dir.create(dir_simulations)
+}
+
+
 ## The flag
 apsimx_flag <- "/Edit"
 ## The base apsimx file 
-apsimx_Basefile <- here::here("Data/ApsimxFiles/20200517BaseSlurp.apsimx")
+apsimx_Basefile <- here::here("Data/ApsimxFiles/20201205BaseSlurp.apsimx")
 path_lincoln <- here::here("Data/ClimateAndObserved/lincoln.met")
 path_AD <- here::here("Data/ClimateAndObserved/AshleyDene.met")
 
 # Set target-specific options such as packages.
 tar_option_set(packages = c("data.table", "magrittr", "readxl", "openxlsx",
-                            "ggplot2", "here", "autoapsimx", "sensitivity"))
+                            "ggplot2", "here", "autoapsimx", "mcp"))
 
 # Define targets
 targets <- list(
@@ -79,7 +89,8 @@ targets <- list(
     ),
   tar_target(esti_DUL_LL, 
              merge.data.table(esti_DUL, 
-                              DUL_LL_range[,.(Experiment, SowingDate, Depth, SW.LL)],
+                              DUL_LL_range[,.(Experiment, SowingDate, Depth, 
+                                              SW.LL, SAT = SW.DUL* 1.05)],
                               by = c("Experiment", "SowingDate", "Depth"))),
   # Output apsimx input and observed --------------
   tar_target(observed, outputobserved(biomass = LAI_Height,

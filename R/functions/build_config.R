@@ -131,7 +131,7 @@ build_apsimx <- function(template, apsimx, apsimx_Basefile,
   replacementI_initialSW <- paste(SW_initial[Experiment == Site &
                                                SowingDate == SD ]$SW, 
                                   collapse = ",")
-  replacementJ_SAT <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$SW.DUL, 
+  replacementJ_SAT <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$SAT, 
                             collapse = ",")
   replacementK_AirDry <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$SW.LL, 
                                collapse = ",")
@@ -148,7 +148,7 @@ build_apsimx <- function(template, apsimx, apsimx_Basefile,
   values <- mget(replacevalues)
   config <- paste0(template, "=", values)
   
-  basename <- paste0(Site, SD)
+  basename <- paste0(Site, "_",SD)
   outputpath <- file.path(dir_config, paste0(basename, ".txt"))
   
   writeLines(text = config, con = outputpath)  
