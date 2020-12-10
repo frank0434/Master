@@ -321,6 +321,8 @@ esti_DUL_AD[, unlist(results, recursive = FALSE), by = .(Experiment, SowingDate,
 
 
 rbindlist(esti_DUL_AD$results)
+tar_load(esti_DUL_LL)
+esti_DUL_LL
 ```
 
 
