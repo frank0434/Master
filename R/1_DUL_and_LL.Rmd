@@ -142,18 +142,18 @@ prior = list(
   ## Evidence in the hist above
   int_1 = "dnorm(0.7, 1) T(, 1)" 
 )
-dt <- AD[SowingDate == "SD1" & Depth == 1]
+dt <- AD[SowingDate == "SD1"]
 # Fit it. 
 fit = mcp(model, data = dt, cores = 3, prior = prior)
     # Extract the cp one 
-cp_1_est = as.data.table(summary(fit))
+cp_1_est = as.data.table(fixef(fit))
 setkey(dt, DAS)
 close_das = dt[dt[J(cp_1_est$mean[1]), roll = 'nearest', which = TRUE]]$DAS
 
 P = plot(fit) +
       geom_vline(xintercept = c(cp_1_est$mean[1],close_das), 
                  color =  c("red","black")) +
-      ggtitle(paste0("Layer ",1))+
+      # ggtitle(paste0("Layer ",1))+
   theme_water()
 P
 
@@ -164,7 +164,7 @@ dt <- AD[SowingDate == "SD1" & Depth == 2]
 # Fit it. 
 fit = mcp(model, data = dt, cores = 3, prior = prior)
     # Extract the cp one 
-cp_1_est = as.data.table(summary(fit))
+cp_1_est = as.data.table(fixef(fit))
 setkey(dt, DAS)
 close_das = dt[dt[J(cp_1_est$mean[1]), roll = 'nearest', which = TRUE]]$DAS
 
@@ -180,7 +180,7 @@ dt <- AD[SowingDate == "SD1" & Depth == 13]
 # Fit it. 
 fit = mcp(model, data = dt, cores = 3, prior = prior)
     # Extract the cp one 
-cp_1_est = as.data.table(summary(fit))
+cp_1_est = as.data.table(fixef(fit))
 setkey(dt, DAS)
 close_das = dt[dt[J(cp_1_est$mean[1]), roll = 'nearest', which = TRUE]]$DAS
 
@@ -195,12 +195,12 @@ cp_1_est[name =="int_1"]
 ```
 # Forming a function
 ```{r}
-estimate_DUL <- function(DT, sowingdate, layer){
+estimate_DUL <- function(DT, sowingdate, layer, mcpmodel = model){
   dt <- AD[SowingDate == sowingdate & Depth == layer]
   # Fit it. 
-  fit = mcp(model, data = dt, cores = 3, prior = prior)
+  fit = mcp(mcpmodel, data = dt, cores = 3, prior = prior)
   # Extract the cp one 
-  cp_1_est = as.data.table(summary(fit,))
+  cp_1_est = as.data.table(fixef(fit))
   setkey(dt, DAS)
   close_das = dt[dt[J(cp_1_est$mean[1]), roll = 'nearest', which = TRUE]
                  ]
@@ -208,11 +208,27 @@ estimate_DUL <- function(DT, sowingdate, layer){
   names(l) <- c("model","cp1", "nearDAS")
   return(l)
 }
+
 ```
+# Model2
+```{r}
+model_2 = list(
+  relativeSW ~ 0 + DAS,  # plateau (int_1)
+  ~ 1  ,       # joined slope (time_2) at cp_1, could be a exp decay function.
+  ~ 0 + DAS
+  
+)
+prior_2 = list(
+  # Intercept should be between 0.5 and 1; less than 1
+  ## Evidence in the hist above
+  int_2 = "dnorm(0.7, 1) T(, 1)" 
+)
+```
+
 # Test the function
 
 ```{r}
-ADSD1 <- estimate_DUL(AD, "SD1", 1)
+ADSD1 <- estimate_DUL(AD, "SD1", 1, mcpmodel = model)
 cp1_mean <- ADSD1$cp1$mean[1]
 cp1_nearDAS <- ADSD1$nearDAS$DAS
 cp1_int1 <- ADSD1$cp1$mean[4]
@@ -306,21 +322,24 @@ estimates[, posterior_DUL := DUL * esti_DUL][]
 # How much different it made? 
 
 ```{r}
-estimates %>% 
+DUL_shift <- estimates %>% 
   ggplot(aes(Depth)) +
   geom_point(aes(y = DUL, color = "DUL")) + 
-  geom_smooth(aes(y = DUL, color = "DUL")) +
+  geom_smooth(aes(y = DUL, color = "DUL"), se = FALSE,) +
   geom_point(aes(y = posterior_DUL, color = "POSTDUL")) + 
-  geom_smooth(aes(y = posterior_DUL, color = "POSTDUL")) +
+  geom_smooth(aes(y = posterior_DUL, color = "POSTDUL"), se = FALSE) +
   coord_flip()+
+  scale_x_reverse(limits = c(23, 0), expand = c(0,0)) 
   
-  scale_x_reverse()
+DUL_shift +
+  theme_water()+
+  scale_color_manual(values = c("DUL" = "#FF0000", "POSTDUL" = "#0000FF"))
 ```
 
 # OUTPUT ALL THE GRAPHS
 
 ```{r}
-lapply(list_AD_models$graphs, function(X){
+lapply(list_AD_models$graphs, function(x){
    name <- unique(x$data[,c("Experiment", "SowingDate", "Depth")]) %>%
     unlist() %>%
     paste(., collapse = "-")
