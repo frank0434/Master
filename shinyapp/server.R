@@ -26,25 +26,9 @@ server <- function(input, output, session) {
   # Cache all the small tables #
   ##############################
   
-  ### project table
-  # proj_df <- reactive({
-  #   pj_df <- pool() %>% tbl("Project") %>% collect()
-  #   if("lat" %in% names(pj_df)){
-  #     pj_df <- rename(pj_df,
-  #                     Lat = lat,
-  #                     Lon = lon)
-  #   }
-  #   return(pj_df)
-  #   
-  # })
   expt <- reactive({input$Experiment})
   sd <- reactive({input$sowingdate})
-  SowingDate <- reactive({
-    DT <- meta[Experiment == expt()
-               ][, SDorder := as.integer(gsub("SD", "", SowingDate))
-                 ][order(SDorder)]
-    
-  })
+
   factor_inputs <- reactive({
     list <- best_comb() %>% 
       as.list()
@@ -58,7 +42,7 @@ server <- function(input, output, session) {
   ############################
   
   observe({
-    updateSelectInput(session, "sowingdate", choices = SowingDate()$SowingDate)
+    updateSelectInput(session, "sowingdate", choices = SowingDate)
     # settingInputNames <- build_factor_dropdowns(factor_df(), "ref", "1", pool())
     # updateSelectInput(session, "xcol", choices = c(names(unlist(inputname_list_ref)),var_list()), selected = var_list()[1])
   })
@@ -71,7 +55,7 @@ server <- function(input, output, session) {
   best_comb <- reactive({
     meta[Experiment == expt() & SowingDate == sd()]
   })
-  
+
   report <- reactive({
     DT = DBI::dbReadTable(conn = pool(), "Report")
     # DBI::dbDisconnect(pool())
@@ -83,7 +67,7 @@ server <- function(input, output, session) {
     DT = DBI::dbReadTable(conn = pool(), "Observed")
     # DBI::dbDisconnect(pool())
     DT = data.table::as.data.table(DT)
-    cols1 <- paste0("SW.", 1:22,".")
+    cols1 <- paste0("SWmm.", 1:22,"..mean")
     DT$PSWC <- rowSums(DT[, ..cols1])
     DT[, ':='(Clock.Today =as.Date(Clock.Today))]
     DT
@@ -94,14 +78,14 @@ server <- function(input, output, session) {
   #####################
   # Output parameters #
   #####################
-  output$best_parameters <- DT::renderDataTable({
-    tab <- DT::datatable(best_comb(),
-                         escape = FALSE,
-                         options = list(dom = 't',
-                                        columnDefs = list(list(className = 'dt-left', targets = '_all'))),
-                         rownames = FALSE, caption = "The best fit parameter combination." )
-    
-    })
+  # output$best_parameters <- DT::renderDataTable({
+  #   tab <- DT::datatable(best_comb(),
+  #                        escape = FALSE,
+  #                        options = list(dom = 't',
+  #                                       columnDefs = list(list(className = 'dt-left', targets = '_all'))),
+  #                        rownames = FALSE, caption = "The best fit parameter combination." )
+  #   
+  #   })
   
   output$best_df <- DT::renderDataTable({
     tab <- DT::datatable(report(),

@@ -16,11 +16,17 @@ options(shiny.sanitize.errors = !DEV, scipen = 999)
 
 poolConnection <- NULL
 
-meta <- data.table::fread(here::here("Data/ProcessedData/best_fit.csv")) 
-meta <- meta[, filenames:= paste0(here::here(), "/Data/ProcessedData/apsimxFiles/", (basename(filenames)))]
+# meta <- data.table::fread(here::here("Data/ProcessedData/best_fit.csv")) 
+# meta <- meta[, filenames:= paste0(here::here(), "/Data/ProcessedData/apsimxFiles/", (basename(filenames)))]
 # meta[Experiment =="AshleyDene" & SowingDate == "SD1", filenames := "C:/Data/Master/Data/ApsimxFiles/20200517BaseSlurp.db"]
+meta <- data.table::data.table(filenames = list.files(here::here("Data/ProcessedData/apsimxFiles2020.12.11.06.38.36/"),
+                                                      pattern = "*.db$",
+                                                      full.names = TRUE))
+meta[, basename := gsub(".db","", basename(filenames))
+     ][, (c("Experiment", "SowingDate")) := data.table::tstrsplit(basename, split = "_")]
+# meta
 experiments <- unique(meta$Experiment)
-SowingDate <- sort(unique(meta$SowingDate))
+SowingDate <- unique(meta$SowingDate)
 DUL_LL_range <- fread(here::here("Data/dul_ll_stats.csv")
                       )[Depth == 1,':='(DUL = SW.mean.DUL * 200,
                                         SE = SW.sd.DUL * 200 / SW.n.DUL)
