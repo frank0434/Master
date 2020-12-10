@@ -70,6 +70,17 @@ targets <- list(
                                   by = .(Experiment, SowingDate, Depth)]),
   tar_target(esti_DUL_AD, process_esti(list_AD, mcpmodel, priorinfo = prior)),
   tar_target(esti_DUL_I12, process_esti(list_I12, mcpmodel, priorinfo = prior)),
+  tar_target(esti_DUL, data.table::rbindlist(
+    list(
+    esti_DUL_AD[, unlist(results, recursive = FALSE), 
+                by = .(Experiment, SowingDate, Depth)],
+    esti_DUL_I12[, unlist(results, recursive = FALSE), 
+                 by = .(Experiment, SowingDate, Depth)]))
+    ),
+  tar_target(esti_DUL_LL, 
+             merge.data.table(esti_DUL, 
+                              DUL_LL_range[,.(Experiment, SowingDate, Depth, SW.LL)],
+                              by = c("Experiment", "SowingDate", "Depth"))),
   # Output apsimx input and observed --------------
   tar_target(observed, outputobserved(biomass = LAI_Height,
                                       SW = SW_mean_new, 
@@ -83,24 +94,24 @@ targets <- list(
                                       output = dir_cover),
              format = "file", 
              pattern = cross(Sites, SD), 
-             cue = tar_cue(depend = TRUE))
-  # Build the apsimx 
-  # tar_target(apsimxPhase1, build_apsimx(template = template,
-  #                                       dir_metfile = dir_met,
-  #                                       cover = LAI_input,
-  #                                       observed = observed,
-  #                                       dir_simulations = dir_simulations ,
-  #                                       dir_config = dir_config,
-  #                                       apsimx = path_apsimx,
-  #                                       apsimx_Basefile = apsimx_Basefile,
-  #                                       DUL_LL_range = DUL_LL_range,
-  #                                       bulkDensity = BDs,
-  #                                       SowingDates = sowingDates,
-  #                                       SW_initial = SW_initials
-  #                                 ),
-  #            format = "file",
-  #            cue = tar_cue(file = TRUE),
-  #            pattern =  map(LAI_input,observed))
+             cue = tar_cue(depend = TRUE)),
+  # # Build the apsimx 
+  tar_target(apsimxPhase1_AD, build_apsimx(template = template,
+                                        dir_metfile = dir_met,
+                                        cover = LAI_input,
+                                        observed = observed,
+                                        dir_simulations = dir_simulations ,
+                                        dir_config = dir_config,
+                                        apsimx = path_apsimx,
+                                        apsimx_Basefile = apsimx_Basefile,
+                                        DUL_LL_range = esti_DUL_LL,
+                                        bulkDensity = BDs,
+                                        SowingDates = sowingDates,
+                                        SW_initial = SW_initials
+                                  ),
+             format = "file",
+             cue = tar_cue(file = TRUE),
+             pattern =  map(LAI_input[1:5],observed[1:5]))
   # tar_target(apsimxPhase2, build_optimSlurp(template = templatePhase2,
   #                                           dir_optim = dir_simulations,
   #                                           dir_config = dir_config,

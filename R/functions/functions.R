@@ -131,7 +131,8 @@ process_esti <- function(DT, model = mcpmodel, priorinfo = prior){
     })), by = .(Experiment)
     ][, results:= lapply(esti, function(x){
       cp1_int1 <- x$cp1$mean[4]
-      dt = x$nearDAS[, esti_DUL := cp1_int1]
+      dt = x$nearDAS[, esti_DUL := cp1_int1
+                     ][, SW.DUL := esti_DUL * DUL]
       return(dt)
       })]
   return(DT)

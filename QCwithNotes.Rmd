@@ -275,7 +275,9 @@ ggsave("Data/images/p_BD.png",plot = p_BD, width = 7, height =6, dpi = 320)
 
 ```{r}
 tar_load(LAI_input)
-LAI_input
+LAI_input[1:5]
+tar_load(observed)
+observed
 ```
 
 # Check relativeSW
@@ -299,10 +301,28 @@ tar_load(winter_AD)
 tar_load(winter_I12)
 winter_AD
 winter_I12
-tar_read(list_AD)
+tar_load(list_AD)
 tar_read(list_I12)
-
+list_AD$data[[1]]
 ```
+
+# check DUL estimation 
+```{r}
+tar_load(esti_DUL_AD)
+
+esti_DUL_AD$results[[1]]
+esti_DUL_AD$esti[[1]]
+esti_DUL_AD$data[[1]]
+esti_DUL_AD[1,]
+tar_load(DUL_LL_range)
+DUL_LL_range
+
+esti_DUL_AD[, unlist(results, recursive = FALSE), by = .(Experiment, SowingDate, Depth)]
+
+
+rbindlist(esti_DUL_AD$results)
+```
+
 
 
 # Check parameter ranges 
