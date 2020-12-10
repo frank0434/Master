@@ -92,7 +92,7 @@ linechasedot <- function(DTsims, DTobs, DUL_LL_range,
     geom_hline(aes_string(yintercept = paste0("DULmm.", Layer, ".")), color = "blue") +
     geom_hline(aes_string(yintercept = paste0(" LL15mm.", Layer, ".")), color = "blue") +
     geom_line(aes_string(y = paste0("SWmm.", Layer, ".")), color = "grey",  alpha = 0.5) +
-    geom_point(data = DTobs, aes_string(y = paste0("SW.", Layer, ".")), color = "red",size = point_size) +
+    geom_point(data = DTobs, aes_string(y = paste0("SWmm.", Layer, "..mean")), color = "red",size = point_size) +
     geom_errorbar(data = SE1, aes(ymin = DUL - SE, ymax = DUL + SE), 
                   show.legend = TRUE, width = 8, size = 1.5) + 
     ggtitle(paste0(Expt, SD)) +
@@ -120,7 +120,7 @@ obsVSsims <- function(DTsims, DTobs, DUL_LL_range,
                          by = c( "Clock.Today"), 
                          all = TRUE)
   p <- DT %>% 
-    ggplot(aes_string(x = paste0("SW.", Layer, "."),y = paste0("SWmm.", Layer, "."))) +
+    ggplot(aes_string(x = paste0("SWmm.", Layer, "..mean"),y = paste0("SWmm.", Layer, "."))) +
     geom_point(color = "grey", size = point_size, alpha = 0.5) +
     geom_smooth(method = "lm", color = "red") + 
     geom_abline()+
