@@ -328,12 +328,15 @@ DUL_shift <- estimates %>%
   geom_smooth(aes(y = DUL, color = "DUL"), se = FALSE,) +
   geom_point(aes(y = posterior_DUL, color = "POSTDUL")) + 
   geom_smooth(aes(y = posterior_DUL, color = "POSTDUL"), se = FALSE) +
+   geom_point(aes(y = DUL * 0.95, color = "arbitraryDUL")) + 
+  geom_smooth(aes(y = DUL * 0.95, color = "arbitraryDUL"), se = FALSE) +
   coord_flip()+
   scale_x_reverse(limits = c(23, 0), expand = c(0,0)) 
   
 DUL_shift +
   theme_water()+
-  scale_color_manual(values = c("DUL" = "#FF0000", "POSTDUL" = "#0000FF"))
+  scale_color_manual(values = c("DUL" = "#FF0000", "POSTDUL" = "#0000FF", 
+                                "arbitrary" = "#00FF00"))
 ```
 
 # OUTPUT ALL THE GRAPHS
