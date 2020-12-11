@@ -33,6 +33,30 @@ SWC = readd(SWC_mean)
 
 
 
+```{r}
+loadd(starts_with("SW"))
+water = merge.data.table(SW_mean, SWC_mean, by = c("Experiment", "SowingDate", "Clock.Today"))
+biomass_obs = biomass[Seed == "CS", .(Height, LAI = LAImod,  Total.DM),
+                      by = .(Experiment, SowingDate, Clock.Today)
+                    ][, unlist(list(lapply(.SD, mean, na.rm = TRUE)), 
+                               recursive = FALSE), 
+                      by = .(Experiment, SowingDate, Clock.Today)
+                      ][, Clock.Today := as.Date(Clock.Today)]
+biomass_obs = biomass_obs[Clock.Today > "2011-11-30" & 
+                            Clock.Today < "2012-03-01" & 
+                            Experiment == "AshleyDene", k:= 0.66
+                          ][, k := ifelse(is.na(k), 0.94, k)
+                            ][, LightInterception := 1 - exp(-k*LAI)
+                              ][, Height := Height * 10
+                                ][, Height := ifelse(is.nan(Height), NA, Height)]
+whole = rbindlist(list(water, biomass_obs), fill = TRUE, use.names = TRUE)
+
+whole[, ':='(SimulationName = paste0(Experiment, "SowingDate", SowingDate))]
+setcolorder(whole, c("SowingDate","SimulationName"))
+whole = whole[!(Experiment == "Iversen12" & SowingDate %in% c("SD9","SD10"))]
+write.xlsx(whole, "../03processed-data/20200630Whole.xlsx", sheetName = "Observed")
+
+```
 
 
 

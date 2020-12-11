@@ -63,7 +63,8 @@ EditApsimxLayers <- function(path,
                              info,
                              SW_DUL_LL, 
                              SD_tidied,
-                             kls){
+                             kls, 
+                             inilayer = 1L, totallayers = 22L){
   
 # Environmental variables to control file paths
 Sys.setenv("WorkingDir" = here::here())
@@ -75,7 +76,7 @@ Sys.setenv("SimsDir" = file.path(Sys.getenv("WorkingDir"), "03processed-data/bes
 ## Verifcation
 # Construct kl ranges 
 # Could be defined on the fly 
-KL_layer <- 22L
+
 
 #BD 
 DB_AshleyDene <- c("1.150,1.150,1.310,1.310,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950,1.950")
@@ -92,6 +93,7 @@ SDnode = "[SlurpSowingRule].Script.SowingDate = "
 ClockStart = "[Clock].Start = "
 
 CoverData = "[SetCropVariables].Script.CoverFile = "
+ObserveData = "[DataStore].Observation.FileNames = "
 initialSW = "[Soil].InitialConditions.SW = "
 
 DUL <- "[Soil].Physical.DUL = "
@@ -102,7 +104,7 @@ LL15 <- "[Soil].Physical.LL15 = "
 LL <- "[Soil].Physical.SlurpSoil.LL = "
 
 ## The kl parameter level configuration 
-KL <- paste0("[Soil].Physical.SlurpSoil.KL", "[1:", KL_layer,"]"," = ")
+KL <- paste0("[Soil].Physical.SlurpSoil.KL", "[", inilayer, ":", totallayers,"]"," = ")
 RFV <-  paste0("[SlurpSowingRule].Script.RFV = ")
 # Replacement values
 # Critical order
@@ -127,7 +129,9 @@ for (i in Sites) {
     ## ClockStart
     replacement_ClockStart <- paste0(replacement_SD, "T00:00:00")
     ## User provide light interception data 
-    replacement_CoverData <- file.path(Sys.getenv("CoverDataDir"),paste0("CoverData", i, j, ".csv"))
+    replacement_CoverData <- file.path(Sys.getenv("CoverDataDir"),paste0("LAI", i, j, ".csv"))
+    replacement_ObserveData <- file.path(Sys.getenv("CoverDataDir"),
+                                         paste0("Observation", i, j, ".xlsx"))
     ## Soil parameters 
     replacement_initialSW <- SW_DUL_LL[Experiment == i & SowingDate == j]$SW
     replacement_DUL <- SW_DUL_LL[Experiment == i & SowingDate == j]$DUL
@@ -138,7 +142,7 @@ for (i in Sites) {
     
     ## The kl parameter level configuration 
     # for (skl in KL_range){
-      replacement_KL <- kls[Experiment == i & SowingDate == j]$kl
+      replacement_KL <- kls[Experiment == i & SowingDate == j]$SKL
       replacement_RFV <-  unique(kls[Experiment == i & SowingDate == j]$RFV)
 
       # Paste together ----
@@ -149,7 +153,7 @@ for (i in Sites) {
       apsimx_SD <- paste0(SDnode, replacement_SD)
       apsimx_ClockStart <- paste0(ClockStart, replacement_ClockStart)
       apsimx_CoverData <- paste0(CoverData, replacement_CoverData)
-      
+      apsimx_ObserveData <- paste0(ObserveData, replacement_ObserveData)
       apsimx_initialSW <- paste0(initialSW, paste(replacement_initialSW,collapse = ","))
       apsimx_DUL <- paste0(DUL, paste(replacement_DUL,collapse = ","))
       apsimx_LL <- paste0(LL, paste(replacement_LL,collapse = ","))
@@ -169,6 +173,7 @@ for (i in Sites) {
           apsimx_BD,
           apsimx_SD,
           apsimx_CoverData,
+          apsimx_ObserveData,
           apsimx_initialSW,
           apsimx_DUL,
           apsimx_KL,
@@ -198,14 +203,10 @@ t2 - t1
 # Constants 
 apsimx <- path
 apsimx_flag <- "/Edit"
-apsimx_Basefile <- file.path(Sys.getenv("BaseApsimxDir"), "20200618CalibrateLayersSlurp.apsimx")
-apsimx_sims_temp <- file.path(Sys.getenv("SimsDir"), "temp.apsimx")
+apsimx_Basefile <- file.path(Sys.getenv("BaseApsimxDir"), "20200618CalibrateLayersSlurpDev.apsimx")
+# apsimx_sims_temp <- file.path(Sys.getenv("SimsDir"), "temp.apsimx")
 apsimx_sims_dir <- Sys.getenv("SimsDir")
 apsimx_config <- paste0(Sys.getenv("ConfigFileDir"),"/LayerKL_")
-# paste0(Sys.getenv("ConfigFileDir"),"/ConfigSKL_", SKL, "RFV_", replacement_RFV, i, j, ".txt")
-# Copy the base apsimx file to a temp file in a disposable dir
-system(paste('cp', apsimx_Basefile, apsimx_sims_temp))
-# system(paste(apsimx, apsimx_sims_temp, apsimx_flag, paste0(apsimx_config, sites[1], SDs[1],".txt")))
 
 t1 <- Sys.time()
 for (i in Sites) {
@@ -215,16 +216,13 @@ for (i in Sites) {
 
       # Edit the base apsimx file and save it to a new name
       ## modify the apsimx file
-      modifiedName <- paste0(apsimx_sims_dir, "/LayerKL_", replacement_KL, "RFV_", replacement_RFV,  i, j, ".apsimx")
-      system(paste("cp", apsimx_sims_temp, modifiedName))
+      modifiedName <- paste0(apsimx_sims_dir, 
+                             "/", i, j,"LayerKL_1_", replacement_KL, "RFV_", replacement_RFV, ".apsimx")
+      system(paste("cp", apsimx_Basefile, modifiedName))
       system(paste(apsimx, modifiedName, apsimx_flag, paste0(apsimx_config,  replacement_KL, "RFV_", replacement_RFV,  i, j,".txt")))
-      ## rename the modified one
-      # system(paste("mv", apsimx_sims_temp, paste0(apsimx_sims_dir, "/Modified", i, j, ".apsimx")))
-    
+      
   }
 }
-## delete the temp apsimx 
-system(paste("rm", paste0(apsimx_sims_dir, "/temp*")))
 t2 <- Sys.time()
 t2 - t1
 }
