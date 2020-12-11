@@ -108,7 +108,7 @@ linechasedot <- function(DTsims, DTobs, DUL_LL_range,
   return(p)
 }
 
-obsVSsims <- function(DTsims, DTobs, DUL_LL_range, 
+obsVSsims <- function(DTsims, DTobs, 
                       Expt, SD, Layer){
   point_size <- 3
   cols <- c("Clock.Today", "SKL", "KLR", "RFV",

@@ -60,7 +60,8 @@ server <- function(input, output, session) {
     DT = DBI::dbReadTable(conn = pool(), "Report")
     # DBI::dbDisconnect(pool())
     DT = data.table::as.data.table(DT)
-    DT = DT[order(SimulationID)][, ':='(Clock.Today =as.Date(Clock.Today))]
+    data.table::setkey(DT, SimulationID)
+    DT = DT[, ':='(Clock.Today =as.Date(Clock.Today))]
   })
   
   obs <- reactive({
@@ -134,7 +135,7 @@ server <- function(input, output, session) {
 
   output$SKL_withAll <- renderPlot({
     point_size <- 6
-    boundaries <- c(unique(report()$DULmm), unique(report()$LL15mm))
+    boundaries <- unlist(report()[1, .(DULmm, LL15mm)])
     cols <- c(keys(), "Clock.Today","PSWC", "DULmm", "LL15mm")
     report()[, ..cols
              ] %>% 
@@ -183,7 +184,7 @@ server <- function(input, output, session) {
                  Expt = expt(), SD = sd(), Layer = 1)
   })
   output$surface_ObsVSSims <- renderPlot({
-    obsVSsims(DTsims = report(), DTobs = obs(), DUL_LL_range = DUL_LL_range, 
+    obsVSsims(DTsims = report(), DTobs = obs(),
               Expt = expt(), SD = sd(), Layer = 1)
   })
   output$surface2 <- renderPlot({
@@ -191,7 +192,7 @@ server <- function(input, output, session) {
                  Expt = expt(), SD = sd(), Layer = 2)
   })
   output$surface_ObsVSSims2 <- renderPlot({
-    linechasedot(report(), obs(), DUL_LL_range, 
+    obsVSsims(report(), obs(),
                  Expt = expt(), SD = sd(), Layer = 2)
   })
   output$surface3 <- renderPlot({
@@ -199,7 +200,7 @@ server <- function(input, output, session) {
                  Expt = expt(), SD = sd(), Layer = 3)
   })
   output$surface_ObsVSSims3 <- renderPlot({
-    linechasedot(report(), obs(), DUL_LL_range, 
+    obsVSsims(report(), obs(), 
                  Expt = expt(), SD = sd(), Layer = 3)
   })
   output$surface4 <- renderPlot({
@@ -207,7 +208,7 @@ server <- function(input, output, session) {
                  Expt = expt(), SD = sd(), Layer = 4)
   })
   output$surface_ObsVSSims4 <- renderPlot({
-    linechasedot(report(), obs(), DUL_LL_range, 
+    obsVSsims(report(), obs(), 
                  Expt = expt(), SD = sd(), Layer = 4)
   })  
   output$surface5 <- renderPlot({
@@ -215,7 +216,7 @@ server <- function(input, output, session) {
                  Expt = expt(), SD = sd(), Layer = 5)
   })
   output$surface_ObsVSSims5 <- renderPlot({
-    linechasedot(report(), obs(), DUL_LL_range, 
+    obsVSsims(report(), obs(), 
                  Expt = expt(), SD = sd(), Layer = 5)
   })  
   output$surface6 <- renderPlot({
@@ -223,7 +224,7 @@ server <- function(input, output, session) {
                  Expt = expt(), SD = sd(), Layer = 6)
   })
   output$surface_ObsVSSims6 <- renderPlot({
-    linechasedot(report(), obs(), DUL_LL_range, 
+    obsVSsims(report(), obs(), 
                  Expt = expt(), SD = sd(), Layer = 6)
   })  
   output$surface7 <- renderPlot({
@@ -231,7 +232,7 @@ server <- function(input, output, session) {
                  Expt = expt(), SD = sd(), Layer = 7)
   })
   output$surface_ObsVSSims7 <- renderPlot({
-    linechasedot(report(), obs(), DUL_LL_range, 
+    obsVSsims(report(), obs(), 
                  Expt = expt(), SD = sd(), Layer = 7)
   })  
   output$surface8 <- renderPlot({
@@ -239,7 +240,7 @@ server <- function(input, output, session) {
                  Expt = expt(), SD = sd(), Layer = 8)
   })
   output$surface_ObsVSSims8 <- renderPlot({
-    linechasedot(report(), obs(), DUL_LL_range, 
+    obsVSsims(report(), obs(),  
                  Expt = expt(), SD = sd(), Layer = 8)
   })  
   output$surface9 <- renderPlot({
@@ -247,7 +248,7 @@ server <- function(input, output, session) {
                  Expt = expt(), SD = sd(), Layer = 9)
   })
   output$surface_ObsVSSims9 <- renderPlot({
-    linechasedot(report(), obs(), DUL_LL_range, 
+    obsVSsims(report(), obs(),
                  Expt = expt(), SD = sd(), Layer = 9)
   }) 
   output$surface10 <- renderPlot({
@@ -255,8 +256,104 @@ server <- function(input, output, session) {
                  Expt = expt(), SD = sd(), Layer = 10)
   })
   output$surface_ObsVSSims10 <- renderPlot({
-    linechasedot(report(), obs(), DUL_LL_range, 
+    obsVSsims(report(), obs(),
                  Expt = expt(), SD = sd(), Layer = 10)
   })
+  output$surface11 <- renderPlot({
+    linechasedot(report(), obs(), DUL_LL_range, 
+                 Expt = expt(), SD = sd(), Layer = 11)
+  })
+  output$surface_ObsVSSims11 <- renderPlot({
+    obsVSsims(DTsims = report(), DTobs = obs(),
+              Expt = expt(), SD = sd(), Layer = 11)
+  })
+  output$surface12 <- renderPlot({
+    linechasedot(report(), obs(), DUL_LL_range, 
+                 Expt = expt(), SD = sd(), Layer = 12)
+  })
+  output$surface_ObsVSSims12 <- renderPlot({
+    obsVSsims(report(), obs(),
+              Expt = expt(), SD = sd(), Layer = 12)
+  })
+  output$surface13 <- renderPlot({
+    linechasedot(report(), obs(), DUL_LL_range, 
+                 Expt = expt(), SD = sd(), Layer = 13)
+  })
+  output$surface_ObsVSSims13 <- renderPlot({
+    obsVSsims(report(), obs(), 
+              Expt = expt(), SD = sd(), Layer = 13)
+  })
+  output$surface14 <- renderPlot({
+    linechasedot(report(), obs(), DUL_LL_range, 
+                 Expt = expt(), SD = sd(), Layer = 14)
+  })
+  output$surface_ObsVSSims14 <- renderPlot({
+    obsVSsims(report(), obs(), 
+              Expt = expt(), SD = sd(), Layer = 14)
+  })  
+  output$surface15 <- renderPlot({
+    linechasedot(report(), obs(), DUL_LL_range, 
+                 Expt = expt(), SD = sd(), Layer = 15)
+  })
+  output$surface_ObsVSSims15 <- renderPlot({
+    obsVSsims(report(), obs(), 
+              Expt = expt(), SD = sd(), Layer = 15)
+  })  
+  output$surface16 <- renderPlot({
+    linechasedot(report(), obs(), DUL_LL_range, 
+                 Expt = expt(), SD = sd(), Layer = 16)
+  })
+  output$surface_ObsVSSims16 <- renderPlot({
+    obsVSsims(report(), obs(), 
+              Expt = expt(), SD = sd(), Layer = 16)
+  })  
+  output$surface17 <- renderPlot({
+    linechasedot(report(), obs(), DUL_LL_range, 
+                 Expt = expt(), SD = sd(), Layer = 17)
+  })
+  output$surface_ObsVSSims17 <- renderPlot({
+    obsVSsims(report(), obs(), 
+              Expt = expt(), SD = sd(), Layer = 17)
+  })  
+  output$surface18 <- renderPlot({
+    linechasedot(report(), obs(), DUL_LL_range, 
+                 Expt = expt(), SD = sd(), Layer = 18)
+  })
+  output$surface_ObsVSSims18 <- renderPlot({
+    obsVSsims(report(), obs(),  
+              Expt = expt(), SD = sd(), Layer = 18)
+  })  
+  output$surface19 <- renderPlot({
+    linechasedot(report(), obs(), DUL_LL_range, 
+                 Expt = expt(), SD = sd(), Layer = 19)
+  })
+  output$surface_ObsVSSims19 <- renderPlot({
+    obsVSsims(report(), obs(),
+              Expt = expt(), SD = sd(), Layer = 19)
+  }) 
+  output$surface20 <- renderPlot({
+    linechasedot(report(), obs(), DUL_LL_range, 
+                 Expt = expt(), SD = sd(), Layer = 20)
+  })
+  output$surface_ObsVSSims20 <- renderPlot({
+    obsVSsims(report(), obs(),
+              Expt = expt(), SD = sd(), Layer = 20)
+  } )
+  output$surface21 <- renderPlot({
+    linechasedot(report(), obs(), DUL_LL_range, 
+                 Expt = expt(), SD = sd(), Layer = 21)
+  })
+  output$surface_ObsVSSims21 <- renderPlot({
+    obsVSsims(report(), obs(),
+              Expt = expt(), SD = sd(), Layer = 21)
+  }) 
+  output$surface22 <- renderPlot({
+    linechasedot(report(), obs(), DUL_LL_range, 
+                 Expt = expt(), SD = sd(), Layer = 22)
+  })
+  output$surface_ObsVSSims22 <- renderPlot({
+    obsVSsims(report(), obs(),
+              Expt = expt(), SD = sd(), Layer = 22)
+  } )
 
 }
