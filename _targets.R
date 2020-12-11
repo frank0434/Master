@@ -66,6 +66,9 @@ targets <- list(
   
   tar_target(SW_initials, initialSWC(SW_mean_new, sowingDates, id_vars)),
   tar_target(DUL_LL_range, doDUL_LL_range(SW = SW_mean_new, id.vars = id_vars)),
+  tar_target(DUL_LL_range_arbitrary, DUL_LL_range[,':='(SAT = SW.DUL* 1.05,
+                                                        SW.DUL = SW.DUL * 0.95,
+                                                        SW.LL15 = SW.LL * 0.95)]),
   tar_target(relativeSW, relativeSW(DT = SW_mean_new, col_pattern = "VWC", id_vars)),
   tar_target(mcpmodel, 
              list(relativeSW ~ 1 + sigma(1),  # plateau (int_1)
@@ -115,7 +118,7 @@ targets <- list(
                                         dir_config = dir_config,
                                         apsimx = path_apsimx,
                                         apsimx_Basefile = apsimx_Basefile,
-                                        DUL_LL_range = esti_DUL_LL,
+                                        DUL_LL_range = DUL_LL_range_arbitrary,
                                         bulkDensity = BDs,
                                         SowingDates = sowingDates,
                                         SW_initial = SW_initials

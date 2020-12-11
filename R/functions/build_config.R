@@ -133,7 +133,7 @@ build_apsimx <- function(template, apsimx, apsimx_Basefile,
                                   collapse = ",")
   replacementJ_SAT <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$SAT, 
                             collapse = ",")
-  replacementK_AirDry <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$SW.LL, 
+  replacementK_AirDry <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$SW.LL15, 
                                collapse = ",")
   replacementL_LL15 <- replacementK_AirDry
   replacementM_DUL <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$SW.DUL, 
