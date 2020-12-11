@@ -78,7 +78,7 @@ ui <- fluidPage(
       tabPanel("100-110cm",
                plotOutput("surface10"),
                plotOutput("surface_ObsVSSims10")),
-    tabPanel("210-220cm",
+    tabPanel("110-120cm",
              plotOutput("surface11"),
              plotOutput("surface_ObsVSSims11")),
     tabPanel("120-130cm",
