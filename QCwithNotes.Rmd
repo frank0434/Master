@@ -249,6 +249,29 @@ ggsave("Data/images/initialSW.png",plot = p_initialSW, width = 7, height =6, dpi
 
 ```
 
+# Check DUL AND LL 
+
+```{r}
+tar_load(DUL_LL_range_arbitrary)
+tar_load(esti_DUL_LL)
+DUL_shift <- esti_DUL_LL %>% 
+  ggplot(aes(Depth)) +
+  geom_point(aes(y = DUL, color = "DUL")) + 
+  geom_smooth(aes(y = DUL, color = "DUL"), se = FALSE,) +
+  geom_point(aes(y = SW.DUL, color = "POSTDUL")) + 
+  geom_smooth(aes(y = SW.DUL, color = "POSTDUL"), se = FALSE) +
+   geom_point(aes(y = DUL * 0.95, color = "arbitraryDUL")) + 
+  geom_smooth(aes(y = DUL * 0.95, color = "arbitraryDUL"), se = FALSE) +
+  coord_flip()+
+  facet_wrap(Experiment ~ .)+
+  scale_x_reverse(limits = c(23, 0), expand = c(0,0)) 
+  
+DUL_shift +
+  theme_water()+
+  scale_color_manual(values = c("DUL" = "#FF0000", "POSTDUL" = "#0000FF", 
+                                "arbitraryDUL" = "#00FF00"))
+```
+
 
 .Simulations.Slurp
 .Simulations.SlurpMorris
