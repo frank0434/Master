@@ -63,127 +63,18 @@
                 },
                 {
                   "$type": "Models.Factorial.Factor, Models",
-                  "Specification": "",
+                  "Specification": "[Soil].SoilWater.SummerU = 1 to 9 step 1",
                   "Name": "U",
-                  "Children": [
-                    {
-                      "$type": "Models.Factorial.CompositeFactor, Models",
-                      "Specifications": [
-                        "[Soil].SoilWater.SummerU = 1"
-                      ],
-                      "Paths": null,
-                      "Values": null,
-                      "Name": "1",
-                      "Children": [],
-                      "IncludeInDocumentation": true,
-                      "Enabled": true,
-                      "ReadOnly": false
-                    },
-                    {
-                      "$type": "Models.Factorial.CompositeFactor, Models",
-                      "Specifications": [
-                        "[Soil].SoilWater.SummerU = 2"
-                      ],
-                      "Paths": null,
-                      "Values": null,
-                      "Name": "2",
-                      "Children": [],
-                      "IncludeInDocumentation": true,
-                      "Enabled": true,
-                      "ReadOnly": false
-                    },
-                    {
-                      "$type": "Models.Factorial.CompositeFactor, Models",
-                      "Specifications": [
-                        "[Soil].SoilWater.SummerU = 3"
-                      ],
-                      "Paths": null,
-                      "Values": null,
-                      "Name": "3",
-                      "Children": [],
-                      "IncludeInDocumentation": true,
-                      "Enabled": true,
-                      "ReadOnly": false
-                    },
-                    {
-                      "$type": "Models.Factorial.CompositeFactor, Models",
-                      "Specifications": [
-                        "[Soil].SoilWater.SummerU = 4"
-                      ],
-                      "Paths": null,
-                      "Values": null,
-                      "Name": "4",
-                      "Children": [],
-                      "IncludeInDocumentation": true,
-                      "Enabled": true,
-                      "ReadOnly": false
-                    },
-                    {
-                      "$type": "Models.Factorial.CompositeFactor, Models",
-                      "Specifications": [
-                        "[Soil].SoilWater.SummerU = 5"
-                      ],
-                      "Paths": null,
-                      "Values": null,
-                      "Name": "5",
-                      "Children": [],
-                      "IncludeInDocumentation": true,
-                      "Enabled": true,
-                      "ReadOnly": false
-                    },
-                    {
-                      "$type": "Models.Factorial.CompositeFactor, Models",
-                      "Specifications": [
-                        "[Soil].SoilWater.SummerU = 6"
-                      ],
-                      "Paths": null,
-                      "Values": null,
-                      "Name": "6",
-                      "Children": [],
-                      "IncludeInDocumentation": true,
-                      "Enabled": true,
-                      "ReadOnly": false
-                    },
-                    {
-                      "$type": "Models.Factorial.CompositeFactor, Models",
-                      "Specifications": [
-                        "[Soil].SoilWater.SummerU = 7"
-                      ],
-                      "Paths": null,
-                      "Values": null,
-                      "Name": "7",
-                      "Children": [],
-                      "IncludeInDocumentation": true,
-                      "Enabled": true,
-                      "ReadOnly": false
-                    },
-                    {
-                      "$type": "Models.Factorial.CompositeFactor, Models",
-                      "Specifications": [
-                        "[Soil].SoilWater.SummerU = 8"
-                      ],
-                      "Paths": null,
-                      "Values": null,
-                      "Name": "8",
-                      "Children": [],
-                      "IncludeInDocumentation": true,
-                      "Enabled": true,
-                      "ReadOnly": false
-                    },
-                    {
-                      "$type": "Models.Factorial.CompositeFactor, Models",
-                      "Specifications": [
-                        "[Soil].SoilWater.SummerU = 9"
-                      ],
-                      "Paths": null,
-                      "Values": null,
-                      "Name": "9",
-                      "Children": [],
-                      "IncludeInDocumentation": true,
-                      "Enabled": true,
-                      "ReadOnly": false
-                    }
-                  ],
+                  "Children": [],
+                  "IncludeInDocumentation": true,
+                  "Enabled": true,
+                  "ReadOnly": false
+                },
+                {
+                  "$type": "Models.Factorial.Factor, Models",
+                  "Specification": "[Soil].SoilWater.SummerCona = 1 to 6 step 0.5",
+                  "Name": "ConA",
+                  "Children": [],
                   "IncludeInDocumentation": true,
                   "Enabled": true,
                   "ReadOnly": false
@@ -191,74 +82,17 @@
                 {
                   "$type": "Models.Factorial.Factor, Models",
                   "Specification": "",
-                  "Name": "ConA",
-                  "Children": [
-                    {
-                      "$type": "Models.Factorial.CompositeFactor, Models",
-                      "Specifications": [
-                        "[Soil].SoilWater.SummerCona = 0.5"
-                      ],
-                      "Paths": null,
-                      "Values": null,
-                      "Name": "05",
-                      "Children": [],
-                      "IncludeInDocumentation": true,
-                      "Enabled": true,
-                      "ReadOnly": false
-                    },
-                    {
-                      "$type": "Models.Factorial.CompositeFactor, Models",
-                      "Specifications": [
-                        "[Soil].SoilWater.SummerCona = 0.6"
-                      ],
-                      "Paths": null,
-                      "Values": null,
-                      "Name": "06",
-                      "Children": [],
-                      "IncludeInDocumentation": true,
-                      "Enabled": true,
-                      "ReadOnly": false
-                    },
-                    {
-                      "$type": "Models.Factorial.CompositeFactor, Models",
-                      "Specifications": [
-                        "[Soil].SoilWater.SummerCona = 0.7"
-                      ],
-                      "Paths": null,
-                      "Values": null,
-                      "Name": "07",
-                      "Children": [],
-                      "IncludeInDocumentation": true,
-                      "Enabled": true,
-                      "ReadOnly": false
-                    },
-                    {
-                      "$type": "Models.Factorial.CompositeFactor, Models",
-                      "Specifications": [
-                        "[Soil].SoilWater.SummerCona = 0.8"
-                      ],
-                      "Paths": null,
-                      "Values": null,
-                      "Name": "08",
-                      "Children": [],
-                      "IncludeInDocumentation": true,
-                      "Enabled": true,
-                      "ReadOnly": false
-                    },
-                    {
-                      "$type": "Models.Factorial.CompositeFactor, Models",
-                      "Specifications": [
-                        "[Soil].SoilWater.SummerCona = 0.9"
-                      ],
-                      "Paths": null,
-                      "Values": null,
-                      "Name": "09",
-                      "Children": [],
-                      "IncludeInDocumentation": true,
-                      "Enabled": true,
-                      "ReadOnly": false
-                    }
-                  ],
+                  "Name": "ConA1",
+                  "Children": [],
+                  "IncludeInDocumentation": true,
+                  "Enabled": true,
+                  "ReadOnly": false
+                },
+                {
+                  "$type": "Models.Factorial.Factor, Models",
+                  "Specification": "[Soil].SoilWater.SummerCona = 1 to 6 step 0.5",
+                  "Name": "ConA2",
+                  "Children": [],
                   "IncludeInDocumentation": true,
                   "Enabled": true,
                   "ReadOnly": false
@@ -357,7 +191,7 @@
                     },
                     {
                       "$type": "Models.Manager, Models",
-                      "Code": "\r\nusing Models.Interfaces;\r\nusing Models.Soils;\r\nusing APSIM.Shared.Utilities;\r\nusing Models.PMF;\r\nusing Models.Core;\r\nusing System;\r\nusing Models.PMF.Organs;\r\n        \r\nnamespace Models\r\n{\r\n    [Serializable] \r\n    [System.Xml.Serialization.XmlInclude(typeof(Model))]\r\n    public class Script : Model\r\n    {\r\n        [Link] private Plant Slurp;\r\n        [Link] private Clock Clock;\r\n        [Link] private Soil Soil;\r\n        [Link] private Zone zone;\r\n        [Link(Type = LinkType.Path, Path = \"[Slurp].Root\")]\r\n        private Root root;\r\n        [Link]\r\n        private IPhysical soilPhysical;\r\n        \r\n        [Description(\"Cultivar\")]\r\n        public string CultivarName { get; set; }\r\n        [Description(\"Initial Root Depth\")]\r\n        public double InitialRootDepth { get; set; }\r\n        [Description(\"Sowing Date\")]\r\n        public DateTime SowingDate { get; set; }\r\n        [Description(\"Maximum Root Depth\")]\r\n        public double RootDepth { get; set; }\r\n        [Description(\"Roof Front Velocity\")]\r\n        public double RFV { get; set; }\r\n        [Description(\"Factor to change Kl modifier with Depth\")]\r\n        public double KLReductionFactor { get; set; }\r\n        [Description(\"Depth that KL starts to decline\")]\r\n        public double KLReductionDepth { get; set; }\r\n        \r\n        public double[] YKLModifiers { get; set; }\r\n        public double[] XDepth { get; set; }\r\n        private double Depth { get; set; }\r\n        \r\n        [Description(\"Maximum Stomatal Conductance\")]\r\n        public double MaxG { get; set; }\r\n        [Description(\"Stomatal Radn response\")]\r\n        public double R50 { get; set; }\r\n        \r\n        [EventSubscribe(\"DoManagement\")]\r\n        private void OnDoManagement(object sender, EventArgs e)\r\n        {\r\n            if (Clock.Today.Date == SowingDate)\r\n            {\r\n                Slurp.Sow(cultivar: CultivarName, population: 1, depth: InitialRootDepth, rowSpacing: 150);\r\n                \r\n                YKLModifiers = new double[soilPhysical.Thickness.Length];\r\n                XDepth = new double[soilPhysical.Thickness.Length];\r\n                Depth = 0;\r\n                for (int layer = 0; layer < soilPhysical.Thickness.Length; layer++)\r\n                {\r\n                    Depth += soilPhysical.Thickness[layer] / 2;  //Add half of the thickness of the current layer so depth is the mid depth of that layer\r\n                    if (Depth <= KLReductionDepth)\r\n                    {\r\n                        YKLModifiers[layer] = 1;\r\n                        XDepth[layer] = Depth;\r\n                    }\r\n                    else\r\n                    {\r\n                        double KLMod = 1 * Math.Exp(-KLReductionFactor * (Depth - KLReductionDepth));\r\n                        YKLModifiers[layer] = KLMod;\r\n                        XDepth[layer] = Depth;\r\n                    }\r\n                    Depth += soilPhysical.Thickness[layer] / 2;  //Add the other half of the current layer so depth is the top of the next layer\r\n                }\r\n                object KLMods = YKLModifiers;\r\n                zone.Set(\"Slurp.Root.KLModifier.XYPairs.Y\", KLMods);\r\n                object Depths = XDepth;\r\n                zone.Set(\"Slurp.Root.KLModifier.XYPairs.X\", Depths);\r\n                object RD = RootDepth;\r\n                zone.Set(\"Slurp.Root.MaximumRootDepth.FixedValue\", RD);\r\n                object RV = RFV;\r\n                zone.Set(\"Slurp.Root.RootFrontVelocity.Potential.FixedValue\", RV);\r\n                object GMaxValue = MaxG;\r\n                zone.Set(\"Slurp.Leaf.Gsmax350\", GMaxValue); \r\n                object R50Value = R50; \r\n                zone.Set(\"Slurp.Leaf.R50\", R50Value); \r\n                \r\n            }\r\n        }\r\n    }\r\n}\r\n                \r\n",
+                      "Code": "\r\nusing Models.Interfaces;\r\nusing Models.Soils;\r\nusing APSIM.Shared.Utilities;\r\nusing Models.PMF;\r\nusing Models.Core;\r\nusing System;\r\nusing Models.PMF.Organs;\r\n        \r\nnamespace Models\r\n{\r\n    [Serializable] \r\n    [System.Xml.Serialization.XmlInclude(typeof(Model))]\r\n    public class Script : Model\r\n    {\r\n        [Link] private Plant Slurp;\r\n        [Link] private Clock Clock;\r\n        [Link] private Soil Soil;\r\n        [Link] private Zone zone;\r\n        [Link(Type = LinkType.Path, Path = \"[Slurp].Root\")]\r\n        private Root root;\r\n        [Link]\r\n        private IPhysical soilPhysical;\r\n        \r\n        [Description(\"Cultivar\")]\r\n        public string CultivarName { get; set; }\r\n        [Description(\"Initial Root Depth\")]\r\n        public double InitialRootDepth { get; set; }\r\n        [Description(\"Sowing Date\")]\r\n        public DateTime SowingDate { get; set; }\r\n        [Description(\"Maximum Root Depth\")]\r\n        public double RootDepth { get; set; }\r\n        [Description(\"Roof Front Velocity\")]\r\n        public double RFV { get; set; }\r\n        [Description(\"Factor to change Kl modifier with Depth\")]\r\n        public double KLReductionFactor { get; set; }\r\n        [Description(\"Depth that KL starts to decline\")]\r\n        public double KLReductionDepth { get; set; }\r\n        \r\n        public double[] YKLModifiers { get; set; }\r\n        public double[] XDepth { get; set; }\r\n        private double Depth { get; set; }\r\n        \r\n        [Description(\"Maximum Stomatal Conductance\")]\r\n        public double MaxG { get; set; }\r\n        [Description(\"Stomatal Radn response\")]\r\n        public double R50 { get; set; }\r\n        [Description(\"SummerU - 1st stage evaporation, controls the threshold which beyond will be 2nd stage.\")]\r\n        public double SummerU { get; set; }\r\n        [Description(\"SummerCona - 2nd stage evaporation, controls how fast the water vapor\")]\r\n        public double SummerCona { get; set; }\r\n        \r\n        [EventSubscribe(\"DoManagement\")]\r\n        private void OnDoManagement(object sender, EventArgs e)\r\n        {\r\n            if (Clock.Today.Date == SowingDate)\r\n            {\r\n                Slurp.Sow(cultivar: CultivarName, population: 1, depth: InitialRootDepth, rowSpacing: 150);\r\n                \r\n                YKLModifiers = new double[soilPhysical.Thickness.Length];\r\n                XDepth = new double[soilPhysical.Thickness.Length];\r\n                Depth = 0;\r\n                for (int layer = 0; layer < soilPhysical.Thickness.Length; layer++)\r\n                {\r\n                    Depth += soilPhysical.Thickness[layer] / 2;  //Add half of the thickness of the current layer so depth is the mid depth of that layer\r\n                    if (Depth <= KLReductionDepth)\r\n                    {\r\n                        YKLModifiers[layer] = 1;\r\n                        XDepth[layer] = Depth;\r\n                    }\r\n                    else\r\n                    {\r\n                        double KLMod = 1 * Math.Exp(-KLReductionFactor * (Depth - KLReductionDepth));\r\n                        YKLModifiers[layer] = KLMod;\r\n                        XDepth[layer] = Depth;\r\n                    }\r\n                    Depth += soilPhysical.Thickness[layer] / 2;  //Add the other half of the current layer so depth is the top of the next layer\r\n                }\r\n                object KLMods = YKLModifiers;\r\n                zone.Set(\"Slurp.Root.KLModifier.XYPairs.Y\", KLMods);\r\n                object Depths = XDepth;\r\n                zone.Set(\"Slurp.Root.KLModifier.XYPairs.X\", Depths);\r\n                object RD = RootDepth;\r\n                zone.Set(\"Slurp.Root.MaximumRootDepth.FixedValue\", RD);\r\n                object RV = RFV;\r\n                zone.Set(\"Slurp.Root.RootFrontVelocity.Potential.FixedValue\", RV);\r\n                object GMaxValue = MaxG;\r\n                zone.Set(\"Slurp.Leaf.Gsmax350\", GMaxValue); \r\n                object R50Value = R50; \r\n                zone.Set(\"Slurp.Leaf.R50\", R50Value); \r\n                object SummerUValue = SummerU;\r\n                zone.Set(\"Soil.SoilWater.SummerU\", SummerUValue); \r\n                object SummerConaValue = SummerCona; \r\n                zone.Set(\"Soil.SoilWater.SummerCona\", SummerConaValue); \r\n                \r\n            }\r\n        }\r\n    }\r\n}\r\n                \r\n",
                       "Parameters": [
                         {
                           "Key": "CultivarName",
@@ -402,6 +236,14 @@
                         {
                           "Key": "R50",
                           "Value": "175"
+                        },
+                        {
+                          "Key": "SummerU",
+                          "Value": "0"
+                        },
+                        {
+                          "Key": "SummerCona",
+                          "Value": "0"
                         }
                       ],
                       "Name": "SlurpSowingRule",
