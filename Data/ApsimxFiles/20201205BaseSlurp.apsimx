@@ -63,18 +63,202 @@
                 },
                 {
                   "$type": "Models.Factorial.Factor, Models",
-                  "Specification": "[Soil].SoilWater.SummerU = 5,25",
+                  "Specification": "",
                   "Name": "U",
-                  "Children": [],
+                  "Children": [
+                    {
+                      "$type": "Models.Factorial.CompositeFactor, Models",
+                      "Specifications": [
+                        "[Soil].SoilWater.SummerU = 1"
+                      ],
+                      "Paths": null,
+                      "Values": null,
+                      "Name": "1",
+                      "Children": [],
+                      "IncludeInDocumentation": true,
+                      "Enabled": true,
+                      "ReadOnly": false
+                    },
+                    {
+                      "$type": "Models.Factorial.CompositeFactor, Models",
+                      "Specifications": [
+                        "[Soil].SoilWater.SummerU = 2"
+                      ],
+                      "Paths": null,
+                      "Values": null,
+                      "Name": "2",
+                      "Children": [],
+                      "IncludeInDocumentation": true,
+                      "Enabled": true,
+                      "ReadOnly": false
+                    },
+                    {
+                      "$type": "Models.Factorial.CompositeFactor, Models",
+                      "Specifications": [
+                        "[Soil].SoilWater.SummerU = 3"
+                      ],
+                      "Paths": null,
+                      "Values": null,
+                      "Name": "3",
+                      "Children": [],
+                      "IncludeInDocumentation": true,
+                      "Enabled": true,
+                      "ReadOnly": false
+                    },
+                    {
+                      "$type": "Models.Factorial.CompositeFactor, Models",
+                      "Specifications": [
+                        "[Soil].SoilWater.SummerU = 4"
+                      ],
+                      "Paths": null,
+                      "Values": null,
+                      "Name": "4",
+                      "Children": [],
+                      "IncludeInDocumentation": true,
+                      "Enabled": true,
+                      "ReadOnly": false
+                    },
+                    {
+                      "$type": "Models.Factorial.CompositeFactor, Models",
+                      "Specifications": [
+                        "[Soil].SoilWater.SummerU = 5"
+                      ],
+                      "Paths": null,
+                      "Values": null,
+                      "Name": "5",
+                      "Children": [],
+                      "IncludeInDocumentation": true,
+                      "Enabled": true,
+                      "ReadOnly": false
+                    },
+                    {
+                      "$type": "Models.Factorial.CompositeFactor, Models",
+                      "Specifications": [
+                        "[Soil].SoilWater.SummerU = 6"
+                      ],
+                      "Paths": null,
+                      "Values": null,
+                      "Name": "6",
+                      "Children": [],
+                      "IncludeInDocumentation": true,
+                      "Enabled": true,
+                      "ReadOnly": false
+                    },
+                    {
+                      "$type": "Models.Factorial.CompositeFactor, Models",
+                      "Specifications": [
+                        "[Soil].SoilWater.SummerU = 7"
+                      ],
+                      "Paths": null,
+                      "Values": null,
+                      "Name": "7",
+                      "Children": [],
+                      "IncludeInDocumentation": true,
+                      "Enabled": true,
+                      "ReadOnly": false
+                    },
+                    {
+                      "$type": "Models.Factorial.CompositeFactor, Models",
+                      "Specifications": [
+                        "[Soil].SoilWater.SummerU = 8"
+                      ],
+                      "Paths": null,
+                      "Values": null,
+                      "Name": "8",
+                      "Children": [],
+                      "IncludeInDocumentation": true,
+                      "Enabled": true,
+                      "ReadOnly": false
+                    },
+                    {
+                      "$type": "Models.Factorial.CompositeFactor, Models",
+                      "Specifications": [
+                        "[Soil].SoilWater.SummerU = 9"
+                      ],
+                      "Paths": null,
+                      "Values": null,
+                      "Name": "9",
+                      "Children": [],
+                      "IncludeInDocumentation": true,
+                      "Enabled": true,
+                      "ReadOnly": false
+                    }
+                  ],
                   "IncludeInDocumentation": true,
                   "Enabled": true,
                   "ReadOnly": false
                 },
                 {
                   "$type": "Models.Factorial.Factor, Models",
-                  "Specification": "[Soil].SoilWater.SummerCona= 4.4,8",
+                  "Specification": "",
                   "Name": "ConA",
-                  "Children": [],
+                  "Children": [
+                    {
+                      "$type": "Models.Factorial.CompositeFactor, Models",
+                      "Specifications": [
+                        "[Soil].SoilWater.SummerCona = 0.5"
+                      ],
+                      "Paths": null,
+                      "Values": null,
+                      "Name": "05",
+                      "Children": [],
+                      "IncludeInDocumentation": true,
+                      "Enabled": true,
+                      "ReadOnly": false
+                    },
+                    {
+                      "$type": "Models.Factorial.CompositeFactor, Models",
+                      "Specifications": [
+                        "[Soil].SoilWater.SummerCona = 0.6"
+                      ],
+                      "Paths": null,
+                      "Values": null,
+                      "Name": "06",
+                      "Children": [],
+                      "IncludeInDocumentation": true,
+                      "Enabled": true,
+                      "ReadOnly": false
+                    },
+                    {
+                      "$type": "Models.Factorial.CompositeFactor, Models",
+                      "Specifications": [
+                        "[Soil].SoilWater.SummerCona = 0.7"
+                      ],
+                      "Paths": null,
+                      "Values": null,
+                      "Name": "07",
+                      "Children": [],
+                      "IncludeInDocumentation": true,
+                      "Enabled": true,
+                      "ReadOnly": false
+                    },
+                    {
+                      "$type": "Models.Factorial.CompositeFactor, Models",
+                      "Specifications": [
+                        "[Soil].SoilWater.SummerCona = 0.8"
+                      ],
+                      "Paths": null,
+                      "Values": null,
+                      "Name": "08",
+                      "Children": [],
+                      "IncludeInDocumentation": true,
+                      "Enabled": true,
+                      "ReadOnly": false
+                    },
+                    {
+                      "$type": "Models.Factorial.CompositeFactor, Models",
+                      "Specifications": [
+                        "[Soil].SoilWater.SummerCona = 0.9"
+                      ],
+                      "Paths": null,
+                      "Values": null,
+                      "Name": "09",
+                      "Children": [],
+                      "IncludeInDocumentation": true,
+                      "Enabled": true,
+                      "ReadOnly": false
+                    }
+                  ],
                   "IncludeInDocumentation": true,
                   "Enabled": true,
                   "ReadOnly": false
@@ -1200,6 +1384,8 @@
                   "$type": "Models.Report, Models",
                   "VariableNames": [
                     "[Clock].Today ",
+                    "[Soil].SoilWater.SummerU as SummerU",
+                    "[Soil].SoilWater.SummerCona as SummerCona",
                     "[Soil].Physical.SlurpSoil.KL[1] as SKL",
                     "[SetCropVariables].Script.Ext_coef as k",
                     "[Slurp].Leaf.CoverTotal as cover",
