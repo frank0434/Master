@@ -1,6 +1,6 @@
 library(targets)
 library(future)
-plan(multisession)
+# plan(multisession)
 # Source functions
 invisible(lapply(list.files("R/functions/", pattern = "R", full.names = TRUE),
                  source))
@@ -69,32 +69,6 @@ targets <- list(
   tar_target(DUL_LL_range_arbitrary, DUL_LL_range[,':='(SAT = SW.DUL* 1.05,
                                                         SW.DUL = SW.DUL * 0.95,
                                                         SW.LL15 = SW.LL * 0.95)]),
-  tar_target(relativeSW, relativeSW(DT = SW_mean_new, col_pattern = "VWC", id_vars)),
-  tar_target(mcpmodel, 
-             list(relativeSW ~ 1 + sigma(1),  # plateau (int_1)
-                  ~ 0 + DAS ,       # joined slope (time_2) at cp_1, could be a exp decay function.
-                  ~ 0)),
-  tar_target(prior, list(int_1 = "dnorm(0.7, 1) T(, 1)")),
-  tar_target(winter_AD, window_DT(relativeSW,Site = "AshleyDene")),
-  tar_target(winter_I12, window_DT(relativeSW, Site = "Iversen12")),
-  tar_target(list_AD, winter_AD[, list(data=list(.SD)), 
-                                by = .(Experiment, SowingDate, Depth)]),
-  tar_target(list_I12, winter_I12[, list(data=list(.SD)), 
-                                  by = .(Experiment, SowingDate, Depth)]),
-  tar_target(esti_DUL_AD, process_esti(list_AD, mcpmodel, priorinfo = prior)),
-  tar_target(esti_DUL_I12, process_esti(list_I12, mcpmodel, priorinfo = prior)),
-  tar_target(esti_DUL, data.table::rbindlist(
-    list(
-    esti_DUL_AD[, unlist(results, recursive = FALSE), 
-                by = .(Experiment, SowingDate, Depth)],
-    esti_DUL_I12[, unlist(results, recursive = FALSE), 
-                 by = .(Experiment, SowingDate, Depth)]))
-    ),
-  tar_target(esti_DUL_LL, 
-             merge.data.table(esti_DUL, 
-                              DUL_LL_range[,.(Experiment, SowingDate, Depth, 
-                                              SW.LL, SAT = SW.DUL* 1.05)],
-                              by = c("Experiment", "SowingDate", "Depth"))),
   # Output apsimx input and observed --------------
   tar_target(observed, outputobserved(biomass = LAI_Height,
                                       SW = SW_mean_new, 
@@ -110,7 +84,7 @@ targets <- list(
              pattern = cross(Sites, SD), 
              cue = tar_cue(depend = TRUE)),
   # # Build the apsimx 
-  tar_target(apsimxPhase1_AD, build_apsimx(template = template,
+  tar_target(apsimxPhase1, build_apsimx(template = template,
                                         dir_metfile = dir_met,
                                         cover = LAI_input,
                                         observed = observed,
@@ -125,16 +99,16 @@ targets <- list(
                                   ),
              format = "file",
              cue = tar_cue(file = TRUE),
-             pattern =  map(LAI_input[1:5],observed[1:5]))
-  # tar_target(apsimxPhase2, build_optimSlurp(template = templatePhase2,
-  #                                           dir_optim = dir_simulations,
-  #                                           dir_config = dir_config,
-  #                                           KL_range = SKL_Range,
-  #                                           apsimx = path_apsimx,
-  #                                           apsimx_Basefile = apsimxPhase1
-  #                                           ),
-  #            cue = tar_cue(mode = "never"),
-  #            pattern =  map(apsimxPhase1))
+             pattern =  map(LAI_input[1:5],observed[1:5])),
+  tar_target(apsimxPhase2, build_optimSlurp(template = templatePhase2,
+                                            dir_optim = dir_simulations,
+                                            dir_config = dir_config,
+                                            KL_range = SKL_Range,
+                                            apsimx = path_apsimx,
+                                            apsimx_Basefile = apsimxPhase1
+                                            ),
+             cue = tar_cue(mode = "never"),
+             pattern =  map(apsimxPhase1))
   
   
 )
