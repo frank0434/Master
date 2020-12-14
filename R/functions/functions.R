@@ -565,7 +565,15 @@ read_Sims <- function(path, source = "Soil Water"){
                              .SDcols = c("Height", "LAImod")]
     return(biomass)
     
+  } else{
+    dt <- dt[Data == "ES"]
+    col_good <- choose_cols(dt) # identify the right cols 
+    
+    dt <- dt[,..col_good]
+    return(dt)
   }
+  
+  
   }
 
 #' chop_dates
