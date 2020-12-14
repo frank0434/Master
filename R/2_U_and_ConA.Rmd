@@ -1,0 +1,139 @@
+---
+title: "Data_EDA"
+author: "jian (AKA Frank) liu"
+date: "04/10/2019"
+output:
+  bookdown::html_document2:
+              code_folding: hide
+              toc: true
+              toc_depth: 3
+              fig_caption: yes
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.align = "center", fig.width = 10, fig.height = 7, 
+                      dpi = 300)
+options(scipen = 999)
+#Constants
+outlier.colour = "#ff0000"
+source(here::here("R/packages.R"))
+source(here::here("R/functions/functions.R"))
+path_richard <- "C:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
+
+```
+
+```{r}
+met_AD <- read_met(path = "../Data/ClimateAndObserved/AshleyDene.met", skip_unit = 10, skip_meta = 8)
+met_AD[]
+```
+
+```{r}
+es <- read_Sims(path_richard, source = "ES")
+ESAD <- es[Experiment == "AshleyDene", .(Clock.Today, SWCES_0.0.2)   ]
+ESAD %>% 
+  ggplot(aes(Clock.Today, SWCES_0.0.2)) + 
+  geom_point()+
+  geom_smooth()+ 
+  ylim(c(0,40))
+
+ESAD_mean <- ESAD[, .(mean = mean(SWCES_0.0.2)),by=.(Clock.Today)]
+ESLL <- ESAD_mean[order(mean)]$mean[1]
+ESAD_mean[, mean:= mean - ESLL][]
+ESAD_mean %>% 
+  ggplot(aes(Clock.Today, mean)) + 
+  geom_point()
+```
+
+```{r}
+dt <- read_dbtab("../Data/ApsimxFiles/20201205BaseSlurp.db", "Report")
+dt$SimulationID %>% unique() %>% length()
+dt
+```
+
+```{r}
+path <- here::here("Data/ApsimxFiles/20201205BaseSlurp.db")
+obs <- read_dbtab(path, table = "Observed")
+p = dt %>% 
+  ggplot(aes(Clock.Today, SWmm.1.)) + 
+  geom_point(aes( color = SimulationID),alpha = 0.5) + 
+  geom_point(data = obs, aes(y = SWmm.1..mean), color = "#FF0000") +
+  theme_water()
+ggsave("Uconatest.png", plot = p, dpi = 320, width = 9, height = 7)
+```
+
+```{r}
+unique(dt[SimulationID <= 2000][,.(U, ConA)])
+ dt[SimulationID <= 2000] 
+```
+
+```{r}
+conn <- DBI::dbConnect(SQLite(),path)
+query <- "SELECT * FROM Report WHERE SimulationID >= 2000"
+dt <- DBI::dbGetQuery(conn = conn, statement = query )
+
+dt <- setDT(dt)[, Clock.Today := as.Date(Clock.Today)]
+p2 <- dt %>% 
+  ggplot(aes(Clock.Today, `SWmm(1)`)) + 
+  geom_point(aes( color = SimulationID),alpha = 0.5) + 
+  geom_point(data = obs, aes(y = SWmm.1..mean), color = "#FF0000") +
+  theme_water()
+ggsave("UconatestFiltered.png", plot = p2, dpi = 320, width = 9, height = 7)
+```
+
+remove 3000 
+```{r}
+conn <- DBI::dbConnect(SQLite(),path)
+query <- "SELECT * FROM Report WHERE SimulationID >= 3000"
+dt <- DBI::dbGetQuery(conn = conn, statement = query )
+dt <- setDT(dt)[, Clock.Today := as.Date(Clock.Today)]
+
+p3 <- dt%>% 
+  ggplot(aes(Clock.Today, `SWmm(1)`)) + 
+  geom_point(aes( color = SimulationID),alpha = 0.5) + 
+  geom_point(data = obs, aes(y = SWmm.1..mean), color = "#FF0000") +
+  theme_water()
+ggsave("UconatestFiltered3000+.png", plot = p3, dpi = 320, width = 9, height = 7)
+
+range(dt$U)
+range(dt$ConA)
+range(dt$SummerU)
+lapply(dt, range)
+dbDisconnect(conn = conn)
+```
+
+
+```{r}
+
+conn <- DBI::dbConnect(SQLite(),path)
+# query <- "SELECT * FROM Report WHERE SimulationID >= 3000"
+# dt <- DBI::dbGetQuery(conn = conn, statement = query )
+dt <- read_dbtab(path = path, table = "Report")
+# dt <- setDT(dt)[, Clock.Today := as.Date(Clock.Today)]
+
+p3 <- dt%>% 
+  ggplot(aes(Clock.Today, SWmm.1.)) + 
+  geom_point(aes( color = SimulationID),alpha = 0.5) + 
+  geom_point(data = obs, aes(y = SWmm.1..mean), color = "#FF0000") +
+  theme_water()
+
+p3
+# ggsave("UconaGsmaxtest.png", plot = p3, dpi = 320, width = 9, height = 7)
+DT <- merge.data.table(dt[, .(Clock.Today, SWmm.1.)], obs[,.(Clock.Today, SWmm.1..mean)],
+                           by = c( "Clock.Today"), 
+                           all = TRUE, suffixes = c(".sim", ".obs"))
+DT %>% 
+  ggplot(aes(x = SWmm.1..mean,y = SWmm.1.)) +
+      geom_point(color = "grey", size = 3, alpha = 0.5) +
+      geom_smooth(method = "lm", color = "red") + 
+      geom_abline()+
+      # ggtitle(paste0(expt(), sd())) +
+      theme_classic() +
+      theme(legend.position =  c(.5, .2),
+            axis.text = element_text(angle = 30, hjust = 1,size = 14),
+            text = element_text(size = 20)) 
+range(dt$U)
+```
+
