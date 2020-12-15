@@ -125,7 +125,7 @@ targets <- list(
                                   ),
              format = "file",
              cue = tar_cue(file = TRUE),
-             pattern =  map(LAI_input[1:5],observed[1:5]))
+             pattern =  map(LAI_input,observed))
   # tar_target(apsimxPhase2, build_optimSlurp(template = templatePhase2,
   #                                           dir_optim = dir_simulations,
   #                                           dir_config = dir_config,
