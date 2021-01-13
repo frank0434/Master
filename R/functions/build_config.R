@@ -196,7 +196,7 @@ build_optimSlurp <- function(template = templatePhase2,
     modifiedName <- paste0(dir_optim, "/ModifiedSKL_", skl, name, ".apsimx")
     system(paste("cp", apsimx_Basefile, modifiedName))
     system(paste(apsimx, modifiedName, "/Edit", output))
-    system(paste(apsimx, modifiedName))
+    # system(paste(apsimx, modifiedName))
   }
   
   
