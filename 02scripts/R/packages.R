@@ -5,10 +5,10 @@ library(magrittr)
 # library(lubridate)
 library(DBI)
 library(RSQLite)
-library(RPostgreSQL)
-library(inspectdf)
-library(reticulate)
-library(visNetwork) 
+# library(RPostgreSQL)
+# library(inspectdf)
+# library(reticulate)
+# library(visNetwork) 
 # library(naniar)
 # library(viridis)
 library(openxlsx)
@@ -17,19 +17,27 @@ library(knitr)
 library(pander)
 library(ggplot2)
 # library(cowplot)
-library(broom)
-library(dplyr)
-library(tidyr)
+# library(broom)
+# library(dplyr)
+# library(tidyr)
 # library(kableExtra)
 # library(bookdown)
 library(here)
 
 # Workflow control 
-library(drake)
+# library(drake)
 # Stats
 library(hydroGOF)
 
 # Customised package
-library(autoapsimx)
+# library(autoapsimx)
 
-
+potentialPKGS <- c("autoapsimx","clipr     "
+,"dplyr     ","drake     "
+,"DT        ","ggthemes  "
+,"ggvis     ","inspectdf "
+,"lubridate ","pool      "
+,"purrr     ","readr     "
+,"reticulate","RPostgreSQL"
+,"shiny     ","shinyjs   "
+,"tidyr     ","visNetwork")
