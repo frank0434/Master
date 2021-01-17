@@ -7,7 +7,7 @@ library(forcats)
 # library(lubridate)
 library(DBI)
 library(RSQLite)
-library(RPostgreSQL)
+# library(RPostgreSQL)
 library(inspectdf)
 
 # library(naniar)
@@ -27,7 +27,7 @@ library(kableExtra)
 
 # Low level management ----------------------------------------------------
 library(here)
-library(fnmate)
+# library(fnmate)
 
 
 # Sensitivity analysis ----------------------------------------------------
