@@ -75,15 +75,32 @@ value_vars <-  grep("SWmm\\.\\d.", colnames(data_sw), value = TRUE)
 sw_mean_new <- colwise_meanSW(data_sw)
 
 ```
-```{r}
-sw_mean_new %>% 
-  ggplot(aes(Clock.Today, SWmm.1..mean)) +
-  geom_point()+ 
-  facet_wrap(SowingDate ~ Experiment)
-sw_mean_new %>% 
-  ggplot(aes(SWmm.1..mean)) + 
-  geom_histogram() + facet_wrap( ~ Experiment)
 
+```{r}
+DUL_LL_range <- doDUL_LL_range(SW = sw_mean_new)
+```
+
+```{r}
+
+DUL_LL_range$SowingDate <- as.factor(DUL_LL_range$SowingDate)
+
+DUL_LL_range$SowingDate <-  factor(DUL_LL_range$SowingDate,
+                                   levels = levels(DUL_LL_range$SowingDate)[c(1, 3:10, 2)])
+p_DUL_LL <- DUL_LL_range %>% 
+  ggplot(aes(x = Depth))+
+  geom_point(aes(y = SW.DUL, color = "DUL"))+
+  geom_line(aes(y = SW.DUL, color = "DUL")) +
+  geom_line(aes(y = SW.LL, color = "LL"))+
+  geom_point(aes(y = SW.LL, color = "LL")) +
+  scale_x_reverse() +
+  coord_flip() +
+  geom_ribbon(aes(ymin = SW.LL, ymax = SW.DUL), fill = "grey80") +
+  facet_grid(  SowingDate ~ Experiment) +
+  theme_water() +
+  scale_color_manual(name = "", values = c("#FF0000", "#0000FF"))
+
+p_DUL_LL
+ggsave("Figures/dul_ll.png",plot = p_DUL_LL, width = 7, height =10, dpi = 320)
 ```
 ```{r}
 VWC <- grep("VWC", x = colnames(sw_mean_new), value = TRUE)
