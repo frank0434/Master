@@ -805,3 +805,26 @@ fix_date <- function(df, col_Date = "Clock.Today"){
   df[[col_Date]] = as.Date(df[[col_Date]])
   dt = data.table::as.data.table(df)
 }
+
+
+
+# fix factors -------------------------------------------------------------
+
+#' fix_SDorder
+#' 
+#' @description re-order the sowing date from 1 to 10
+#' @param dt a data.table has a column named `SowingDate`
+#'
+#' @return
+#' @export
+#'
+#' @examples
+fix_SDorder <- function(dt){
+  dt$SowingDate <- as.factor(dt$SowingDate)
+  
+  dt$SowingDate <-  factor(dt$SowingDate,
+                           levels = levels(dt$SowingDate)[c(1, 3:10, 2)])
+  return(dt)
+}
+
+

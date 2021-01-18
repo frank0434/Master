@@ -48,7 +48,24 @@ outlier.colour = "#ff0000"
 source(here::here("02Scripts/R/packages.R"))
 source(here::here("02Scripts/R/functions.R"))
 path_richard <- "C:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
+id_vars <- c("Experiment", "SowingDate", "Clock.Today", "DAS")
 
+data_sw <- read_Sims(path = path_richard)
+
+value_vars <-  grep("SWmm\\.\\d.", colnames(data_sw), value = TRUE)
+sw_mean_new <- colwise_meanSW(data_sw)
+
+# Colour p
+blues <- c("#0f5e9c",
+           "#2389da",
+           "#1ca3ec",
+           "#5abcd8",
+           "#74ccf4")
+names(blues) <- blues 
+ggplot(data.frame(x = blues, y = 1),aes(x, y, fill = x)) +
+  geom_col() +
+  scale_fill_manual(name = "", values = blues)+
+  theme_void()
 ```
 
 
@@ -65,27 +82,15 @@ path_richard <- "C:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
 |SD9	|10-Jan-12	|10-Jan-12|
 |SD10|	17-Feb-12	|17-Feb-12|
 
-
-```{r}
-id_vars <- c("Experiment", "SowingDate", "Clock.Today", "DAS")
-
-data_sw <- read_Sims(path = path_richard)
-
-value_vars <-  grep("SWmm\\.\\d.", colnames(data_sw), value = TRUE)
-sw_mean_new <- colwise_meanSW(data_sw)
-
-```
+# DUL AND LL GRAPH
 
 ```{r}
 DUL_LL_range <- doDUL_LL_range(SW = sw_mean_new)
 ```
 
+
 ```{r}
-
-DUL_LL_range$SowingDate <- as.factor(DUL_LL_range$SowingDate)
-
-DUL_LL_range$SowingDate <-  factor(DUL_LL_range$SowingDate,
-                                   levels = levels(DUL_LL_range$SowingDate)[c(1, 3:10, 2)])
+DUL_LL_range <- fix_SDorder(DUL_LL_range)
 p_DUL_LL <- DUL_LL_range %>% 
   ggplot(aes(x = Depth))+
   geom_point(aes(y = SW.DUL, color = "DUL"))+
@@ -94,36 +99,49 @@ p_DUL_LL <- DUL_LL_range %>%
   geom_point(aes(y = SW.LL, color = "LL")) +
   scale_x_reverse() +
   coord_flip() +
-  geom_ribbon(aes(ymin = SW.LL, ymax = SW.DUL), fill = "grey80") +
+  geom_ribbon(aes(ymin = SW.LL, ymax = SW.DUL), fill = "#1ca3ec") +
   facet_grid(  SowingDate ~ Experiment) +
   theme_water() +
-  scale_color_manual(name = "", values = c("#FF0000", "#0000FF"))
+  scale_color_manual(name = "", values = c("#0000FF", "#FF0000"))
 
 p_DUL_LL
 ggsave("Figures/dul_ll.png",plot = p_DUL_LL, width = 7, height =10, dpi = 320)
 ```
-```{r}
-VWC <- grep("VWC", x = colnames(sw_mean_new), value = TRUE)
-VWCcols <- c(id_vars, VWC)
-DT_VWC <- sw_mean_new[,..VWCcols] %>% 
-  melt.data.table(id.vars = id_vars, 
-                  value.name = "SW",
-                  variable.name = "Depth",
-                  variable.factor = FALSE)
-DT_VWC[, Depth:= as.integer(gsub("\\D","",Depth))]
-DT_VWC[, DUL := max(SW), by = .(Experiment, SowingDate, Depth)
-       ][, relativeSW:= SW/DUL][]
 
+# sOIL INITIAL WATER CONTENT GRAPH 
 
-DT_VWC %>% 
-  ggplot(aes(Clock.Today, relativeSW, color = SowingDate)) +
-  geom_point() +
-  geom_line()+
-  scale_x_date(date_breaks = "8 weeks") +
-  geom_smooth()
+```{r, fig.height=10}
+sw_initials <- readRDS(here::here("_targets/objects/SW_initials"))
+sw_initials <- fix_SDorder(sw_initials)
 
+p_sw_initials <- sw_initials %>% 
+  ggplot(aes(x = Depth))+
+  geom_col(aes(y = SW, fill = "SWC"))+
+  geom_line(data = DUL_LL_range, aes(y = SW.DUL, color = "DUL")) +
+  geom_point(data = DUL_LL_range, aes(y = SW.DUL, color = "DUL"))+
+  geom_line(data = DUL_LL_range,aes(y = SW.LL, color = "LL"))+
+  geom_point(data = DUL_LL_range,aes(y = SW.LL, color = "LL")) +
+  # geom_line(aes(y = SW))+
+  scale_x_reverse() +
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  coord_flip() +
+  # geom_ribbon(aes(ymin = SW.LL, ymax = SW.DUL), fill = "grey80") +
+  facet_grid(  SowingDate ~ Experiment) +
+  theme_water() +
+  theme(legend.position = "bottom") +
+  scale_fill_manual(name = "", values = "#74ccf4") +
+  scale_colour_manual(name = "", values = c("#0000FF", "#FF0000"))
+p_sw_initials
+ggsave("Figures/sw_initials.png",plot = p_sw_initials, width = 7, height =10, dpi = 320)
 ```
-**Subset** the autum rain
+
+# PAWC IN A TABLE
+
+
+
+
+
 
 ```{r}
 AD <- DT_VWC[ Experiment == "AshleyDene" &
