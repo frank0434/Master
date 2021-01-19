@@ -116,7 +116,7 @@ sw_initials <- fix_SDorder(sw_initials)
 
 p_sw_initials <- sw_initials %>% 
   ggplot(aes(x = Depth))+
-  geom_col(aes(y = SW, fill = "SWC"))+
+  geom_col(aes(y = SW, fill = "SWC"), position = "dodge", width = 1)+
   geom_line(data = DUL_LL_range, aes(y = SW.DUL, color = "DUL")) +
   geom_point(data = DUL_LL_range, aes(y = SW.DUL, color = "DUL"))+
   geom_line(data = DUL_LL_range,aes(y = SW.LL, color = "LL"))+
@@ -137,6 +137,8 @@ ggsave("Figures/sw_initials.png",plot = p_sw_initials, width = 7, height =10, dp
 
 # PAWC IN A TABLE
 
+
+# KL IN A TABLE
 ```{r}
 Sys.setenv("JAVA_HOME"="C:\\Program Files\\Java\\jre1.8.0_271")
 library(tabulizer)
@@ -156,21 +158,57 @@ dt_kl <- dt_kl[is.na(V1), V1 := V3
 dt_kl_layer <- rbindlist(list(dt_kl, dt_kl, dt_kl))[order(V1)]
 dt_kl_layer$V1 <- 2:22
 
-newnames <- c("Seedling StoneFree", "Seedling VeryStony", 
-              "Established StoneFree", "Established Stony", "Established VeryStony")
+newnames <- c("Seedling Iversen12", "Seedling AshleyDene", 
+              "Established Iversen12", "Established Stony", "Established AshleyDene")
 setnames(dt_kl_layer, colnames(dt_kl_layer), c("Depth", newnames))
 # Add an artifical layer with all kls = 0.06
 dt_kl_layer <- rbindlist(list(dt_kl_layer, c(list(1L), rep(list(0.060), 5))))
-dt_kl_AD <- dt_kl_layer[order(Depth)][, .(Depth, `Seedling VeryStony`, `Established VeryStony`)]
-dt_kl_AD <- dt_kl_AD %>% 
-  melt.data.table(., id.vars = "Depth") 
-dt_kl_AD[, value := as.numeric(value)] %>% 
-  ggplot(aes(x = Depth, y = value, color = variable ))+
-  geom_line()+
-  geom_point()+
-  scale_x_reverse() +
-  coord_flip() +
-  theme_water()
+dt_kl_layer <- dt_kl_layer[order(Depth)
+                        ][, .(Depth,`Seedling AshleyDene`, `Established AshleyDene`,
+                              `Seedling Iversen12`, `Established Iversen12`)]
+# grahy
+# dt_kl_AD <- dt_kl_AD %>% 
+#   melt.data.table(., id.vars = "Depth") 
+# dt_kl_AD[, value := as.numeric(value)] %>% 
+#   ggplot(aes(x = Depth, y = value, color = variable ))+
+#   geom_line()+
+#   geom_point()+
+#   scale_x_reverse() +
+#   coord_flip() +
+#   theme_water()
+
+```
+
+# BD IN A TABLE
+Numbers extracted from [Graham et al 2019](https://www.sciencedirect.com/science/article/abs/pii/S037837741930887X?via%3Dihub)
+```{r}
+BDs <- readRDS(here::here("_targets/objects/BDs"))
+BDs <- BDs[, BDSE := ifelse(!is.na(Stderror),
+                                   paste(BD_kg.m3, Stderror, sep = "\u00B1"), BD_kg.m3)
+    ][,.(Depth, Experiment, BDSE)] %>% 
+  dcast.data.table(Depth ~ Experiment)
+
+
+```
+
+# EFV IN A TABLE 
+only two values: once for AD and one for I12
+unit ` mm/d`
+```{r}
+EFV <- data.table( AshleyDene = "15.1±2.45", Iversen12 = "12.9±1.02")
+EFV %>%
+  melt.data.table(measure.vars = c("AshleyDene", "Iversen12"),
+                  variable.name = "Site",
+                  value.name = "EFV",
+                  variable.factor = FALSE)
+```
+
+# Combine and formatting 
+```{r}
+BD_KL <- merge(BDs, dt_kl_layer, on = "Depth")
+# BD_KL_EFV <- merge.data.table(BD_KL, EFV, on = "Depth",
+#                               all.x = TRUE, suffixes = c("","EFV.mm.d-1"))
+# BD_KL_EFV
 
 ```
 
