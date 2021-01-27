@@ -3,6 +3,7 @@
 .RData
 .Ruserdata
 #less desired files
+*.docx
 *.html
 *.db-shm
 *.db-wal
