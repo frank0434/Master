@@ -277,7 +277,51 @@ This is for calibrate the model for Potential Ep since there is no crop growing 
 
 ```
 
-# Biomass Overview
+# MANAGEMENT MODULE
+
+## sowing and cutting dates 
+
+apsimx has a `mower` function in the factor to mimic harvest.   
+the harvest date always one day after the actual harvest date.  
+Probably because the `mower` just an simple remove all above ground function.  
+
+```{r}
+data_biomass <- read_Sims(path = path_richard,source = "biomass" )
+
+dt = readxl::read_excel(path_richard, guess_max = 10300, sheet = 2,
+               .name_repair ="universal",
+               skip = 9 ) # fix the names 
+dt = data.table::as.data.table(dt) 
+data.table::setnames(dt, old = c("Site", "Date", "Sowing.Date"), 
+                    new = c("Experiment", "Clock.Today", "SowingDate"))
+dt[, ...119 := NULL]
+col_type =  inspectdf::inspect_types(dt)
+col_date = col_type$col_name[[3]]
+dt[, (col_date) := lapply(.SD, function(x) as.Date(x,  tz = "Pacific/Auckland")),
+  .SDcol = col_date]
+
+
+manage <- dt[Seed == "CS" & !is.na(Total.FW..g.),.(Experiment, Clock.Today, Season, SowingDate, Seed, Harvest.No.,Rotation.No.)]
+manage <- unique(manage)
+```
+**Harvest.No** is for drawing the growth curve.  
+**Rotation.No** is for the cutting dates. 
+Need to extract the last date of a rotation.no.   
+
+```{r}
+cutDates <- manage[, ':='(SDorder = as.integer(gsub("SD", "", SowingDate)),
+              Harvest.No. = as.integer(Harvest.No.))
+       ][!is.na(Harvest.No.) & Harvest.No. != 0,
+         .SD[.N], by = .(Experiment, SowingDate, Rotation.No., Season)
+         ][,.(Experiment, SowingDate, Season, Clock.Today,SDorder, Rotation.No.)]
+
+tab_cutDates <- cutDates %>% 
+  dcast.data.table(Season+SowingDate + SDorder + Rotation.No.~ Experiment, value.var = "Clock.Today", )
+tab_cutDates[order(Season, SDorder)
+             ][,.(Season, SowingDate, Rotation = Rotation.No., `Ashley Dene` =  AshleyDene, Iversen12)]%>%
+  kbl() %>%
+  kable_classic()
+```
 
 **The Biomass has r dim(biomass)[1] obs for two sites.**
 
