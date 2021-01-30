@@ -30,7 +30,7 @@ if(dir.exists(dir_simulations)){
 apsimx_flag <- "/Edit"
 ## The base apsimx file 
 apsimx_Basefile <- here::here("Data/ApsimxFiles/20201205BaseSlurp.apsimx")
-path_lincoln <- here::here("Data/ClimateAndObserved/lincoln.met")
+path_lincoln <- here::here("Data/ClimateAndObserved/Iversen12.met")
 path_AD <- here::here("Data/ClimateAndObserved/AshleyDene.met")
 
 # Set target-specific options such as packages.
@@ -41,7 +41,7 @@ tar_option_set(packages = c("data.table", "magrittr", "readxl", "openxlsx",
 targets <- list(
   # Define keys and treatments --------------
   tar_target(Sites, unique(CoverData$Experiment)),
-  tar_target(SD, paste0("SD", 1:5)),
+  tar_target(SD, paste0("SD", 1:10)),
   tar_target(id_vars, c("Experiment", "SowingDate", "Clock.Today", "DAS")),
   tar_target(value_vars, grep("SWmm\\.\\d.", colnames(data_SW), value = TRUE)),
   tar_target(SKL_Range, seq(0.005, 0.11, by = 0.005)),
@@ -99,21 +99,21 @@ targets <- list(
                                   ),
              format = "file",
              cue = tar_cue(file = TRUE),
-             pattern =  map(LAI_input[1:5],observed[1:5])),
-  tar_target(apsimxPhase2, build_optimSlurp(template = templatePhase2,
-                                            dir_optim = dir_simulations,
-                                            dir_config = dir_config,
-                                            KL_range = SKL_Range,
-                                            apsimx = path_apsimx,
-                                            apsimx_Basefile = apsimxPhase1
-                                            ),
-             cue = tar_cue(mode = "never"),
-             pattern =  map(apsimxPhase1))
+             pattern =  map(LAI_input,observed))
+  # tar_target(apsimxPhase2, build_optimSlurp(template = templatePhase2,
+  #                                           dir_optim = dir_simulations,
+  #                                           dir_config = dir_config,
+  #                                           KL_range = SKL_Range,
+  #                                           apsimx = path_apsimx,
+  #                                           apsimx_Basefile = apsimxPhase1
+  #                                           ),
+  #            cue = tar_cue(mode = "never"),
+  #            pattern =  map(apsimxPhase1))
   
   
 )
-
+targets
 # End with a call to tar_pipeline() to wrangle the targets together.
 # This target script must return a pipeline object.
-tar_pipeline(targets)
+# tar_pipeline(targets)
 
