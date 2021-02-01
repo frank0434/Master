@@ -25,5 +25,5 @@ Data/
 .drake/
 .drake_history/
 *CloseSimDBs.ipynb
-renv/
+renv/library/
 _targets/
