@@ -54,13 +54,97 @@ goodcols_AD <- choose_cols(AD)
 length(grep("error", goodcols_AD, value = TRUE))
 ```
 It had `r length(goodcols_AD)` cols.   
-KEEP these variable and add in the new ones  
+KEEP these variable or just remove all AD and add in the new ones  
 
 
 
 ```{r}
+# MELT the DT to a long format for fast filter
+obs_long <- obsalldata %>% 
+  melt.data.table(id.vars = c("SimulationName", "Clock.Today")) 
+
+
+# Filter out the missing values and any data from AshleyDene
+# Then cast it back to wide format
+obs_wide <- obs_long[!is.na(value) & !SimulationName %like% "Ashley"] %>% 
+  dcast.data.table(SimulationName + Clock.Today ~ variable)
+# Correct a typo in the simulation name col
+obs_wide[SimulationName == "AshlydeenDefoliation", 
+         SimulationName := "AshleyDeneDefoliation"]
+obs_wide %>% 
+  write.xlsx(file = "ObsAllData.xlsx", sheetName = "ObsAllData")
+# colnames(obs_wide)
 
 ```
+Possible duplicated columns 
+Biomass_Wt, ShootWt, Shootbiomass
+Plantpopulation, Shootpopulation 
+SWC, Total_SW
+
+**Assume that all biomass unit is KG/HA** 
+Not sure about the `Biomass_Wt` column in `GattonDefoliation`  
+So could combine the rest of the two.  
+```{r}
+aboveground <- obs_wide[, .(SimulationName, Clock.Today, Biomass_wt, ShootWt, Shootbiomass)] %>% 
+  melt.data.table(id.vars = c("SimulationName", "Clock.Today"))
+aboveground[!is.na(value) & value != 0 ] %>% 
+  ggplot(aes(Clock.Today, value) )+
+  geom_point()+
+  facet_grid( variable ~ .)
+siteA <- unique(aboveground[variable == "Shootbiomass" & !is.na(value)]$SimulationName)
+siteB <- unique(aboveground[variable == "ShootWt" & !is.na(value)]$SimulationName)
+siteA %in% siteB
+
+```
+Investigate  `Plantpopulation, Shootpopulation`
+```{r}
+aboveground <- obs_wide[, .(SimulationName, Clock.Today, PlantPopulation, ShootPopulation)] %>% 
+  melt.data.table(id.vars = c("SimulationName", "Clock.Today"))
+aboveground[!is.na(value) & value != 0 ] %>% 
+  ggplot(aes(Clock.Today, value) )+
+  geom_point()+
+  facet_grid( variable ~ .)
+```
+
+investigate `SWC, Total_SW`  
+```{r}
+aboveground <- obs_wide[, .(SimulationName, Clock.Today, SWC, Total_SW)] %>% 
+  melt.data.table(id.vars = c("SimulationName", "Clock.Today"))
+aboveground[!is.na(value) & value != 0 ] %>% 
+  ggplot(aes(Clock.Today, value) )+
+  geom_point()+
+  facet_grid( variable ~ .)
+aboveground[variable=="Total_SW" & value > 750]
+```
+
+1. Combine `ShootWt` with `Shootbiomass`  
+Seems `ShootWt` contains `Shootbiomass` for all listed sites. 
+**Remove Shootbiomass and its sme**
+
+2. `Plantpopulation, Shootpopulation` are different. remain intact   
+
+3. `Total_SW` is from `JimbourSowingDate*`. pretty high, left untouched. 
+
+```{r}
+obs_wide[, ':='(Shootbiomass = NULL, 
+                Shootbiomasserror = NULL)]
+
+```
+#### Existing variable names can be reused 
+
+"ET", "Height", "Heighterror", "LAI", "LeafWt", "RootWt", "SLA", "SWC", 
+"ShootPopulation", "ShootWt"
+
+Not sure about the unit of "SLA"
+
+```{r checking existing SLA}
+hist(obs_wide$SLA)
+```
+
+Seems in the $cm^2/g$ 
+
+#### Aggreate Richard's data into the obsalldata excel 
+
 
 
 
