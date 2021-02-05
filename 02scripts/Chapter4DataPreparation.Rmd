@@ -7,6 +7,9 @@ output:
     code_folding: hide
     toc: true
     toc_depth: 3
+editor_options: 
+  markdown: 
+    wrap: 72
 ---
 
 ```{r setup, include=FALSE,warning=FALSE}
@@ -24,7 +27,7 @@ obsalldata <-  read_excel(apsimx_obs, guess_max = 10300) %>%
 
 ```
 
-## Richard data set into sqlite?
+## Richard and obsalldata set into sqlite?
 
 ```{r richard}
 introduce(file_richard)
@@ -37,15 +40,17 @@ goodcols <- choose_cols(obsalldata)
 badcols <- colnames(obsalldata)[!colnames(obsalldata) %in% goodcols ]
 obsalldata <- obsalldata[,..goodcols]
 ```
-There are `r length(goodcols)` good column have at least one value.  
-In contrast, these variables `r badcols` have none values.  
 
-what is available already? 
+There are `r length(goodcols)` good column have at least one value.\
+In contrast, these variables `r badcols` have none values.
+
+what is available already?
 
 ```{r}
 obsalldata$SimulationName %>% 
   unique()
 ```
+
 Ashley Dene treatment showed up. What is there?
 
 ```{r}
@@ -53,50 +58,57 @@ AD <- obsalldata[SimulationName %like% "Ashley"]
 goodcols_AD <- choose_cols(AD)
 length(grep("error", goodcols_AD, value = TRUE))
 ```
-It had `r length(goodcols_AD)` cols.   
-KEEP these variable or just remove all AD and add in the new ones  
 
-
+It had `r length(goodcols_AD)` cols.\
+KEEP these variable or just remove all AD and add in the new ones
 
 ```{r}
 # MELT the DT to a long format for fast filter
 obs_long <- obsalldata %>% 
-  melt.data.table(id.vars = c("SimulationName", "Clock.Today")) 
+  melt.data.table(id.vars = c("SimulationName", "Clock.Today"), na.rm = TRUE) 
 
+# Correct a typo in the simulation name col
+obs_long <- obs_long[SimulationName == "AshlydeenDefoliation",
+         SimulationName := "AshleyDeneDefoliation"
+         ][value!=0]
 
 # Filter out the missing values and any data from AshleyDene
 # Then cast it back to wide format
-obs_wide <- obs_long[!is.na(value) & !SimulationName %like% "Ashley"] %>% 
+obs_wide <- obs_long %>% 
   dcast.data.table(SimulationName + Clock.Today ~ variable)
-# Correct a typo in the simulation name col
-obs_wide[SimulationName == "AshlydeenDefoliation", 
-         SimulationName := "AshleyDeneDefoliation"]
-obs_wide %>% 
-  write.xlsx(file = "ObsAllData.xlsx", sheetName = "ObsAllData")
+
+# obs_wide %>%
+#   write.xlsx(file = "ObsAllData.xlsx", sheetName = "ObsAllData")
 # colnames(obs_wide)
 
 ```
-Possible duplicated columns 
-Biomass_Wt, ShootWt, Shootbiomass
-Plantpopulation, Shootpopulation 
-SWC, Total_SW
 
-**Assume that all biomass unit is KG/HA** 
-Not sure about the `Biomass_Wt` column in `GattonDefoliation`  
-So could combine the rest of the two.  
+Possible duplicated columns Biomass_Wt, ShootWt, Shootbiomass
+Plantpopulation, Shootpopulation SWC, Total_SW
+
+**Assume that all biomass unit is KG/HA** Not sure about the
+`Biomass_Wt` column in `GattonDefoliation`\
+So could combine the rest of the two.
+
 ```{r}
 aboveground <- obs_wide[, .(SimulationName, Clock.Today, Biomass_wt, ShootWt, Shootbiomass)] %>% 
-  melt.data.table(id.vars = c("SimulationName", "Clock.Today"))
+  melt.data.table(id.vars = c("SimulationName", "Clock.Today"), na.rm = TRUE)
 aboveground[!is.na(value) & value != 0 ] %>% 
   ggplot(aes(Clock.Today, value) )+
   geom_point()+
   facet_grid( variable ~ .)
 siteA <- unique(aboveground[variable == "Shootbiomass" & !is.na(value)]$SimulationName)
 siteB <- unique(aboveground[variable == "ShootWt" & !is.na(value)]$SimulationName)
-siteA %in% siteB
 
+dup_cols <- siteA[siteA %in% siteB]
+# aboveground[SimulationName %in% dup_cols]
 ```
-Investigate  `Plantpopulation, Shootpopulation`
+
+"BalcarceDefoliationCutting" "TrenqueLauquenDefoliationCutting" have
+identical values in two different colnames.
+
+Investigate `Plantpopulation, Shootpopulation`
+
 ```{r}
 aboveground <- obs_wide[, .(SimulationName, Clock.Today, PlantPopulation, ShootPopulation)] %>% 
   melt.data.table(id.vars = c("SimulationName", "Clock.Today"))
@@ -106,7 +118,8 @@ aboveground[!is.na(value) & value != 0 ] %>%
   facet_grid( variable ~ .)
 ```
 
-investigate `SWC, Total_SW`  
+investigate `SWC, Total_SW`
+
 ```{r}
 aboveground <- obs_wide[, .(SimulationName, Clock.Today, SWC, Total_SW)] %>% 
   melt.data.table(id.vars = c("SimulationName", "Clock.Today"))
@@ -117,22 +130,18 @@ aboveground[!is.na(value) & value != 0 ] %>%
 aboveground[variable=="Total_SW" & value > 750]
 ```
 
-1. Combine `ShootWt` with `Shootbiomass`  
-Seems `ShootWt` contains `Shootbiomass` for all listed sites. 
-**Remove Shootbiomass and its sme**
+1.  Combine `ShootWt` with `Shootbiomass`\
+    \~Seems `ShootWt` contains `Shootbiomass` for all listed sites.\~
+    **Remove Shootbiomass and its sme**
 
-2. `Plantpopulation, Shootpopulation` are different. remain intact   
+2.  `Plantpopulation, Shootpopulation` are different. remain intact
 
-3. `Total_SW` is from `JimbourSowingDate*`. pretty high, left untouched. 
+3.  `Total_SW` is from `JimbourSowingDate*`. pretty high, left
+    untouched.
 
-```{r}
-obs_wide[, ':='(Shootbiomass = NULL, 
-                Shootbiomasserror = NULL)]
+#### Existing variable names can be reused
 
-```
-#### Existing variable names can be reused 
-
-"ET", "Height", "Heighterror", "LAI", "LeafWt", "RootWt", "SLA", "SWC", 
+"ET", "Height", "Heighterror", "LAI", "LeafWt", "RootWt", "SLA", "SWC",
 "ShootPopulation", "ShootWt"
 
 Not sure about the unit of "SLA"
@@ -141,25 +150,158 @@ Not sure about the unit of "SLA"
 hist(obs_wide$SLA)
 ```
 
-Seems in the $cm^2/g$ 
+Seems in the $cm^2/g$
 
-#### Aggreate Richard's data into the obsalldata excel 
+## Aggregate Richard's data into the obsalldata excel
 
+```{r}
+colnames(file_richard)
 
+```
 
+Quite a lot columns.
 
-what **S AND E** MEANS? SOWING AND EMERGE?
-Alpha|	Growth Stage|		No.
- ---|---|---
-S|	Sowing	|	1
-E	|Emergence	|	3
-J	|Juvenile	|	4
-Fi|	Visible Bud	|	5
-Fl | Flower Open	|	6
+| Biomass        | Root                                         | SW     | Phenology    |
+|----------------|----------------------------------------------|--------|--------------|
+| Height (cm)    | Root.Total (kg/ha) = Crown + 0-5cm + 5-30cm) | SWC.\* | MS.node.No   |
+| Shoot.m2       | Crown? (kg/ha)                               |        | Growth.Stage |
+| Leaf. (kg/ha)  | Plant.No....48 (m\^2)                        |        |              |
+| Stem. (kg/ha)  |                                              |        |              |
+| Total. (kg/ha) |                                              |        |              |
+| SLA FM (cm2/g) |                                              |        |              |
+| LAImod         |                                              |        |              |
+| SLA DM (cm2/g) |                                              |        |              |
 
+```{r}
+idvars <- c("Data","Site", "Date", "Season", "Sowing.Date", 
+            # "Rep", "Plot",  
+            "Seed", "Rotation.No.", "Harvest.No.",  "DAS")
+valvars <- c("Height", "Shoots.m2", "Total.", "Leaf.", "Stem.","SLA..FW.",
+             "SLA..DW.", "LAImod", "Root.Total", "Crown", 
+             paste0("SWC.0.", 1:23), "SWC.2.3.m..mm.",
+             "MS.node.No", "Growth.stage")
+file_richard
 
-_Note_
-Richard excel file has mix variable types. 
+cols <- c(idvars, valvars)
+richard_long <- file_richard[Data %in% c("Biomass", "Root",
+                                         "Phenology", "Soil water") &
+               Seed == "CS",
+             ..cols
+             ][, SWC.0.1:= SWC.0.1+SWC.0.2
+               ][, SWC.0.2 := NULL] %>% 
+  setnames(., paste0("SWC.0.", c(1,3:23)), paste0("SWmm(", 1:22,")")) %>% 
+  melt.data.table(id.vars = idvars, na.rm = TRUE)
+
+```
+
+```{r}
+No.ofObs <- richard_long[, .N, by = c(idvars, "variable")]
+hist(No.ofObs$N)
+No.ofObs[N < 3]$Data %>% 
+  unique()
+
+```
+
+There are some harvest or assessment had only 1 observation or no
+replication.
+
+```{r}
+groupkey <- c(idvars, "variable")
+agg <- richard_long[, unlist(lapply(.SD, function(x) 
+  list(mean=mean(x, na.rm = TRUE),
+       sd = sd(x, na.rm = TRUE),
+       n = .N,
+       Upper = max(x, na.rm = TRUE),
+       Lower = min(x, na.rm = TRUE))
+  ), recursive = FALSE), by = groupkey]
+
+```
+
+Change the aggregated DT to wide format as APSIM requires.
+
+```{r}
+keycols <- c(idvars, "variable", "value.mean")
+
+mean_se <- agg[, se := value.sd/sqrt(value.n)
+               ][!(Data == "Phenology" & variable == "LAImod")]
+obs_Richard <- mean_se[,..keycols] %>% 
+  dcast.data.table(Data + Site + Sowing.Date + Season + Date + 
+                     DAS + Rotation.No.+ Harvest.No.~ variable,
+                   value.var = c("value.mean"))
+```
+
+Necessary to tidy up the names
+
+```{r}
+# Connect to the simulation output db 
+# And grep colnames 
+# path_db <- here::here("01Data/ApsimxFiles/LucerneValidation.db")
+# conn <- dbConnect(SQLite(), path_db)
+# 
+# report <- dbReadTable(conn, "Report", check.names = FALSE )
+# colnames(report)
+
+# Rename obs_wide to match the colnames 
+ # colnames(obs_Richard)
+
+setnames(obs_Richard, 
+         c("Sowing.Date", "Date","Shoots.m2", "Total.", "Leaf.","Stem.","LAImod", 
+           "Root.Total", "SWC.2.3.m..mm."),
+         c("SowingDate", "Clock.Today","ShootPopulation", "ShootWt", "LeafWt",
+           "StemWt", "LAI", "RootWt", "SWCmm"))
+obs_Richard[, SimulationName := paste0(Site, "SowingDate", SowingDate)
+            ][, (c("Site", "SowingDate","Data","Season","DAS",
+                   "Rotation.No.","Harvest.No.")) := NULL]
+# colnames(obs_wide)
+
+obs_wide <- rbindlist(list(obs_wide, obs_Richard), use.names = TRUE, fill = TRUE)
+
+```
+
+## Output the big obsalldata
+
+```{r}
+obs_wide[, Clock.Today := as.Date(Clock.Today)] %>%
+  write.xlsx(file = "../01Data/ApsimxFiles/ObsAllData.xlsx", 
+             sheetName = "ObsAllData")
+
+```
+
+### Biomass
+
+```{r Biomass tab}
+biomass <- file_richard[Data == "Biomass"]
+
+col_good <- choose_cols(biomass) # identify the right cols 
+
+biomass <- biomass[Seed == "CS",..col_good] # subset the right cols
+
+# drop the extra cols in place 
+
+SowingDates <- biomass[!is.na(AD)][, .(SD =...120, AD, I12)]
+biomass[, c("...120", "AD", "I12") := NULL]
+
+```
+
+overview of biomass
+
+#### Biomass of Total, leaf and stem
+
+```{r}
+
+biomass[, ..cols]
+
+```
+
+```{r}
+
+```
+
+what **S AND E** MEANS? SOWING AND EMERGE? Alpha\| Growth Stage\| No.
+---\|---\|--- S\| Sowing \| 1 E \|Emergence \| 3 J \|Juvenile \| 4 Fi\|
+Visible Bud \| 5 Fl \| Flower Open \| 6
+
+*Note* Richard excel file has mix variable types.
 
 ### inspect the data
 
@@ -181,64 +323,30 @@ file_richard[, (col_date) := lapply(.SD, function(x) as.Date(x,  tz = "Pacific/A
 
 ```
 
-_couldn't use `inspect_cat` because of duplicated colnames?_ Fixed by using `.name_repair` in `as_tibble`
+*couldn't use `inspect_cat` because of duplicated colnames?* Fixed by
+using `.name_repair` in `as_tibble`
 
-There are two `Plant No.` variables.
-One is the harvest area plant number and the other one is the plant number per $m^2$
+There are two `Plant No.` variables. One is the harvest area plant
+number and the other one is the plant number per $m^2$
 
-_Note:_
+*Note:*
 
-1. the number of obs for Total.DM is larger than the obs for Total FW?
-   **not really - there are missing values have been coded as 0**
+1.  the number of obs for Total.DM is larger than the obs for Total FW?
+    **not really - there are missing values have been coded as 0**
 
-2. there are multiply tables in one sheet. need to separate into different tables 
+2.  there are multiply tables in one sheet. need to separate into
+    different tables
 
-_Note_ 
-1. Need to figure out what `ES` and `*` stands for.
-**ES** should be evapotranspiration surface SWC 0-0.2m
-2. same for the `Site` col.
-3. same for the `Date` col, and the `Date` col need to be converted.
-4. all the rest of cols have this `*`.
+*Note* 1. Need to figure out what `ES` and `*` stands for. **ES** should
+be evapotranspiration surface SWC 0-0.2m 2. same for the `Site` col. 3.
+same for the `Date` col, and the `Date` col need to be converted. 4. all
+the rest of cols have this `*`.
 
-**The `*`** means the end of the main table. 
+**The `*`** means the end of the main table.
 
 **chop the main table to separate tables**
 
-## Biomass 
-
-need a function to figure out which col is not necessary 
-
-```{r Biomass tab}
-biomass <- file_richard[Data == "Biomass"]
-
-col_good <- choose_cols(biomass) # identify the right cols 
-
-biomass <- biomass[Seed == "CS",..col_good] # subset the right cols
-
-# drop the extra cols in place 
-
-SowingDates <- biomass[!is.na(AD)][, .(SD =...120, AD, I12)]
-biomass[, c("...120", "AD", "I12") := NULL]
-
-```
-
-overview of biomass 
-
-#### Biomass of Total, leaf and stem 
-
-```{r}
-idvars <- c("Site", "Date", "Season", "Sowing.Date", "Rep", "Plot",  
-            "Seed", "Rotation.No.", "Harvest.No.",  "DAS")
-valvars <- c("Total.DM", "Leaf.DM", "Stem.DM")
-cols <- c(idvars, valvars)
-biomass[, ..cols]
-
-```
-
-
-
-
-_Note_
+*Note*
 
 Protein and MJME might be worth to be in a single table?
 
@@ -248,7 +356,6 @@ Protein and MJME might be worth to be in a single table?
 sowingDate <- dt[,...120 : I12][!is.na(...120)]
 setnames(sowingDate, "...120", "ID", skip_absent = TRUE)
 ```
-
 
 ```{r Root tab}
 
@@ -262,7 +369,6 @@ root <- root[,..col_good]
 #   show_plot()
 ```
 
-
 ```{r Phenology tab}
 
 Phenology <- dt[Seed == "CS" & Harvest.No. != "Post" & Data == "Phenology"]
@@ -271,7 +377,6 @@ col_good <- choose_cols(Phenology) # identify the right cols
 
 Phenology <- Phenology[,..col_good]
 ```
-
 
 ```{r Soil water tab}
 
@@ -301,7 +406,6 @@ SoilWater[Experiment == "AshleyDene"][, mean(Rep), by = .(Clock.Today)]
 
 ```
 
-
 ```{r ES tab}
 
 ES <- dt[Data == "ES"]
@@ -310,7 +414,6 @@ col_good <- choose_cols(ES) # identify the right cols
 
 ES <- ES[,..col_good]
 ```
-
 
 ### Check again before lock into sqlite
 
@@ -322,15 +425,14 @@ l %>%
   lapply(colnames)
 ```
 
-_Note:_
+*Note:*
 
-1. variable types are not right
-2. `Plant.No....40` is the plant number in the harvest area.
-3. `Plant.No....48` is the plant number per $m^2$
-4. Phenology tab has biomass cols because missing values as 0s. 
-5. The first 11 cols are the factors.
-6. Variables in Phenology tab should not be change to numeric. 
-
+1.  variable types are not right
+2.  `Plant.No....40` is the plant number in the harvest area.
+3.  `Plant.No....48` is the plant number per $m^2$
+4.  Phenology tab has biomass cols because missing values as 0s.
+5.  The first 11 cols are the factors.
+6.  Variables in Phenology tab should not be change to numeric.
 
 ```{r fix Phenology tab}
 cols_11 <- colnames(dt)[1:11] # the master cols
@@ -339,7 +441,6 @@ cols_inPheno <- colnames(Phenology)[cols_both %in% cols_11]
 Phenology <- Phenology[,..cols_inPheno]
 colnames(Phenology)
 ```
-
 
 ```{r fix the types}
 
@@ -362,26 +463,22 @@ ES <- ES[, (cols) := lapply(.SD, as.numeric), .SDcols = cols]
 
 ```
 
-_Note:_ 
-There two cols has values been converted to NA by coercion. cautions going forward!!!
+*Note:* There two cols has values been converted to NA by coercion.
+cautions going forward!!!
 
+**Rerun** the chunck `inspect types`. everything seems awesome
 
-**Rerun** the chunck `inspect types`. everything seems awesome 
-
-
-### Weather data 
+### Weather data
 
 What are the key dates to source the right climate data?
 
-Dates|Event
-----|----
-21-Oct-10 | Sowing Date 1 in AD
+| Dates     | Event               |
+|-----------|---------------------|
+| 21-Oct-10 | Sowing Date 1 in AD |
 
+MORE DATES IN THE `sqlite` file.
 
-MORE DATES IN THE `sqlite` file. 
-
-There are quite a few `.met` files. 
-
+There are quite a few `.met` files.
 
 ```{r read mets}
 climate_units <- read_met_col("../01raw-data/ClimateAndObserved/lincoln.met", skip = 6)
@@ -393,8 +490,7 @@ AshleyDene <- read_met("../01raw-data/ClimateAndObserved/AshleyDene.met", skip_u
 
 ```
 
-
-### Lock tabs into sqlite 
+### Lock tabs into sqlite
 
 ```{r sqlite}
 
@@ -428,23 +524,26 @@ DBI::dbDisconnect(con)
 
 ## Import data from apsimx
 
-* All phenotype data are stored in `Excel` files on [the apsimx github account](https://github.com/APSIMInitiative/ApsimX/tree/master/Prototypes/Lucerne).
+-   All phenotype data are stored in `Excel` files on [the apsimx github
+    account](https://github.com/APSIMInitiative/ApsimX/tree/master/Prototypes/Lucerne).
 
-* All weather files are in the `.met` format and also available on github.
+-   All weather files are in the `.met` format and also available on
+    github.
 
-* Soil data and N content of crop component data are mixed in the `Excel` files, which may require sub-setting. 
+-   Soil data and N content of crop component data are mixed in the
+    `Excel` files, which may require sub-setting.
 
-* A copy of Richard's data (plant, soil moisture and weather) are in the local hard drive. 
+-   A copy of Richard's data (plant, soil moisture and weather) are in
+    the local hard drive.
 
 **Plan**
 
-1. clone the repo to local 
-   _path:_  "C:/Data/latest_apsimx/ApsimX/Prototypes/Lucerne"
-2. read necessary Excel files
-3. tidy up 
-4. join up
-5. store in SQLite
-
+1.  clone the repo to local *path:*
+    "C:/Data/latest_apsimx/ApsimX/Prototypes/Lucerne"
+2.  read necessary Excel files
+3.  tidy up
+4.  join up
+5.  store in SQLite
 
 ### Browser the data folder
 
@@ -456,7 +555,7 @@ xlsxs <- list.files(path_apX, pattern = "^\\w.+\\.xlsx")
 xlsxs
 ```
 
-_Note_
+*Note*
 
 Need to explore what data inside these `Excel` files
 
@@ -469,15 +568,15 @@ map2(path_apX, xlsxs, ~ exam_xlsxs(.x, .y))
 read_excel(file.path(path_apX,xlsxs[10]))
 ```
 
-"Lucerne_All_Obs.xlsx" actually only have ashley dene summaries data ready for apsim classic. 
+"Lucerne_All_Obs.xlsx" actually only have ashley dene summaries data
+ready for apsim classic.
 
 ```{r try out new pkg and exam file 1}
 
 exam_xlsxs(path_apX, xlsxs[1])
 ```
 
-File `r file.path(path_apX, xlsxs[1])` has the expts done in Lincoln. 
-
+File `r file.path(path_apX, xlsxs[1])` has the expts done in Lincoln.
 
 ```{r exam file 2}
 df = read_excel(file.path(path_apX, xlsxs[2])) %>% 
@@ -491,22 +590,25 @@ df
 exam_xlsxs(path_apX, xlsxs[2])
 ```
 
-File `r file.path(path_apX, xlsxs[2])` is from **Argentina**. Seems only the data from `Elliot` has water relative information with total number of obs at 26. 
+File `r file.path(path_apX, xlsxs[2])` is from **Argentina**. Seems only
+the data from `Elliot` has water relative information with total number
+of obs at 26.
 
 ```{r exam file 3}
 exam_xlsxs(path_apX, xlsxs[3])
 
 ```
 
-File `r file.path(path_apX, xlsxs[3])` is from **AshleyDene**. Must be the Richard data. 
+File `r file.path(path_apX, xlsxs[3])` is from **AshleyDene**. Must be
+the Richard data.
 
 ```{r exam file 4}
 exam_xlsxs(path_apX, xlsxs[4])
 
 ```
 
-File `r file.path(path_apX, xlsxs[4])` probably is not immediately useful. 
-
+File `r file.path(path_apX, xlsxs[4])` probably is not immediately
+useful.
 
 ```{r exam file 5}
 exam_xlsxs(path_apX, xlsxs[5])
@@ -515,57 +617,54 @@ exam_xlsxs(path_apX, xlsxs[5])
 
 File `r file.path(path_apX, xlsxs[5])` could be a validation set???
 
-
 ```{r exam file 6}
 # exam_xlsxs(path_apX, xlsxs[6])
 
 ```
 
-File `r file.path(path_apX, xlsxs[6])` has data from lincoln, ashleydene and other places over a few years period. need more metadata if want to use this one for any purpose. 
-
+File `r file.path(path_apX, xlsxs[6])` has data from lincoln, ashleydene
+and other places over a few years period. need more metadata if want to
+use this one for any purpose.
 
 ```{r exam file 7}
 exam_xlsxs(path_apX, xlsxs[7])
 
 ```
 
-File `r file.path(path_apX, xlsxs[7])` seems a duplicated version of last file. Is `Total_SW` for total soil water?? 
-
-
+File `r file.path(path_apX, xlsxs[7])` seems a duplicated version of
+last file. Is `Total_SW` for total soil water??
 
 ```{r exam file 8}
 exam_xlsxs(path_apX, xlsxs[8])
 
 ```
 
-File `r file.path(path_apX, xlsxs[8])` is not immediately useful. 
+File `r file.path(path_apX, xlsxs[8])` is not immediately useful.
 
-
-
-File `r file.path(path_apX, xlsxs[9]) ` & `r file.path(path_apX, xlsxs[10])` are duplicated?? need to confirm with Xiumei. 
+File `r file.path(path_apX, xlsxs[9])` &
+`r file.path(path_apX, xlsxs[10])` are duplicated?? need to confirm with
+Xiumei.
 
 ```{r exam file 11}
 exam_xlsxs(path_apX, xlsxs[11])
 
 ```
 
-File `r file.path(path_apX, xlsxs[11])` is not immediately useful. 
+File `r file.path(path_apX, xlsxs[11])` is not immediately useful.
 
 ```{r exam file 12}
 exam_xlsxs(path_apX, xlsxs[12])
 
 ```
 
-File `r file.path(path_apX, xlsxs[12])` is not immediately useful. 
+File `r file.path(path_apX, xlsxs[12])` is not immediately useful.
 
+*Note*
 
-_Note_
-
-1. Need metadata for variable names 
-2. Trial design and data collection method (probabaly in the papers?)
-3. Soil information for water expts (papers?)
-4. Extract all water relevant data and integrate together? 
-
+1.  Need metadata for variable names
+2.  Trial design and data collection method (probabaly in the papers?)
+3.  Soil information for water expts (papers?)
+4.  Extract all water relevant data and integrate together?
 
 ```{r}
 l <- lapply(xlsxs[-c(6,9,10)], function(x){
@@ -578,12 +677,8 @@ potentials <- potentials[, water := stringr::str_extract(string = tolower(value)
 potentials
 ```
 
-**total number of obs is `r sum(potentials$cnt)`**
-There is no Iversen_12 for Richard 10 sowing date expt? 
-
-
-
-
+**total number of obs is `r sum(potentials$cnt)`** There is no
+Iversen_12 for Richard 10 sowing date expt?
 
 # Attempt to organise all excel dataset into one
 
@@ -609,7 +704,7 @@ lapply(l, dim) %>%
 
 ```
 
-obsall and obsalldata have duplicated colnames for clock.today. 
+obsall and obsalldata have duplicated colnames for clock.today.
 
 ```{r fix obvious duplicated colnames}
 # (l$ObsAll %>% colnames())[!(l$ObsAll %>% colnames()) %in% (l$ObsAllData %>% colnames())] # checking the mismatch ones
@@ -655,7 +750,7 @@ DT <- DT[, ..cols]
 dim(DT)
 ```
 
-Need to figure out if those SW cols could be combined 
+Need to figure out if those SW cols could be combined
 
 ```{r}
 DT %>% 
@@ -666,7 +761,6 @@ DT %>%
 ```
 
 quite a few variables have large chunck missing values
-
 
 ### exam water obs first
 
@@ -685,12 +779,11 @@ inspect_num(DT_swc)
 colnames(DT_swc)
 ```
 
-what do these swc mean 
-how they have been collected 
-where are they from.... 
+what do these swc mean how they have been collected where are they
+from....
 
-excel file has not been read correctly:
-**increase the `guess_format` to 10000**
+excel file has not been read correctly: **increase the `guess_format` to
+10000**
 
 ```{r which is which}
 DT_swc[!is.na(SW2)]
@@ -705,10 +798,8 @@ melt(DT_swc, id.vars = col_essential)[!is.na(value)][, .N, by = .(SimulationName
 melt(DT_swc, id.vars = col_essential)[!is.na(value)][, .N, by = .(variable)]
 ```
 
-35 simulationNames in total
-8256 obs in total for soil water
-53 columns have values 
-
+35 simulationNames in total 8256 obs in total for soil water 53 columns
+have values
 
 ```{r}
 
@@ -717,27 +808,18 @@ melt(DT_swc, id.vars = col_essential)[!is.na(value)
                                         ][]
 ```
 
-**There is no layer data for Iversen8 & Iversen12**
-only swc as soil water content in a soil profile? 
-Nekia file contains the ruthergledefoliation layer data. 
-`ObsAll` has 
-nekia
-rutherglede
-hudson 
-griffith
-pergamino
+**There is no layer data for Iversen8 & Iversen12** only swc as soil
+water content in a soil profile? Nekia file contains the
+ruthergledefoliation layer data. `ObsAll` has nekia rutherglede hudson
+griffith pergamino
 
+*Note:*
 
-_Note:_
+1.  what is SWCerror? standard error?
+2.  total_sw? profile water? can be combined into SWC?
+3.  what is SD in Hudson?
 
-1. what is SWCerror? standard error?
-2. total_sw? profile water? can be combined into SWC? 
-3. what is SD in Hudson? 
-
-
-
-after all these checking 
-obsall seems have the most complete data? 
+after all these checking obsall seems have the most complete data?
 
 ```{r}
 
@@ -751,7 +833,7 @@ DT_long  <- melt(DT_obsall, id.vars = col_essential)[!is.na(value)]
 DT_long[, .N, by = .(SimulationName, variable)]
 ```
 
-## Is ObsData has all the rest of files 
+## Is ObsData has all the rest of files
 
 ```{r}
 main_cols <- l_swc$ObsAll$SimulationName %>% unique()
@@ -763,15 +845,14 @@ length(therest_cols)
 therest_cols[!therest_cols%in% main_cols]
 ```
 
+the obsData has no Iversen_12 fall domancy expt.
 
-the obsData has no Iversen_12 fall domancy expt. 
-
-Iversen_12 has no water relevant bits. 
+Iversen_12 has no water relevant bits.
 
 # so **ObsAll is the one to use**
 
-`ObsAll` has no Iversen_12 fall domancy expt 
-`ObsAllData` has no Iversen_12 water and dry expt 
+`ObsAll` has no Iversen_12 fall domancy expt `ObsAllData` has no
+Iversen_12 water and dry expt
 
 ```{r ObsAll}
 obsall <- read_excel("../Data/Lucerne/ObsAll.xlsx", guess_max = 15000)
@@ -796,8 +877,7 @@ toExcelformat <- dcast(obs_DT, SimulationName + Clock.Today ~ ...)
 # write.xlsx(toExcelformat, file = "../Data/Lucerne/20191018_ObsAll_Frank.xlsx", sheetName = "Observed")
 ```
 
-are those 0s in the data are turely 0s? 
-
+are those 0s in the data are turely 0s?
 
 ```{r}
 con <- dbConnect(SQLite(), "../Data/ObsAll.sqlite3")
@@ -813,10 +893,9 @@ DBI::dbListTables(con)
 DBI::dbDisconnect(con)
 ```
 
+# to do
 
-# to do 
 combine the richard one with obs all
-
 
 ```{r read from sqlite}
 con_richard <- dbConnect(SQLite(), "../Data/Richard.sqlite3")
@@ -835,7 +914,6 @@ obsData <- con_all %>%
   dbReadTable("ObsData")
 
 ```
-
 
 ```{r inspect }
 names(tabs_l) <- tabs
@@ -861,8 +939,7 @@ grepl(pattern = "Iversen_12sowingdate", ignore.case = T,x = DT_obsall$Simulation
 
 ```
 
-
-# how many form richard excel if summarised by treatment 
+# how many form richard excel if summarised by treatment
 
 ```{r}
 
@@ -887,7 +964,6 @@ iv12 <- melt(DT_richard[Site != "AshleyDene" & Sowing.Date != "Fallow"
 # 1076 in richard
 
 ```
- 
 
 ```{r}
 
@@ -915,6 +991,6 @@ glimpse(iv12)
 glimpse(ashley_obsData)
 ```
 
-# DO i need to consider plant number stem/leaf ratio stuff? 
-or mainly focus on soil water and yield? 
+# DO i need to consider plant number stem/leaf ratio stuff?
 
+or mainly focus on soil water and yield?
