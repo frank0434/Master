@@ -161,26 +161,26 @@ colnames(file_richard)
 
 Quite a lot columns.
 
-| Biomass        | Root                                         | SW     | Phenology    |
-|----------------|----------------------------------------------|--------|--------------|
-| Height (cm)    | Root.Total (kg/ha) = Crown + 0-5cm + 5-30cm) | SWC.\* | MS.node.No   |
-| Shoot.m2       | Crown? (kg/ha)                               |        | Growth.Stage |
-| Leaf. (kg/ha)  | Plant.No....48 (m\^2)                        |        |              |
-| Stem. (kg/ha)  |                                              |        |              |
-| Total. (kg/ha) |                                              |        |              |
-| SLA FM (cm2/g) |                                              |        |              |
-| LAImod         |                                              |        |              |
-| SLA DM (cm2/g) |                                              |        |              |
+| Biomass          | Root                                         | SW     | Phenology    |
+|------------------|----------------------------------------------|--------|--------------|
+| Height (cm)      | Root.Total (kg/ha) = Crown + 0-5cm + 5-30cm) | SWC.\* | MS.node.No   |
+| Shoot.m2         | Crown? (kg/ha)                               |        | Growth.Stage |
+| Leaf.DM (kg/ha)  | Plant.No....48 (m\^2)                        |        |              |
+| Stem.DM (kg/ha)  |                                              |        |              |
+| Total.DM (kg/ha) |                                              |        |              |
+| SLA FM (cm2/g)   |                                              |        |              |
+| LAImod           |                                              |        |              |
+| SLA DM (cm2/g)   |                                              |        |              |
 
 ```{r}
 idvars <- c("Data","Site", "Date", "Season", "Sowing.Date", 
             # "Rep", "Plot",  
             "Seed", "Rotation.No.", "Harvest.No.",  "DAS")
-valvars <- c("Height", "Shoots.m2", "Total.", "Leaf.", "Stem.","SLA..FW.",
+valvars <- c("Height", "Shoots.m2", "Total.DM", "Leaf.DM", "Stem.DM","SLA..FW.",
              "SLA..DW.", "LAImod", "Root.Total", "Crown", 
              paste0("SWC.0.", 1:23), "SWC.2.3.m..mm.",
              "MS.node.No", "Growth.stage")
-file_richard
+# file_richard
 
 cols <- c(idvars, valvars)
 richard_long <- file_richard[Data %in% c("Biomass", "Root",
@@ -199,7 +199,7 @@ No.ofObs <- richard_long[, .N, by = c(idvars, "variable")]
 hist(No.ofObs$N)
 No.ofObs[N < 3]$Data %>% 
   unique()
-
+hist(file_richard$Total.DM)
 ```
 
 There are some harvest or assessment had only 1 observation or no
@@ -245,10 +245,12 @@ Necessary to tidy up the names
  # colnames(obs_Richard)
 
 setnames(obs_Richard, 
-         c("Sowing.Date", "Date","Shoots.m2", "Total.", "Leaf.","Stem.","LAImod", 
-           "Root.Total", "SWC.2.3.m..mm."),
+         c("Sowing.Date", "Date","Shoots.m2", "Total.DM", "Leaf.DM","Stem.DM",
+           "LAImod", 
+           "Root.Total", "SWC.2.3.m..mm.",
+           "Growth.stage"),
          c("SowingDate", "Clock.Today","ShootPopulation", "ShootWt", "LeafWt",
-           "StemWt", "LAI", "RootWt", "SWCmm"))
+           "StemWt", "LAI", "RootWt", "SWCmm", "GrowthStage"))
 obs_Richard[, SimulationName := paste0(Site, "SowingDate", SowingDate)
             ][, (c("Site", "SowingDate","Data","Season","DAS",
                    "Rotation.No.","Harvest.No.")) := NULL]
@@ -256,6 +258,16 @@ obs_Richard[, SimulationName := paste0(Site, "SowingDate", SowingDate)
 
 obs_wide <- rbindlist(list(obs_wide, obs_Richard), use.names = TRUE, fill = TRUE)
 
+```
+
+[FAKE ZEROS NEED TO BE REPALCED BY
+NAs](https://github.com/frank0434/Master/issues/29#issuecomment-774422595)
+
+```{r}
+colnames(obs_wide)
+
+setkey(obs_wide, SimulationName, Clock.Today)
+obs_wide[, lapply(.SD, function(x) ifelse(x == 0, NA, x)), by = key(obs_wide)]
 ```
 
 ## Output the big obsalldata
