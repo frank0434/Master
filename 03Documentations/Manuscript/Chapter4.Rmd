@@ -160,7 +160,7 @@ keySoilParams <- sw_initials[DUL_LL_range, on = .(Experiment, SowingDate, Depth)
                                    Clock.Today, DAS, SW,
                                    Clock.Today.DUL, DAS.DUL, i.SW.DUL,
                                    Clock.Today.LL, DAS.LL, i.SW.LL)]
-write.xlsx(keySoilParams, here::here("01Data/keySoilParams.xlsx"))
+# write.xlsx(keySoilParams, here::here("01Data/keySoilParams.xlsx"))
 ```
 
 # PAWC IN A TABLE
