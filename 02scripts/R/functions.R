@@ -421,6 +421,9 @@ interp_LAI <- function(biomass, sowingDates, accumTT) {
 
 ##' @param DT 
 ##'
+##' @param sowingDates 
+##' @param id_vars 
+##'
 ##' @import data.table
 ##' @return
 ##' @author frank0434
@@ -428,9 +431,18 @@ interp_LAI <- function(biomass, sowingDates, accumTT) {
 initialSWC <- function(DT, sowingDates, id_vars) {
   needed <- grep("SW.\\d.", colnames(DT), value = TRUE)
   needed <- c(id_vars, needed)
+  
+  if(is.data.table(sowingDates) | is.data.frame(sowingDates)){
+    
   SW_initials = DT[,..needed][sowingDates, 
                               on = c("Experiment", "SowingDate", "Clock.Today"),
                               roll = "nearest"]
+  } else if(is.character(sowingDates)){
+    SW_initials = DT[Clock.Today == sowingDates][,..needed]
+  } else{
+    print("Please provide valid sowing dates or starting dates.")
+  }
+  
 
   SW_initials_melted = data.table::melt.data.table(
     SW_initials, 
