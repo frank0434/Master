@@ -163,6 +163,32 @@ keySoilParams <- sw_initials[DUL_LL_range, on = .(Experiment, SowingDate, Depth)
 # write.xlsx(keySoilParams, here::here("01Data/keySoilParams.xlsx"))
 ```
 
+# Results wording 
+what were the absolute values for profile initial swc?
+what were the absolute values for profile initial DUL AND CLL?
+```{r}
+
+sw_dul_ll <-  sw_initials[DUL_LL_range, on = .(Experiment, SowingDate, Depth)]
+PAW <- sw_dul_ll[, ':='(SWmm = ifelse(Depth == 1, SW * 200, SW * 100))
+                 ][, PAW := SWmm - SW.LL
+                   ][, .(Experiment, SowingDate, Depth, PAW)
+                     ][, sum(PAW), by = .(Experiment, SowingDate)]
+range(PAW[Experiment == "AshleyDene"]$V1)
+
+PAW_wide <- PAW %>% 
+  dcast.data.table(SowingDate ~ Experiment)
+
+PAW_wide[, time:=Iversen12/AshleyDene] 
+hist(PAW_wide$time)
+```
+```{r}
+DUL_LL_range[, .(Experiment, i.SW.DUL)
+             ][, range(i.SW.DUL), by = .(Experiment)]
+DUL_LL_range[, .(Experiment, i.SW.LL)
+             ][, range(i.SW.LL), by = .(Experiment)]
+  
+```
+
 # PAWC IN A TABLE
 
 ```{r}
@@ -188,6 +214,10 @@ PAWC %>%
   kbl(caption = "PAWC") %>%
   kable_classic(full_width = F) %>% 
   column_spec(4, width = 0)
+PAWC[SowingDate %in% paste0("SD", 1:5)
+     ][, .(mean = mean(PAWC),
+           sd = sd(PAWC)), 
+       by = .(Experiment)]
 ```
 
 # KL IN A TABLE
@@ -237,9 +267,11 @@ dt_kl_layer <- dt_kl_layer[order(Depth)
 Numbers extracted from [Graham et al 2019](https://www.sciencedirect.com/science/article/abs/pii/S037837741930887X?via%3Dihub)
 
 ```{r}
-BDs <- readRDS(here::here("_targets/objects/BDs"))
+BDs <- as.data.table(read_excel(here::here("01Data/BulkDensity.xlsx")))
+
 BDs <- BDs[, BDSE := ifelse(!is.na(Stderror),
-                                   paste(BD_kg.m3, Stderror, sep = "\u00B1"), BD_kg.m3)
+                                   paste(BD_kg.m3, Stderror, sep = "\u00B1"), 
+                            BD_kg.m3)
     ][,.(Depth, Experiment, BDSE)] %>% 
   dcast.data.table(Depth ~ Experiment)
 
