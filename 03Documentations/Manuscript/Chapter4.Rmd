@@ -94,7 +94,8 @@ ggplot(data.frame(x = blues, y = 1),aes(x, y, fill = x)) +
 # DUL AND LL GRAPH
 
 ```{r}
-DUL_LL_range <- doDUL_LL_range(SW = sw_mean_new)
+DUL_LL_range <- doDUL_LL_range(SW = sw_mean_new,
+                               startd = "2011-06-25")
 # CF 0.95
 DUL_LL_range[, ':=' (i.SW.DUL = i.SW.DUL * 0.95,
                      i.SW.LL = i.SW.LL * 0.95)]
@@ -117,20 +118,37 @@ p_DUL_LL <- DUL_LL_range %>%
 
 p_DUL_LL
 # ggsave("Figures/dul_ll.png",plot = p_DUL_LL, width = 7, height =10, dpi = 320)
+# ggsave("Figures/dul_ll20110701.png",plot = p_DUL_LL, width = 7, height =10, dpi = 320)
 ```
 
 # SOIL INITIAL WATER CONTENT GRAPH
 
 ```{r, fig.height=10}
 sowingDates <-  read_Sims(path_richard, source =  "sowingDate")
+# mimic the paper logic, force starting date to "2011-07-01"
+# The nearest measurements were "2011-06-25" for sd1 to sd5
+sowingDates[SowingDate%in% paste0("SD", 1:5), 
+            Clock.Today := as.Date("2011-06-25")]
 data_SW <- read_Sims(path = path_richard)
 SW_mean_new <- colwise_meanSW(data_SW = data_SW, 
-                                     id.vars = id_vars, 
-                                     col.vars = value_vars)
+                              id.vars = id_vars, 
+                              col.vars = value_vars)
 sw_initials <- initialSWC(SW_mean_new, sowingDates, id_vars)
+
+# # SW_INITALS FROM 1 JULY 2011
+# sw_mean_new[Clock.Today >= "2011-06-25"
+#             ][, range(Clock.Today), by = .(Experiment)]
+# # Both sites had measurements on "2011-06-25"
+# sw_initials <- initialSWC(SW_mean_new, sowingDates = "2011-06-25", id_vars)
+# sw_initials
 # sw_initials <- readRDS(here::here("_targets/objects/SW_initials"))
 sw_initials <- fix_SDorder(sw_initials)
 
+
+```
+
+
+```{r}
 p_sw_initials <- sw_initials %>% 
   ggplot(aes(x = Depth))+
   geom_col(aes(y = SW, fill = "SWC"), position = "dodge", width = 1)+
@@ -152,7 +170,9 @@ p_sw_initials <- sw_initials %>%
   scale_colour_manual(name = "", values = c("#0000FF", "#FF0000"))
 p_sw_initials
 # ggsave("Figures/sw_initials.png",plot = p_sw_initials, width = 7, height =10, dpi = 320)
+# ggsave("Figures/sw_initials_20110701.png",plot = p_sw_initials, width = 7, height =10, dpi = 320)
 ```
+
 # Output an excel file for Fullvalidation apsimx manual configuration
 ```{r}
 keySoilParams <- sw_initials[DUL_LL_range, on = .(Experiment, SowingDate, Depth)
@@ -161,6 +181,7 @@ keySoilParams <- sw_initials[DUL_LL_range, on = .(Experiment, SowingDate, Depth)
                                    Clock.Today.DUL, DAS.DUL, i.SW.DUL,
                                    Clock.Today.LL, DAS.LL, i.SW.LL)]
 # write.xlsx(keySoilParams, here::here("01Data/keySoilParams.xlsx"))
+# write.xlsx(keySoilParams, here::here("01Data/keySoilParams20110701.xlsx"))
 ```
 
 # Results wording 
@@ -410,15 +431,28 @@ pre_obs[, Clock.Today:=as.Date(Clock.Today)]
 setnames(pre_obs, colnames(pre_obs), gsub("[[:punct:]]", ".", colnames(pre_obs)))
 ```
 ## Soil water profile
+
 ```{r}
 
-pre_obs[,.(Clock.Today, Name, Predicted.SWCmm, Observed.SWCmm)] %>% 
+
+pre_obs[,.(Clock.Today, Name, Predicted.SWCmm, Observed.SWCmm)
+        ][, Name := gsub("SowingDate", "", Name)] %>% 
   ggplot(aes(Observed.SWCmm, Predicted.SWCmm)) +
-  geom_point() 
-  # facet_wrap(~ Name)
+  geom_point() +
+  facet_wrap(~ Name, scales = "free")
 pre_obs[,.(Clock.Today, Name, Pred.Obs.SWCmm)] %>% 
   ggplot(aes(Clock.Today, Pred.Obs.SWCmm)) +
   geom_point() +
   facet_wrap(~ Name)
+```
+
+## Biomass and LAI
+```{r}
+
+pre_obs[,.(Clock.Today, Name, Predicted.ShootWt, Observed.ShootWt)
+        ][, Name := gsub("SowingDate", "", Name)] %>% 
+  ggplot(aes(Observed.SWCmm, Predicted.SWCmm)) +
+  geom_point() +
+  facet_wrap(~ Name, scales = "free")
 ```
 
