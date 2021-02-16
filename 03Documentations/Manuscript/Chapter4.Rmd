@@ -328,7 +328,6 @@ This is for calibrate the model for Potential Ep since there is no crop growing 
 ```
 
 # MANAGEMENT MODULE
-
 ## sowing and cutting dates 
 
 apsimx has a `mower` function in the factor to mimic harvest.   
@@ -395,41 +394,31 @@ tab_cutDates[order(Season, SDorder)
   kable_classic()
 ```
 
-**The Biomass has r dim(biomass)[1] obs for two sites.**
+# Results for 4.3.1.2 onwards
 
-```{r biomass, fig.height=12, fig.width=12, message=FALSE,warning=FALSE,dpi=300}
-
-# nums <- inspect_num(biomass)
-# show_plot(nums)
-# inspect_cat(biomass) %>% 
-#   show_plot()
-```
-
+## Connect to db and extract the predict and observed
 ```{r}
-# GGally::ggpairs(biomass[,.(Site, Sowing.Date, Date, FW..g.,DW..g.)],aes(colour = Site, alpha = 0.4))
-# colnames(biomass)
-# biomass_sub <- biomass[,.(Experiment, Clock.Today, SowingDate, DAS,  Shoot.No., Shoots.m2, FW..g., DW..g., Leaf.Area..cm.,LAImod)]
+conn <- DBI::dbConnect(drv = SQLite(), 
+                       here::here("01Data/ApsimxFiles/LucerneValidation.db"))
+dbListTables(conn)
+sql <- 'SELECT * FROM PredictedObserved INNER JOIN _Simulations ON PredictedObserved.SimulationID = _Simulations.ID'
+rs <- dbSendQuery(conn, sql)
+pre_obs <- DBI::dbFetch(rs) %>% 
+  as.data.table()
+
+pre_obs[, Clock.Today:=as.Date(Clock.Today)]
+setnames(pre_obs, colnames(pre_obs), gsub("[[:punct:]]", ".", colnames(pre_obs)))
+```
+## Soil water profile
+```{r}
+
+pre_obs[,.(Clock.Today, Name, Predicted.SWCmm, Observed.SWCmm)] %>% 
+  ggplot(aes(Observed.SWCmm, Predicted.SWCmm)) +
+  geom_point() 
+  # facet_wrap(~ Name)
+pre_obs[,.(Clock.Today, Name, Pred.Obs.SWCmm)] %>% 
+  ggplot(aes(Clock.Today, Pred.Obs.SWCmm)) +
+  geom_point() +
+  facet_wrap(~ Name)
 ```
 
-*Note:*
-
-Too many vars, take long time to generate the pairplot. R is a bit slow to plot big correlation plots Try seaborn in python. still slow. consider to set up `Draker` plan.
-
- **Maybe leave the biomass data at last to touch.**
-
-    # import seaborn as sns
-    # import matplotlib.pyplot as plt
-    # 
-    # sns.pairplot(r.biomass_sub, hue="Sowing.Date")
-    # plt.show()
-    # plt.savefig("biomass_cor.png", dpi = 300)
-
-# Root Overview
-
-**The Root tab has r dim(root)[1] obs.**
-
-```{r root, fig.height=12, fig.width=12,dpi=300}
-
-# nums <- inspect_num(root)
-# show_plot(nums)
-```
