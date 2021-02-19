@@ -194,7 +194,7 @@ PAW <- sw_dul_ll[, ':='(SWmm = ifelse(Depth == 1, SW * 200, SW * 100))
                  ][, PAW := SWmm - SW.LL
                    ][, .(Experiment, SowingDate, Depth, PAW)
                      ][, sum(PAW), by = .(Experiment, SowingDate)]
-range(PAW[Experiment == "AshleyDene"]$V1)
+PAW[, range(V1), by = .(Experiment)]
 
 PAW_wide <- PAW %>% 
   dcast.data.table(SowingDate ~ Experiment)
@@ -202,6 +202,7 @@ PAW_wide <- PAW %>%
 PAW_wide[, time:=Iversen12/AshleyDene] 
 hist(PAW_wide$time)
 ```
+
 ```{r}
 DUL_LL_range[, .(Experiment, i.SW.DUL)
              ][, range(i.SW.DUL), by = .(Experiment)]
@@ -445,6 +446,59 @@ pre_obs[,.(Clock.Today, Name, Pred.Obs.SWCmm)] %>%
   geom_point() +
   facet_wrap(~ Name)
 ```
+## after Reset the soil 
+
+```{r}
+SWCprofile <- pre_obs[Clock.Today >= "2011-06-25", 
+                      .(Name, Clock.Today, Predicted.SWCmm, Observed.SWCmm)]
+SWCprofile[, (c("Experiment", "SowingDate")) := tstrsplit(Name, split = "SowingDate")
+           ][]
+SWCprofile <- fix_SDorder(SWCprofile)
+plot_PreObs <- function(dt, col_obs, col_pre, color = "SowingDate"){
+  base_p <- dt %>% 
+  ggplot(aes(x = .data[[col_obs]],
+             y = .data[[col_pre]]
+             # shape = SowingDate,
+             # colour = .data[[color]]
+             )) +
+  geom_point() +
+  facet_wrap( ~ Experiment, scales = "free")
+  return(base_p)
+}
+base_p <- SWCprofile %>% 
+  plot_PreObs(., col_obs = "Observed.SWCmm", col_pre = "Predicted.SWCmm")+
+  theme_water()
+
+# Add stats
+abline_p <- base_p+
+  geom_abline()+
+  geom_smooth(method =  "lm", se = FALSE)
+
+stats <- sims_stats(SWCprofile, keys = c("Experiment"),
+                    col_pred = "Predicted.SWCmm",
+                    col_obs = "Observed.SWCmm")
+stats_rs <- stats[, unlist(stats, recursive = FALSE), by = .(Experiment)]
+
+anchors <- SWCprofile[, .(x = min(Observed.SWCmm, na.rm = TRUE) * 1.1,
+                          y = max(Predicted.SWCmm, na.rm = TRUE) * 0.9),
+                      by =.(Experiment)]
+stats_rs <- stats_rs[anchors, on = "Experiment"]
+
+stats_rs[, ':='(R2_str = paste0(as.character(expression(italic(R)^2 ~"=")), "~",R2),
+                NSE_str = paste0(as.character(expression(NSE~"=")), "~", NSE),
+                RMSE_str = paste0(as.character(expression(RMSE~" = ")), "~", RMSE))]
+abline_p +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y, label = NSE_str), parse = TRUE,
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y*1.02, label = R2_str), parse = TRUE,
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y*0.98, label = RMSE_str), parse = TRUE,
+            inherit.aes = FALSE) 
+```
+
 
 ## Biomass and LAI
 ```{r}
@@ -453,6 +507,31 @@ pre_obs[,.(Clock.Today, Name, Predicted.ShootWt, Observed.ShootWt)
         ][, Name := gsub("SowingDate", "", Name)] %>% 
   ggplot(aes(Observed.SWCmm, Predicted.SWCmm)) +
   geom_point() +
+  facet_wrap(~ Name, scales = "free")
+```
+
+```{r}
+sql <- 'SELECT * FROM ObsAllData INNER JOIN _Simulations ON ObsAllData.SimulationID = _Simulations.ID'
+rs <- dbSendQuery(conn, sql)
+obs <- DBI::dbFetch(rs) %>% 
+  as.data.table()
+
+sql <- 'SELECT * FROM Report INNER JOIN _Simulations ON Report.SimulationID = _Simulations.ID WHERE "Clock.Today" >="2011-07-01"'
+rs <- dbSendQuery(conn, sql)
+pre20110701 <- DBI::dbFetch(rs) %>% 
+  as.data.table()
+
+```
+
+```{r}
+sub_obs <- obs[Clock.Today >= "2011-07-01",.(Name, Clock.Today, SWCmm)]
+sub_pre <- pre20110701[,.(Name, Clock.Today, SWCmm)]
+dt <- merge(sub_pre, sub_obs, by = c("Name", "Clock.Today"))
+
+dt[, Clock.Today:=as.Date(Clock.Today)] %>% 
+  ggplot(aes(Clock.Today)) +
+  geom_point(aes(y = SWCmm.y)) +
+  geom_line(aes(y = SWCmm.x)) +
   facet_wrap(~ Name, scales = "free")
 ```
 
