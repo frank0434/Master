@@ -144,7 +144,8 @@ sw_initials <- initialSWC(SW_mean_new, sowingDates, id_vars)
 # sw_initials <- readRDS(here::here("_targets/objects/SW_initials"))
 sw_initials <- fix_SDorder(sw_initials)
 
-
+data_SW[SowingDate == "SD6"&Experiment == "Iversen12"] %>% 
+  ggplot(aes(Clock.Today, SWmm.2.,group = Clock.Today)) + geom_boxplot()
 ```
 
 
@@ -428,32 +429,115 @@ rs <- dbSendQuery(conn, sql)
 pre_obs <- DBI::dbFetch(rs) %>% 
   as.data.table()
 
-pre_obs[, Clock.Today:=as.Date(Clock.Today)]
+sql <- 'SELECT * FROM Report INNER JOIN _Simulations ON Report.SimulationID = _Simulations.ID'
+rs <- dbSendQuery(conn, sql)
+Report <- DBI::dbFetch(rs) %>% 
+  as.data.table()
+
+
+pre_obs[, Clock.Today:=as.Date(Clock.Today)
+        ][, (c("Experiment", "SowingDate")) := tstrsplit(Name, split = "SowingDate")]
 setnames(pre_obs, colnames(pre_obs), gsub("[[:punct:]]", ".", colnames(pre_obs)))
+Report[, Clock.Today:=as.Date(Clock.Today)]
+names(Report) <-   gsub("[[:punct:]]", ".", colnames(Report))
+
+DBI::dbDisconnect(conn)
 ```
 ## Soil water profile
 
 ```{r}
 
-
-pre_obs[,.(Clock.Today, Name, Predicted.SWCmm, Observed.SWCmm)
-        ][, Name := gsub("SowingDate", "", Name)] %>% 
-  ggplot(aes(Observed.SWCmm, Predicted.SWCmm)) +
-  geom_point() +
-  facet_wrap(~ Name, scales = "free")
-pre_obs[,.(Clock.Today, Name, Pred.Obs.SWCmm)] %>% 
-  ggplot(aes(Clock.Today, Pred.Obs.SWCmm)) +
-  geom_point() +
-  facet_wrap(~ Name)
+# 
+# pre_obs[,.(Clock.Today, Name, Predicted.SWCmm, Observed.SWCmm)
+#         ][, Name := gsub("SowingDate", "", Name)] %>% 
+#   ggplot(aes(Observed.SWCmm, Predicted.SWCmm)) +
+#   geom_point() +
+#   facet_wrap(~ Name, scales = "free")
+# pre_obs[,.(Clock.Today, Name, Pred.Obs.SWCmm)] %>% 
+#   ggplot(aes(Clock.Today, Pred.Obs.SWCmm)) +
+#   geom_point() +
+#   facet_wrap(~ Name)
 ```
 ## after Reset the soil 
 
-```{r}
+### Time course
+```{r, fig.height=10}
+
+variable <- "SWC"
+var_unit <- "mm"
+var_unit_lab <- paste0("(", var_unit, ")")
+
+pre_col <- paste0("Predicted.", variable, var_unit)
+obs_col <- paste0("Observed.", variable, var_unit)
+pre_color <- "black"
+obs_color <- "#FF0000"
+pre_label <- paste("Predicted", variable, var_unit_lab)
+obs_label <- paste("Observed", variable, var_unit_lab)
+
+
+var_subset <- c("Experiment","SowingDate", "Clock.Today",
+                pre_col, obs_col)
 SWCprofile <- pre_obs[Clock.Today >= "2011-06-25", 
-                      .(Name, Clock.Today, Predicted.SWCmm, Observed.SWCmm)]
-SWCprofile[, (c("Experiment", "SowingDate")) := tstrsplit(Name, split = "SowingDate")
-           ][]
+                      ..var_subset]
+
 SWCprofile <- fix_SDorder(SWCprofile)
+colnames(SWCprofile)
+
+timestep_colors <- c(pre_color,obs_color)
+names(timestep_colors) <- c(pre_col, obs_col)
+timestep_labels <- c(pre_label, obs_label)
+names(timestep_labels) <- c(pre_col, obs_col)
+timestep_p <- SWCprofile %>% 
+  ggplot(.,aes(Clock.Today )) +
+  geom_point(aes(y = .data[[obs_col]], color = {{obs_col}}),
+             size = 3)+
+  geom_line(aes(y = .data[[pre_col]], color = {{pre_col}}), show.legend = TRUE,
+            size = 1) +
+  facet_wrap( ~  SowingDate + Experiment,
+              strip.position = "right", nrow = 10, scales = "free_y") +
+  theme_water()  +
+  theme(legend.position = "none", legend.key.size = unit(1, "cm")) +
+  labs(y = paste0(gsub("Predicted\\.|mm", "", pre_col), " (mm)"), 
+       x = "Date") +
+  scale_colour_manual(name = "col", values = timestep_colors, labels = timestep_labels)
+timestep_p
+#https://stackoverflow.com/questions/49740215/ggplot-facet-grid-label-cut-off
+
+
+```
+Add DUL to time stamp graph
+```{r}
+DULmm <- unique(Report[!is.na(DULmm), .(DULmm, Experiment, SowingDate)])
+DULmm <- fix_SDorder(DULmm)
+p <- timestep_p +
+  geom_hline(data = DULmm, aes(yintercept = DULmm), linetype = 2, size = 0.5, 
+             alpha = 0.6, inherits =FALSE)
+
+p
+# ggsave("Figures/sw_timestamp.png",plot = p, width = 10, height =14, dpi = 320)
+
+
+```
+#### Soil moisture deficit wording
+
+```{r}
+SWCmm <- SW_mean_new[ , SWCmm := rowSums(.SD, na.rm = TRUE), 
+                      by = .(Experiment,SowingDate, Clock.Today, DAS), 
+                      .SDcols = grep("SWmm.\\d.+mean", 
+                                     colnames(sw_mean_new), value = TRUE)
+                      ][,.(Experiment, SowingDate, Clock.Today, DAS, SWCmm)]
+SMD <- SWCmm[order(SWCmm), .SD[1], by = .(Experiment, SowingDate)] 
+
+SMD[DULmm[, SowingDate:=as.character(SowingDate)], 
+    on = c("Experiment", "SowingDate")
+    ][, SMD.mm := DULmm - SWCmm][order(DAS)]
+```
+
+
+### Pre vs obs
+
+```{r}
+
 plot_PreObs <- function(dt, col_obs, col_pre, color = "SowingDate"){
   base_p <- dt %>% 
   ggplot(aes(x = .data[[col_obs]],
@@ -461,7 +545,7 @@ plot_PreObs <- function(dt, col_obs, col_pre, color = "SowingDate"){
              # shape = SowingDate,
              # colour = .data[[color]]
              )) +
-  geom_point() +
+  geom_point(size = 3, alpha = 0.8) +
   facet_wrap( ~ Experiment, scales = "free")
   return(base_p)
 }
@@ -496,16 +580,69 @@ abline_p +
             inherit.aes = FALSE) +
   geom_text(data = stats_rs, 
             aes( x = x,  y = y*0.98, label = RMSE_str), parse = TRUE,
-            inherit.aes = FALSE) 
+            inherit.aes = FALSE) +
+  labs(y = paste0(gsub("\\.|mm", " ", pre_col), " (mm)"),
+       x = paste0(gsub("\\.|mm", " ", obs_col), " (mm)"))
+ggsave("Figures/sw_preobs.png", width = 10, height =5, dpi = 320)
 ```
 
 
 ## Biomass and LAI
+
+
+### Time course graph
+
+```{r}
+variable <- "Shoot"
+var_unit <- "Wt"
+var_unit_lab <- paste0("(kg/ha)")
+
+plot_timecourse <- function(DT, var, unit, label){
+  pre_col <- paste0("Predicted.", var, unit)
+  obs_col <- paste0("Observed.", var, unit)
+  pre_color <- "black"
+  obs_color <- "#FF0000"
+  pre_label <- paste("Predicted", var, label)
+  obs_label <- paste("Observed", var, label)
+  
+  var_subset <- c("Experiment","SowingDate", "Clock.Today",
+                  pre_col, obs_col)
+  SWCprofile <- DT[Clock.Today >= "2011-06-25", 
+                   ..var_subset]
+  SWCprofile <- fix_SDorder(SWCprofile)
+  # label and colour
+  timestep_colors <- c(pre_color,obs_color)
+  names(timestep_colors) <- c(pre_col, obs_col)
+  timestep_labels <- c(pre_label, obs_label)
+  names(timestep_labels) <- c(pre_col, obs_col)
+  # Graphing
+  timestep_p <- SWCprofile %>% 
+    ggplot(.,aes(Clock.Today )) +
+    geom_point(aes(y = .data[[obs_col]], color = {{obs_col}}),
+               size = 3)+
+    geom_line(aes(y = .data[[pre_col]], color = {{pre_col}}), 
+              show.legend = TRUE,size = 1) +
+    facet_wrap( ~  SowingDate + Experiment,
+                strip.position = "right", nrow = 10, scales = "free_y") +
+    theme_water()  +
+    theme(legend.position = "none", legend.key.size = unit(1, "cm")) +
+    labs(y = paste0(gsub("Predicted\\.|mm", "", pre_col), " (mm)"), 
+         x = "Date") +
+    scale_colour_manual(name = "col", values = timestep_colors, labels = timestep_labels)
+timestep_p
+}
+
+```
+
+
+### Pre vs obs
+
+
 ```{r}
 
 pre_obs[,.(Clock.Today, Name, Predicted.ShootWt, Observed.ShootWt)
         ][, Name := gsub("SowingDate", "", Name)] %>% 
-  ggplot(aes(Observed.SWCmm, Predicted.SWCmm)) +
+  ggplot(aes(Observed.ShootWt, Predicted.ShootWt)) +
   geom_point() +
   facet_wrap(~ Name, scales = "free")
 ```
