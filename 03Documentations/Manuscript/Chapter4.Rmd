@@ -845,7 +845,60 @@ stats_rs <- key_stats(DT_sub, key = c("Experiment"),
 stats_rs <- stats_rs[anchors, on = "Experiment"]
 
 
-abline_p +
+p_shoot <- abline_p +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y, label = NSE_str), parse = TRUE,
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y + 250, label = R2_str), parse = TRUE,
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y - 250, label = RMSE_str), parse = TRUE,
+            inherit.aes = FALSE) +
+  labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
+       x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
+```
+
+```{r}
+variable <- "Leaf"
+var_unit <- "Wt"
+var_unit_lab <- " (kg/ha)"
+
+pre_col <- paste0("Predicted.", variable, var_unit)
+obs_col <- paste0("Observed.", variable, var_unit)
+pre_color <- "black"
+obs_color <- "#FF0000"
+pre_label <- paste("Predicted", variable, var_unit_lab)
+obs_label <- paste("Observed", variable, var_unit_lab)
+
+
+var_subset <- c("Experiment","SowingDate", "Clock.Today",
+                pre_col, obs_col)
+DT_sub <- pre_obs[Clock.Today >= "2011-06-25", 
+                      ..var_subset]
+
+DT_sub <- fix_SDorder(DT_sub)
+colnames(DT_sub)
+
+base_p <- DT_sub %>% 
+  plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
+  theme_water()
+
+# Add stats
+abline_p <- base_p+
+  geom_abline()+
+  geom_smooth(method =  "lm", se = FALSE)
+
+
+anchors <-  data.table(Experiment = c("AshleyDene", "Iversen12"), 
+                       x = c(3000,1000), y = c(1000,3000))
+stats_rs <- key_stats(DT_sub, key = c("Experiment"),
+                    pre_col, obs_col)
+
+stats_rs <- stats_rs[anchors, on = "Experiment"]
+
+
+p_leaf <- abline_p +
   geom_text(data = stats_rs, 
             aes( x = x,  y = y, label = NSE_str), parse = TRUE,
             inherit.aes = FALSE) +
@@ -858,6 +911,66 @@ abline_p +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
 
-ggsave("Figures/Shoot_preobs.png", width = 10, height =5, dpi = 320)
+```
+```{r}
+variable <- "Stem"
+var_unit <- "Wt"
+var_unit_lab <- " (kg/ha)"
+
+pre_col <- paste0("Predicted.", variable, var_unit)
+obs_col <- paste0("Observed.", variable, var_unit)
+pre_color <- "black"
+obs_color <- "#FF0000"
+pre_label <- paste("Predicted", variable, var_unit_lab)
+obs_label <- paste("Observed", variable, var_unit_lab)
+
+
+var_subset <- c("Experiment","SowingDate", "Clock.Today",
+                pre_col, obs_col)
+DT_sub <- pre_obs[Clock.Today >= "2011-06-25", 
+                      ..var_subset]
+
+DT_sub <- fix_SDorder(DT_sub)
+colnames(DT_sub)
+
+base_p <- DT_sub %>% 
+  plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
+  theme_water()
+
+# Add stats
+abline_p <- base_p+
+  geom_abline()+
+  geom_smooth(method =  "lm", se = FALSE)
+
+
+anchors <-  data.table(Experiment = c("AshleyDene", "Iversen12"), 
+                       x = c(700,600), y = c(2500,2500))
+stats_rs <- key_stats(DT_sub, key = c("Experiment"),
+                    pre_col, obs_col)
+
+stats_rs <- stats_rs[anchors, on = "Experiment"]
+
+
+p_stem <- abline_p +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y, label = NSE_str), parse = TRUE,
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y + 200, label = R2_str), parse = TRUE,
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y - 200, label = RMSE_str), parse = TRUE,
+            inherit.aes = FALSE) +
+  labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
+       x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
+p_stem
+```
+
+combine shoot component
+```{r}
+
+p_aboveground <- plot_grid(p_shoot, p_leaf, p_stem, ncol = 1)
+ggsave("Figures/aboveground_preobs.png",plot = p_aboveground, 
+       width = 10, height =14, dpi = 320)
 ```
 

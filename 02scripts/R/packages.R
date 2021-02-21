@@ -17,7 +17,7 @@ library(openxlsx)
 library(knitr)
 library(pander)
 library(ggplot2)
-# library(cowplot)
+library(cowplot)
 # library(broom)
 # library(dplyr)
 # library(tidyr)
@@ -32,7 +32,7 @@ library(targets)
 library(hydroGOF)
 
 # Customised package
-# library(autoapsimx)
+library(autoapsimx)
 
 potentialPKGS <- c("autoapsimx","clipr     "
 ,"dplyr     ","drake     "
