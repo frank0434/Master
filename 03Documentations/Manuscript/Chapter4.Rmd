@@ -717,8 +717,8 @@ stats <- sims_stats(SWCprofile, keys = c("Experiment"),
                     col_obs = obs_col)
 stats_rs <- stats[, unlist(stats, recursive = FALSE), by = .(Experiment)]
 
-anchors <- SWCprofile[, .(x = min(get(obs_col), na.rm = TRUE) * 1.5,
-                          y = max(get(pre_col), na.rm = TRUE) * 0.9),
+anchors <- SWCprofile[, .(x = 6,
+                          y = 1 ),
                       by =.(Experiment)]
 stats_rs <- stats_rs[anchors, on = "Experiment"]
 
@@ -730,14 +730,14 @@ abline_p +
             aes( x = x,  y = y, label = NSE_str), parse = TRUE,
             inherit.aes = FALSE) +
   geom_text(data = stats_rs, 
-            aes( x = x,  y = y*1.02, label = R2_str), parse = TRUE,
+            aes( x = x,  y = y*1.3, label = R2_str), parse = TRUE,
             inherit.aes = FALSE) +
   geom_text(data = stats_rs, 
-            aes( x = x,  y = y*0.98, label = RMSE_str), parse = TRUE,
+            aes( x = x,  y = y*0.7, label = RMSE_str), parse = TRUE,
             inherit.aes = FALSE) +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
-ggsave("Figures/sw_preobs.png", width = 10, height =5, dpi = 320)
+ggsave("Figures/LAI_preobs.png", width = 10, height =5, dpi = 320)
 ```
 
 
