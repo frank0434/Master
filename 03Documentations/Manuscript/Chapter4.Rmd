@@ -667,8 +667,9 @@ ggsave("Figures/GS_timestamp.png",plot = p_GS, width = 10, height = 10, dpi = 32
 
 ### Pre vs obs
 
-```{r}
+function
 
+```{r}
 plot_PreObs <- function(dt, col_obs, col_pre, 
                         color = "SowingDate", scale = "fixed"){
   base_p <- dt %>% 
@@ -683,6 +684,72 @@ plot_PreObs <- function(dt, col_obs, col_pre,
 }
 
 
+key_stats <- function(DT, key =c("Experiment"), pre_col, obs_col){
+ stats <-  sims_stats(DT, keys = key,
+                      col_pred = pre_col,
+                      col_obs = obs_col)
+ stats_rs <- stats[, unlist(stats, recursive = FALSE), by = .(Experiment)]
+ stats_rs[, ':='(R2_str = paste0(as.character(expression(italic(R)^2 ~"=")), "~",R2),
+                 NSE_str = paste0(as.character(expression(NSE~"=")), "~", NSE),
+                 RMSE_str = paste0(as.character(expression(RMSE~" = ")), "~", RMSE))]
+ return(stats_rs)
+}
+```
+
+
+```{r}
+variable <- "SWC"
+var_unit <- "mm"
+var_unit_lab <- " (mm)"
+
+pre_col <- paste0("Predicted.", variable, var_unit)
+obs_col <- paste0("Observed.", variable, var_unit)
+pre_color <- "black"
+obs_color <- "#FF0000"
+pre_label <- paste("Predicted", variable, var_unit_lab)
+obs_label <- paste("Observed", variable, var_unit_lab)
+
+
+var_subset <- c("Experiment","SowingDate", "Clock.Today",
+                pre_col, obs_col)
+DT_sub <- pre_obs[Clock.Today >= "2011-06-25",
+                      ..var_subset]
+
+DT_sub <- fix_SDorder(DT_sub)
+
+base_p <- DT_sub %>%
+  plot_PreObs(., col_obs = obs_col, col_pre = pre_col,scale = "free")+
+  theme_water()
+
+# Add stats
+abline_p <- base_p+
+  geom_abline()+
+  geom_smooth(method =  "lm", se = FALSE)
+
+stats_rs <- key_stats(DT_sub, key =c("Experiment"), pre_col, obs_col)
+## Has to customise
+anchors <- DT_sub[, .(x = min(eval(parse(text = obs_col)), na.rm = TRUE) * 1.1,
+                      y = max(eval(parse(text = pre_col)), na.rm = TRUE)* 0.9), 
+                  by = .(Experiment)]
+stats_rs <- stats_rs[anchors, on = "Experiment"]
+
+abline_p +
+  geom_text(data = stats_rs,
+            aes( x = x,  y = y, label = NSE_str), parse = TRUE,
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs,
+            aes( x = x,  y = y*1.02, label = R2_str), parse = TRUE,
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs,
+            aes( x = x,  y = y*0.98, label = RMSE_str), parse = TRUE,
+            inherit.aes = FALSE) +
+  labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
+       x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
+ggsave("Figures/swc_preobs.png", width = 10, height =5, dpi = 320)
+```
+
+
+```{r}
 variable <- "LAI"
 var_unit <- ""
 var_unit_lab <- ""
@@ -697,13 +764,13 @@ obs_label <- paste("Observed", variable, var_unit_lab)
 
 var_subset <- c("Experiment","SowingDate", "Clock.Today",
                 pre_col, obs_col)
-SWCprofile <- pre_obs[Clock.Today >= "2011-06-25", 
+DT_sub <- pre_obs[Clock.Today >= "2011-06-25",
                       ..var_subset]
 
-SWCprofile <- fix_SDorder(SWCprofile)
-colnames(SWCprofile)
+DT_sub <- fix_SDorder(DT_sub)
+colnames(DT_sub)
 
-base_p <- SWCprofile %>% 
+base_p <- DT_sub %>%
   plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
   theme_water()
 
@@ -712,27 +779,20 @@ abline_p <- base_p+
   geom_abline()+
   geom_smooth(method =  "lm", se = FALSE)
 
-stats <- sims_stats(SWCprofile, keys = c("Experiment"),
-                    col_pred = pre_col,
-                    col_obs = obs_col)
-stats_rs <- stats[, unlist(stats, recursive = FALSE), by = .(Experiment)]
+stats_rs <- key_stats(DT_sub, key = c("Experiment"),
+                       pre_col, obs_col)
 
-anchors <- SWCprofile[, .(x = 6,
-                          y = 1 ),
-                      by =.(Experiment)]
+anchors <- data.table(Experiment = c("AshleyDene", "Iversen12"), x = 6, y = 1)
 stats_rs <- stats_rs[anchors, on = "Experiment"]
 
-stats_rs[, ':='(R2_str = paste0(as.character(expression(italic(R)^2 ~"=")), "~",R2),
-                NSE_str = paste0(as.character(expression(NSE~"=")), "~", NSE),
-                RMSE_str = paste0(as.character(expression(RMSE~" = ")), "~", RMSE))]
 abline_p +
-  geom_text(data = stats_rs, 
+  geom_text(data = stats_rs,
             aes( x = x,  y = y, label = NSE_str), parse = TRUE,
             inherit.aes = FALSE) +
-  geom_text(data = stats_rs, 
+  geom_text(data = stats_rs,
             aes( x = x,  y = y*1.3, label = R2_str), parse = TRUE,
             inherit.aes = FALSE) +
-  geom_text(data = stats_rs, 
+  geom_text(data = stats_rs,
             aes( x = x,  y = y*0.7, label = RMSE_str), parse = TRUE,
             inherit.aes = FALSE) +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
@@ -740,4 +800,64 @@ abline_p +
 ggsave("Figures/LAI_preobs.png", width = 10, height =5, dpi = 320)
 ```
 
+
+```{r}
+
+```
+
+### Shootwt
+```{r}
+variable <- "Shoot"
+var_unit <- "Wt"
+var_unit_lab <- " (kg/ha)"
+
+pre_col <- paste0("Predicted.", variable, var_unit)
+obs_col <- paste0("Observed.", variable, var_unit)
+pre_color <- "black"
+obs_color <- "#FF0000"
+pre_label <- paste("Predicted", variable, var_unit_lab)
+obs_label <- paste("Observed", variable, var_unit_lab)
+
+
+var_subset <- c("Experiment","SowingDate", "Clock.Today",
+                pre_col, obs_col)
+DT_sub <- pre_obs[Clock.Today >= "2011-06-25", 
+                      ..var_subset]
+
+DT_sub <- fix_SDorder(DT_sub)
+colnames(DT_sub)
+
+base_p <- DT_sub %>% 
+  plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
+  theme_water()
+
+# Add stats
+abline_p <- base_p+
+  geom_abline()+
+  geom_smooth(method =  "lm", se = FALSE)
+
+
+anchors <-  data.table(Experiment = c("AshleyDene", "Iversen12"), 
+                       x = c(3000,1000), y = c(1000,3000))
+stats_rs <- key_stats(DT_sub, key = c("Experiment"),
+                    pre_col, obs_col)
+
+stats_rs <- stats_rs[anchors, on = "Experiment"]
+
+
+abline_p +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y, label = NSE_str), parse = TRUE,
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y + 200, label = R2_str), parse = TRUE,
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y - 200, label = RMSE_str), parse = TRUE,
+            inherit.aes = FALSE) +
+  labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
+       x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
+
+ggsave("Figures/Shoot_preobs.png", width = 10, height =5, dpi = 320)
+```
 
