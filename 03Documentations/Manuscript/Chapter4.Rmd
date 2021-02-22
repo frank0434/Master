@@ -76,6 +76,8 @@ ggplot(data.frame(x = blues, y = 1),aes(x, y, fill = x)) +
   geom_col() +
   scale_fill_manual(name = "", values = blues)+
   theme_void()
+
+magicDate <- "2011-06-25"
 ```
 
 |      | AD        | I12       |
@@ -95,10 +97,12 @@ ggplot(data.frame(x = blues, y = 1),aes(x, y, fill = x)) +
 
 ```{r}
 DUL_LL_range <- doDUL_LL_range(SW = sw_mean_new,
-                               startd = "2011-06-25")
+                               startd = magicDate)
 # CF 0.95
 DUL_LL_range[, ':=' (i.SW.DUL = i.SW.DUL * 0.95,
-                     i.SW.LL = i.SW.LL * 0.95)]
+                     i.SW.LL = i.SW.LL * 0.95, 
+                     SW.DUL = SW.DUL * 0.95,
+                     SW.LL = SW.LL *0.95)]
 ```
 
 ```{r}
@@ -128,7 +132,7 @@ sowingDates <-  read_Sims(path_richard, source =  "sowingDate")
 # mimic the paper logic, force starting date to "2011-07-01"
 # The nearest measurements were "2011-06-25" for sd1 to sd5
 sowingDates[SowingDate%in% paste0("SD", 1:5), 
-            Clock.Today := as.Date("2011-06-25")]
+            Clock.Today := as.Date(magicDate)]
 data_SW <- read_Sims(path = path_richard)
 SW_mean_new <- colwise_meanSW(data_SW = data_SW, 
                               id.vars = id_vars, 
@@ -144,8 +148,6 @@ sw_initials <- initialSWC(SW_mean_new, sowingDates, id_vars)
 # sw_initials <- readRDS(here::here("_targets/objects/SW_initials"))
 sw_initials <- fix_SDorder(sw_initials)
 
-data_SW[SowingDate == "SD6"&Experiment == "Iversen12"] %>% 
-  ggplot(aes(Clock.Today, SWmm.2.,group = Clock.Today)) + geom_boxplot()
 ```
 
 
@@ -170,7 +172,7 @@ p_sw_initials <- sw_initials %>%
   scale_fill_manual(name = "", values = "#74ccf4") +
   scale_colour_manual(name = "", values = c("#0000FF", "#FF0000"))
 p_sw_initials
-# ggsave("Figures/sw_initials.png",plot = p_sw_initials, width = 7, height =10, dpi = 320)
+ggsave("Figures/sw_initials.png",plot = p_sw_initials, width = 7, height =10, dpi = 320)
 # ggsave("Figures/sw_initials_20110701.png",plot = p_sw_initials, width = 7, height =10, dpi = 320)
 ```
 
@@ -184,6 +186,48 @@ keySoilParams <- sw_initials[DUL_LL_range, on = .(Experiment, SowingDate, Depth)
 # write.xlsx(keySoilParams, here::here("01Data/keySoilParams.xlsx"))
 # write.xlsx(keySoilParams, here::here("01Data/keySoilParams20110701.xlsx"))
 ```
+
+##### Fix issue 34
+edit the dul value for SD6 to 10 to get initial soil water right.
+
+Automation login? 
+
+if the dul is smaller than sw, reset it back to DUL.
+
+```{r}
+keySoilParams[,':=' (i.SW.DUL = ifelse(i.SW.DUL < SW, SW, i.SW.DUL))]
+missDULlayers <- keySoilParams[, .I[which(i.SW.DUL < SW)]]
+all.equal(keySoilParams[missDULlayers], 
+          keySoilParams[, .SD[which(i.SW.DUL < SW)]])
+keySoilParams[missDULlayers, ':=' (i.SW.DUL = i.SW.DUL/0.95,
+                                   i.SW.LL = i.SW.LL/0.95)]
+
+
+keySoilParams  %>% 
+  ggplot(aes(x = Depth))+
+  geom_col(aes(y = SW, fill = "SWC"), position = "dodge", width = 1)+
+  geom_line(aes(y = i.SW.DUL, color = "DUL")) +
+  geom_point(aes(y = i.SW.DUL, color = "DUL"))+
+  geom_line(aes(y = i.SW.LL, color = "LL"))+
+  geom_point(aes(y = i.SW.LL, color = "LL")) +
+  # geom_line(aes(y = SW))+
+  scale_x_reverse() +
+  scale_y_continuous(expand = c(0, 0), 
+                     name = expression("Volumetric water content"~ (mm^3 ~ mm^{-3}))) +
+  coord_flip() +
+  # geom_ribbon(aes(ymin = SW.LL, ymax = SW.DUL), fill = "grey80") +
+  facet_grid(  SowingDate ~ Experiment) +
+  theme_water() +
+  theme(legend.margin = margin(0,0,0,0),
+        legend.box.margin = margin(0,0,0,0)) +
+  scale_fill_manual(name = "", values = "#74ccf4") +
+  scale_colour_manual(name = "", values = c("#0000FF", "#FF0000"))
+
+
+write.xlsx(keySoilParams, here::here("01Data/keySoilParamsFixIssue34.xlsx"))
+
+```
+
 
 # Results wording 
 what were the absolute values for profile initial swc?
@@ -477,7 +521,7 @@ obs_label <- paste("Observed", variable, var_unit_lab)
 
 var_subset <- c("Experiment","SowingDate", "Clock.Today",
                 pre_col, obs_col)
-SWCprofile <- pre_obs[Clock.Today >= "2011-06-25", 
+SWCprofile <- pre_obs[Clock.Today >= magicDate, 
                       ..var_subset]
 
 SWCprofile <- fix_SDorder(SWCprofile)
@@ -514,10 +558,13 @@ p <- timestep_p +
              alpha = 0.6, inherits =FALSE)
 
 p
-# ggsave("Figures/sw_timestamp.png",plot = p, width = 10, height =14, dpi = 320)
+ggsave("Figures/sw_timestamp.png",plot = p, width = 10, height =14, dpi = 320)
 
 
 ```
+
+**Manually edit** SD10 LAYER 1 from 0.333 to 0.320 
+
 #### Soil moisture deficit wording
 
 ```{r}
@@ -550,7 +597,7 @@ plot_timecourse <- function(DT, var, unit, label){
   
   var_subset <- c("Experiment","SowingDate", "Clock.Today",
                   pre_col, obs_col)
-  DT_sub <- DT[Clock.Today >= "2011-06-25", 
+  DT_sub <- DT[Clock.Today >= magicDate, 
                    ..var_subset]
   DT_sub <- fix_SDorder(DT_sub)
   # label and colour
@@ -581,7 +628,7 @@ timestep_p
 variable <- "LAI"
 var_unit <- ""
 var_unit_lab <- ""
-p_LAI <- plot_timecourse(pre_obs[Clock.Today >= "2011-06-25"], variable, var_unit, var_unit_lab)
+p_LAI <- plot_timecourse(pre_obs[Clock.Today >= magicDate], variable, var_unit, var_unit_lab)
 ggsave("Figures/LAI_timestamp.png",plot = p_LAI, width = 10, height =14, dpi = 320)
 
 ```
@@ -606,10 +653,10 @@ var_unit <- "Wt"
 var_unit_lab <- paste0("(kg/ha)")
 
 
-p_stemwt <- plot_timecourse(pre_obs[Clock.Today >= "2011-06-25"], variable, var_unit, var_unit_lab)
+p_stemwt <- plot_timecourse(pre_obs[Clock.Today >= magicDate], variable, var_unit, var_unit_lab)
 ggsave("Figures/stem_timestamp.png",plot = p_stemwt, width = 10, height =14, dpi = 320)
 ##QC CHECK
-# pre_obs[Clock.Today >= "2011-06-25", .(Experiment, SowingDate, Clock.Today,Predicted.ShootWt, Observed.StemWt)] %>% 
+# pre_obs[Clock.Today >= magicDate, .(Experiment, SowingDate, Clock.Today,Predicted.ShootWt, Observed.StemWt)] %>% 
 #   ggplot(aes(Clock.Today, Observed.StemWt)) +
 #   geom_point() +
 #   geom_line(aes(y = Predicted.ShootWt)) +
@@ -632,7 +679,7 @@ ggsave("Figures/shoot_timestamp.png",plot = p_shootwt, width = 10, height =14, d
 ```{r}
 variable <- "Height"
 var_unit <- ""
-var_unit_lab <- "cm"
+var_unit_lab <- "(cm)"
 
 
 p_height <- plot_timecourse(pre_obs[SowingDate %in% paste0("SD",1:5)], variable, var_unit, var_unit_lab)+
@@ -646,10 +693,11 @@ ggsave("Figures/height_timestamp.png",plot = p_height, width = 10, height = 7, d
 ```{r}
 variable <- "MS.node.No"
 var_unit <- ""
-var_unit_lab <- ""
+var_unit_lab <- "Main Stem Node Number"
 
 
-p_node <- plot_timecourse(pre_obs, variable, var_unit, var_unit_lab)
+p_node <- plot_timecourse(pre_obs, variable, var_unit, var_unit_lab) +
+  ylab(var_unit_lab)
 
 ggsave("Figures/node_timestamp.png",plot = p_node, width = 10, height = 10, dpi = 320)
 
@@ -658,7 +706,7 @@ var_unit <- ""
 var_unit_lab <- ""
 
 
-p_GS <- plot_timecourse(pre_obs, variable, var_unit, var_unit_lab)
+p_GS <- plot_timecourse(pre_obs, variable, var_unit, var_unit_lab) 
 
 ggsave("Figures/GS_timestamp.png",plot = p_GS, width = 10, height = 10, dpi = 320)
 
@@ -712,7 +760,7 @@ obs_label <- paste("Observed", variable, var_unit_lab)
 
 var_subset <- c("Experiment","SowingDate", "Clock.Today",
                 pre_col, obs_col)
-DT_sub <- pre_obs[Clock.Today >= "2011-06-25",
+DT_sub <- pre_obs[Clock.Today >= magicDate,
                       ..var_subset]
 
 DT_sub <- fix_SDorder(DT_sub)
@@ -764,7 +812,7 @@ obs_label <- paste("Observed", variable, var_unit_lab)
 
 var_subset <- c("Experiment","SowingDate", "Clock.Today",
                 pre_col, obs_col)
-DT_sub <- pre_obs[Clock.Today >= "2011-06-25",
+DT_sub <- pre_obs[Clock.Today >= magicDate,
                       ..var_subset]
 
 DT_sub <- fix_SDorder(DT_sub)
@@ -821,7 +869,7 @@ obs_label <- paste("Observed", variable, var_unit_lab)
 
 var_subset <- c("Experiment","SowingDate", "Clock.Today",
                 pre_col, obs_col)
-DT_sub <- pre_obs[Clock.Today >= "2011-06-25", 
+DT_sub <- pre_obs[Clock.Today >= magicDate, 
                       ..var_subset]
 
 DT_sub <- fix_SDorder(DT_sub)
@@ -874,7 +922,7 @@ obs_label <- paste("Observed", variable, var_unit_lab)
 
 var_subset <- c("Experiment","SowingDate", "Clock.Today",
                 pre_col, obs_col)
-DT_sub <- pre_obs[Clock.Today >= "2011-06-25", 
+DT_sub <- pre_obs[Clock.Today >= magicDate, 
                       ..var_subset]
 
 DT_sub <- fix_SDorder(DT_sub)
@@ -927,7 +975,7 @@ obs_label <- paste("Observed", variable, var_unit_lab)
 
 var_subset <- c("Experiment","SowingDate", "Clock.Today",
                 pre_col, obs_col)
-DT_sub <- pre_obs[Clock.Today >= "2011-06-25", 
+DT_sub <- pre_obs[Clock.Today >= magicDate, 
                       ..var_subset]
 
 DT_sub <- fix_SDorder(DT_sub)
@@ -990,7 +1038,7 @@ obs_label <- paste("Observed", variable, var_unit_lab)
 
 var_subset <- c("Experiment","SowingDate", "Clock.Today",
                 pre_col, obs_col)
-DT_sub <- pre_obs[Clock.Today >= "2011-06-25", 
+DT_sub <- pre_obs[Clock.Today >= magicDate, 
                       ..var_subset]
 
 DT_sub <- fix_SDorder(DT_sub)
@@ -1046,7 +1094,7 @@ obs_label <- paste("Observed", variable, var_unit_lab)
 
 var_subset <- c("Experiment","SowingDate", "Clock.Today",
                 pre_col, obs_col)
-DT_sub <- pre_obs[Clock.Today >= "2011-06-25", 
+DT_sub <- pre_obs[Clock.Today >= magicDate, 
                       ..var_subset]
 
 DT_sub <- fix_SDorder(DT_sub)
@@ -1099,7 +1147,7 @@ obs_label <- paste("Observed", variable, var_unit_lab)
 
 var_subset <- c("Experiment","SowingDate", "Clock.Today",
                 pre_col, obs_col)
-DT_sub <- pre_obs[Clock.Today >= "2011-06-25", 
+DT_sub <- pre_obs[Clock.Today >= magicDate, 
                       ..var_subset]
 
 DT_sub <- fix_SDorder(DT_sub)
@@ -1145,6 +1193,46 @@ ggsave("Figures/height_preobs.png",plot = p_height,
        width = 10, height = 5, dpi = 320)
 ggsave("Figures/phenology_preobs.png",plot = p_phenology, 
        width = 10, height = 9.5, dpi = 320)
+```
+#### Need the rainfall
+
+```{r}
+met_AD <- read_met(here::here("01Data/ClimateAndObserved/AshleyDene.met"),
+                   skip_unit = 10, skip_meta = 8)
+met_i12 <- read_met(here::here("01Data/ClimateAndObserved/lincoln.met"),
+                    skip_unit =  7, skip_meta = 6, site = "Iversen12")
+met <- rbindlist(list(met_AD,met_i12))
+
+
+met[Clock.Today >= magicDate] %>% 
+  ggplot(aes(Clock.Today, rain)) +
+  geom_col(color = "#0f5e9c", width = 0.1) +
+  facet_wrap( ~ Experiment, ncol = 1) +
+  theme_water() +
+  scale_y_continuous(expand = c(0,0), limits = c(0,70)) +
+  labs(x = "Date", y = "Rainfall (mm)")
+ggsave("Figures/rainfall_daily.png", 
+       width = 10, height = 5, dpi = 320)
+
+met_monthly <- met[Clock.Today >= magicDate
+                   ][, Month := gsub("^\\d{4}-|-\\d{2}$", "", Clock.Today)
+                     ][, .(rain = sum(rain, na.rm = TRUE)), 
+                       by = .(Month, Season,Experiment)]
+
+met_monthly[, Date := as.Date(paste0(c(rep("2011",7), 
+                                       rep("2012", 7)), 
+                                     "-",Month,"-", 
+                                     rep("01",14))), # RESOTRE THE DATE TIME FOR PLOTTING
+            by = .(Experiment)]
+met_monthly %>% 
+   ggplot(aes(Date, rain)) +
+  geom_col(fill = "#0f5e9c") +
+  facet_wrap( ~ Experiment, ncol = 2) +
+  theme_water() +
+  scale_y_continuous(expand = c(0,0), limits = c(0,70)) +
+  labs(x = "Date", y = "Rainfall (mm)")
+ggsave("Figures/rainfall_monthly.png", 
+       width = 10, height = 5, dpi = 320)
 ```
 
 
