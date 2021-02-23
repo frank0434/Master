@@ -1,6 +1,75 @@
 
 
 
+#' norm_stats
+#'
+#' @description this function is designed to be used with data.table and lappy
+#' 
+#' @param x a numeric vector 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+norm_stats <- function(x){
+  l <- list(mean=mean(x, na.rm = TRUE),
+            sd = sd(x, na.rm = TRUE),       
+            n = .N,
+            Upper = max(x, na.rm = TRUE),
+            Lower = min(x, na.rm = TRUE))
+  return(l)
+  } 
+#### Graph function
+
+#' plot_timecourse
+#' @description This function is tailored to plot a time course faceted plot 
+#' for apsimx simulation and observation comparision
+#' 
+#' @param DT a data.table. This table is the predict and observe table in apsimx
+#' db
+#' @param var a character string for variable name
+#' @param unit a character vector for the unit if any or anything that is 
+#' associated with the variable. create an empty one "" if nothing 
+#' @param label a character string to show the label for the variable 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+plot_timecourse <- function(DT, var, unit, label){
+  pre_col <- paste0("Predicted.", var, unit)
+  obs_col <- paste0("Observed.", var, unit)
+  pre_color <- "black"
+  obs_color <- "#FF0000"
+  pre_label <- paste("Predicted", var, label)
+  obs_label <- paste("Observed", var, label)
+  
+  var_subset <- c("Experiment","SowingDate", "Clock.Today",
+                  pre_col, obs_col)
+  DT_sub <- unique(DT[Clock.Today >= magicDate, 
+                      ..var_subset])
+  DT_sub <- fix_SDorder(DT_sub)
+  # label and colour
+  timestep_colors <- c(pre_color,obs_color)
+  names(timestep_colors) <- c(pre_col, obs_col)
+  timestep_labels <- c(pre_label, obs_label)
+  names(timestep_labels) <- c(pre_col, obs_col)
+  # Graphing
+  timestep_p <- DT_sub %>% 
+    ggplot(.,aes(Clock.Today )) +
+    geom_point(aes(y = .data[[obs_col]], color = {{obs_col}}),
+               size = 3)+
+    geom_line(aes(y = .data[[pre_col]], color = {{pre_col}}), 
+              show.legend = TRUE,size = 1) +
+    facet_wrap( ~  SowingDate + Experiment,
+                strip.position = "right", nrow = 10, scales = "free_y") +
+    theme_water()  +
+    theme(legend.position = "none", legend.key.size = unit(1, "cm")) +
+    labs(y = paste(gsub("Predicted\\.|mm", "", pre_col), label), 
+         x = "Date") +
+    scale_colour_manual(name = "col", values = timestep_colors, labels = timestep_labels)
+  timestep_p
+}
 
 
 #' morrisEE
