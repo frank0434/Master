@@ -172,7 +172,7 @@ p_sw_initials <- sw_initials %>%
   scale_fill_manual(name = "", values = "#74ccf4") +
   scale_colour_manual(name = "", values = c("#0000FF", "#FF0000"))
 p_sw_initials
-ggsave("Figures/sw_initials.png",plot = p_sw_initials, width = 7, height =10, dpi = 320)
+#ggsa("Figures/sw_initials.png",plot = p_sw_initials, width = 7, height =10, dpi = 320)
 # ggsave("Figures/sw_initials_20110701.png",plot = p_sw_initials, width = 7, height =10, dpi = 320)
 ```
 
@@ -478,54 +478,45 @@ rs <- dbSendQuery(conn, sql)
 Report <- DBI::dbFetch(rs) %>% 
   as.data.table()
 
+sql <- 'SELECT * FROM ObsAllData INNER JOIN _Simulations ON ObsAllData.SimulationID = _Simulations.ID'
+rs <- dbSendQuery(conn, sql)
+Observe <- DBI::dbFetch(rs) %>% 
+  as.data.table()
+
 
 pre_obs[, Clock.Today:=as.Date(Clock.Today)
         ][, (c("Experiment", "SowingDate")) := tstrsplit(Name, split = "SowingDate")]
 setnames(pre_obs, colnames(pre_obs), gsub("[[:punct:]]", ".", colnames(pre_obs)))
 Report[, Clock.Today:=as.Date(Clock.Today)]
 names(Report) <-   gsub("[[:punct:]]", ".", colnames(Report))
+Observe[, Clock.Today:=as.Date(Clock.Today)
+        ][, (c("Experiment", "SowingDate")) := tstrsplit(Name, split = "SowingDate")]
+names(Observe) <-   gsub("[[:punct:]]", ".", colnames(Observe))
 
 DBI::dbDisconnect(conn)
 ```
 ## Soil water profile
-
-```{r}
-
-# 
-# pre_obs[,.(Clock.Today, Name, Predicted.SWCmm, Observed.SWCmm)
-#         ][, Name := gsub("SowingDate", "", Name)] %>% 
-#   ggplot(aes(Observed.SWCmm, Predicted.SWCmm)) +
-#   geom_point() +
-#   facet_wrap(~ Name, scales = "free")
-# pre_obs[,.(Clock.Today, Name, Pred.Obs.SWCmm)] %>% 
-#   ggplot(aes(Clock.Today, Pred.Obs.SWCmm)) +
-#   geom_point() +
-#   facet_wrap(~ Name)
-```
 ## after Reset the soil 
-
 ### Time course
 ```{r, fig.height=10}
-
+# Define variable components
 variable <- "SWC"
 var_unit <- "mm"
 var_unit_lab <- paste0("(", var_unit, ")")
-
+# Assemble the variable names 
 pre_col <- paste0("Predicted.", variable, var_unit)
 obs_col <- paste0("Observed.", variable, var_unit)
 pre_color <- "black"
 obs_color <- "#FF0000"
 pre_label <- paste("Predicted", variable, var_unit_lab)
 obs_label <- paste("Observed", variable, var_unit_lab)
-
-
+# Assemble necessary variable names 
 var_subset <- c("Experiment","SowingDate", "Clock.Today",
                 pre_col, obs_col)
-SWCprofile <- pre_obs[Clock.Today >= magicDate, 
-                      ..var_subset]
-
+SWCprofile <- unique(pre_obs[Clock.Today >= magicDate, 
+                             ..var_subset])
+# Fix the factor order 
 SWCprofile <- fix_SDorder(SWCprofile)
-colnames(SWCprofile)
 
 timestep_colors <- c(pre_color,obs_color)
 names(timestep_colors) <- c(pre_col, obs_col)
@@ -556,11 +547,8 @@ DULmm <- fix_SDorder(DULmm)
 p <- timestep_p +
   geom_hline(data = DULmm, aes(yintercept = DULmm), linetype = 2, size = 0.5, 
              alpha = 0.6, inherits =FALSE)
-
 p
-ggsave("Figures/sw_timestamp.png",plot = p, width = 10, height =14, dpi = 320)
-
-
+#ggsa("Figures/sw_timestamp.png",plot = p, width = 10, height =14, dpi = 320)
 ```
 
 **Manually edit** SD10 LAYER 1 from 0.333 to 0.320 
@@ -579,49 +567,9 @@ SMD[DULmm[, SowingDate:=as.character(SowingDate)],
     on = c("Experiment", "SowingDate")
     ][, SMD.mm := DULmm - SWCmm][order(DAS)]
 ```
-
-
 ## Biomass and LAI
 
 ### Time course graph
-
-#### Graph function
-```{r}
-plot_timecourse <- function(DT, var, unit, label){
-  pre_col <- paste0("Predicted.", var, unit)
-  obs_col <- paste0("Observed.", var, unit)
-  pre_color <- "black"
-  obs_color <- "#FF0000"
-  pre_label <- paste("Predicted", var, label)
-  obs_label <- paste("Observed", var, label)
-  
-  var_subset <- c("Experiment","SowingDate", "Clock.Today",
-                  pre_col, obs_col)
-  DT_sub <- DT[Clock.Today >= magicDate, 
-                   ..var_subset]
-  DT_sub <- fix_SDorder(DT_sub)
-  # label and colour
-  timestep_colors <- c(pre_color,obs_color)
-  names(timestep_colors) <- c(pre_col, obs_col)
-  timestep_labels <- c(pre_label, obs_label)
-  names(timestep_labels) <- c(pre_col, obs_col)
-  # Graphing
-  timestep_p <- DT_sub %>% 
-    ggplot(.,aes(Clock.Today )) +
-    geom_point(aes(y = .data[[obs_col]], color = {{obs_col}}),
-               size = 3)+
-    geom_line(aes(y = .data[[pre_col]], color = {{pre_col}}), 
-              show.legend = TRUE,size = 1) +
-    facet_wrap( ~  SowingDate + Experiment,
-                strip.position = "right", nrow = 10, scales = "free_y") +
-    theme_water()  +
-    theme(legend.position = "none", legend.key.size = unit(1, "cm")) +
-    labs(y = paste(gsub("Predicted\\.|mm", "", pre_col), label), 
-         x = "Date") +
-    scale_colour_manual(name = "col", values = timestep_colors, labels = timestep_labels)
-timestep_p
-}
-```
 
 #### LAI
 ```{r}
@@ -629,9 +577,33 @@ variable <- "LAI"
 var_unit <- ""
 var_unit_lab <- ""
 p_LAI <- plot_timecourse(pre_obs[Clock.Today >= magicDate], variable, var_unit, var_unit_lab)
-ggsave("Figures/LAI_timestamp.png",plot = p_LAI, width = 10, height =14, dpi = 320)
+# ggsave("Figures/LAI_timestamp.png",plot = p_LAI, width = 10, height =14, dpi = 320)
 
 ```
+need some numbers to states
+```{r}
+DT_LAI <- merge(unique(p_LAI$data), cutDates[Clock.Today >= magicDate], all.x = TRUE,
+                    by = c("Experiment", "SowingDate", "Clock.Today"))
+
+p_LAI$data[cutDates[Clock.Today >= magicDate],
+           on = c("Experiment", "SowingDate", "Clock.Today")]
+setnames(DT_LAI, "Clock.Today", "Date")
+DT_LAI <- group_in_season(DT_LAI)
+DT_LAI[, ':='(SDorder = nafill(SDorder, type =  "nocb"),
+              Rotation.No. = nafill(Rotation.No., type = "nocb")), 
+       by = .(Experiment, SowingDate)]
+LAI_sumary <- DT_LAI[ !is.na(Observed.LAI)
+                      ][order(Date), DAS :=  as.numeric(difftime(Date, Date[1], units = "days")),
+                        by = .(Experiment, SowingDate, Season, SDorder, Rotation.No.)
+                        ][][, ':='(rate_pre = Predicted.LAI / DAS, 
+                                 rate_obs = Observed.LAI/DAS)
+                          ][, ratio := rate_pre/rate_obs]
+
+LAI_sumary
+
+```
+
+
 
 #### leaf wt 
 ```{r}
@@ -641,10 +613,9 @@ var_unit_lab <- paste0("(kg/ha)")
 
 
 p_leafwt <- plot_timecourse(pre_obs, variable, var_unit, var_unit_lab)
-ggsave("Figures/leaf_timestamp.png",plot = p_leafwt, width = 10, height =14, dpi = 320)
+#ggsave("Figures/leaf_timestamp.png",plot = p_leafwt, width = 10, height =14, dpi = 320)
 
 ```
-
 #### stem wt
 
 ```{r}
@@ -652,15 +623,25 @@ variable <- "Stem"
 var_unit <- "Wt"
 var_unit_lab <- paste0("(kg/ha)")
 
-
 p_stemwt <- plot_timecourse(pre_obs[Clock.Today >= magicDate], variable, var_unit, var_unit_lab)
-ggsave("Figures/stem_timestamp.png",plot = p_stemwt, width = 10, height =14, dpi = 320)
+#ggsave("Figures/stem_timestamp.png",plot = p_stemwt, width = 10, height =14, dpi = 320)
 ##QC CHECK
-# pre_obs[Clock.Today >= magicDate, .(Experiment, SowingDate, Clock.Today,Predicted.ShootWt, Observed.StemWt)] %>% 
-#   ggplot(aes(Clock.Today, Observed.StemWt)) +
-#   geom_point() +
-#   geom_line(aes(y = Predicted.ShootWt)) +
-#   facet_wrap(~ SowingDate + Experiment, nrow = 10, strip.position = "right")
+obs_stem <- Observe[Clock.Today >= magicDate &
+                      (Name %like% "AshleyDeneSow"| Name %like% "Iversen12Sow"),
+                    .(Experiment, SowingDate, Clock.Today,StemWt)] 
+obs_stem %>%
+  ggplot(aes(Clock.Today, StemWt)) +
+  geom_point() +
+  # geom_line(aes(y = Predicted.ShootWt)) +
+  facet_wrap(~ SowingDate + Experiment, nrow = 10, strip.position = "right")
+
+stats_stemWt <- obs_stem[!is.na(StemWt)
+                         ][, unlist(lapply(.SD, norm_stats),
+                                    recursive = FALSE), by = .(Experiment), .SDcols = "StemWt"]
+stats_stemWt
+p_stemwt$data[, unlist(lapply(.SD, norm_stats), recursive = FALSE),
+              by = .(Experiment),
+              .SDcols = paste0("Predicted.",variable, var_unit)]
 ```
 
 #### SHOOT WT
@@ -671,8 +652,33 @@ var_unit_lab <- paste0("(kg/ha)")
 
 
 p_shootwt <- plot_timecourse(pre_obs, variable, var_unit, var_unit_lab)
-ggsave("Figures/shoot_timestamp.png",plot = p_shootwt, width = 10, height =14, dpi = 320)
+#ggsave("Figures/shoot_timestamp.png",plot = p_shootwt, width = 10, height =14, dpi = 320)
+DT <- merge(unique(p_shootwt$data), cutDates[Clock.Today >= magicDate],
+            all.x = TRUE,
+            by = c("Experiment", "SowingDate", "Clock.Today"))
 
+setnames(DT, "Clock.Today", "Date")
+DT <- group_in_season(DT)
+DT[, ':='(SDorder = nafill(SDorder, type =  "nocb"),
+          Rotation.No. = nafill(Rotation.No., type = "nocb"),
+          SDorder = nafill(SDorder, type = "locf"),
+          Season = ifelse(is.na(Season), "2011/2012", Season)), 
+       by = .(Experiment, SowingDate)]
+sum_yield <- DT[ !is.na(Observed.ShootWt)
+    ][order(Date), DAS :=  as.numeric(difftime(Date, Date[1], units = "days")),
+      by = .(Experiment, SowingDate, Season, SDorder, Rotation.No.)
+      ][order(DAS), .SD[.N], by = .(Experiment, SowingDate,Rotation.No., SDorder)
+        ][, .(obs = sum(Observed.ShootWt),
+              pre = sum(Predicted.ShootWt)) ,
+          by = .(Experiment, SowingDate, SDorder)]
+
+sum_yield[, ration := pre/obs][order(Experiment, SDorder)]
+sum_yield %>% 
+  ggplot(aes(SDorder, obs)) +
+  geom_point(color = "red") +
+  geom_point(aes(y = pre), color= "blue") + 
+  facet_wrap(~ Experiment ) 
+  # geom_text(aes(x = SDorder, y = obs, label = obs), inherit.aes = FALSE)
 ```
 
 #### height
@@ -685,7 +691,7 @@ var_unit_lab <- "(cm)"
 p_height <- plot_timecourse(pre_obs[SowingDate %in% paste0("SD",1:5)], variable, var_unit, var_unit_lab)+
   facet_wrap( ~  SowingDate + Experiment,
                 strip.position = "right", nrow = 5, scales = "free_y")
-ggsave("Figures/height_timestamp.png",plot = p_height, width = 10, height = 7, dpi = 320)
+#ggsave("Figures/height_timestamp.png",plot = p_height, width = 10, height = 7, dpi = 320)
 
 ```
 #### Phenology
@@ -699,7 +705,7 @@ var_unit_lab <- "Main Stem Node Number"
 p_node <- plot_timecourse(pre_obs, variable, var_unit, var_unit_lab) +
   ylab(var_unit_lab)
 
-ggsave("Figures/node_timestamp.png",plot = p_node, width = 10, height = 10, dpi = 320)
+#ggsave("Figures/node_timestamp.png",plot = p_node, width = 10, height = 10, dpi = 320)
 
 variable <- "GrowthStage"
 var_unit <- ""
@@ -708,7 +714,7 @@ var_unit_lab <- ""
 
 p_GS <- plot_timecourse(pre_obs, variable, var_unit, var_unit_lab) 
 
-ggsave("Figures/GS_timestamp.png",plot = p_GS, width = 10, height = 10, dpi = 320)
+#ggsave("Figures/GS_timestamp.png",plot = p_GS, width = 10, height = 10, dpi = 320)
 
 
 ```
@@ -793,7 +799,7 @@ abline_p +
             inherit.aes = FALSE) +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
-ggsave("Figures/swc_preobs.png", width = 10, height =5, dpi = 320)
+#ggsave("Figures/swc_preobs.png", width = 10, height =5, dpi = 320)
 ```
 
 
@@ -845,7 +851,7 @@ abline_p +
             inherit.aes = FALSE) +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
-ggsave("Figures/LAI_preobs.png", width = 10, height =5, dpi = 320)
+#ggsave("Figures/LAI_preobs.png", width = 10, height =5, dpi = 320)
 ```
 
 
@@ -1018,8 +1024,8 @@ combine shoot component
 ```{r}
 
 p_aboveground <- plot_grid(p_shoot, p_leaf, p_stem, ncol = 1)
-ggsave("Figures/aboveground_preobs.png",plot = p_aboveground, 
-       width = 10, height =14, dpi = 320)
+#ggsave("Figures/aboveground_preobs.png",plot = p_aboveground, 
+       # width = 10, height =14, dpi = 320)
 ```
 
 #### Height
@@ -1189,10 +1195,10 @@ combine phenology
 
 ```{r}
 p_phenology <- plot_grid(p_MS.node.No, p_GrowthStage, ncol = 1)
-ggsave("Figures/height_preobs.png",plot = p_height, 
-       width = 10, height = 5, dpi = 320)
-ggsave("Figures/phenology_preobs.png",plot = p_phenology, 
-       width = 10, height = 9.5, dpi = 320)
+#ggsave("Figures/height_preobs.png",plot = p_height, 
+       # width = 10, height = 5, dpi = 320)
+#ggsave("Figures/phenology_preobs.png",plot = p_phenology, 
+       # width = 10, height = 9.5, dpi = 320)
 ```
 #### Need the rainfall
 
@@ -1211,8 +1217,8 @@ met[Clock.Today >= magicDate] %>%
   theme_water() +
   scale_y_continuous(expand = c(0,0), limits = c(0,70)) +
   labs(x = "Date", y = "Rainfall (mm)")
-ggsave("Figures/rainfall_daily.png", 
-       width = 10, height = 5, dpi = 320)
+#ggsave("Figures/rainfall_daily.png", 
+       # width = 10, height = 5, dpi = 320)
 
 met_monthly <- met[Clock.Today >= magicDate
                    ][, Month := gsub("^\\d{4}-|-\\d{2}$", "", Clock.Today)
@@ -1231,8 +1237,8 @@ met_monthly %>%
   theme_water() +
   scale_y_continuous(expand = c(0,0), limits = c(0,70)) +
   labs(x = "Date", y = "Rainfall (mm)")
-ggsave("Figures/rainfall_monthly.png", 
-       width = 10, height = 5, dpi = 320)
+#ggsave("Figures/rainfall_monthly.png", 
+       # width = 10, height = 5, dpi = 320)
 ```
 
 
