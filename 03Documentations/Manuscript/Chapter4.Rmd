@@ -604,46 +604,6 @@ LAI_sumary
 ```
 
 
-
-#### leaf wt 
-```{r}
-variable <- "Leaf"
-var_unit <- "Wt"
-var_unit_lab <- paste0("(kg/ha)")
-
-
-p_leafwt <- plot_timecourse(pre_obs, variable, var_unit, var_unit_lab)
-#ggsave("Figures/leaf_timestamp.png",plot = p_leafwt, width = 10, height =14, dpi = 320)
-
-```
-#### stem wt
-
-```{r}
-variable <- "Stem"
-var_unit <- "Wt"
-var_unit_lab <- paste0("(kg/ha)")
-
-p_stemwt <- plot_timecourse(pre_obs[Clock.Today >= magicDate], variable, var_unit, var_unit_lab)
-#ggsave("Figures/stem_timestamp.png",plot = p_stemwt, width = 10, height =14, dpi = 320)
-##QC CHECK
-obs_stem <- Observe[Clock.Today >= magicDate &
-                      (Name %like% "AshleyDeneSow"| Name %like% "Iversen12Sow"),
-                    .(Experiment, SowingDate, Clock.Today,StemWt)] 
-obs_stem %>%
-  ggplot(aes(Clock.Today, StemWt)) +
-  geom_point() +
-  # geom_line(aes(y = Predicted.ShootWt)) +
-  facet_wrap(~ SowingDate + Experiment, nrow = 10, strip.position = "right")
-
-stats_stemWt <- obs_stem[!is.na(StemWt)
-                         ][, unlist(lapply(.SD, norm_stats),
-                                    recursive = FALSE), by = .(Experiment), .SDcols = "StemWt"]
-stats_stemWt
-p_stemwt$data[, unlist(lapply(.SD, norm_stats), recursive = FALSE),
-              by = .(Experiment),
-              .SDcols = paste0("Predicted.",variable, var_unit)]
-```
-
 #### SHOOT WT
 ```{r}
 variable <- "Shoot"
@@ -681,17 +641,113 @@ sum_yield %>%
   # geom_text(aes(x = SDorder, y = obs, label = obs), inherit.aes = FALSE)
 ```
 
+
+#### leaf wt 
+```{r}
+variable <- "Leaf"
+var_unit <- "Wt"
+var_unit_lab <- paste0("(kg/ha)")
+
+
+p_leafwt <- plot_timecourse(pre_obs, variable, var_unit, var_unit_lab)
+#ggsave("Figures/leaf_timestamp.png",plot = p_leafwt, width = 10, height =14, dpi = 320)
+DT <- merge(unique(p_leafwt$data), cutDates[Clock.Today >= magicDate],
+            all.x = TRUE,
+            by = c("Experiment", "SowingDate", "Clock.Today"))
+
+setnames(DT, "Clock.Today", "Date")
+DT <- group_in_season(DT)
+DT[, ':='(SDorder = nafill(SDorder, type =  "nocb"),
+          Rotation.No. = nafill(Rotation.No., type = "nocb"),
+          Season = ifelse(is.na(Season), "2011/2012", Season)), 
+       by = .(Experiment, SowingDate)]
+sum_yield <- DT[ !is.na(Observed.LeafWt)
+    ][order(Date), DAS :=  as.numeric(difftime(Date, Date[1], units = "days")),
+      by = .(Experiment, SowingDate, Season, SDorder, Rotation.No.)
+      ][order(DAS), .SD[.N], by = .(Experiment, SowingDate,Rotation.No., SDorder)
+        ][, .(obs = sum(Observed.LeafWt),
+              pre = sum(Predicted.LeafWt)) ,
+          by = .(Experiment, SowingDate, SDorder)]
+
+sum_yield[, ration := pre/obs][order(Experiment, SDorder)]
+sum_yield %>% 
+  ggplot(aes(SDorder, obs)) +
+  geom_point(color = "red") +
+  geom_point(aes(y = pre), color= "blue") + 
+  facet_wrap(~ Experiment ) 
+sum_yield
+
+
+```
+#### stem wt
+
+```{r}
+variable <- "Stem"
+var_unit <- "Wt"
+var_unit_lab <- paste0("(kg/ha)")
+
+p_stemwt <- plot_timecourse(pre_obs[Clock.Today >= magicDate], variable, var_unit, var_unit_lab)
+#ggsave("Figures/stem_timestamp.png",plot = p_stemwt, width = 10, height =14, dpi = 320)
+##QC CHECK
+obs_stem <- Observe[Clock.Today >= magicDate &
+                      (Name %like% "AshleyDeneSow"| Name %like% "Iversen12Sow"),
+                    .(Experiment, SowingDate, Clock.Today,StemWt)] 
+obs_stem %>%
+  ggplot(aes(Clock.Today, StemWt)) +
+  geom_point() +
+  # geom_line(aes(y = Predicted.ShootWt)) +
+  facet_wrap(~ SowingDate + Experiment, nrow = 10, strip.position = "right")
+
+stats_stemWt <- obs_stem[!is.na(StemWt)
+                         ][, unlist(lapply(.SD, norm_stats),
+                                    recursive = FALSE), by = .(Experiment), .SDcols = "StemWt"]
+stats_stemWt
+p_stemwt$data[, unlist(lapply(.SD, norm_stats), recursive = FALSE),
+              by = .(Experiment),
+              .SDcols = paste0("Predicted.",variable, var_unit)]
+```
+
 #### height
 ```{r}
-variable <- "Height"
-var_unit <- ""
-var_unit_lab <- "(cm)"
+var <- "Height"
+unit <- ""
+label <- "(cm)"
 
+pre_col <- paste0("Predicted.", var, unit)
+obs_col <- paste0("Observed.", var, unit)
+  pre_color <- "black"
+  obs_color <- "#FF0000"
+  pre_label <- paste("Predicted", var, label)
+  obs_label <- paste("Observed", var, label)
+  
+  var_subset <- c("Experiment","SowingDate", "Clock.Today",
+                  pre_col, obs_col)
+  DT_sub <- unique(pre_obs[Clock.Today >= magicDate &
+                             SowingDate %in% paste0("SD", 1:5), 
+                      ..var_subset])
+  # DT_sub <- fix_SDorder(DT_sub)
+  # label and colour
+  timestep_colors <- c(pre_color,obs_color)
+  names(timestep_colors) <- c(pre_col, obs_col)
+  timestep_labels <- c(pre_label, obs_label)
+  names(timestep_labels) <- c(pre_col, obs_col)
+  # Graphing
+p_height <- timestep_p <- DT_sub %>% 
+    ggplot(.,aes(Clock.Today )) +
+    geom_point(aes(y = .data[[obs_col]], color = {{obs_col}}),
+               size = 3)+
+    geom_line(aes(y = .data[[pre_col]], color = {{pre_col}}), 
+              show.legend = TRUE,size = 1) +
+    facet_wrap( ~  SowingDate + Experiment,
+                strip.position = "right", nrow = 5, scales = "free_y") +
+    theme_water()  +
+    theme(legend.position = "none", legend.key.size = unit(1, "cm")) +
+    labs(y = paste(gsub("Predicted\\.|mm", "", pre_col), label), 
+         x = "Date") +
+    scale_colour_manual(name = "col", values = timestep_colors, labels = timestep_labels)
+  
 
-p_height <- plot_timecourse(pre_obs[SowingDate %in% paste0("SD",1:5)], variable, var_unit, var_unit_lab)+
-  facet_wrap( ~  SowingDate + Experiment,
-                strip.position = "right", nrow = 5, scales = "free_y")
-#ggsave("Figures/height_timestamp.png",plot = p_height, width = 10, height = 7, dpi = 320)
+ggsave("Figures/height_timestamp.png",plot = p_height, width = 10, height = 7, dpi = 320)
 
 ```
 #### Phenology
