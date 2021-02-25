@@ -1,6 +1,52 @@
 
 
+#' Title
+#'
+#' @param dt 
+#' @param col_obs 
+#' @param col_pre 
+#' @param color 
+#' @param scale 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+plot_PreObs <- function(dt, col_obs, col_pre, 
+                        color = "SowingDate", scale = "fixed"){
+  base_p <- dt %>% 
+    ggplot(aes(x = .data[[col_obs]],
+               y = .data[[col_pre]]
+               # shape = SowingDate,
+               # colour = .data[[color]]
+    )) +
+    geom_point(size = 3, alpha = 0.8) +
+    facet_wrap( ~ Experiment, scales = scale)
+  return(base_p)
+}
 
+
+#' Title
+#'
+#' @param DT 
+#' @param key 
+#' @param pre_col 
+#' @param obs_col 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+key_stats <- function(DT, key =c("Experiment"), pre_col, obs_col){
+  stats <-  sims_stats(DT, keys = key,
+                       col_pred = pre_col,
+                       col_obs = obs_col)
+  stats_rs <- stats[, unlist(stats, recursive = FALSE), by = .(Experiment)]
+  stats_rs[, ':='(R2_str = paste0(as.character(expression(italic(R)^2 ~"=")), "~",R2),
+                  NSE_str = paste0(as.character(expression(NSE~"=")), "~", NSE),
+                  RMSE_str = paste0(as.character(expression(RMSE~" = ")), "~", RMSE))]
+  return(stats_rs)
+}
 #' norm_stats
 #'
 #' @description this function is designed to be used with data.table and lappy

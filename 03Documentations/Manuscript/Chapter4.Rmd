@@ -747,7 +747,45 @@ p_height <- timestep_p <- DT_sub %>%
     scale_colour_manual(name = "col", values = timestep_colors, labels = timestep_labels)
   
 
-ggsave("Figures/height_timestamp.png",plot = p_height, width = 10, height = 7, dpi = 320)
+# ggsave("Figures/height_timestamp.png",plot = p_height, width = 10, height = 7, dpi = 320)
+obs_height <- Observe[Clock.Today >= magicDate &
+                      (Name %like% "AshleyDeneSow"| Name %like% "Iversen12Sow"),
+                    .(Experiment, SowingDate, Clock.Today,Height)] 
+obs_height %>%
+  ggplot(aes(Clock.Today, Height)) +
+  geom_point() +
+  # geom_line(aes(y = Predicted.ShootWt)) +
+  facet_wrap(~ SowingDate + Experiment, nrow = 10, strip.position = "right")
+
+stats_Height <- obs_height[!is.na(Height)
+                         ][, unlist(lapply(.SD, norm_stats),
+                                    recursive = FALSE), by = .(Experiment), .SDcols = "Height"]
+stats_Height
+DT <- merge(unique(p_height$data), cutDates[Clock.Today >= magicDate],
+            all.x = TRUE,
+            by = c("Experiment", "SowingDate", "Clock.Today"))
+
+setnames(DT, "Clock.Today", "Date")
+DT <- group_in_season(DT)
+DT[, ':='(SDorder = nafill(SDorder, type =  "nocb"),
+          Rotation.No. = nafill(Rotation.No., type = "nocb"),
+          Season = ifelse(is.na(Season), "2011/2012", Season)), 
+       by = .(Experiment, SowingDate)]
+sum_yield <- DT[ !is.na(Observed.Height) & Rotation.No.<= 4
+    ][order(Date), DAS :=  as.numeric(difftime(Date, Date[1], units = "days")),
+      by = .(Experiment, SowingDate, Season, SDorder, Rotation.No.)
+      ][order(DAS), .SD[.N], by = .(Experiment, SowingDate,Rotation.No., SDorder)
+        ][, .(obs = max(Observed.Height),
+              pre = max(Predicted.Height)) ,
+          by = .(Experiment, SowingDate, SDorder)]
+
+sum_yield[, ration := pre/obs][order(Experiment, SDorder)]
+sum_yield %>% 
+  ggplot(aes(SDorder, obs)) +
+  geom_point(color = "red") +
+  geom_point(aes(y = pre), color= "blue") + 
+  facet_wrap(~ Experiment ) 
+sum_yield[, .(mean(obs),sd(obs),  mean(pre), sd(pre)), by = .(Experiment)]
 
 ```
 #### Phenology
@@ -760,8 +798,8 @@ var_unit_lab <- "Main Stem Node Number"
 
 p_node <- plot_timecourse(pre_obs, variable, var_unit, var_unit_lab) +
   ylab(var_unit_lab)
-
-#ggsave("Figures/node_timestamp.png",plot = p_node, width = 10, height = 10, dpi = 320)
+# plotly::ggplotly(p_node)
+# ggsave("Figures/node_timestamp.png",plot = p_node, width = 10, height = 10, dpi = 320)
 
 variable <- "GrowthStage"
 var_unit <- ""
@@ -776,36 +814,6 @@ p_GS <- plot_timecourse(pre_obs, variable, var_unit, var_unit_lab)
 ```
 
 ### Pre vs obs
-
-function
-
-```{r}
-plot_PreObs <- function(dt, col_obs, col_pre, 
-                        color = "SowingDate", scale = "fixed"){
-  base_p <- dt %>% 
-  ggplot(aes(x = .data[[col_obs]],
-             y = .data[[col_pre]]
-             # shape = SowingDate,
-             # colour = .data[[color]]
-             )) +
-  geom_point(size = 3, alpha = 0.8) +
-  facet_wrap( ~ Experiment, scales = scale)
-  return(base_p)
-}
-
-
-key_stats <- function(DT, key =c("Experiment"), pre_col, obs_col){
- stats <-  sims_stats(DT, keys = key,
-                      col_pred = pre_col,
-                      col_obs = obs_col)
- stats_rs <- stats[, unlist(stats, recursive = FALSE), by = .(Experiment)]
- stats_rs[, ':='(R2_str = paste0(as.character(expression(italic(R)^2 ~"=")), "~",R2),
-                 NSE_str = paste0(as.character(expression(NSE~"=")), "~", NSE),
-                 RMSE_str = paste0(as.character(expression(RMSE~" = ")), "~", RMSE))]
- return(stats_rs)
-}
-```
-
 
 ```{r}
 variable <- "SWC"
@@ -910,10 +918,6 @@ abline_p +
 #ggsave("Figures/LAI_preobs.png", width = 10, height =5, dpi = 320)
 ```
 
-
-```{r}
-
-```
 
 ### Shootwt
 ```{r}
@@ -1152,8 +1156,17 @@ pre_color <- "black"
 obs_color <- "#FF0000"
 pre_label <- paste("Predicted", variable, var_unit_lab)
 obs_label <- paste("Observed", variable, var_unit_lab)
-
-
+check <- merge(Report[,.(Experiment, SowingDate, Clock.Today, MS.node.No)], 
+      Observe[!is.na(SowingDate) & !is.na(MS.node.No),
+              .(Experiment, SowingDate, Clock.Today, MS.node.No)], 
+      by = c("Experiment", "SowingDate", "Clock.Today"))
+p <- check %>% 
+  ggplot(aes(MS.node.No.x, MS.node.No.y)) +
+  geom_point() 
+  plotly::ggplotly(p)
+  
+Observe[Clock.Today == "2012-04-12", .(MS.node.No, Name)]
+Report[Clock.Today == "2012-04-12", .(Clock.Today,MS.node.No, Name)]
 var_subset <- c("Experiment","SowingDate", "Clock.Today",
                 pre_col, obs_col)
 DT_sub <- pre_obs[Clock.Today >= magicDate, 
@@ -1253,8 +1266,11 @@ combine phenology
 p_phenology <- plot_grid(p_MS.node.No, p_GrowthStage, ncol = 1)
 #ggsave("Figures/height_preobs.png",plot = p_height, 
        # width = 10, height = 5, dpi = 320)
-#ggsave("Figures/phenology_preobs.png",plot = p_phenology, 
-       # width = 10, height = 9.5, dpi = 320)
+ggsave("Figures/phenology_preobs.png",plot = p_MS.node.No,
+       width = 10, height = 5, dpi = 320)
+
+plotly::ggplotly(p_MS.node.No)
+p_MS.node.No$data[!is.na(Observed.MS.node.No) & Experiment == "AshleyDene" & Observed.MS.node.No >13]
 ```
 #### Need the rainfall
 
