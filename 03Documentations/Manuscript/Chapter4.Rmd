@@ -690,19 +690,24 @@ p_stemwt <- plot_timecourse(pre_obs[Clock.Today >= magicDate], variable, var_uni
 #ggsave("Figures/stem_timestamp.png",plot = p_stemwt, width = 10, height =14, dpi = 320)
 ##QC CHECK
 obs_stem <- Observe[Clock.Today >= magicDate &
-                      (Name %like% "AshleyDeneSow"| Name %like% "Iversen12Sow"),
-                    .(Experiment, SowingDate, Clock.Today,StemWt)] 
+                      Experiment %in% c("AshleyDene","Iversen12") & 
+                      SowingDate %in% paste0("SD", 1:10),
+                    .(Experiment, SowingDate, Clock.Today,StemWt)
+                    ][!is.na(StemWt)] 
 obs_stem %>%
   ggplot(aes(Clock.Today, StemWt)) +
   geom_point() +
   # geom_line(aes(y = Predicted.ShootWt)) +
   facet_wrap(~ SowingDate + Experiment, nrow = 10, strip.position = "right")
 
-stats_stemWt <- obs_stem[!is.na(StemWt)
-                         ][, unlist(lapply(.SD, norm_stats),
-                                    recursive = FALSE), by = .(Experiment), .SDcols = "StemWt"]
-stats_stemWt
-p_stemwt$data[, unlist(lapply(.SD, norm_stats), recursive = FALSE),
+obs_stem[, range(StemWt), by = .(Experiment)]
+obs_stem[, mean(StemWt), by = .(Experiment)]
+p_stemwt$data[, unlist(lapply(.SD, function(x){
+  list(mean=mean(x, na.rm = TRUE),
+            sd = sd(x, na.rm = TRUE),       
+            n = .N,
+            Upper = max(x, na.rm = TRUE),
+            Lower = min(x, na.rm = TRUE))}), recursive = FALSE),
               by = .(Experiment),
               .SDcols = paste0("Predicted.",variable, var_unit)]
 ```
@@ -758,7 +763,12 @@ obs_height %>%
   facet_wrap(~ SowingDate + Experiment, nrow = 10, strip.position = "right")
 
 stats_Height <- obs_height[!is.na(Height)
-                         ][, unlist(lapply(.SD, norm_stats),
+                         ][, unlist(lapply(.SD,  function(x){
+  list(mean=mean(x, na.rm = TRUE),
+            sd = sd(x, na.rm = TRUE),       
+            n = .N,
+            Upper = max(x, na.rm = TRUE),
+            Lower = min(x, na.rm = TRUE))} ),
                                     recursive = FALSE), by = .(Experiment), .SDcols = "Height"]
 stats_Height
 DT <- merge(unique(p_height$data), cutDates[Clock.Today >= magicDate],
@@ -1311,6 +1321,68 @@ met_monthly %>%
   labs(x = "Date", y = "Rainfall (mm)")
 #ggsave("Figures/rainfall_monthly.png", 
        # width = 10, height = 5, dpi = 320)
+met_monthly[, sum(rain), by = .(Experiment)]
+```
+#### Need the temperature
+
+```{r}
+met[Clock.Today >= magicDate] %>% 
+  ggplot(aes(Clock.Today, mean, color = Experiment)) +
+  geom_line(width = 1) +
+  theme_water() +
+  scale_y_continuous(expand = c(0,0), limits = c(0,25)) +
+  labs(x = "Date", y = "Temperature (\u00B0C)")+
+  scale_color_manual(name = "Site", values = c("blue", "red"))
+ggsave("Figures/temp_daily.png",
+width = 10, height = 5, dpi = 320)
+met[Clock.Today >= "2011-07-01" ] %>% 
+  ggplot(aes(Clock.Today, AccumTT)) +
+  geom_point(size = 1) +
+  theme_water() +
+  # scale_y_continuous(expand = c(0,0), limits = c(0,25)) +
+  labs(x = "Date", y = "Accumulative thermal time (\u00B0Cd)") +
+  facet_wrap( ~ Experiment)
+ggsave("Figures/cum_TT.png", 
+       width = 10, height = 5, dpi = 320)
+
+met[Clock.Today >= "2011-07-01" ]$AccumTT %>% max()
 ```
 
+#### Need radiation 
+
+```{r}
+met[Clock.Today >= "2011-07-01"
+    ][,AccumRadn := cumsum(radn), by = .(Season, Experiment)][] %>% 
+  ggplot(aes(Clock.Today, AccumRadn)) +
+  geom_point(size = 1) +
+  theme_water() +
+  # scale_y_continuous(expand = c(0,0), limits = c(0,25)) +
+  labs(x = "Date", y = bquote("Accumlative solar radiation (MJ "~ m^-2 ~ d^-1 ~")"))
+ggsave("Figures/cum_radn.png", 
+       width = 10, height = 5, dpi = 320)
+met[Clock.Today >= "2011-07-01" ]$AccumRadn %>% max()
+```
+
+#### Supply and demand
+
+```{r}
+Fw <- Report[Experiment %in% c("AshleyDene", "Iversen12") &
+               SowingDate %in% paste0("SD", 1:10)&
+               Clock.Today >= magicDate,
+       .(Experiment,SowingDate, Clock.Today, Lucerne.Leaf.Fw)]
+Fw <- fix_SDorder(Fw)
+ Fw %>% 
+    ggplot(.,aes(Clock.Today, Lucerne.Leaf.Fw )) +
+    # geom_point(size = 3)+
+    geom_line(size = 0.6) +
+    facet_wrap( ~  SowingDate + Experiment,
+                strip.position = "right", nrow = 10) +
+    theme_water()  +
+    theme(legend.position = "none", legend.key.size = unit(1, "cm")) +
+    labs(y = "Ratio of leaf transpiration and water demand", 
+         x = "Date") +
+    scale_colour_manual(name = "col", values = timestep_colors, labels = timestep_labels)
+ggsave("Figures/fw.png",
+       width = 10, height = 10, dpi = 320)
+```
 
