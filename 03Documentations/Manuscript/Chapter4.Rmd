@@ -1283,7 +1283,7 @@ plotly::ggplotly(p_MS.node.No)
 p_MS.node.No$data[!is.na(Observed.MS.node.No) & Experiment == "AshleyDene" & Observed.MS.node.No >13]
 ```
 #### Need the rainfall
-
+boardfield rainfall
 ```{r}
 met_AD <- read_met(here::here("01Data/ClimateAndObserved/AshleyDene.met"),
                    skip_unit = 10, skip_meta = 8)
@@ -1384,5 +1384,89 @@ Fw <- fix_SDorder(Fw)
     scale_colour_manual(name = "col", values = timestep_colors, labels = timestep_labels)
 ggsave("Figures/fw.png",
        width = 10, height = 10, dpi = 320)
+```
+
+### use met file from the excel 
+```{r}
+excel_sheets("c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx")
+met_AD <- read_excel("c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx", 
+                     sheet = "AshleyDene.met", range = "a10:i802") %>% 
+  as.data.table()
+
+met_AD_col <- read_excel("c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx", 
+                     sheet = "AshleyDene.met", range = "A9:I10")
+colnames(met_AD) <- colnames(met_AD_col)
+startd = "2010-10-01"
+endd = "2012-08-01"
+site = "AshleyDene"
+met_AD <- met_AD[, Clock.Today := as.Date(day, origin = paste0(year, "-01-01"))
+                 ][Clock.Today > startd & Clock.Today < endd
+                   ][,Date := Clock.Today]
+met_AD <- group_in_season(met_AD)[, AccumTT := cumsum(mean),
+                                  by = Season
+                                  ][, Experiment:=site]
+met_i12 <- read_excel("c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx", 
+                     sheet = "Iversen12.met", range = "a18639:i19581") %>% 
+  as.data.table()
+
+met_i12_col <- read_excel("c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx", 
+                     sheet = "Iversen12.met", range = "A9:I10") 
+colnames(met_i12) <- colnames(met_i12_col)
+startd = "2010-10-01"
+endd = "2012-08-01"
+site = "AshleyDene"
+met_i12 <- met_i12[, Clock.Today := as.Date(day, origin = paste0(year, "-01-01"))
+                 ][Clock.Today > startd & Clock.Today < endd
+                   ][,Date := Clock.Today]
+met_i12 <- group_in_season(met_i12)[, AccumTT := cumsum(mean),
+                                    by = Season
+                                  ][, Experiment:= "Iversen12"]
+
+met <- rbindlist(list(met_AD, met_i12))
+met[Clock.Today >= "2011-07-01" ] %>% 
+  ggplot(aes(Clock.Today, AccumTT)) +
+  geom_point(size = 1) +
+  theme_water() +
+  # scale_y_continuous(expand = c(0,0), limits = c(0,25)) +
+  labs(x = "Date", y = "Accumulative thermal time (\u00B0Cd)") +
+  facet_wrap( ~ Experiment)
+ggsave("Figures/cum_radn.png", 
+       width = 10, height = 5, dpi = 320)
+
+```
+
+local rainfall
+
+```{r}
+met[Clock.Today >= magicDate] %>% 
+  ggplot(aes(Clock.Today, rain)) +
+  geom_col(color = "#0f5e9c", width = 0.1) +
+  facet_wrap( ~ Experiment, ncol = 1) +
+  theme_water() +
+  scale_y_continuous(expand = c(0,0), limits = c(0,70)) +
+  labs(x = "Date", y = "Rainfall (mm)")
+#ggsave("Figures/rainfall_daily.png", 
+       # width = 10, height = 5, dpi = 320)
+
+met_monthly <- met[Clock.Today >= magicDate
+                   ][, Month := gsub("^\\d{4}-|-\\d{2}$", "", Clock.Today)
+                     ][, .(rain = sum(rain, na.rm = TRUE)), 
+                       by = .(Month, Season,Experiment)]
+
+met_monthly[, Date := as.Date(paste0(c(rep("2011",7), 
+                                       rep("2012", 7)), 
+                                     "-",Month,"-", 
+                                     rep("01",14))), # RESOTRE THE DATE TIME FOR PLOTTING
+            by = .(Experiment)]
+met_monthly %>% 
+   ggplot(aes(Date, rain)) +
+  geom_col(fill = "#0f5e9c") +
+  facet_wrap( ~ Experiment, ncol = 2) +
+  theme_water() +
+  scale_y_continuous(expand = c(0,0), limits = c(0,70)) +
+  labs(x = "Date", y = "Rainfall (mm)")
+ggsave("Figures/rainfall_monthly.png",
+       width = 10, height = 5, dpi = 320)
+met_monthly[, sum(rain), by = .(Experiment)]
 ```
 
