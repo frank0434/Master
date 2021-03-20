@@ -44,7 +44,8 @@ key_stats <- function(DT, key =c("Experiment"), pre_col, obs_col){
   stats_rs <- stats[, unlist(stats, recursive = FALSE), by = .(Experiment)]
   stats_rs[, ':='(R2_str = paste0(as.character(expression(italic(R)^2 ~"=")), "~",R2),
                   NSE_str = paste0(as.character(expression(NSE~"=")), "~", NSE),
-                  RMSE_str = paste0(as.character(expression(RMSE~" = ")), "~", RMSE))]
+                  RMSE_str = paste0(as.character(expression(RMSE~" = ")), "~", RMSE),
+                  nRMSE_str = paste0(as.character(expression(nRMSE~" = ")), "~", `NRMSE %`/100))]
   return(stats_rs)
 }
 #' norm_stats
