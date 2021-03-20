@@ -60,7 +60,7 @@ range_check <- function(DT,  layer, boundry = c("DUL","LL")){
 range_check(SW_mean_new, 1, boundry = "DUL")
 range_check(SW_mean_new, 1, boundry = "LL")
 
-SW_mean_new[Experiment =="AshleyDene" & SowingDate == "SD9"]$Clock.Today %>% range()
+SW_mean_new[Experiment !="AshleyDene" & SowingDate == "SD9"] %>% 
   ggplot(aes(Clock.Today, SWmm.1..mean)) +
   geom_point()
 
@@ -73,7 +73,7 @@ LL seems not the lowest since we constrian the period.
 maybe the end of June is good?
 ```{r fig.height=10}
 
-
+range_check(SW_mean_new, 1, boundry = "DUL")
 range_check(SW_mean_new, 1, boundry = "LL")
 ```
 
