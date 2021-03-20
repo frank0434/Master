@@ -889,7 +889,7 @@ abline_p +
             inherit.aes = FALSE) +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
-ggsave("Figures/swc_preobs.png", width = 10, height =5, dpi = 320)
+# ggsave("Figures/swc_preobs.png", width = 10, height =5, dpi = 320)
 ```
 
 
@@ -937,11 +937,11 @@ abline_p +
             aes( x = x,  y = y*1.3, label = R2_str), parse = TRUE,
             inherit.aes = FALSE) +
   geom_text(data = stats_rs,
-            aes( x = x,  y = y*0.7, label = RMSE_str), parse = TRUE,
+            aes( x = x,  y = y*0.7, label = nRMSE_str), parse = TRUE,
             inherit.aes = FALSE) +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
-#ggsave("Figures/LAI_preobs.png", width = 10, height =5, dpi = 320)
+ggsave("Figures/LAI_preobs.png", width = 10, height =5, dpi = 320)
 ```
 
 
@@ -993,7 +993,7 @@ p_shoot <- abline_p +
             aes( x = x,  y = y + 250, label = R2_str), parse = TRUE,
             inherit.aes = FALSE) +
   geom_text(data = stats_rs, 
-            aes( x = x,  y = y - 250, label = RMSE_str), parse = TRUE,
+            aes( x = x,  y = y - 250, label = nRMSE_str), parse = TRUE,
             inherit.aes = FALSE) +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
@@ -1046,13 +1046,14 @@ p_leaf <- abline_p +
             aes( x = x,  y = y + 200, label = R2_str), parse = TRUE,
             inherit.aes = FALSE) +
   geom_text(data = stats_rs, 
-            aes( x = x,  y = y - 200, label = RMSE_str), parse = TRUE,
+            aes( x = x,  y = y - 200, label = nRMSE_str), parse = TRUE,
             inherit.aes = FALSE) +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
 
 ```
-```{r}
+#### Disable stemwt since not many observations available
+```
 variable <- "Stem"
 var_unit <- "Wt"
 var_unit_lab <- " (kg/ha)"
@@ -1099,7 +1100,7 @@ p_stem <- abline_p +
             aes( x = x,  y = y + 200, label = R2_str), parse = TRUE,
             inherit.aes = FALSE) +
   geom_text(data = stats_rs, 
-            aes( x = x,  y = y - 200, label = RMSE_str), parse = TRUE,
+            aes( x = x,  y = y - 200, label = nRMSE_str), parse = TRUE,
             inherit.aes = FALSE) +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
@@ -1109,9 +1110,9 @@ p_stem
 combine shoot component
 ```{r}
 
-p_aboveground <- plot_grid(p_shoot, p_leaf, p_stem, ncol = 1)
-#ggsave("Figures/aboveground_preobs.png",plot = p_aboveground, 
-       # width = 10, height =14, dpi = 320)
+p_aboveground <- plot_grid(p_shoot, p_leaf, ncol = 1)
+ggsave("Figures/aboveground_preobs.png",plot = p_aboveground,
+       width = 10, height =9, dpi = 320)
 ```
 
 #### Height
@@ -1162,11 +1163,12 @@ p_height <- abline_p +
             aes( x = x,  y = y + 5, label = R2_str), parse = TRUE,
             inherit.aes = FALSE) +
   geom_text(data = stats_rs, 
-            aes( x = x,  y = y - 5, label = RMSE_str), parse = TRUE,
+            aes( x = x,  y = y - 5, label = nRMSE_str), parse = TRUE,
             inherit.aes = FALSE) +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
 p_height
+ggsave("Figures/height_preobs.png",plot = p_height, width = 10, height =5, dpi = 320)
 ```
 
 #### Phenology
@@ -1227,11 +1229,13 @@ p_MS.node.No <- abline_p +
             aes( x = x,  y = y + 1, label = R2_str), parse = TRUE,
             inherit.aes = FALSE) +
   geom_text(data = stats_rs, 
-            aes( x = x,  y = y - 1, label = RMSE_str), parse = TRUE,
+            aes( x = x,  y = y - 1, label = nRMSE_str), parse = TRUE,
             inherit.aes = FALSE) +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
 p_MS.node.No
+ggsave("Figures/MSNN_preobs.png",plot = p_MS.node.No, width = 10, height =5, dpi = 320)
+
 ```
 ```{r}
 variable <- "GrowthStage"
@@ -1280,7 +1284,7 @@ p_GrowthStage <- abline_p +
             aes( x = x,  y = y + 0.25, label = R2_str), parse = TRUE,
             inherit.aes = FALSE) +
   geom_text(data = stats_rs, 
-            aes( x = x,  y = y - 0.25, label = RMSE_str), parse = TRUE,
+            aes( x = x,  y = y - 0.25, label = nRMSE_str), parse = TRUE,
             inherit.aes = FALSE) +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
