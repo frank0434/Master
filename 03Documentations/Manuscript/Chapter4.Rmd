@@ -550,6 +550,13 @@ p <- timestep_p +
 p
 #ggsa("Figures/sw_timestamp.png",plot = p, width = 10, height =14, dpi = 320)
 ```
+```{r}
+p$data[Experiment == "Iversen12" & SowingDate == "SD6"] %>% 
+  qplot(Clock.Today, Predicted.SWCmm, data = .) %>% 
+  plotly::ggplotly()
+```
+SD6 in Iversen12 extracted `r 747-588` mm water from 2011-12-19 to 2012-02-29
+rainfall recharged the SWC from 588 to 619 
 
 **Manually edit** SD10 LAYER 1 from 0.333 to 0.320 
 
@@ -599,9 +606,16 @@ LAI_sumary <- DT_LAI[ !is.na(Observed.LAI)
                                  rate_obs = Observed.LAI/DAS)
                           ][, ratio := rate_pre/rate_obs]
 
-LAI_sumary
-
+LAI_sumary[!is.infinite(rate_pre)
+           ][Experiment == "AshleyDene" & Rotation.No. == 1 &  SDorder ==1 
+           ][, .(pre = mean(rate_pre),
+                 obs = mean(rate_obs))]
+LAI_sumary[, .(max(Predicted.LAI),
+               max(Observed.LAI)), 
+           by = .(Experiment, SowingDate, Rotation.No.)
+           ][Rotation.No. ==2]
 ```
+4.3.2.1 the rate of LAI per day was 0.12 for prediction VS 0.053 for observation in spring. 
 
 
 #### SHOOT WT
@@ -694,6 +708,8 @@ obs_stem <- Observe[Clock.Today >= magicDate &
                       SowingDate %in% paste0("SD", 1:10),
                     .(Experiment, SowingDate, Clock.Today,StemWt)
                     ][!is.na(StemWt)] 
+#### checking stem wt from raw data----
+# indeed not many observations available
 obs_stem %>%
   ggplot(aes(Clock.Today, StemWt)) +
   geom_point() +
@@ -869,11 +885,11 @@ abline_p +
             aes( x = x,  y = y*1.02, label = R2_str), parse = TRUE,
             inherit.aes = FALSE) +
   geom_text(data = stats_rs,
-            aes( x = x,  y = y*0.98, label = RMSE_str), parse = TRUE,
+            aes( x = x,  y = y*0.98, label = nRMSE_str), parse = TRUE,
             inherit.aes = FALSE) +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
-#ggsave("Figures/swc_preobs.png", width = 10, height =5, dpi = 320)
+ggsave("Figures/swc_preobs.png", width = 10, height =5, dpi = 320)
 ```
 
 
@@ -1357,7 +1373,7 @@ met[Clock.Today >= "2011-07-01"
   geom_point(size = 1) +
   theme_water() +
   # scale_y_continuous(expand = c(0,0), limits = c(0,25)) +
-  labs(x = "Date", y = bquote("Accumlative solar radiation (MJ "~ m^-2 ~ d^-1 ~")"))
+  labs(x = "Date", y = expression("Accumlative solar radiation (MJ "~ m^-2 ~ d^-1~")"))
 ggsave("Figures/cum_radn.png", 
        width = 10, height = 5, dpi = 320)
 met[Clock.Today >= "2011-07-01" ]$AccumRadn %>% max()
