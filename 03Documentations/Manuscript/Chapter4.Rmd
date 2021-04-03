@@ -422,43 +422,63 @@ manage <- unique(manage)
 ```
 **Harvest.No** is for drawing the growth curve.  
 **Rotation.No** is for the cutting dates. 
-Need to extract the last date of a rotation.no.   
+Need to extract the last date of a rotation.no.  
+
+altought it said grazed in the thesis. the actual cutting still happened as a 
 
 ```{r}
-cutDates <- manage[, ':='(SDorder = as.integer(gsub("SD", "", SowingDate)),
-              Harvest.No. = as.integer(Harvest.No.))
-       ][!is.na(Harvest.No.) & Harvest.No. != 0,
-         .SD[.N], by = .(Experiment, SowingDate, Rotation.No., Season)
-         ][,.(Experiment, SowingDate, Season, Clock.Today,SDorder, Rotation.No.)]
-Grazed <- cutDates[, .SD[.N],
-         by = .(Experiment, SowingDate, Season, SDorder)
-         ][,DefoliationMethod := "Grazed" 
-           ][]
-DefoliationMethod <- Grazed[cutDates, on = c("Experiment", "SowingDate" ,"Season", "SDorder",
-                        "Clock.Today", "Rotation.No.")
-       ][, DefoliationMethod := ifelse(is.na(DefoliationMethod), "Mown", DefoliationMethod)
-         ][]
-DefoliationMethod <- DefoliationMethod[, GrazingPeriod := ifelse(DefoliationMethod =="Grazed", 5L, 0L)
-                  ][Experiment == "Iversen12" & 
-                      Season == "2010/11" & 
-                      SowingDate %in% paste0("SD", 1:5) &
-                      DefoliationMethod == "Grazed",
-                    GrazingPeriod := 7L
-                    ][Experiment == "AshleyDene" & 
-                      Season == "2011/12" & 
-                      SowingDate %in% paste0("SD", 1:5) ,
-                      GrazingPeriod := fcase(Rotation.No. == 1, 7L,
-                                             Rotation.No. == 2, 8L,
-                                             Rotation.No. == 5, 5L,
-                                             default = 4L
-                                             )
-                      ][, Dates := Clock.Today + GrazingPeriod + 1L][]
+# good cutting dates
+DefoliationMethod <- manage[, ':='(SDorder = as.integer(gsub("SD", "", SowingDate)),
+                                   Harvest.No. = as.integer(Harvest.No.))
+                                   ][!is.na(Harvest.No.), .SD[.N], 
+                                     by = .(Experiment, SowingDate, Rotation.No., Season)
+                                     ][, Dates := Clock.Today + 1L][]
+# Residual cutting dates 
+residuals <- manage[is.na(Harvest.No.), .SD[.N], 
+                    by = .(Experiment, SowingDate, Rotation.No., Season)
+                    ][, Dates := Clock.Today + 1L] %>% 
+  dcast.data.table(Season+SowingDate + SDorder + Rotation.No. ~ Experiment, value.var = "Dates" )
+# DefoliationMethod <- rbindlist(list(DefoliationMethod, residuals))
+# cutDates <- manage[, ':='(SDorder = as.integer(gsub("SD", "", SowingDate)),
+#               Harvest.No. = as.integer(Harvest.No.))
+#        ][!is.na(Harvest.No.) & Harvest.No. != 0,
+#          .SD[.N], by = .(Experiment, SowingDate, Rotation.No., Season)
+#          ][,.(Experiment, SowingDate, Season, Clock.Today,SDorder, Rotation.No.)]
+# Grazed <- cutDates[, .SD[.N],
+#          by = .(Experiment, SowingDate, Season, SDorder)
+#          ][,DefoliationMethod := "Grazed" 
+#            ][]
+# DefoliationMethod <- Grazed[cutDates, on = c("Experiment", "SowingDate" ,"Season", "SDorder",
+#                         "Clock.Today", "Rotation.No.")
+#        ][, DefoliationMethod := ifelse(is.na(DefoliationMethod), "Mown", DefoliationMethod)
+#          ][, Dates := Clock.Today + 1L][]
+
+## The issue 39
+# DefoliationMethod <- DefoliationMethod[, GrazingPeriod := ifelse(DefoliationMethod =="Grazed", 5L, 0L)
+#                   ][Experiment == "Iversen12" & 
+#                       Season == "2010/11" & 
+#                       SowingDate %in% paste0("SD", 1:5) &
+#                       DefoliationMethod == "Grazed",
+#                     GrazingPeriod := 7L
+#                     ][Experiment == "AshleyDene" & 
+#                       Season == "2011/12" & 
+#                       SowingDate %in% paste0("SD", 1:5) ,
+#                       GrazingPeriod := fcase(Rotation.No. == 1, 7L,
+#                                              Rotation.No. == 2, 8L,
+#                                              Rotation.No. == 5, 5L,
+#                                              default = 4L
+#                                              )
+#                       ]
 tab_cutDates <- DefoliationMethod %>% 
   dcast.data.table(Season+SowingDate + SDorder + Rotation.No. ~ Experiment, value.var = "Dates" )
-tab_cutDates[order(Season, SDorder)
+tab_cutDates <- rbindlist(list(tab_cutDates, residuals), fill = TRUE)
+tab_cutDates[order(Season, SDorder, Rotation.No., AshleyDene)
              ][,.(Season, SowingDate, Rotation = Rotation.No., `Ashley Dene` =  AshleyDene, Iversen12)]%>%
   kbl() %>%
   kable_classic()
+# tab_cutDates[order(Season, SDorder, Rotation.No., AshleyDene)
+#              ] %>% 
+#   write.xlsx(file = "cuttingdates.xlsx")
 ```
 
 # Results for 4.3.1.2 onwards
@@ -589,10 +609,10 @@ p_LAI <- plot_timecourse(pre_obs[Clock.Today >= magicDate], variable, var_unit, 
 ```
 need some numbers to states
 ```{r}
-DT_LAI <- merge(unique(p_LAI$data), cutDates[Clock.Today >= magicDate], all.x = TRUE,
+DT_LAI <- merge(unique(p_LAI$data), DefoliationMethod[Clock.Today >= magicDate], all.x = TRUE,
                     by = c("Experiment", "SowingDate", "Clock.Today"))
 
-p_LAI$data[cutDates[Clock.Today >= magicDate],
+p_LAI$data[DefoliationMethod[Clock.Today >= magicDate],
            on = c("Experiment", "SowingDate", "Clock.Today")]
 setnames(DT_LAI, "Clock.Today", "Date")
 DT_LAI <- group_in_season(DT_LAI)
@@ -627,7 +647,7 @@ var_unit_lab <- paste0("(kg/ha)")
 
 p_shootwt <- plot_timecourse(pre_obs, variable, var_unit, var_unit_lab)
 #ggsave("Figures/shoot_timestamp.png",plot = p_shootwt, width = 10, height =14, dpi = 320)
-DT <- merge(unique(p_shootwt$data), cutDates[Clock.Today >= magicDate],
+DT <- merge(unique(p_shootwt$data), DefoliationMethod[Clock.Today >= magicDate],
             all.x = TRUE,
             by = c("Experiment", "SowingDate", "Clock.Today"))
 
@@ -665,7 +685,7 @@ var_unit_lab <- paste0("(kg/ha)")
 
 p_leafwt <- plot_timecourse(pre_obs, variable, var_unit, var_unit_lab)
 #ggsave("Figures/leaf_timestamp.png",plot = p_leafwt, width = 10, height =14, dpi = 320)
-DT <- merge(unique(p_leafwt$data), cutDates[Clock.Today >= magicDate],
+DT <- merge(unique(p_leafwt$data), DefoliationMethod[Clock.Today >= magicDate],
             all.x = TRUE,
             by = c("Experiment", "SowingDate", "Clock.Today"))
 
@@ -787,7 +807,7 @@ stats_Height <- obs_height[!is.na(Height)
             Lower = min(x, na.rm = TRUE))} ),
                                     recursive = FALSE), by = .(Experiment), .SDcols = "Height"]
 stats_Height
-DT <- merge(unique(p_height$data), cutDates[Clock.Today >= magicDate],
+DT <- merge(unique(p_height$data), DefoliationMethod[Clock.Today >= magicDate],
             all.x = TRUE,
             by = c("Experiment", "SowingDate", "Clock.Today"))
 
@@ -997,6 +1017,9 @@ p_shoot <- abline_p +
             inherit.aes = FALSE) +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
+# check the weired overestimation 
+plotly::ggplotly(p_shoot)
+DT_sub[Clock.Today == "2011-11-03"]
 ```
 
 ```{r}
@@ -1235,7 +1258,7 @@ p_MS.node.No <- abline_p +
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
 p_MS.node.No
 ggsave("Figures/MSNN_preobs.png",plot = p_MS.node.No, width = 10, height =5, dpi = 320)
-
+plotly::ggplotly(p_MS.node.No)
 ```
 ```{r}
 variable <- "GrowthStage"
