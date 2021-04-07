@@ -40,3 +40,20 @@ ggplot(data.frame(x = blues, y = 1),aes(x, y, fill = x)) +
 magicDate <- "2011-06-25"
 ```
 
+
+# Introduction 
+
+
+# Material and method 
+
+## APSIMX-Slurp
+
+## APSIMX-Lucerne
+
+## Workflow 
+
+
+# Results 
+
+
+# Discussion
