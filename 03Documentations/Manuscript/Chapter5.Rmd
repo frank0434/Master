@@ -1,0 +1,42 @@
+---
+title: "Chapter 5"
+output:
+  word_document:
+    reference_docx: FRC dissertation template.docx
+  html_document:
+    df_print: paged
+always_allow_html: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.align = "center", fig.width = 10, fig.height = 7, 
+                      dpi = 300)
+options(scipen = 999)
+#Constants
+outlier.colour = "#ff0000"
+source(here::here("02Scripts/R/packages.R"))
+source(here::here("02Scripts/R/functions.R"))
+path_richard <- "C:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
+id_vars <- c("Experiment", "SowingDate", "Clock.Today", "DAS")
+
+data_sw <- read_Sims(path = path_richard)
+
+value_vars <-  grep("SWmm\\.\\d.", colnames(data_sw), value = TRUE)
+sw_mean_new <- colwise_meanSW(data_sw)
+
+# Colour p
+blues <- c("#0f5e9c",
+           "#2389da",
+           "#1ca3ec",
+           "#5abcd8",
+           "#74ccf4")
+names(blues) <- blues 
+ggplot(data.frame(x = blues, y = 1),aes(x, y, fill = x)) +
+  geom_col() +
+  scale_fill_manual(name = "", values = blues)+
+  theme_void()
+
+magicDate <- "2011-06-25"
+```
+
