@@ -1,0 +1,13 @@
+[Weather].FileName 
+[Clock].Start 
+[SlurpSowingRule].Script.SowingDate 
+[SetCropVariables].Script.MaximumHeight 
+[SetCropVariables].Script.CoverFile 
+[Soil].InitialConditions.SW 
+[Soil].Physical.SAT
+[Soil].Physical.AirDry
+[Soil].Physical.LL15
+[Soil].Physical.DUL
+[Soil].Physical.SlurpSoil.LL
+[Soil].Physical.BD
+[DataStore].ExcelInput.FileNames
