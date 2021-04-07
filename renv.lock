@@ -1038,15 +1038,10 @@
     },
     "targets": {
       "Package": "targets",
-      "Version": "0.0.0.9002",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "targets",
-      "RemoteUsername": "wlandau",
-      "RemoteRef": "HEAD",
-      "RemoteSha": "fd9b7a46ac3ee8116d78d2c3888467b7d5ee8f61",
-      "Hash": "b08403e75f4e2247a0fb7f0c9970dffb"
+      "Version": "0.3.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "79ff2b6bb9c75ec0b4c3716a77dc24eb"
     },
     "testthat": {
       "Package": "testthat",

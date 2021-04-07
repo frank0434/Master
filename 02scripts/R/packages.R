@@ -30,6 +30,7 @@ library(here)
 
 # Workflow control 
 library(targets)
+library(future)
 # Stats
 library(hydroGOF)
 

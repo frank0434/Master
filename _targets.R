@@ -1,24 +1,26 @@
-library(targets)
-library(future)
-# plan(multisession)
-# Source functions
+
+
+## Source functions
 invisible(lapply(list.files("R/functions/", pattern = "R", full.names = TRUE),
                  source))
-source("R/packages.R")
+source("02Scripts/R/packages.R")
+source("02Scripts/R/functions.R")
+## if want to run multi sessions
+# plan(multisession)
 # Set constants 
 path_richard <- "C:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
 path_apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
-path_BD <- here::here("Data/BulkDensity.xlsx")
-dir_tempalte <- here::here("Data/ApsimxFiles/SlurpTemplateFirstPhase.txt")
-dir_tempalte2 <- here::here("Data/ApsimxFiles/SlurpTemplateSecondPhase.txt")
-dir_met <- here::here("Data/ClimateAndObserved")
-dir_cover <- here::here("Data/ProcessedData/CoverData")
-dir_config <- here::here("Data/ProcessedData/ConfigurationFiles/")
-dir_simulations <- here::here("Data/ProcessedData/apsimxFiles/")
+path_BD <- here::here("01Data/BulkDensity.xlsx")
+dir_tempalte <- here::here("01Data/ApsimxFiles/SlurpTemplateFirstPhase.txt")
+dir_tempalte2 <- here::here("01Data/ApsimxFiles/SlurpTemplateSecondPhase.txt")
+dir_met <- here::here("01Data/ClimateAndObserved")
+dir_cover <- here::here("01Data/ProcessedData/CoverData")
+dir_config <- here::here("01Data/ProcessedData/ConfigurationFiles/")
+dir_simulations <- here::here("01Data/ProcessedData/apsimxFiles/")
 
 if(dir.exists(dir_simulations)){
   timestamp <- gsub("\\D",".",Sys.time())
-  dir_simulations <- paste0(here::here("Data/ProcessedData/apsimxFiles"), timestamp)
+  dir_simulations <- paste0(here::here("01Data/ProcessedData/apsimxFiles"), timestamp)
   dir.create(path = dir_simulations)
   
 } else{
@@ -29,16 +31,16 @@ if(dir.exists(dir_simulations)){
 ## The flag
 apsimx_flag <- "/Edit"
 ## The base apsimx file 
-apsimx_Basefile <- here::here("Data/ApsimxFiles/20201205BaseSlurp.apsimx")
-path_lincoln <- here::here("Data/ClimateAndObserved/Iversen12.met")
-path_AD <- here::here("Data/ClimateAndObserved/AshleyDene.met")
+apsimx_Basefile <- here::here("01Data/ApsimxFiles/20201205Bas")
+path_lincoln <- here::here("01Data/ClimateAndObserved/Iversen12.met")
+path_AD <- here::here("01Data/ClimateAndObserved/AshleyDene.met")
 
 # Set target-specific options such as packages.
 tar_option_set(packages = c("data.table", "magrittr", "readxl", "openxlsx",
                             "ggplot2", "here", "autoapsimx", "mcp"))
 
 # Define targets
-targets <- list(
+list(
   # Define keys and treatments --------------
   tar_target(Sites, unique(CoverData$Experiment)),
   tar_target(SD, paste0("SD", 1:10)),
@@ -82,24 +84,24 @@ targets <- list(
                                       output = dir_cover),
              format = "file", 
              pattern = cross(Sites, SD), 
-             cue = tar_cue(depend = TRUE)),
+             cue = tar_cue(depend = TRUE))
   # # Build the apsimx 
-  tar_target(apsimxPhase1, build_apsimx(template = template,
-                                        dir_metfile = dir_met,
-                                        cover = LAI_input,
-                                        observed = observed,
-                                        dir_simulations = dir_simulations ,
-                                        dir_config = dir_config,
-                                        apsimx = path_apsimx,
-                                        apsimx_Basefile = apsimx_Basefile,
-                                        DUL_LL_range = DUL_LL_range_arbitrary,
-                                        bulkDensity = BDs,
-                                        SowingDates = sowingDates,
-                                        SW_initial = SW_initials
-                                  ),
-             format = "file",
-             cue = tar_cue(file = TRUE),
-             pattern =  map(LAI_input,observed))
+  # tar_target(apsimxPhase1, build_apsimx(template = template,
+  #                                       dir_metfile = dir_met,
+  #                                       cover = LAI_input,
+  #                                       observed = observed,
+  #                                       dir_simulations = dir_simulations ,
+  #                                       dir_config = dir_config,
+  #                                       apsimx = path_apsimx,
+  #                                       apsimx_Basefile = apsimx_Basefile,
+  #                                       DUL_LL_range = DUL_LL_range_arbitrary,
+  #                                       bulkDensity = BDs,
+  #                                       SowingDates = sowingDates,
+  #                                       SW_initial = SW_initials
+  #                                 ),
+  #            format = "file",
+  #            cue = tar_cue(file = TRUE),
+  #            pattern =  map(LAI_input,observed))
   # tar_target(apsimxPhase2, build_optimSlurp(template = templatePhase2,
   #                                           dir_optim = dir_simulations,
   #                                           dir_config = dir_config,
@@ -112,7 +114,7 @@ targets <- list(
   
   
 )
-targets
+
 # End with a call to tar_pipeline() to wrangle the targets together.
 # This target script must return a pipeline object.
 # tar_pipeline(targets)
