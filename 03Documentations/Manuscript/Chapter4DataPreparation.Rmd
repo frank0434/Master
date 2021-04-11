@@ -14,8 +14,8 @@ editor_options:
 
 ```{r setup, include=FALSE,warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
-source("R/packages.R")
-source("R/functions.R")
+source(here::here("02scripts/R/packages.R"))
+source(here::here("02scripts/R/functions.R"))
 path_richard <-  "c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
 file_richard <-  read_excel(path_richard, guess_max = 10300, sheet = 2,
                           skip = 9, .name_repair = "universal") %>% 
@@ -274,8 +274,8 @@ obs_wide[, (SDCOLS) := lapply(.SD, function(x) ifelse(x == 0, NA, x)),
 ## Output the big obsalldata
 
 ```{r}
-obs_wide[, Clock.Today := as.Date(Clock.Today)] %>%
-  write.xlsx(file = "../01Data/ApsimxFiles/ObsAllData.xlsx", 
+write.xlsx(x = obs_Richard[, Clock.Today := as.Date(Clock.Today)], 
+           file = here::here("01Data/ApsimxFiles/ObsAllData.xlsx"), 
              sheetName = "ObsAllData")
 
 ```
