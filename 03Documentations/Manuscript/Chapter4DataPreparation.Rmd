@@ -14,8 +14,8 @@ editor_options:
 
 ```{r setup, include=FALSE,warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
-source("R/packages.R")
-source("R/functions.R")
+source(here::here("02scripts/R/packages.R"))
+source(here::here("02scripts/R/functions.R"))
 path_richard <-  "c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
 file_richard <-  read_excel(path_richard, guess_max = 10300, sheet = 2,
                           skip = 9, .name_repair = "universal") %>% 
