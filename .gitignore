@@ -18,6 +18,7 @@ test*
 *.pdf
 *.png
 03processed-data/*/*.apsimx
+01Data/ProcessedData/*/*.apsimx
 #notebook checkout points
 .ipynb_check*
 #dir

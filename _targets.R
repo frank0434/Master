@@ -1,7 +1,7 @@
 
 
 ## Source functions
-invisible(lapply(list.files("R/functions/", pattern = "R", full.names = TRUE),
+invisible(lapply(list.files("02Scripts/R/functions/", pattern = "R", full.names = TRUE),
                  source))
 source("02Scripts/R/packages.R")
 source("02Scripts/R/functions.R")
@@ -31,7 +31,7 @@ if(dir.exists(dir_simulations)){
 ## The flag
 apsimx_flag <- "/Edit"
 ## The base apsimx file 
-apsimx_Basefile <- here::here("01Data/ApsimxFiles/20201205Bas")
+apsimx_Basefile <- here::here("01Data/ApsimxFiles/20201205BaseSlurp.apsimx")
 path_lincoln <- here::here("01Data/ClimateAndObserved/Iversen12.met")
 path_AD <- here::here("01Data/ClimateAndObserved/AshleyDene.met")
 
@@ -84,24 +84,24 @@ list(
                                       output = dir_cover),
              format = "file", 
              pattern = cross(Sites, SD), 
-             cue = tar_cue(depend = TRUE))
+             cue = tar_cue(depend = TRUE)),
   # # Build the apsimx 
-  # tar_target(apsimxPhase1, build_apsimx(template = template,
-  #                                       dir_metfile = dir_met,
-  #                                       cover = LAI_input,
-  #                                       observed = observed,
-  #                                       dir_simulations = dir_simulations ,
-  #                                       dir_config = dir_config,
-  #                                       apsimx = path_apsimx,
-  #                                       apsimx_Basefile = apsimx_Basefile,
-  #                                       DUL_LL_range = DUL_LL_range_arbitrary,
-  #                                       bulkDensity = BDs,
-  #                                       SowingDates = sowingDates,
-  #                                       SW_initial = SW_initials
-  #                                 ),
-  #            format = "file",
-  #            cue = tar_cue(file = TRUE),
-  #            pattern =  map(LAI_input,observed))
+  tar_target(apsimxPhase1, build_apsimx(template = template,
+                                        dir_metfile = dir_met,
+                                        cover = LAI_input,
+                                        observed = observed,
+                                        dir_simulations = dir_simulations ,
+                                        dir_config = dir_config,
+                                        apsimx = path_apsimx,
+                                        apsimx_Basefile = apsimx_Basefile,
+                                        DUL_LL_range = DUL_LL_range_arbitrary,
+                                        bulkDensity = BDs,
+                                        SowingDates = sowingDates,
+                                        SW_initial = SW_initials
+                                  ),
+             format = "file",
+             cue = tar_cue(file = TRUE),
+             pattern =  map(LAI_input,observed))
   # tar_target(apsimxPhase2, build_optimSlurp(template = templatePhase2,
   #                                           dir_optim = dir_simulations,
   #                                           dir_config = dir_config,
