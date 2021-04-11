@@ -14,7 +14,7 @@
         {
           "$type": "Models.PostSimulationTools.ExcelInput, Models",
           "FileNames": [
-            "C:\\Data\\Master\\Data\\ProcessedData\\CoverData\\ObservedAshleyDeneSD1.xlsx"
+            "\\workspace\\cflfcl\\github\\Master\\01Data\\ProcessedData\\CoverData\\ObservedAshleyDeneSD1.xlsx"
           ],
           "SheetNames": [
             "Observed"
@@ -98,8 +98,8 @@
             {
               "$type": "Models.Climate.Weather, Models",
               "ConstantsFile": null,
-              "FileName": "%root%\\Examples\\WeatherFiles\\lincoln.met",
-              "ExcelWorkSheetName": null,
+              "FileName": "\\\\storage.powerplant.pfr.co.nz\\workspace\\cflfcl\\github\\Master\\01Data\\ClimateAndObserved\\AshleyDene.met",
+              "ExcelWorkSheetName": "",
               "Name": "Weather",
               "Children": [],
               "IncludeInDocumentation": true,
@@ -231,7 +231,7 @@
                       "Parameters": [
                         {
                           "Key": "CoverFile",
-                          "Value": "C:\\Data\\Master\\Data\\ProcessedData\\CoverData\\LAI_AshleyDene_SD1.csv"
+                          "Value": "\\workspace\\cflfcl\\github\\Master\\01Data\\ProcessedData\\CoverData\\LAI_AshleyDene_SD1.csv"
                         },
                         {
                           "Key": "Ext_coef",

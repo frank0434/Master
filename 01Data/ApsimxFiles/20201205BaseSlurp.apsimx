@@ -14,7 +14,7 @@
         {
           "$type": "Models.PostSimulationTools.ExcelInput, Models",
           "FileNames": [
-            "C:\\Data\\Master\\Data\\ProcessedData\\CoverData\\ObservedAshleyDeneSD1.xlsx"
+            "C:\\Data\\Master\\01Data\\ProcessedData\\CoverData\\ObservedAshleyDeneSD1.xlsx"
           ],
           "SheetNames": [
             "Observed"
@@ -283,7 +283,7 @@
                       "Parameters": [
                         {
                           "Key": "CoverFile",
-                          "Value": "C:\\Data\\Master\\Data\\ProcessedData\\CoverData\\LAI_AshleyDene_SD1.csv"
+                          "Value": "C:\\Data\\Master\\01Data\\ProcessedData\\CoverData\\LAI_AshleyDene_SD1.csv"
                         },
                         {
                           "Key": "Ext_coef",
