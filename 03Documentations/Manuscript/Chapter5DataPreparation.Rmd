@@ -1,0 +1,78 @@
+---
+title: "Chapter 5"
+output:
+  word_document:
+    reference_docx: FRC dissertation template.docx
+  html_document:
+    df_print: paged
+always_allow_html: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.align = "center", fig.width = 10, fig.height = 7, 
+                      dpi = 300)
+options(scipen = 999)
+#Constants
+outlier.colour = "#ff0000"
+source(here::here("02Scripts/R/packages.R"))
+source(here::here("02Scripts/R/functions.R"))
+
+magicDate <- "2011-06-25"
+```
+
+# Define the directories 
+
+```{r}
+#path to apsimx 
+Local <- TRUE
+#Running locally or not
+if(Local){
+  apsimx <- "C:/Data/ApsimxLatest/ApsimX/Bin/Models.exe"
+} else { 
+  library(RLinuxModules)
+  module("load apsimx")
+  module("load openlava")
+  module("load asub/2.1")
+  module ("load R")
+  
+  apsimx <- ""
+}
+#Apsimx edit flag
+apsimx_flag <- "/Edit"
+
+#Directories for file management 
+## Input files
+path_BD <- here::here("01Data/BulkDensity.xlsx")
+apsimx_Basefile <- here::here("01Data/ApsimxFiles/SlurpBase.apsimx")
+path_lincoln <- here::here("01Data/ClimateAndObserved/Iversen12.met")
+path_AD <- here::here("01Data/ClimateAndObserved/AshleyDene.met")
+dir_tempalte <- here::here("01Data/ApsimxFiles/SlurpTemplateFirstPhase.txt")
+dir_tempalte2 <- here::here("01Data/ApsimxFiles/SlurpTemplateSecondPhase.txt")
+dir_met <- here::here("01Data/ClimateAndObserved")
+dir_cover <- here::here("01Data/ProcessedData/CoverData")
+dir_config <- here::here("01Data/ProcessedData/ConfigurationFiles/")
+
+## Output directory
+dir_simulations <- here::here("01Data/ProcessedData/apsimxFiles/")
+#Update the output apsimx directory
+if(dir.exists(dir_simulations)){
+  timestamp <- gsub("\\D",".",Sys.time())
+  dir_simulations <- paste0(here::here("01Data/ProcessedData/apsimxFiles"), timestamp)
+  dir.create(path = dir_simulations)
+  
+} else{
+  dir.create(dir_simulations)
+}
+
+```
+
+# Test edit 
+
+```{r}
+
+
+
+
+```
+
