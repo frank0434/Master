@@ -1,3 +1,83 @@
+
+
+
+
+#' Title
+#'
+#' @param template 
+#' @param Site 
+#' @param SD 
+#' @param apsimx 
+#' @param apsimx_Basefile 
+#' @param dir_metfile 
+#' @param dir_cover 
+#' @param dir_config 
+#' @param dir_Sensitivity 
+#' @param DUL_LL_range 
+#' @param bulkDensity 
+#' @param SowingDates 
+#' @param SW_initial 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+slurpConfig <- function(template = template, 
+                        Site, SD, apsimx, apsimx_Basefile,
+                        dir_metfile, dir_cover, dir_config,
+                        DUL_LL_range = DUL_LL_range,
+                        bulkDensity = bulkDensity, 
+                        SowingDates, SW_initial) {
+
+  replacementA_met <- file.path(dir_metfile, paste0(Site,".met"))
+  
+  # Sowing date level 
+  ## SD
+  replacementC_SD <- as.character(SowingDates[Experiment == Site & 
+                                                SowingDate == SD ]$Clock.Today)
+  
+  replacementB_ClockStart <- paste0(replacementC_SD, "T00:00:00")
+  
+  ## Height
+  replacementD_MaxHeight <- ifelse(Site == "AshleyDene", 390L, 595L)
+  
+  
+  ## ClockStart
+  ## User provide light interception data 
+  replacementE_CoverData <- file.path(dir_cover,paste0("LAI", Site, SD, ".csv"))
+  
+  replacementI_initialSW <- paste(SW_initial[Experiment == Site & SowingDate == SD]$SW, 
+                                  collapse = ",")
+  replacementJ_SAT <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$High.DUL, 
+                            collapse = ",")
+  replacementK_AirDry <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$Low.LL, 
+                               collapse = ",")
+  replacementL_LL15 <- replacementK_AirDry
+  replacementM_DUL <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$SW.mean.DUL, 
+                            collapse = ",")
+  replacementN_LL <- paste(DUL_LL_range[Experiment == Site & SowingDate == SD]$SW.mean.LL, 
+                           collapse = ",")
+  BD_profile <- (bulkDensity[Experiment == Site]$BD_kg.m3)/1000
+  replacementO_BD <- paste(BD_profile, 
+                           collapse = ",")
+  replacevalues <- grep("replacement.+", ls(), value = TRUE)
+  values <- mget(replacevalues)
+  config <- paste0(template, "=", values)
+  
+  basename <- paste0(Site, SD)
+  outputpath <- file.path(dir_config, paste0(basename, ".txt"))
+  
+  writeLines(text = config, con = outputpath)  
+  cat("Configuration file write into", outputpath, "\r\n")
+  ## New name
+  modifiedName <- file.path(dir_Sensitivity, paste0(basename, ".apsimx"))
+  ## Modify base to generate new apsimx files 
+  system(paste("cp", apsimx_Basefile, modifiedName))
+  system(paste(apsimx, modifiedName, "/Edit",outputpath))
+  return(modifiedName)
+
+}
+
 ##' .. content for \description{} (no empty lines) ..
 ##'
 ##' .. content for \details{} ..

@@ -39,12 +39,13 @@ if(Local){
   apsimx <- ""
 }
 #Apsimx edit flag
-apsimx_flag <- "/Edit"
+apsimx_flag <- "--edit"
 
 #Directories for file management 
 ## Input files
 path_BD <- here::here("01Data/BulkDensity.xlsx")
 apsimx_Basefile <- here::here("01Data/ApsimxFiles/SlurpBase.apsimx")
+apsimx_sims_temp <- gsub(basename(apsimx_file),"temp.apsimx",apsimx_file)
 path_lincoln <- here::here("01Data/ClimateAndObserved/Iversen12.met")
 path_AD <- here::here("01Data/ClimateAndObserved/AshleyDene.met")
 dir_tempalte <- here::here("01Data/ApsimxFiles/SlurpTemplateFirstPhase.txt")
@@ -69,10 +70,84 @@ if(dir.exists(dir_simulations)){
 
 # Test edit 
 
+## Load objects from the pipeline
 ```{r}
+BDs <- readRDS("../../_targets/objects/BDs")
+dulll <- readRDS("../../_targets/objects/DUL_LL_range_arbitrary")
+SWinitials <- readRDS("../../_targets/objects/SW_initials")
+SowingDates <- readRDS("../../_targets/objects/sowingDates")
+Sites <- readRDS("../../_targets/objects/Sites")
+template <- readRDS("../../_targets/objects/template")
+BDs <- readRDS("../../_targets/objects/BDs")
+
+template
+
+# create value list
+values <- vector("list", length = length(template))
+names(values) <- template
+values
+dulll
+BDs[, list(Data = list(.SD)), by = .(Experiment)]
+dulll[, list(Data = list(.SD)), by = .(Experiment,SowingDate)]
+SWinitials[, list(Data = list(.SD)), by = .(Experiment,SowingDate)]
 
 
+simname <- template[1]
 
+teststring <- paste0(simname, "=", "ridiculors")
+    # Open a text file
+    f <- file(paste0(dir_config, "/test.txt"), "w")
+    # Write values into the file 
+    cat(
+        teststring,"\r",
+        # apsimx_RUE_VE,"\r",
+        sep = "\r", 
+        file = f, 
+        append = TRUE)
+    # Close the file and clean it from memory 
+    close(f)
 
+    system(paste("cp", apsimx_file, apsimx_sims_temp))
+    ## modify the apsimx file 
+    system(paste(apsimx, apsimx_flag, paste0(dir_config, "/test.txt"), 
+                 apsimx_sims_temp
+                 ))
+
+    system(paste(apsimx, apsimx_sims_temp, 
+                 "/NumberOfProcessors:8"))
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

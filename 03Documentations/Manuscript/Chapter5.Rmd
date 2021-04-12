@@ -46,6 +46,17 @@ magicDate <- "2011-06-25"
 
 # Material and method 
 
+## Workflow description 
+
+1. slurp simulation configuration. one base apsimx and modified into 20 or one 
+apsimx file has 20 simulations in it.   
+2. edit apsimx file. the difficult part is to find a reliable tool to modify apsimx 
+files.  
+3. optimisation. DEoptim function choices, had a SSR calculation for a cost function 
+when doing the optimisation with junqi. 
+
+
+
 ## APSIMX-Slurp
 
 ## APSIMX-Lucerne

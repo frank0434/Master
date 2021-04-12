@@ -42,11 +42,12 @@ tar_option_set(packages = c("data.table", "magrittr", "readxl", "openxlsx",
 # Define targets
 list(
   # Define keys and treatments --------------
+  tar_target(magicDate, as.Date("2011-06-25")),
   tar_target(Sites, unique(CoverData$Experiment)),
   tar_target(SD, paste0("SD", 1:10)),
   tar_target(id_vars, c("Experiment", "SowingDate", "Clock.Today", "DAS")),
   tar_target(value_vars, grep("SWmm\\.\\d.", colnames(data_SW), value = TRUE)),
-  tar_target(SKL_Range, seq(0.005, 0.11, by = 0.005)),
+  # tar_target(SKL_Range, seq(0.005, 0.11, by = 0.005)),
   # Read data --------------
   tar_target(data_SW, read_Sims(path = path_richard)[SowingDate %in% SD]),
   tar_target(sowingDates, read_Sims(path_richard, source =  "sowingDate")),
@@ -55,22 +56,26 @@ list(
   tar_target(met_Iversen12, read_met(path_lincoln, skip_unit = 8, skip_meta = 6,
                                      site = "Iversen12")),
   tar_target(BDs, as.data.table(read_excel(path = path_BD))),
-  tar_target(template, readLines(dir_tempalte)),
+  tar_target(template, readLines(dir_tempalte), cue = tar_cue("always")),
   tar_target(templatePhase2, readLines(dir_tempalte2)),
   # Do calculation --------------
-  tar_target(SW_mean_new, colwise_meanSW(data_SW = data_SW, 
-                                     id.vars = id_vars, 
-                                     col.vars = value_vars)),
+  tar_target(SW_mean_new,
+             colwise_meanSW(data_SW = data_SW[Clock.Today >= magicDate], 
+                            id.vars = id_vars, 
+                            col.vars = value_vars)),
   
   tar_target(cumTT, rbindlist(list(met_Iversen12, met_AshleyDene),
                               use.names = TRUE)[,.(Experiment, Clock.Today, AccumTT)]),
   tar_target(CoverData, interp_LAI(biomass = LAI_Height, sowingDates, cumTT)),
   
   tar_target(SW_initials, initialSWC(SW_mean_new, sowingDates, id_vars)),
-  tar_target(DUL_LL_range, doDUL_LL_range(SW = SW_mean_new, id.vars = id_vars)),
+  tar_target(DUL_LL_range, doDUL_LL_range(SW = SW_mean_new, 
+                                          id.vars = id_vars, 
+                                          startd = magicDate)),
   tar_target(DUL_LL_range_arbitrary, DUL_LL_range[,':='(SAT = SW.DUL* 1.05,
                                                         SW.DUL = SW.DUL * 0.95,
                                                         SW.LL15 = SW.LL * 0.95)]),
+  tar_target(Soil)
   # Output apsimx input and observed --------------
   tar_target(LAI_input, outputLAIinput(CoverData, Sites, SD, 
                                       output = dir_cover),
