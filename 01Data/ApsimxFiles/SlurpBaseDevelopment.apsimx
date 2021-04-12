@@ -48,7 +48,7 @@
       "$type": "Models.Core.Simulation, Models",
       "IsRunning": false,
       "Descriptors": null,
-      "Name": "AshleyDeneSimulationNameSD1",
+      "Name": "AshleyDeneSowingDateSD1",
       "Children": [
         {
           "$type": "Models.Climate.Weather, Models",
@@ -1187,7 +1187,7 @@
                 "[Soil].SoilWater.SWmm as SWmm",
                 "[Soil].Physical.DULmm as DULmm",
                 "[Soil].Physical.LL15mm as LL15mm",
-                "sum([Soil].SoilWater.SWmm) as PSWC",
+                "sum([Soil].SoilWater.SWmm) as SWCmm",
                 "sum([Soil].Physical.DULmm) as DULmm",
                 "sum([Soil].Physical.LL15mm) as LL15mm"
               ],
@@ -1280,7 +1280,7 @@
               "LegendOrientation": 0,
               "DisabledSeries": [],
               "LegendOutsideGraph": false,
-              "Name": "ProfileSWCAD",
+              "Name": "ProfileSWC",
               "Children": [
                 {
                   "$type": "Models.Series, Models",
@@ -1288,8 +1288,8 @@
                   "XAxis": 3,
                   "YAxis": 0,
                   "ColourArgb": -16777216,
-                  "FactorToVaryColours": "SimulationName",
-                  "FactorToVaryMarkers": "SimulationName",
+                  "FactorToVaryColours": null,
+                  "FactorToVaryMarkers": null,
                   "FactorToVaryLines": null,
                   "Marker": 0,
                   "MarkerSize": 0,
@@ -1304,86 +1304,7 @@
                   "IncludeSeriesNameInLegend": false,
                   "Cumulative": false,
                   "CumulativeX": false,
-                  "Filter": "[SimulationName] LIKE 'AshleyDene%'",
-                  "Name": "Series1",
-                  "Children": [
-                    {
-                      "$type": "Models.Regression, Models",
-                      "ForEachSeries": false,
-                      "showOneToOne": true,
-                      "showEquation": true,
-                      "Name": "Regression",
-                      "Children": [],
-                      "IncludeInDocumentation": true,
-                      "Enabled": true,
-                      "ReadOnly": false
-                    }
-                  ],
-                  "IncludeInDocumentation": true,
-                  "Enabled": true,
-                  "ReadOnly": false
-                }
-              ],
-              "IncludeInDocumentation": true,
-              "Enabled": true,
-              "ReadOnly": false
-            },
-            {
-              "$type": "Models.Graph, Models",
-              "Caption": null,
-              "Axis": [
-                {
-                  "$type": "Models.Axis, Models",
-                  "Type": 3,
-                  "Title": null,
-                  "Inverted": false,
-                  "Minimum": "NaN",
-                  "Maximum": "NaN",
-                  "Interval": "NaN",
-                  "DateTimeAxis": false,
-                  "CrossesAtZero": false
-                },
-                {
-                  "$type": "Models.Axis, Models",
-                  "Type": 0,
-                  "Title": null,
-                  "Inverted": false,
-                  "Minimum": "NaN",
-                  "Maximum": "NaN",
-                  "Interval": "NaN",
-                  "DateTimeAxis": false,
-                  "CrossesAtZero": false
-                }
-              ],
-              "LegendPosition": 3,
-              "LegendOrientation": 0,
-              "DisabledSeries": [],
-              "LegendOutsideGraph": false,
-              "Name": "ProfileSWCI12",
-              "Children": [
-                {
-                  "$type": "Models.Series, Models",
-                  "Type": 1,
-                  "XAxis": 3,
-                  "YAxis": 0,
-                  "ColourArgb": -16777216,
-                  "FactorToVaryColours": "SimulationName",
-                  "FactorToVaryMarkers": "SimulationName",
-                  "FactorToVaryLines": null,
-                  "Marker": 0,
-                  "MarkerSize": 0,
-                  "Line": 4,
-                  "LineThickness": 0,
-                  "TableName": "PredictedObserved",
-                  "XFieldName": "Observed.SWCmm",
-                  "YFieldName": "Predicted.SWCmm",
-                  "X2FieldName": "",
-                  "Y2FieldName": "",
-                  "ShowInLegend": false,
-                  "IncludeSeriesNameInLegend": false,
-                  "Cumulative": false,
-                  "CumulativeX": false,
-                  "Filter": "[SimulationName] LIKE 'Iversen12%'",
+                  "Filter": "",
                   "Name": "Series1",
                   "Children": [
                     {
