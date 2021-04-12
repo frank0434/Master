@@ -14,12 +14,26 @@
         {
           "$type": "Models.PostSimulationTools.ExcelInput, Models",
           "FileNames": [
-            "C:\\Data\\Master\\01Data\\ProcessedData\\CoverData\\ObservedAshleyDeneSD1.xlsx"
+            "ObsAllData.xlsx"
           ],
           "SheetNames": [
-            "Observed"
+            "ObsAllData"
           ],
           "Name": "ExcelInput",
+          "Children": [],
+          "IncludeInDocumentation": true,
+          "Enabled": true,
+          "ReadOnly": false
+        },
+        {
+          "$type": "Models.PostSimulationTools.PredictedObserved, Models",
+          "PredictedTableName": "Report",
+          "ObservedTableName": "ObsAllData",
+          "FieldNameUsedForMatch": "Clock.Today",
+          "FieldName2UsedForMatch": null,
+          "FieldName3UsedForMatch": null,
+          "AllColumns": false,
+          "Name": "PredictedObserved",
           "Children": [],
           "IncludeInDocumentation": true,
           "Enabled": true,
@@ -34,7 +48,7 @@
       "$type": "Models.Core.Simulation, Models",
       "IsRunning": false,
       "Descriptors": null,
-      "Name": "Site",
+      "Name": "AshleyDeneSowingDateSD1",
       "Children": [
         {
           "$type": "Models.Climate.Weather, Models",
@@ -1173,7 +1187,7 @@
                 "[Soil].SoilWater.SWmm as SWmm",
                 "[Soil].Physical.DULmm as DULmm",
                 "[Soil].Physical.LL15mm as LL15mm",
-                "sum([Soil].SoilWater.SWmm) as PSWC",
+                "sum([Soil].SoilWater.SWmm) as SWCmm",
                 "sum([Soil].Physical.DULmm) as DULmm",
                 "sum([Soil].Physical.LL15mm) as LL15mm"
               ],
