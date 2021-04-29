@@ -31,6 +31,9 @@ library(here)
 # Workflow control 
 library(targets)
 library(future)
+library(future.callr)
+library(future.batchtools)
+
 # Stats
 library(hydroGOF)
 
