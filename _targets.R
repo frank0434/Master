@@ -27,14 +27,19 @@ values <-  data.table::data.table(Site = "AshleyDene",
 
 targets <- tar_map(
   values = values, 
-  names = c("ID", "years", "k"),
+  names = c("Site", "SowingDate"),
   # Constants
-  tar_target(SD, paste0("SD", 1:10)),
+  tar_target(rawobs, ""),
+  
+  tar_target(SD, SowingDate),
+  tar_target(Sites, Site),
   tar_target(magicDate, as.Date("2011-06-25")),
-  tar_target(Sites, unique(CoverData$Experiment)),
   
   # Site depended targets
-  
+  tar_target(BD, ""),
+  tar_target(path_met, ifelse(Sites == "AshleyDene", 
+                              here::here("01Data/ClimateAndObserved/AshleyDene.met"),
+                              here::here("01Data/ClimateAndObserved/Iversen12.met")))
   
   # Site and Sowing dates depended targets 
   

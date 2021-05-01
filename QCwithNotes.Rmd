@@ -8,9 +8,14 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-source("R/packages.R")
-source("r/functions/functions.R")
+source("02Scripts/R/packages.R")
+source("02Scripts/R/functions.R")
 library(targets)
+```
+
+```{r}
+tar_load(starts_with("path_met"))
+path_met_AshleyDene_SD1
 ```
 
 
