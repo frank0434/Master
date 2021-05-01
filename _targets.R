@@ -24,12 +24,15 @@ if(REMOTE){
 values <-  data.table::data.table(Site = c("AshleyDene","Iversen12"),
                                   SowingDate = rep(paste0("SD", 1:2), each = 2))
 
+# Constants raw data
+rawobs <- read_excel("~/Dropbox/Data/APSIM_Sim.xlsx", 
+                               guess_max = 10300, sheet = 2,
+                               skip = 9, .name_repair = "universal") %>% 
+  as.data.table()
 targets <- tar_map(
   values = values, 
   names = c("Site", "SowingDate"),
   # Constants
-  tar_target(rawobs, ""),
-  
   tar_target(SD, SowingDate),
   tar_target(Sites, Site),
   tar_target(magicDate, as.Date("2011-06-25")),
@@ -40,8 +43,10 @@ targets <- tar_map(
                               here::here("01Data/ClimateAndObserved/Iversen12.met"))),
   tar_target(lucerne_height, ifelse(Sites == "AshleyDene", 390L, 595L)),
   
-  tar_target(BD, filter_BD(path = here("01Data/BulkDensity.xlsx"), Sites))
+  tar_target(BD, filter_BD(path = here("01Data/BulkDensity.xlsx"), Sites)),
   # Site and Sowing dates depended targets 
+  ## Observations
+  tar_target(obs, prepare_obs(rawobs, trts = c(Sites, SD)))
   
   
   

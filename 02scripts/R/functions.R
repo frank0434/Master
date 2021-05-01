@@ -1,6 +1,77 @@
 
 
 
+#' prepare_obs
+#'
+#' @param DT 
+#' @param trts 
+#'
+#' @description Read raw observation data and prepare it into apsimx readable
+#' excel format. currently, works only for richard's raw data
+#'
+#' @return
+#' @export
+#'
+#' @examples
+prepare_obs <- function(DT, trts = c("AshleyDene", "SD1")){
+  # Define variables for output
+  idvars <- c("Data","Site", "Date", "Season", "Sowing.Date", 
+              # "Rep", "Plot",  
+              "Seed", "Rotation.No.", "Harvest.No.",  "DAS")
+  valvars <- c("Height", "Shoots.m2", "Total.DM", "Leaf.DM", "Stem.DM","SLA..FW.",
+               "SLA..DW.", "LAImod", "Root.Total", "Crown", 
+               paste0("SWC.0.", 1:23), "SWC.2.3.m..mm.",
+               "MS.node.No", "Growth.stage")
+  # Subset and manipulation 
+  cols <- c(idvars, valvars)
+  richard_long <- DT[Data %in% c("Biomass", "Root",
+                                 "Phenology", "Soil water") &
+                       Seed == "CS",
+                     ..cols
+                     ][, SWC.0.1:= SWC.0.1+SWC.0.2
+                       ][, SWC.0.2 := NULL] %>% 
+    setnames(., paste0("SWC.0.", c(1,3:23)), paste0("SWmm(", 1:22,")")) %>% 
+    melt.data.table(id.vars = idvars, na.rm = TRUE)
+  # Aggregate into means 
+  groupkey <- c(idvars, "variable")
+  agg <- richard_long[, unlist(lapply(.SD, function(x) 
+    list(mean=mean(x, na.rm = TRUE),
+         sd = sd(x, na.rm = TRUE),
+         n = .N,
+         Upper = max(x, na.rm = TRUE),
+         Lower = min(x, na.rm = TRUE))
+  ), recursive = FALSE), by = groupkey]
+  # Transform it into wide format 
+  keycols <- c(idvars, "variable", "value.mean")
+  
+  mean_se <- agg[, se := value.sd/sqrt(value.n)
+  ][!(Data == "Phenology" & variable == "LAImod")]
+  obs_Richard <- mean_se[,..keycols] %>% 
+    dcast.data.table(Data + Site + Sowing.Date + Season + Date + 
+                       DAS + Rotation.No.+ Harvest.No.~ variable,
+                     value.var = c("value.mean"))
+  # Manually tidy up column names 
+  setnames(obs_Richard, 
+           c("Sowing.Date", "Date","Shoots.m2", "Total.DM", "Leaf.DM","Stem.DM",
+             "LAImod", 
+             "Root.Total", "SWC.2.3.m..mm.",
+             "Growth.stage"),
+           c("SowingDate", "Clock.Today","ShootPopulation", "ShootWt", "LeafWt",
+             "StemWt", "LAI", "RootWt", "SWCmm", "GrowthStage"))
+  outpath <- here::here("01Data/ProcessedData",
+                       paste0(paste(trts, collapse = "_"),".xlsx"))
+  DT <- obs_Richard[Site == trts[1]&
+                SowingDate == trts[2]
+              ][, SimulationName := paste0(Site, "SowingDate", SowingDate)
+                ][, (c("Site", "SowingDate","Data","Season","DAS",
+                       "Rotation.No.","Harvest.No.")) := NULL]
+  write.xlsx(x = DT[, Clock.Today := as.Date(Clock.Today)], 
+             file = outpath, 
+             sheetName = "ObsAllData")
+  return(outpath)
+  
+  
+}
 
 #' filter_BD
 #'
