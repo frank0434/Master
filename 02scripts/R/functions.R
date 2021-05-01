@@ -1,5 +1,25 @@
 
 
+
+
+#' filter_BD
+#'
+#' @param path 
+#' @param Sites 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+filter_BD <- function(path, Sites){
+  BD <- data.table::as.data.table(
+    readxl::read_excel(path)
+  )
+  BD <- BD[Experiment == Sites]
+  
+  
+  }
+
 #' Title
 #'
 #' @param dt 

@@ -20,10 +20,9 @@ if(REMOTE){
   tar_option_set(deployment="main") # default to host
 }
 
-# Constant 
-
-values <-  data.table::data.table(Site = "AshleyDene",
-                                  SowingDate = paste0("SD", 1:2))
+# Construct the instruction
+values <-  data.table::data.table(Site = c("AshleyDene","Iversen12"),
+                                  SowingDate = rep(paste0("SD", 1:2), each = 2))
 
 targets <- tar_map(
   values = values, 
@@ -36,11 +35,12 @@ targets <- tar_map(
   tar_target(magicDate, as.Date("2011-06-25")),
   
   # Site depended targets
-  tar_target(BD, ""),
   tar_target(path_met, ifelse(Sites == "AshleyDene", 
                               here::here("01Data/ClimateAndObserved/AshleyDene.met"),
-                              here::here("01Data/ClimateAndObserved/Iversen12.met")))
+                              here::here("01Data/ClimateAndObserved/Iversen12.met"))),
+  tar_target(lucerne_height, ifelse(Sites == "AshleyDene", 390L, 595L)),
   
+  tar_target(BD, filter_BD(path = here("01Data/BulkDensity.xlsx"), Sites))
   # Site and Sowing dates depended targets 
   
   
