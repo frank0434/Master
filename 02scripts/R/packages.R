@@ -30,6 +30,7 @@ library(here)
 
 # Workflow control 
 library(targets)
+library(tarchetypes)
 library(future)
 library(future.callr)
 library(future.batchtools)
