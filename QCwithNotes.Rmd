@@ -16,6 +16,11 @@ library(targets)
 ```{r}
 tar_load(starts_with("path_met"))
 path_met_AshleyDene_SD1
+path_met_Iversen12_SD2
+path_met_AshleyDene_SD1_1
+tar_load(starts_with("lucerne_height"))
+lucerne_height_AshleyDene_SD1
+
 ```
 
 
