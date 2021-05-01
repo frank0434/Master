@@ -23,19 +23,26 @@ if(REMOTE){
 # Construct the instruction
 values <-  data.table::data.table(Site = c("AshleyDene","Iversen12"),
                                   SowingDate = rep(paste0("SD", 1:2), each = 2))
+# Raw data path
+targets0 <- list(
+  tar_target(path_richard,"~/Dropbox/Data/APSIM_Sim.xlsx"),
+  # Constants raw data
+  tar_target(rawobs, read_excel(path_richard, 
+                     guess_max = 10300, sheet = 2,
+                     skip = 9, .name_repair = "universal") %>% 
+  as.data.table()),
+  tar_target(magicDate, as.Date("2011-06-25")),
+  tar_target(sowingDates, read_Sims(path_richard, source =  "sowingDate"))
+  
+  
+)
 
-# Constants raw data
-rawobs <- read_excel("~/Dropbox/Data/APSIM_Sim.xlsx", 
-                               guess_max = 10300, sheet = 2,
-                               skip = 9, .name_repair = "universal") %>% 
-  as.data.table()
-targets <- tar_map(
+targets1 <- tar_map(
   values = values, 
   names = c("Site", "SowingDate"),
   # Constants
   tar_target(SD, SowingDate),
   tar_target(Sites, Site),
-  tar_target(magicDate, as.Date("2011-06-25")),
   
   # Site depended targets
   tar_target(path_met, ifelse(Sites == "AshleyDene", 
@@ -50,9 +57,10 @@ targets <- tar_map(
   
   
   
+  
 )
 
-list(targets)
+list(targets0, targets1)
 # # Set constants 
 # path_richard <- "C:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
 # path_apsimx <- "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
