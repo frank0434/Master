@@ -31,12 +31,20 @@ targets0 <- list(
                      guess_max = 10300, sheet = 2,
                      skip = 9, .name_repair = "universal") %>% 
   as.data.table()),
+  # Get SWC data and filter down to the required sown dates
+  tar_target(data_SW, read_Sims(path = path_richard)[SowingDate %in% values$SowingDate]),
+  
+  # Constant variables
+  tar_target(id_vars, c("Experiment", "SowingDate", "Clock.Today", "DAS")),
+  tar_target(value_vars, grep("SWmm\\.\\d.", colnames(data_SW), value = TRUE)),
   # Date for reset soil water content
   tar_target(magicDate, as.Date("2011-06-25")),
   # Get the actual dates of sowing
   tar_target(sowingDates, read_Sims(path_richard, source =  "sowingDate")),
   # Get the LAI for daily value interpolation 
   tar_target(LAI_Height,  read_Sims(path = path_richard, source = "biomass"))
+  # 
+  
   
   
 )
@@ -65,7 +73,20 @@ targets1 <- tar_map(
   tar_target(CoverData, interp_LAI(biomass = LAI_Height,
                                    sowingDates = actualSD, 
                                    accumTT = cumTT, 
-                                   trts = c(Sites, SD)))
+                                   trts = c(Sites, SD))),
+  tar_target(SW_mean_new,
+             colwise_meanSW(DT = data_SW[Experiment == Sites &
+                                                SowingDate == SD
+                                              ][Clock.Today >= magicDate],
+                            id.vars = id_vars,
+                            col.vars = value_vars)),
+  tar_target(SW_initials, initialSWC(SW_mean_new, sowingDates, id_vars)),
+  tar_target(DUL_LL_range, doDUL_LL_range(SW = SW_mean_new,
+                                          id.vars = id_vars,
+                                          startd = magicDate)),
+  tar_target(DUL_LL_range_arbitrary, DUL_LL_range[,':='(SAT = SW.DUL* 1.05,
+                                                        SW.DUL = SW.DUL * 0.95,
+                                                        SW.LL15 = SW.LL * 0.95)])
   
   
   

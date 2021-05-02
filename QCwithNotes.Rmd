@@ -43,7 +43,22 @@ tar_load(sowingDates)
 sowingDates
 tar_load(starts_with("CoverData"))
 CoverData_AshleyDene_SD1
+tar_load(data_SW)
+data_SW
+tar_load(value_vars)
+tar_load(id_vars)
 ```
+# SOIL PARAMS
+```{r}
+tar_load(starts_with("DUL_LL_range_arbitrary"))
+DUL_LL_range_arbitrary_Iversen12_SD1
+
+DT = data_SW[Experiment == "AshleyDene" & SowingDate == "SD1"]
+tar_load(starts_with("SW_mean_new"))
+
+SW_mean_new_Iversen12_SD1
+```
+
 
 
 # Debug couldn't find objects

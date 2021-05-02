@@ -363,9 +363,9 @@ process_esti <- function(DT, model = mcpmodel, priorinfo = prior){
 ##' @return
 ##' @author frank0434
 ##' @export
-colwise_meanSW <- function(data_SW, id.vars = id_vars, col.vars = value_vars){
+colwise_meanSW <- function(DT, id.vars = id_vars, col.vars = value_vars){
   
-  SW_mean <- data_SW[, unlist(lapply(.SD, function(x) list(mean=mean(x, na.rm = TRUE),
+  SW_mean <- DT[, unlist(lapply(.SD, function(x) list(mean=mean(x, na.rm = TRUE),
                                                           sd = sd(x, na.rm = TRUE),
                                                           n = .N,
                                                           Upper = max(x, na.rm = TRUE),
