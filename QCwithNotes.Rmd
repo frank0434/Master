@@ -52,11 +52,20 @@ tar_load(id_vars)
 ```{r}
 tar_load(starts_with("DUL_LL_range_arbitrary"))
 DUL_LL_range_arbitrary_Iversen12_SD1
-
-DT = data_SW[Experiment == "AshleyDene" & SowingDate == "SD1"]
+tar_load(starts_with("SW_mean"))
+SW_mean_AshleyDene_SD1
+SW_mean
+# DT = data_SW[Experiment == "AshleyDene" & SowingDate == "SD1"]
 tar_load(starts_with("SW_mean_new"))
 
 SW_mean_new_Iversen12_SD1
+SW_mean_new_Iversen12_SD2
+deparse(substitute(SW_mean_new_Iversen12_SD2))
+tar_load(starts_with("input_list"))
+
+names(input_list_AshleyDene_SD1)
+
+combine_input(SW_mean_AshleyDene_SD1, SW_mean_AshleyDene_SD2)
 ```
 
 

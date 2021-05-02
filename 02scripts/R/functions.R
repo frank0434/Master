@@ -1,6 +1,25 @@
 
 
 
+#' combine_input
+#' @description pack a number of objects into a list and name with their object
+#' names 
+#'
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+combine_input <- function(...){
+
+  nms <- as.character(as.list(substitute(list(...))))[-1]
+  l <- list(...)
+  names(l) <- nms
+  l
+}
+
+
 #' prepare_obs
 #'
 #' @param DT 
@@ -72,6 +91,40 @@ prepare_obs <- function(DT, trts = c("AshleyDene", "SD1")){
   
   
 }
+
+#' filter_SD 
+#' @description Helper function to get the pipeline dependencies right.
+#'
+#' @param DT 
+#' @param trts 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+filter_SD <- function(DT, trts){
+  SD <- DT[Experiment == trts[1] &
+             SowingDate == trts[2]]
+  SD
+}
+
+#' Title
+#'
+#' @param DT 
+#' @param date 
+#' @param trts order of trts matters, first is the site
+#'
+#' @return
+#' @export
+#'
+#' @examples
+filter_SW <- function(DT, date, trts){
+  DT <- DT[Clock.Today >= date
+           ][Experiment == trts[1] &
+               SowingDate == trts[2]]
+  DT
+  
+  }
 
 #' filter_BD
 #'
@@ -377,7 +430,7 @@ colwise_meanSW <- function(DT, id.vars = id_vars, col.vars = value_vars){
   SW_mean[, ':='(SW.1..VWC= round(SWmm.1..mean/200, digits = 3))
             ][, (paste0("SW.",2:22, "..VWC")) := lapply(.SD, function(x) round(x/100, digits = 3)),
               .SDcols = meancols[-1]][]
-  return(SW_mean)
+  SW_mean
 
 
 }

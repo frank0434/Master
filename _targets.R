@@ -67,26 +67,32 @@ targets1 <- tar_map(
   # Site and Sowing dates depended targets 
   ## Observations
   tar_target(obs, prepare_obs(rawobs, trts = c(Sites, SD))),
-  tar_target(cumTT, met[,.(Experiment, Clock.Today, AccumTT)]),
-  tar_target(actualSD, sowingDates[Experiment == Sites & 
-                                     SowingDate == SD]),
+  # tar_target(cumTT, met[,.(Experiment, Clock.Today, AccumTT)]),
+  tar_target(actualSD, filter_SD(sowingDates, trts = c(Sites, SD))),
   tar_target(CoverData, interp_LAI(biomass = LAI_Height,
                                    sowingDates = actualSD, 
-                                   accumTT = cumTT, 
+                                   accumTT =  met[,.(Experiment, Clock.Today, AccumTT)], 
                                    trts = c(Sites, SD))),
-  tar_target(SW_mean_new,
-             colwise_meanSW(DT = data_SW[Experiment == Sites &
-                                                SowingDate == SD
-                                              ][Clock.Today >= magicDate],
-                            id.vars = id_vars,
-                            col.vars = value_vars)),
+  # Subset the raw sw into treatment level
+  tar_target(SW_mean, filter_SW(data_SW, magicDate, trts = c(Sites, SD))), 
+  tar_target(SW_mean_new, colwise_meanSW(DT = SW_mean,
+                                         id.vars = id_vars,
+                                         col.vars = value_vars)),
   tar_target(SW_initials, initialSWC(SW_mean_new, sowingDates, id_vars)),
   tar_target(DUL_LL_range, doDUL_LL_range(SW = SW_mean_new,
                                           id.vars = id_vars,
                                           startd = magicDate)),
+  # Manually adjust the DUL levels to 0.95
   tar_target(DUL_LL_range_arbitrary, DUL_LL_range[,':='(SAT = SW.DUL* 1.05,
                                                         SW.DUL = SW.DUL * 0.95,
-                                                        SW.LL15 = SW.LL * 0.95)])
+                                                        SW.LL15 = SW.LL * 0.95)]),
+  # Combine all into one list
+  tar_target(input_list, combine_input( path_met, #climate met path 
+                                        lucerne_height, # sowing dates
+                                        actualSD,
+                                        CoverData, 
+                                        DUL_LL_range_arbitrary
+                                        ))
   
   
   
