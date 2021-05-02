@@ -551,7 +551,7 @@ outputobserved <- function(biomass, SW, site, SD,
 #'
 #' @examples
 outputLAIinput <- function(CoverData, site, SD,
-                           output = "Data/ProcessedData/CoverData/"){
+                           output = "01Data/ProcessedData/CoverData/"){
   # OUPUT CONFIG
   
   if(!dir.exists(output)){
@@ -589,11 +589,12 @@ outputLAIinput <- function(CoverData, site, SD,
 ##' @return
 ##' @author frank0434
 ##' @export
-interp_LAI <- function(biomass, sowingDates, accumTT) {
-  
+interp_LAI <- function(biomass = LAI_Height, sowingDates, accumTT, 
+                       trts = c("AshleyDene", "SD1")) {
+
   LAI_Height_SD <- merge.data.table(biomass, sowingDates, 
-                                    by = c("Experiment", "Clock.Today" , "SowingDate"), 
-                                    all= TRUE)[,
+                                    by = c("Experiment", "Clock.Today" , "SowingDate"),
+                                    all = TRUE)[,
                                                ':='(LAImod = ifelse(is.na(LAImod), 0, LAImod),
                                                     Height = ifelse(is.nan(Height), NA, Height))]
   
@@ -615,7 +616,9 @@ interp_LAI <- function(biomass, sowingDates, accumTT) {
      ][Experiment == "AshleyDene" & Clock.Today %between% c( '2011-11-30','2012-03-01'),
        k:= 0.66][, LI := 1 - exp(-k * LAI) ]
   
-  return(DT)
+  outputLAIinput(DT, site = trts[1], SD = trts[2],
+                 output = here("01Data/ProcessedData/CoverData/"))
+  
 }
 
 
@@ -670,6 +673,8 @@ initialSWC <- function(DT, sowingDates, id_vars) {
 
 # read functions ----------------------------------------------------------
 
+
+
 #' read_met
 #'
 #' @param path A character string. The path to access the met files.
@@ -688,9 +693,22 @@ initialSWC <- function(DT, sowingDates, id_vars) {
 #' \dontrun{
 #' read_met("path", skip_unit = 9, skip_meta = 7)
 #' }
-read_met <- function(path = path_met, skip_unit = 9, skip_meta = 7,
-                     startd = "2010-10-01", endd = "2012-08-01",
-                     site = "AshleyDene"){
+read_met <- function(path = path_met){
+  
+  switch <- as.logical(grep("AshleyDene", x = path))
+  if(isTRUE(switch)){
+   skip_unit = 10
+   skip_meta = 8
+   site = "AshleyDene"
+  } else{
+    skip_unit = 8
+    skip_meta = 6
+    site = "Iversen12"
+  }
+
+  startd = "2010-10-01"
+  endd = "2012-08-01"
+  
   start_date <- as.Date(startd)
   end_date <- as.Date(endd)
   met_LN <- data.table::fread(input = path,skip = skip_unit, fill = TRUE)

@@ -15,7 +15,7 @@ library(targets)
 
 ```{r}
 tar_load(starts_with("path_met"))
-path_met_AshleyDene_SD1
+grep("AshleyDene", x = path_met_Iversen12_SD1)
 path_met_Iversen12_SD2
 
 tar_load(starts_with("lucerne_height"))
@@ -30,6 +30,19 @@ BD_AshleyDene_SD1
 
 tar_read(magicDate)
 
+tar_read(sowingDates)
+
+tar_load(starts_with("met"))
+
+met_AshleyDene_SD1
+
+
+met_Iversen12_SD1
+tar_load(LAI_Height)
+tar_load(sowingDates)
+sowingDates
+tar_load(starts_with("CoverData"))
+CoverData_AshleyDene_SD1
 ```
 
 

@@ -31,8 +31,12 @@ targets0 <- list(
                      guess_max = 10300, sheet = 2,
                      skip = 9, .name_repair = "universal") %>% 
   as.data.table()),
+  # Date for reset soil water content
   tar_target(magicDate, as.Date("2011-06-25")),
-  tar_target(sowingDates, read_Sims(path_richard, source =  "sowingDate"))
+  # Get the actual dates of sowing
+  tar_target(sowingDates, read_Sims(path_richard, source =  "sowingDate")),
+  # Get the LAI for daily value interpolation 
+  tar_target(LAI_Height,  read_Sims(path = path_richard, source = "biomass"))
   
   
 )
@@ -49,11 +53,19 @@ targets1 <- tar_map(
                               here::here("01Data/ClimateAndObserved/AshleyDene.met"),
                               here::here("01Data/ClimateAndObserved/Iversen12.met"))),
   tar_target(lucerne_height, ifelse(Sites == "AshleyDene", 390L, 595L)),
+  tar_target(met, read_met(path_met)),
   
   tar_target(BD, filter_BD(path = here("01Data/BulkDensity.xlsx"), Sites)),
   # Site and Sowing dates depended targets 
   ## Observations
-  tar_target(obs, prepare_obs(rawobs, trts = c(Sites, SD)))
+  tar_target(obs, prepare_obs(rawobs, trts = c(Sites, SD))),
+  tar_target(cumTT, met[,.(Experiment, Clock.Today, AccumTT)]),
+  tar_target(actualSD, sowingDates[Experiment == Sites & 
+                                     SowingDate == SD]),
+  tar_target(CoverData, interp_LAI(biomass = LAI_Height,
+                                   sowingDates = actualSD, 
+                                   accumTT = cumTT, 
+                                   trts = c(Sites, SD)))
   
   
   
