@@ -42,11 +42,15 @@ targets0 <- list(
   # Get the actual dates of sowing
   tar_target(sowingDates, read_Sims(path_richard, source =  "sowingDate")),
   # Get the LAI for daily value interpolation 
-  tar_target(LAI_Height,  read_Sims(path = path_richard, source = "biomass"))
-  # 
+  tar_target(LAI_Height,  read_Sims(path = path_richard, source = "biomass")),
   
-  
-  
+  # APSIMX constants
+  tar_target(path_apsimx, 
+             "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"),
+  tar_target(template,
+             readLines(here::here("01Data/ApsimxFiles/SlurpTemplateFirstPhase.txt"))),
+  tar_target(apsimx_Basefile,
+             here::here("01Data/ApsimxFiles/20201205BaseSlurp.apsimx"))
 )
 
 targets1 <- tar_map(
@@ -74,12 +78,12 @@ targets1 <- tar_map(
                                    accumTT =  met[,.(Experiment, Clock.Today, AccumTT)], 
                                    trts = c(Sites, SD))),
   # Subset the raw sw into treatment level
-  tar_target(SW_mean, filter_SW(data_SW, magicDate, trts = c(Sites, SD))), 
-  tar_target(SW_mean_new, colwise_meanSW(DT = SW_mean,
-                                         id.vars = id_vars,
-                                         col.vars = value_vars)),
-  tar_target(SW_initials, initialSWC(SW_mean_new, sowingDates, id_vars)),
-  tar_target(DUL_LL_range, doDUL_LL_range(SW = SW_mean_new,
+  tar_target(SW, filter_SW(data_SW, magicDate, trts = c(Sites, SD))), 
+  tar_target(SW_sub, colwise_meanSW(DT = SW,
+                                     id.vars = id_vars,
+                                     col.vars = value_vars)),
+  tar_target(SW_initials, initialSWC(SW_sub, sowingDates = actualSD, id_vars)),
+  tar_target(DUL_LL_range, doDUL_LL_range(SW = SW_sub,
                                           id.vars = id_vars,
                                           startd = magicDate)),
   # Manually adjust the DUL levels to 0.95
@@ -88,15 +92,16 @@ targets1 <- tar_map(
                                                         SW.LL15 = SW.LL * 0.95)]),
   # Combine all into one list
   tar_target(input_list, combine_input( path_met, #climate met path 
+                                        obs, 
+                                        BD,
                                         lucerne_height, # sowing dates
                                         actualSD,
                                         CoverData, 
-                                        DUL_LL_range_arbitrary
-                                        ))
-  
-  
-  
-  
+                                        DUL_LL_range_arbitrary,
+                                        SW_initials
+                                        )),
+  # Construct the configuration file 
+  tar_target(config, "")
 )
 
 list(targets0, targets1)

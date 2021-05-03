@@ -418,7 +418,7 @@ process_esti <- function(DT, model = mcpmodel, priorinfo = prior){
 ##' @export
 colwise_meanSW <- function(DT, id.vars = id_vars, col.vars = value_vars){
   
-  SW_mean <- DT[, unlist(lapply(.SD, function(x) list(mean=mean(x, na.rm = TRUE),
+  mean_SW <- DT[, unlist(lapply(.SD, function(x) list(mean=mean(x, na.rm = TRUE),
                                                           sd = sd(x, na.rm = TRUE),
                                                           n = .N,
                                                           Upper = max(x, na.rm = TRUE),
@@ -426,11 +426,11 @@ colwise_meanSW <- function(DT, id.vars = id_vars, col.vars = value_vars){
                              recursive = FALSE), 
                     by = id.vars,
                     .SDcols = col.vars]
-  meancols <- grep("mean", colnames(SW_mean), value = TRUE)
-  SW_mean[, ':='(SW.1..VWC= round(SWmm.1..mean/200, digits = 3))
+  meancols <- grep("mean", colnames(mean_SW), value = TRUE)
+  mean_SW[, ':='(SW.1..VWC= round(SWmm.1..mean/200, digits = 3))
             ][, (paste0("SW.",2:22, "..VWC")) := lapply(.SD, function(x) round(x/100, digits = 3)),
               .SDcols = meancols[-1]][]
-  SW_mean
+  mean_SW
 
 
 }
@@ -440,15 +440,15 @@ colwise_meanSW <- function(DT, id.vars = id_vars, col.vars = value_vars){
 #' @description need to know which date has the maximum and minimum SW to figure
 #'   out the range from the replicates
 #'
-#' @param SW_mean 
+#' @param mean_SW 
 #'
 #' @return
 #' @export
 #'
 #' @examples
-filter_datemax <- function(SW_mean, mode = c("max", "min"), id.vars = id_vars){
+filter_datemax <- function(mean_SW, mode = c("max", "min"), id.vars = id_vars){
   if(mode == "max"){
-    TEST <- data.table::melt.data.table(SW_mean, id.vars = id.vars, 
+    TEST <- data.table::melt.data.table(mean_SW, id.vars = id.vars, 
                                         variable.name = "Depth", 
                                         variable.factor = FALSE,
                                         value.name = "SW") %>% 
@@ -457,7 +457,7 @@ filter_datemax <- function(SW_mean, mode = c("max", "min"), id.vars = id_vars){
       dplyr::group_by(Experiment, SowingDate, Depth, SW) %>% 
       dplyr::filter(Clock.Today == first(Clock.Today))
   } else if(mode == "min"){
-    TEST <- data.table::melt.data.table(SW_mean, id.vars = id.vars, 
+    TEST <- data.table::melt.data.table(mean_SW, id.vars = id.vars, 
                                         variable.name = "Depth", 
                                         variable.factor = FALSE,
                                         value.name = "SW") %>% 
@@ -494,8 +494,8 @@ doDUL_LL_range <- function(SW, id.vars = id_vars,
   needed <- c(id.vars, needed)
   VWC <- SW[,..needed]
 
-  Dates_max <- filter_datemax(SW_mean = VWC, id.vars = id.vars, mode = "max")
-  Dates_min <- filter_datemax(SW_mean = VWC, id.vars = id.vars, mode = "min")
+  Dates_max <- filter_datemax(mean_SW = VWC, id.vars = id.vars, mode = "max")
+  Dates_min <- filter_datemax(mean_SW = VWC, id.vars = id.vars, mode = "min")
 
   DT <- data.table::melt.data.table(VWC, id.vars = id.vars, 
                                     # measure.vars = value.vars,
