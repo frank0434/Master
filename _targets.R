@@ -31,6 +31,8 @@ targets0 <- list(
                      guess_max = 10300, sheet = 2,
                      skip = 9, .name_repair = "universal") %>% 
   as.data.table()),
+  tar_target(params, read_excel(here("01Data/SlurpParamList.xlsx")) %>% 
+               as.data.table(), cue = tar_cue(mode = "always")),
   # Get SWC data and filter down to the required sown dates
   tar_target(data_SW, read_Sims(path = path_richard)[SowingDate %in% values$SowingDate]),
   
@@ -48,7 +50,7 @@ targets0 <- list(
   tar_target(path_apsimx, 
              "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"),
   tar_target(template,
-             readLines(here::here("01Data/ApsimxFiles/SlurpTemplateFirstPhase.txt"))),
+             readLines(here::here("01Data/ApsimxFiles/SlurpTemplate.txt"))),
   tar_target(apsimx_Basefile,
              here::here("01Data/ApsimxFiles/20201205BaseSlurp.apsimx"))
 )
@@ -69,6 +71,7 @@ targets1 <- tar_map(
   
   tar_target(BD, filter_BD(path = here("01Data/BulkDensity.xlsx"), Sites)),
   # Site and Sowing dates depended targets 
+  tar_target(SimName, paste0(Sites, "SowingDate", SD)),
   ## Observations
   tar_target(obs, prepare_obs(rawobs, trts = c(Sites, SD))),
   # tar_target(cumTT, met[,.(Experiment, Clock.Today, AccumTT)]),

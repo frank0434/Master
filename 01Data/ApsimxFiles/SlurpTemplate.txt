@@ -1,4 +1,4 @@
-.Simulations.Site.Name = AshleyDeneSowingDateSD1
+[Site].Name = AshleyDeneSowingDateSD1
 [SlurpSowingRule].Script.SowingDate = 2010-12-08T00:00:00
 [Weather].FileName = C:\Data\Master\01Data\ClimateAndObserved\AshleyDene.met
 [SetCropVariables].Script.CoverFile = C:\Data\Master\01Data\ProcessedData\CoverData\LAI_AshleyDene_SD1.csv
