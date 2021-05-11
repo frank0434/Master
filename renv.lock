@@ -348,13 +348,6 @@
       "Repository": "CRAN",
       "Hash": "813fa8857aaa949b243e2e0b4abb8592"
     },
-    "dbplyr": {
-      "Package": "dbplyr",
-      "Version": "2.1.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "1f37fa4ab2f5f7eded42f78b9a887182"
-    },
     "desc": {
       "Package": "desc",
       "Version": "1.2.0",

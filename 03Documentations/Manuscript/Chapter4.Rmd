@@ -134,7 +134,9 @@ sowingDates <-  read_Sims(path_richard, source =  "sowingDate")
 sowingDates[SowingDate%in% paste0("SD", 1:5), 
             Clock.Today := as.Date(magicDate)]
 data_SW <- read_Sims(path = path_richard)
-SW_mean_new <- colwise_meanSW(data_SW = data_SW, 
+id_vars <- readRDS(here("_targets/objects/id_vars"))
+value_vars <- readRDS(here("_targets/objects/value_vars"))
+SW_mean_new <- colwise_meanSW(DT = data_SW, 
                               id.vars = id_vars, 
                               col.vars = value_vars)
 sw_initials <- initialSWC(SW_mean_new, sowingDates, id_vars)
