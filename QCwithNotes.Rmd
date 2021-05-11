@@ -119,6 +119,7 @@ tar_load(starts_with("SimName"))
 
 ## initial configuration 
 temp_list$`[Site].Name =` <- SimName_AshleyDene_SD1
+temp_list$`[DataStore].ExcelInput.FileNames = ` <- obs_AshleyDene_SD1
 temp_list$`[SlurpSowingRule].Script.SowingDate =` <- as.character(actualSD_AshleyDene_SD1[["Clock.Today"]])
 temp_list$`[Weather].FileName =` <-  path_met_AshleyDene_SD1
 temp_list$`[SetCropVariables].Script.CoverFile =` <- CoverData_AshleyDene_SD1

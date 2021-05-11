@@ -50,7 +50,8 @@ targets0 <- list(
   tar_target(path_apsimx, 
              "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"),
   tar_target(template,
-             readLines(here::here("01Data/ApsimxFiles/SlurpTemplate.txt"))),
+             readLines(here::here("01Data/ApsimxFiles/SlurpTemplate.txt")),
+             cue = tar_cue(mode = "always")),
   tar_target(apsimx_Basefile,
              here::here("01Data/ApsimxFiles/20201205BaseSlurp.apsimx"))
 )
