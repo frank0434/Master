@@ -117,41 +117,72 @@ names(temp_list) <- temp
 # }
 tar_load(starts_with("SimName"))
 
-## initial configuration 
+# the code below was for construct the value list object 
+## initial configuration
 temp_list$`[Site].Name =` <- SimName_AshleyDene_SD1
 temp_list$`[DataStore].ExcelInput.FileNames = ` <- obs_AshleyDene_SD1
-temp_list$`[SlurpSowingRule].Script.SowingDate =` <- as.character(actualSD_AshleyDene_SD1[["Clock.Today"]])
+temp_list$`[SlurpSowingRule].Script.SowingDate =` <- as.character(actualSD_AshleyDene_SD1$Clock.Today)
 temp_list$`[Weather].FileName =` <-  path_met_AshleyDene_SD1
 temp_list$`[SetCropVariables].Script.CoverFile =` <- CoverData_AshleyDene_SD1
 temp_list$`[SetCropVariables].Script.MaximumHeight =` <- lucerne_height_AshleyDene_SD1
-temp_list$`[Soil].Physical.BD =` <- paste(BD_AshleyDene_SD1[["adjustedBD"]]/1000, collapse = ",")
-temp_list$`[Soil].InitialConditions.SW =` <- paste(SW_initials_AshleyDene_SD1[["SW"]],
+temp_list$`[Soil].Physical.BD =` <- paste(BD_AshleyDene_SD1$adjustedBD/1000, collapse = ",")
+temp_list$`[Soil].InitialConditions.SW =` <- paste(SW_initials_AshleyDene_SD1$SW,
                                                    collapse = ",")
-temp_list$`[Soil].Physical.DUL =` <- paste(DUL_LL_range_arbitrary_AshleyDene_SD1[["SW.DUL"]],
+temp_list$`[Soil].Physical.DUL =` <- paste(DUL_LL_range_arbitrary_AshleyDene_SD1$SW.DUL,
                                            collapse = ",")
-temp_list$`[Soil].Physical.SlurpSoil.LL =`<- paste(DUL_LL_range_arbitrary_AshleyDene_SD1[["SW.LL"]],
-                                           collapse = ",")
-
-
-temp_list$`[Soil].Physical.SAT =`<- paste(DUL_LL_range_arbitrary_AshleyDene_SD1[["SAT"]],
-                                           collapse = ",")
-temp_list$`[Soil].Physical.AirDry =`<- paste(DUL_LL_range_arbitrary_AshleyDene_SD1[["SW.LL"]],
+temp_list$`[Soil].Physical.SlurpSoil.LL =`<- paste(DUL_LL_range_arbitrary_AshleyDene_SD1$SW.LL,
                                            collapse = ",")
 
-temp_list$`[Soil].Physical.LL15 =`<- paste(DUL_LL_range_arbitrary_AshleyDene_SD1[["SW.LL"]],
+
+temp_list$`[Soil].Physical.SAT =`<- paste(DUL_LL_range_arbitrary_AshleyDene_SD1$SAT,
                                            collapse = ",")
-## parameters that need optimisation 
+temp_list$`[Soil].Physical.AirDry =`<- paste(DUL_LL_range_arbitrary_AshleyDene_SD1$SW.LL,
+                                           collapse = ",")
 
-temp_list$`[Soil].Physical.SlurpSoil.KL[1:22] =` <- parameters[parameter == "KL"][["initials"]]
-temp_list$`[SlurpSowingRule].Script.RFV =`<- parameters[parameter %like% "RFV"][["initials"]]
-temp_list$`[SlurpSowingRule].Script.KLReductionFactor =`<- parameters[parameter %like% "KLR"][["initials"]]
-temp_list$`[SlurpSowingRule].Script.MaxG =`<- parameters[parameter %like% "gsmax350"][["initials"]]
-temp_list$`[SlurpSowingRule].Script.R50 =`<- parameters[parameter %like% "R50"][["initials"]]
-temp_list$`[SlurpSowingRule].Script.SummerU =`<- parameters[parameter %like% "SummerU"][["initials"]]
-temp_list$`[SlurpSowingRule].Script.SummerCona =`<- parameters[parameter %like% "SummerCona"][["initials"]]
-temp_list$`[SlurpSowingRule].Script.WinterU =`<- parameters[parameter %like% "WinterU"][["initials"]]
-temp_list$`[SlurpSowingRule].Script.WinterCona =`<- parameters[parameter %like% "WinterCona"][["initials"]]
+temp_list$`[Soil].Physical.LL15 =`<- paste(DUL_LL_range_arbitrary_AshleyDene_SD1$SW.LL,
+                                           collapse = ",")
+## parameters that need optimisation
 
+temp_list$`[Soil].Physical.SlurpSoil.KL[1:22] =` <- parameters[parameter == "KL"]$initials
+temp_list$`[SlurpSowingRule].Script.RFV =`<- parameters[parameter %like% "RFV"]$initials
+temp_list$`[SlurpSowingRule].Script.KLReductionFactor =`<- parameters[parameter %like% "KLR"]$initials
+temp_list$`[SlurpSowingRule].Script.MaxG =`<- parameters[parameter %like% "gsmax350"]$initials
+temp_list$`[SlurpSowingRule].Script.R50 =`<- parameters[parameter %like% "R50"]$initials
+temp_list$`[SlurpSowingRule].Script.SummerU =`<- parameters[parameter %like% "SummerU"]$initials
+temp_list$`[SlurpSowingRule].Script.SummerCona =`<- parameters[parameter %like% "SummerCona"]$initials
+temp_list$`[SlurpSowingRule].Script.WinterU =`<- parameters[parameter %like% "WinterU"]$initials
+temp_list$`[SlurpSowingRule].Script.WinterCona =`<- parameters[parameter %like% "WinterCona"]$initials
+
+
+## Could be messed up by the order
+# value_list <- list(SimName_AshleyDene_SD1,
+#                    obs_AshleyDene_SD1,
+#                    as.character(actualSD_AshleyDene_SD1$Clock.Today),
+#                    path_met_AshleyDene_SD1,
+#                    CoverData_AshleyDene_SD1,
+#                    lucerne_height_AshleyDene_SD1,
+#                    paste(BD_AshleyDene_SD1$adjustedBD/1000, collapse = ","),
+#                    paste(SW_initials_AshleyDene_SD1$SW, collapse = ","),
+#                    paste(DUL_LL_range_arbitrary_AshleyDene_SD1$SW.DUL, collapse = ","),
+#                    parameters[parameter == "KL"]$initials,
+#                    paste(DUL_LL_range_arbitrary_AshleyDene_SD1$SW.LL, collapse = ","),
+#                    paste(DUL_LL_range_arbitrary_AshleyDene_SD1$SAT, collapse = ","),
+#                    paste(DUL_LL_range_arbitrary_AshleyDene_SD1$SW.LL, collapse = ","),
+#                    paste(DUL_LL_range_arbitrary_AshleyDene_SD1$SW.LL, collapse = ","),
+#                    parameters[parameter %like% "RFV"]$initials,
+#                    parameters[parameter %like% "KLR"]$initials,
+#                    parameters[parameter %like% "gsmax350"]$initials,
+#                    parameters[parameter %like% "R50"]$initials,
+#                    parameters[parameter %like% "SummerU"]$initials,
+#                    parameters[parameter %like% "SummerCona"]$initials,
+#                    parameters[parameter %like% "WinterU"]$initials,
+#                    parameters[parameter %like% "WinterCona"]$initials)
+# 
+# if(length(temp_list) == length(value_list)){
+#   for(i in seq_len(length(temp_list))){
+#     temp_list[[i]] <- value_list[[i]]
+#     }
+# }
 
 ```
 ## Test the config file
@@ -187,6 +218,60 @@ tar_load(path_apsimx)
   
 
 ```
+# get DEOPTIM?
+
+
+```{r}
+paravals <- c(0.25, 0.005,12,0.008,200,10,5,4,2)
+# Edit fun
+APSIMEditFun <- function( paravals, nodes = template,
+                         initial_cond = 13L,
+                         input_list = input_list_AshleyDene_SD1){
+  no.ofPara = length(paravals)
+  id = paste0(paravals, collapse = '_')
+  
+  temp_initial <- gsub("(?<=\\=)\\s.+$","",nodes, perl = TRUE)
+  temp_ini_list <- vector("list", length = length(temp_initial))
+  names(temp_ini_list) <- temp_initial
+  ## initial configuration
+  temp_ini_list$`[Site].Name =` <- input_list[[1]]
+  temp_ini_list$`[DataStore].ExcelInput.FileNames = ` <- input_list[[2]]
+  temp_ini_list$`[SlurpSowingRule].Script.SowingDate =` <- as.character(input_list[[3]]$Clock.Today)
+  temp_ini_list$`[Weather].FileName =` <- input_list[[4]]
+  temp_ini_list$`[SetCropVariables].Script.CoverFile =` <-  input_list[[5]]
+  temp_ini_list$`[SetCropVariables].Script.MaximumHeight =` <-  input_list[[6]]
+  temp_ini_list$`[Soil].Physical.BD =` <- paste( input_list[[7]]$adjustedBD/1000, collapse = ",")
+  temp_ini_list$`[Soil].InitialConditions.SW =` <- paste( input_list[[8]]$SW,
+                                                     collapse = ",")
+  temp_ini_list$`[Soil].Physical.DUL =` <- paste( input_list[[9]]$SW.DUL,
+                                             collapse = ",")
+  temp_ini_list$`[Soil].Physical.SlurpSoil.LL =`<- paste(input_list[[9]]$SW.LL,
+                                             collapse = ",")
+  temp_ini_list$`[Soil].Physical.SAT =`<- paste(input_list[[9]]$SAT,
+                                             collapse = ",")
+  temp_ini_list$`[Soil].Physical.AirDry =`<- paste(input_list[[9]]$SW.LL,
+                                             collapse = ",")
+  temp_ini_list$`[Soil].Physical.LL15 =`<- paste(input_list[[9]]$SW.LL,
+                                             collapse = ",")
+  for(i in (initial_cond+1):length(nodes)){
+    temp_ini_list[[i]] <- paravals[i-initial_cond]
+  }
+  f = file(paste0(apsimx_sims_dir,"temp", id, ".txt"), "w")
+  
+  for(i in seq_len(length(nodes))){
+    line = paste0(names(temp_ini_list[i]) ," ", temp_ini_list[[i]])
+    cat(line, "\r",
+        file = f, 
+        append = TRUE)
+  }
+  # Close the file and clean it from memory 
+  close(f)
+  rm(f)
+  gc()
+}
+APSIMEditFun(paravals = c(0.05, 0.015,13,0.008,200,10,5,4,2))
+```
+
 # address issue 46
 
 ```{r}

@@ -95,14 +95,15 @@ targets1 <- tar_map(
                                                         SW.DUL = SW.DUL * 0.95,
                                                         SW.LL15 = SW.LL * 0.95)]),
   # Combine all into one list
-  tar_target(input_list, combine_input( path_met, #climate met path 
+  tar_target(input_list, combine_input( SimName,
                                         obs, 
-                                        BD,
-                                        lucerne_height, # sowing dates
                                         actualSD,
+                                        path_met, #climate met path 
                                         CoverData, 
-                                        DUL_LL_range_arbitrary,
-                                        SW_initials
+                                        lucerne_height, # sowing dates
+                                        BD,
+                                        SW_initials,
+                                        DUL_LL_range_arbitrary
                                         )),
   # Construct the configuration file 
   tar_target(config, "")
