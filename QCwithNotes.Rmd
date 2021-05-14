@@ -214,7 +214,7 @@ tar_load(path_apsimx)
   system(paste("cp", apsimx_file, newname))
   
   # Modify the apsimx file 
-  system(paste(path_apsimx, "--edit", path_config, newname))
+  # system(paste(path_apsimx, "--edit", path_config, newname))
   
 
 ```
@@ -227,8 +227,8 @@ paravals <- c(0.25, 0.005,12,0.008,200,10,5,4,2)
 APSIMEditFun <- function( paravals, nodes = template,
                          initial_cond = 13L,
                          input_list = input_list_AshleyDene_SD1){
-  no.ofPara = length(paravals)
-  id = paste0(paravals, collapse = '_')
+  no.ofPara <- length(paravals)
+  id <- paste0(paravals, collapse = '_')
   
   temp_initial <- gsub("(?<=\\=)\\s.+$","",nodes, perl = TRUE)
   temp_ini_list <- vector("list", length = length(temp_initial))
@@ -256,10 +256,12 @@ APSIMEditFun <- function( paravals, nodes = template,
   for(i in (initial_cond+1):length(nodes)){
     temp_ini_list[[i]] <- paravals[i-initial_cond]
   }
-  f = file(paste0(apsimx_sims_dir,"temp", id, ".txt"), "w")
+  path_config <- here("01Data/ProcessedData/ConfigurationFiles", 
+                      paste0("temp", id, ".txt"))
+  f<- file(path_config, "w")
   
   for(i in seq_len(length(nodes))){
-    line = paste0(names(temp_ini_list[i]) ," ", temp_ini_list[[i]])
+    line <- paste0(names(temp_ini_list[i]) ," ", temp_ini_list[[i]])
     cat(line, "\r",
         file = f, 
         append = TRUE)
@@ -269,8 +271,112 @@ APSIMEditFun <- function( paravals, nodes = template,
   rm(f)
   gc()
 }
-APSIMEditFun(paravals = c(0.05, 0.015,13,0.008,200,10,5,4,2))
+APSIMEditFun(paravals = paravals)
+APSIMRun = function(par){
+  # Create a new name for the apsimx file 
+  id <- paste0(par, collapse = '_')
+  path_config <- here("01Data/ProcessedData/ConfigurationFiles", 
+                      paste0("temp", id, ".txt"))
+  # Create a new name for the apsimx file 
+  newname <- paste0(apsimx_sims_dir, '/temp', id, ".apsimx")
+ 
+  # Copy base apsimx file to its new name 
+  system(paste("cp", apsimx_file, newname))
+  
+  # Modify the apsimx file 
+  system(paste(path_apsimx, "--edit", path_config, newname))
+  
+  # # Execute the new apsimx file 
+  # system(paste(apsimx, newname, 
+  #                "/NumberOfProcessors:8"))
+    
+}
+APSIMRun(par = paravals)
+# The cost
+tar_load(magicDate)
+cost.function <- function(par, obspara = "SWCmm", reset = magicDate){
+  id <- paste0(par, collapse = '_')
+  cat("Processing param combination: ",par, "\r\n")
+  APSIMEditFun(par)
+  APSIMRun(par)
+  db <- RSQLite::dbConnect(RSQLite::SQLite(),
+                           paste0(apsimx_sims_dir, '/temp', id,'.db'))
+  
+
+  PredictedObserved <- data.table::as.data.table(
+    RSQLite::dbReadTable(db,"PredictedObserved"))
+  PredictedObserved <- PredictedObserved[Clock.Today >= reset]
+  # Generate multiple cost depends on user input of observation variables 
+  no.ofobspara <- length(obspara)
+  l <- vector("list", length = no.ofobspara)
+  names(l) <- obspara
+  for (i in seq_len(no.ofobspara)){
+    pre_col <- paste0("Predicted.", obspara[i])
+    obs_col <- paste0("Observed.", obspara[i])
+    l[[i]] <- sum(na.omit(PredictedObserved[[pre_col]]- 
+                          PredictedObserved[[obs_col]])^2)
+  }
+
+  totalCost = 0 
+  totalCost = sum(unlist(l))
+
+  RSQLite::dbDisconnect(db)
+  
+  rm(db)
+  gc()
+  
+  system(paste("rm", paste0(apsimx_sims_dir, "/temp", id, "*")))
+  
+  return(totalCost)
+}
+
+cost.function(par)
 ```
+# assemble the cost and DEoptim
+```{r}
+t1 = Sys.time()
+#DEoptim
+maxIt = 10
+np = 3
+lower = c(0.005,  0.0005, 10)
+upper = c(0.11, 0.01, 35)
+# The observaion value that will be used as the benchmark
+obspara = "SWC"
+
+opt.res =
+  DEoptim::DEoptim(fn=cost.function, 
+                   lower = lower,
+                   upper = upper,
+                   control=list(NP=np * 10, itermax=maxIt, parallelType=1,
+                                storepopfrom = 1,
+                                packages = c('RSQLite'),
+                                parVar = c(
+                                'slurpnodes',
+                                'apsimx',
+                                'apsimx_flag',
+                                'apsimx_file',
+                                'obspara',
+                                'apsimx_sims_dir',
+                                'apsimx_config',
+                                'APSIMEditFun', 
+                                'APSIMRun' ))
+  )
+
+
+save(opt.res, file =  file.path(apsimx_sims_dir,
+                                paste0(Sys.Date(), 'opt.res', ".RData")))
+
+fit.par = data.frame(estimates = opt.res$optim$bestmem, cost = opt.res$optim$bestval)
+
+ 
+#output the statistical test
+par = fit.par$estimates
+
+write.csv(par, 'C:/Data/Master/03processed-data/opt.par.csv', row.names = F)
+t2 = Sys.time()
+t2-t1
+```
+
 
 # address issue 46
 
