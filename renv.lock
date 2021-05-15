@@ -98,13 +98,6 @@
       "RemoteSha": "e895cb1cac9857ee557d2ebb9427817b41fc398c",
       "Hash": "1a5be1afe0e06106e86991a12fb6cf30"
     },
-    "RPostgreSQL": {
-      "Package": "RPostgreSQL",
-      "Version": "0.6-2",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "82cb7737c081ed6b5e528a37f536d864"
-    },
     "RSQLite": {
       "Package": "RSQLite",
       "Version": "2.2.2",
