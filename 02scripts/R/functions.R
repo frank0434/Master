@@ -1,6 +1,211 @@
 
 
+prepare_params <- function(params){
+  params <- params[!is.na(parameter)
+                   ][,.(parameter, lower, uppper, layer)
+                     ][, initials:= uppper/2]
+  return(params)
+}
 
+#' wrapper_deoptim
+#'
+#' @param parameters 
+#' @param obspara 
+#' @param maxIt 
+#' @param np 
+#' @param ... , input object will be passed into functions within optimisation
+#'
+#' @return
+#' @export
+#'
+#' @examples
+wrapper_deoptim <- function(parameters, par, obspara, maxIt, np,...){
+  # maxIt <- 10
+  # np <- 3
+  arg_input <- as.character(as.list(substitute(list(...))))[-1]
+  obj_nms <- gsub("_(Ash|Ive).+_SD\\d{1,}$","", arg_input, ignore.case = TRUE)
+
+  # import necessary input from cache
+  for (i in seq_len(length(arg_input))) {
+    assign(obj_nms[i], readRDS(here::here("_targets/objects/", 
+                                            arg_input[i])),
+           envir = .GlobalEnv
+           )
+  }
+
+
+  # input_list <- readRDS(here::here("_targets/objects/", 
+  #                                  arg_input[7]))
+  # arg_input[7] <- "input_list"
+  # import necessary functions 
+  source(here::here("02Scripts/R/functions.R"))
+  # source(here::here("02Scripts/R/DEoptimCustomised.R"))
+  low <- parameters$lower
+  up <- parameters$uppper
+  # The observaion value that will be used as the benchmark
+  # obspara <- "SWCmm"
+  
+  opt.res <- DEoptim::DEoptim(fn=cost.function, 
+                     lower = low,
+                     upper = up,
+                     control=list(NP=np * 10, itermax=maxIt, parallelType=1,
+                                  storepopfrom = 1,
+                                  packages = c('RSQLite','here'),
+                                  parVar = c("APSIMEditFun",
+                                             "APSIMRun",
+                                             obj_nms))
+                     )
+  
+  
+  save(opt.res, file =  file.path(apsimx_sims_dir,
+                                  paste0(Sys.Date(), 'opt.res', ".RData")))
+  
+  fit.par = data.frame(estimates = opt.res$optim$bestmem, 
+                       cost = opt.res$optim$bestval)
+  
+  
+  #output the statistical test
+  par = fit.par$estimates
+  
+  write.csv(par, here::here("01Data/ProcessedData/opt.par.csv"), row.names = F)
+  
+}
+
+#' Title
+#'
+#' @param par 
+#' @param obspara 
+#' @param reset 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+cost.function <- function(par, obspara, reset = magicDate){
+  id <- paste0(round(par, digits = 3), collapse = '_')
+  cat("Processing param combination: ",par, "\r\n")
+  APSIMEditFun(par)
+  APSIMRun(par)
+  db <- RSQLite::dbConnect(RSQLite::SQLite(),
+                           paste0(apsimx_sims_dir, '/temp', id,'.db'))
+  
+  
+  PredictedObserved <- data.table::as.data.table(
+    RSQLite::dbReadTable(db,"PredictedObserved"))
+  PredictedObserved <- PredictedObserved[Clock.Today >= reset]
+  # Generate multiple cost depends on user input of observation variables 
+  no.ofobspara <- length(obspara)
+  l <- vector("list", length = no.ofobspara)
+  names(l) <- obspara
+  for (i in seq_len(no.ofobspara)){
+    pre_col <- paste0("Predicted.", obspara[i])
+    obs_col <- paste0("Observed.", obspara[i])
+    l[[i]] <- sum(na.omit(PredictedObserved[[pre_col]]- 
+                            PredictedObserved[[obs_col]])^2)
+  }
+  
+  totalCost = 0 
+  totalCost = sum(unlist(l))
+  
+  RSQLite::dbDisconnect(db)
+  
+  rm(db)
+  gc()
+  
+  system(paste("rm", paste0(apsimx_sims_dir, "/temp", id, "*")))
+  
+  return(totalCost)
+}
+
+#' Title
+#'
+#' @param par 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+APSIMRun <- function(par){
+  # Create a new name for the apsimx file 
+  id <- paste0(round(par, digits = 3), collapse = '_')
+  path_config <- here("01Data/ProcessedData/ConfigurationFiles", 
+                      paste0("temp", id, ".txt"))
+  # Create a new name for the apsimx file 
+  newname <- paste0(apsimx_sims_dir, '/temp', id, ".apsimx")
+  
+  # Copy base apsimx file to its new name 
+  system(paste("cp", apsimx_Basefile, newname))
+  
+  # Modify the apsimx file 
+  system(paste(path_apsimx, "--edit", path_config, newname))
+  
+  # # Execute the new apsimx file 
+  # system(paste(apsimx, newname, 
+  #                "/NumberOfProcessors:8"))
+  
+}
+
+
+
+#' APSIMEditFun
+#'
+#' @param par 
+#' @param nodes 
+#' @param initial_cond 
+#' @param input_list 
+#'
+#' @seealso \code{\link{APSIMRun}}
+#' @return
+#' @export
+#'
+#' @examples
+APSIMEditFun <- function( par, nodes = template,
+                          initial_cond = 13L,
+                          input_list. = input_list){
+  no.ofPara <- length(par)
+  id <- paste0(round(par, digits = 3), collapse = '_')
+  
+  temp_initial <- gsub("(?<=\\=)\\s.+$","",nodes, perl = TRUE)
+  temp_ini_list <- vector("list", length = length(temp_initial))
+  names(temp_ini_list) <- temp_initial
+  ## initial configuration
+  temp_ini_list$`[Site].Name =` <- input_list.[[1]]
+  temp_ini_list$`[DataStore].ExcelInput.FileNames = ` <- input_list.[[2]]
+  temp_ini_list$`[SlurpSowingRule].Script.SowingDate =` <- as.character(input_list.[[3]]$Clock.Today)
+  temp_ini_list$`[Weather].FileName =` <- input_list.[[4]]
+  temp_ini_list$`[SetCropVariables].Script.CoverFile =` <-  input_list.[[5]]
+  temp_ini_list$`[SetCropVariables].Script.MaximumHeight =` <-  input_list.[[6]]
+  temp_ini_list$`[Soil].Physical.BD =` <- paste( input_list.[[7]]$adjustedBD/1000, collapse = ",")
+  temp_ini_list$`[Soil].InitialConditions.SW =` <- paste( input_list.[[8]]$SW,
+                                                          collapse = ",")
+  temp_ini_list$`[Soil].Physical.DUL =` <- paste( input_list.[[9]]$SW.DUL,
+                                                  collapse = ",")
+  temp_ini_list$`[Soil].Physical.SlurpSoil.LL =`<- paste(input_list.[[9]]$SW.LL,
+                                                         collapse = ",")
+  temp_ini_list$`[Soil].Physical.SAT =`<- paste(input_list.[[9]]$SAT,
+                                                collapse = ",")
+  temp_ini_list$`[Soil].Physical.AirDry =`<- paste(input_list.[[9]]$SW.LL,
+                                                   collapse = ",")
+  temp_ini_list$`[Soil].Physical.LL15 =`<- paste(input_list.[[9]]$SW.LL,
+                                                 collapse = ",")
+  for(i in (initial_cond+1):length(nodes)){
+    temp_ini_list[[i]] <- par[i-initial_cond]
+  }
+  path_config <- here("01Data/ProcessedData/ConfigurationFiles", 
+                      paste0("temp", id, ".txt"))
+  f<- file(path_config, "w")
+  
+  for(i in seq_len(length(nodes))){
+    line <- paste0(names(temp_ini_list[i]) ," ", temp_ini_list[[i]])
+    cat(line, "\r",
+        file = f, 
+        append = TRUE)
+  }
+  # Close the file and clean it from memory 
+  close(f)
+  rm(f)
+  gc()
+}
 #' combine_input
 #' @description pack a number of objects into a list and name with their object
 #' names 

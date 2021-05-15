@@ -224,11 +224,11 @@ tar_load(path_apsimx)
 ```{r}
 paravals <- c(0.25, 0.005,12,0.008,200,10,5,4,2)
 # Edit fun
-APSIMEditFun <- function( paravals, nodes = template,
+APSIMEditFun <- function( par, nodes = template,
                          initial_cond = 13L,
                          input_list = input_list_AshleyDene_SD1){
-  no.ofPara <- length(paravals)
-  id <- paste0(paravals, collapse = '_')
+  no.ofPara <- length(par)
+  id <- paste0(round(par, digits = 3), collapse = '_')
   
   temp_initial <- gsub("(?<=\\=)\\s.+$","",nodes, perl = TRUE)
   temp_ini_list <- vector("list", length = length(temp_initial))
@@ -254,7 +254,7 @@ APSIMEditFun <- function( paravals, nodes = template,
   temp_ini_list$`[Soil].Physical.LL15 =`<- paste(input_list[[9]]$SW.LL,
                                              collapse = ",")
   for(i in (initial_cond+1):length(nodes)){
-    temp_ini_list[[i]] <- paravals[i-initial_cond]
+    temp_ini_list[[i]] <- par[i-initial_cond]
   }
   path_config <- here("01Data/ProcessedData/ConfigurationFiles", 
                       paste0("temp", id, ".txt"))
@@ -271,10 +271,10 @@ APSIMEditFun <- function( paravals, nodes = template,
   rm(f)
   gc()
 }
-APSIMEditFun(paravals = paravals)
+APSIMEditFun(par = paravals)
 APSIMRun = function(par){
   # Create a new name for the apsimx file 
-  id <- paste0(par, collapse = '_')
+  id <- paste0(round(par, digits = 3), collapse = '_')
   path_config <- here("01Data/ProcessedData/ConfigurationFiles", 
                       paste0("temp", id, ".txt"))
   # Create a new name for the apsimx file 
@@ -295,7 +295,7 @@ APSIMRun(par = paravals)
 # The cost
 tar_load(magicDate)
 cost.function <- function(par, obspara = "SWCmm", reset = magicDate){
-  id <- paste0(par, collapse = '_')
+  id <- paste0(round(par, digits = 3), collapse = '_')
   cat("Processing param combination: ",par, "\r\n")
   APSIMEditFun(par)
   APSIMRun(par)
@@ -334,32 +334,33 @@ cost.function(par)
 ```
 # assemble the cost and DEoptim
 ```{r}
-t1 = Sys.time()
+t1 <- Sys.time()
 #DEoptim
-maxIt = 10
-np = 3
-lower = c(0.005,  0.0005, 10)
-upper = c(0.11, 0.01, 35)
-# The observaion value that will be used as the benchmark
-obspara = "SWC"
+maxIt <- 1
+np <- 3
 
-opt.res =
+lower <- parameters$lower
+upper <- parameters$uppper
+# The observaion value that will be used as the benchmark
+obspara <- "SWCmm"
+
+opt.res <- 
   DEoptim::DEoptim(fn=cost.function, 
                    lower = lower,
                    upper = upper,
                    control=list(NP=np * 10, itermax=maxIt, parallelType=1,
                                 storepopfrom = 1,
-                                packages = c('RSQLite'),
+                                packages = c('RSQLite','here'),
                                 parVar = c(
-                                'slurpnodes',
-                                'apsimx',
-                                'apsimx_flag',
+                                'template',
+                                'path_apsimx',
+                                'magicDate',
                                 'apsimx_file',
                                 'obspara',
                                 'apsimx_sims_dir',
-                                'apsimx_config',
                                 'APSIMEditFun', 
-                                'APSIMRun' ))
+                                'APSIMRun',
+                                'input_list_AshleyDene_SD1'))
   )
 
 
@@ -377,6 +378,36 @@ t2 = Sys.time()
 t2-t1
 ```
 
+
+```{r}
+plot(opt.res, plot.type = "bestmemit")
+plot(opt.res, plot.type = "storepop")
+
+```
+
+# Test wrapper here
+```{r}
+parameters <- readRDS("_targets/objects/parameters")
+wrapper_deoptim(parameters, paravals, obspara, 1, 1, 
+                template,
+                path_apsimx,                              
+                magicDate,                              
+                apsimx_Basefile,
+                obspara,                          
+                apsimx_sims_dir,
+                input_list_AshleyDene_SD1)
+```
+
+
+# QC CHECK PARAMTERS
+```{r}
+tar_load(parameters)
+parameters
+length(parameters$lower)
+parameters$uppper %>% 
+  paste(., collapse = ",")
+
+```
 
 # address issue 46
 

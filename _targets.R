@@ -53,7 +53,11 @@ targets0 <- list(
              readLines(here::here("01Data/ApsimxFiles/SlurpTemplate.txt")),
              cue = tar_cue(mode = "always")),
   tar_target(apsimx_Basefile,
-             here::here("01Data/ApsimxFiles/20201205BaseSlurp.apsimx"))
+             here::here("01Data/ApsimxFiles/20201205BaseSlurp.apsimx")),
+  tar_target(obspara, "SWCmm"),
+  tar_target(parameters, prepare_params(params = params)),
+  tar_target(par, parameters$initials),
+  tar_target(apsimx_sims_dir, here("01Data/ProcessedData/apsimxFiles"))
 )
 
 targets1 <- tar_map(
@@ -106,7 +110,39 @@ targets1 <- tar_map(
                                         DUL_LL_range_arbitrary
                                         )),
   # Construct the configuration file 
-  tar_target(config, "")
+  tar_target(opt.res,
+             # DEoptim::DEoptim(fn=cost.function, 
+             #                  lower = rep(0, 9),
+             #                  upper = c(0.5,50,0.01,0.1,300,15,15,8,8),
+             #                  control=list(NP=1 * 10, itermax=1, parallelType=1,
+             #                               storepopfrom = 1,
+             #                               packages = c('RSQLite','here'),
+             #                               parVar = c('par',
+             #                                 'template',
+             #                                 'path_apsimx',
+             #                                   'magicDate',
+             #                                   'apsimx_Basefile',
+             #                                   'obspara',
+             #                                   'apsimx_sims_dir',
+             #                                   'APSIMEditFun', 
+             #                                   'APSIMRun',
+             #                                   'input_list'))
+               # )
+             wrapper_deoptim(parameters = parameters,
+                                         par = parameters$initials,
+                                         obspara =  obspara,
+                                         maxIt = 1,
+                                         np = 1,
+                                         template,
+                                         path_apsimx,
+                                         magicDate,
+                                         apsimx_Basefile,
+                                         obspara,
+                                         apsimx_sims_dir,
+                                         # APSIMEditFun,
+                                         # APSIMRun,
+                                         input_list)
+             )
 )
 
 list(targets0, targets1)
