@@ -19,7 +19,7 @@ prepare_params <- function(params){
 #' @export
 #'
 #' @examples
-wrapper_deoptim <- function(parameters, par, obspara, maxIt, np,...){
+wrapper_deoptim <- function(parameters, par,  maxIt, np,...){
   # maxIt <- 10
   # np <- 3
   arg_input <- as.character(as.list(substitute(list(...))))[-1]
@@ -53,6 +53,7 @@ wrapper_deoptim <- function(parameters, par, obspara, maxIt, np,...){
                                   packages = c('RSQLite','here'),
                                   parVar = c("APSIMEditFun",
                                              "APSIMRun",
+                                             # "obspara",
                                              obj_nms))
                      )
   
@@ -81,7 +82,7 @@ wrapper_deoptim <- function(parameters, par, obspara, maxIt, np,...){
 #' @export
 #'
 #' @examples
-cost.function <- function(par, obspara, reset = magicDate){
+cost.function <- function(par, obspara = "SWCmm", reset = magicDate){
   id <- paste0(round(par, digits = 3), collapse = '_')
   cat("Processing param combination: ",par, "\r\n")
   APSIMEditFun(par)
@@ -128,8 +129,8 @@ cost.function <- function(par, obspara, reset = magicDate){
 APSIMRun <- function(par){
   # Create a new name for the apsimx file 
   id <- paste0(round(par, digits = 3), collapse = '_')
-  path_config <- here("01Data/ProcessedData/ConfigurationFiles", 
-                      paste0("temp", id, ".txt"))
+  path_config <- here::here("01Data/ProcessedData/ConfigurationFiles", 
+                            paste0("temp", id, ".txt"))
   # Create a new name for the apsimx file 
   newname <- paste0(apsimx_sims_dir, '/temp', id, ".apsimx")
   
@@ -191,7 +192,7 @@ APSIMEditFun <- function( par, nodes = template,
   for(i in (initial_cond+1):length(nodes)){
     temp_ini_list[[i]] <- par[i-initial_cond]
   }
-  path_config <- here("01Data/ProcessedData/ConfigurationFiles", 
+  path_config <- here::here("01Data/ProcessedData/ConfigurationFiles", 
                       paste0("temp", id, ".txt"))
   f<- file(path_config, "w")
   
@@ -282,7 +283,7 @@ prepare_obs <- function(DT, trts = c("AshleyDene", "SD1")){
              "Growth.stage"),
            c("SowingDate", "Clock.Today","ShootPopulation", "ShootWt", "LeafWt",
              "StemWt", "LAI", "RootWt", "SWCmm", "GrowthStage"))
-  outpath <- here::here("01Data/ProcessedData",
+  outpath <- here::here("01Data/ProcessedData/CoverData",
                        paste0(paste(trts, collapse = "_"),".xlsx"))
   DT <- obs_Richard[Site == trts[1]&
                 SowingDate == trts[2]
