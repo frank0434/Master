@@ -1423,7 +1423,9 @@ Fw <- fix_SDorder(Fw)
     facet_wrap( ~  SowingDate + Experiment,
                 strip.position = "right", nrow = 10) +
     theme_water()  +
-    theme(legend.position = "none", legend.key.size = unit(1, "cm")) +
+    theme(legend.position = "none", 
+          legend.key.size = unit(1, "cm"),
+          axis.title = element_text(size = 20)) +
     labs(y = "Ratio of leaf transpiration and water demand", 
          x = "Date") +
     scale_colour_manual(name = "col", values = timestep_colors, labels = timestep_labels)
