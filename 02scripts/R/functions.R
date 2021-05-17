@@ -54,7 +54,7 @@ wrapper_deoptim <- function(parameters, par,  maxIt, np, ...){
   opt.res <- DEoptim::DEoptim(fn=cost.function,
                               lower = low,
                               upper = up,
-                              control=list(NP=np * 10, itermax=maxIt, parallelType=1,
+                              control=list(NP=np * 1, itermax=maxIt, parallelType=1,
                                            storepopfrom = 1,
                                            packages = c('RSQLite','here'),
                                            parVar = c("APSIMEditFun",
@@ -196,6 +196,11 @@ APSIMEditFun <- function( par, nodes = template,
                                                    collapse = ",")
   temp_ini_list$`[Soil].Physical.LL15 =`<- paste(input_list.[[9]]$SW.LL,
                                                  collapse = ",")
+  temp_ini_list$`[ResetOnDate].Script.ResetDate =` <- paste(input_list.[[10]]$Clock.Today,
+                                                 collapse = ",")
+  temp_ini_list$`[ResetOnDate].Script.ResetWater =`<- "Yes"
+  temp_ini_list$`[ResetOnDate].Script.NewSW =`<- paste(input_list.[[11]]$SW,
+                                                       collapse = ",")
   for(i in (initial_cond+1):length(nodes)){
     temp_ini_list[[i]] <- par[i-initial_cond]
   }
@@ -303,6 +308,12 @@ prepare_obs <- function(DT, trts = c("AshleyDene", "SD1")){
   return(outpath)
   
   
+}
+
+
+subset_met <- function(met){
+  DT <- met[,.(Experiment, Clock.Today, AccumTT)]
+  return(DT)
 }
 
 #' filter_SD 

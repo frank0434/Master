@@ -5,7 +5,12 @@ invisible(lapply(list.files("02Scripts/R/functions/", pattern = "R", full.names 
                  source))
 source("02Scripts/R/packages.R")
 source("02Scripts/R/functions.R")
-plan(callr)
+# plan(callr)
+tar_option_set(
+  packages = c("data.table", "here", "magrittr","readxl", "RSQLite","DBI",
+               "openxlsx", "autoapsimx", "DEoptim"), 
+  # imports = c("package1", "package2")
+)
 
 # If use job scheduler 
 REMOTE = FALSE
@@ -34,7 +39,7 @@ targets0 <- list(
   tar_target(params, read_excel(here("01Data/SlurpParamList.xlsx")) %>% 
                as.data.table(), cue = tar_cue(mode = "always")),
   # Get SWC data and filter down to the required sown dates
-  tar_target(data_SW, read_Sims(path = path_richard)[SowingDate %in% values$SowingDate]),
+  tar_target(data_SW, as.data.table(read_Sims(path = path_richard))),
   
   # Constant variables
   tar_target(id_vars, c("Experiment", "SowingDate", "Clock.Today", "DAS")),
@@ -82,7 +87,7 @@ targets1 <- tar_map(
   tar_target(SimName, paste0(Sites, "SowingDate", SD)),
   ## Observations
   tar_target(obs, prepare_obs(rawobs, trts = c(Sites, SD))),
-  # tar_target(cumTT, met[,.(Experiment, Clock.Today, AccumTT)]),
+  tar_target(cumTT, met[,.(Experiment, Clock.Today, AccumTT)]),
   tar_target(actualSD, filter_SD(sowingDates, trts = c(Sites, SD))),
   tar_target(resetSD, filter_SD(resetDates, trts = c(Sites, SD))),
   tar_target(CoverData, interp_LAI(biomass = LAI_Height,
@@ -97,8 +102,7 @@ targets1 <- tar_map(
   tar_target(SW_initials, initialSWC(SW_sub, sowingDates = actualSD, id_vars)),
   tar_target(SW_initials_reset, initialSWC(SW_sub, sowingDates = resetSD, id_vars)),
   tar_target(DUL_LL_range, doDUL_LL_range(SW = SW_sub,
-                                          id.vars = id_vars,
-                                          startd = magicDate)),
+                                          id.vars = id_vars)),
   # Manually adjust the DUL levels to 0.95
   tar_target(DUL_LL_range_arbitrary, DUL_LL_range[,':='(SAT = SW.DUL* 1.05,
                                                         SW.DUL = SW.DUL * 0.95,
@@ -112,26 +116,28 @@ targets1 <- tar_map(
                                         lucerne_height, # sowing dates
                                         BD,
                                         SW_initials,
-                                        DUL_LL_range_arbitrary
-                                        ))
+                                        DUL_LL_range_arbitrary,
+                                        resetSD,
+                                        SW_initials_reset
+                                        )),
   # Construct the configuration file 
-  # tar_target(opt.res,
-  #            wrapper_deoptim(parameters = parameters,
-  #                            par = parameters$initials,
-  #                            # obspara =  "SWCmm",
-  #                            maxIt = 1,                               
-  #                            np = length(par),
-  #                            Sites, SD,
-  #                            template,
-  #                            path_apsimx,
-  #                            magicDate,
-  #                            apsimx_Basefile,
-  #                            # obspara,
-  #                            apsimx_sims_dir,
-  #                            # APSIMEditFun,
-  #                            # APSIMRun,
-  #                            input_list)
-  #            )
+  tar_target(opt.res,
+             wrapper_deoptim(parameters = parameters,
+                             par = parameters$initials,
+                             # obspara =  "SWCmm",
+                             maxIt = 3,
+                             np = length(par),
+                             Sites, SD,
+                             template,
+                             path_apsimx,
+                             magicDate,
+                             apsimx_Basefile,
+                             # obspara,
+                             apsimx_sims_dir,
+                             # APSIMEditFun,
+                             # APSIMRun,
+                             input_list)
+             )
 )
 
 list(targets0, targets1)
