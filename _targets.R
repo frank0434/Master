@@ -43,6 +43,9 @@ targets0 <- list(
   tar_target(magicDate, as.Date("2011-06-25")),
   # Get the actual dates of sowing
   tar_target(sowingDates, read_Sims(path_richard, source =  "sowingDate")),
+  # Modify SD1:5 to magic dates for reset initial swc in the second season
+  tar_target(resetDates, sowingDates[SowingDate%in% paste0("SD", 1:5), 
+                                     Clock.Today := as.Date(magicDate)]),
   # Get the LAI for daily value interpolation 
   tar_target(LAI_Height,  read_Sims(path = path_richard, source = "biomass")),
   
@@ -81,16 +84,18 @@ targets1 <- tar_map(
   tar_target(obs, prepare_obs(rawobs, trts = c(Sites, SD))),
   # tar_target(cumTT, met[,.(Experiment, Clock.Today, AccumTT)]),
   tar_target(actualSD, filter_SD(sowingDates, trts = c(Sites, SD))),
+  tar_target(resetSD, filter_SD(resetDates, trts = c(Sites, SD))),
   tar_target(CoverData, interp_LAI(biomass = LAI_Height,
                                    sowingDates = actualSD, 
                                    accumTT =  met[,.(Experiment, Clock.Today, AccumTT)], 
                                    trts = c(Sites, SD))),
   # Subset the raw sw into treatment level
-  tar_target(SW, filter_SW(data_SW, magicDate, trts = c(Sites, SD))), 
+  tar_target(SW, filter_SW(data_SW, trts = c(Sites, SD))), 
   tar_target(SW_sub, colwise_meanSW(DT = SW,
                                      id.vars = id_vars,
                                      col.vars = value_vars)),
   tar_target(SW_initials, initialSWC(SW_sub, sowingDates = actualSD, id_vars)),
+  tar_target(SW_initials_reset, initialSWC(SW_sub, sowingDates = resetSD, id_vars)),
   tar_target(DUL_LL_range, doDUL_LL_range(SW = SW_sub,
                                           id.vars = id_vars,
                                           startd = magicDate)),
@@ -108,25 +113,25 @@ targets1 <- tar_map(
                                         BD,
                                         SW_initials,
                                         DUL_LL_range_arbitrary
-                                        )),
+                                        ))
   # Construct the configuration file 
-  tar_target(opt.res,
-             wrapper_deoptim(parameters = parameters,
-                             par = parameters$initials,
-                             # obspara =  "SWCmm",
-                             maxIt = 1,                               
-                             np = length(par),
-                             Sites, SD,
-                             template,
-                             path_apsimx,
-                             magicDate,
-                             apsimx_Basefile,
-                             # obspara,
-                             apsimx_sims_dir,
-                             # APSIMEditFun,
-                             # APSIMRun,
-                             input_list)
-             )
+  # tar_target(opt.res,
+  #            wrapper_deoptim(parameters = parameters,
+  #                            par = parameters$initials,
+  #                            # obspara =  "SWCmm",
+  #                            maxIt = 1,                               
+  #                            np = length(par),
+  #                            Sites, SD,
+  #                            template,
+  #                            path_apsimx,
+  #                            magicDate,
+  #                            apsimx_Basefile,
+  #                            # obspara,
+  #                            apsimx_sims_dir,
+  #                            # APSIMEditFun,
+  #                            # APSIMRun,
+  #                            input_list)
+  #            )
 )
 
 list(targets0, targets1)

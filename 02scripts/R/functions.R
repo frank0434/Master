@@ -168,7 +168,7 @@ APSIMRun <- function(par){
 #'
 #' @examples
 APSIMEditFun <- function( par, nodes = template,
-                          initial_cond = 13L,
+                          initial_cond = 16L,
                           input_list. = input_list){
   no.ofPara <- length(par)
   id <- paste0(round(par, digits = 3), collapse = '_')
@@ -331,10 +331,9 @@ filter_SD <- function(DT, trts){
 #' @export
 #'
 #' @examples
-filter_SW <- function(DT, date, trts){
-  DT <- DT[Clock.Today >= date
-           ][Experiment == trts[1] &
-               SowingDate == trts[2]]
+filter_SW <- function(DT,  trts){
+  DT <- DT[Experiment == trts[1] &
+             SowingDate == trts[2]]
   DT
   
   }

@@ -74,7 +74,7 @@ tar_load(starts_with("input_list"))
 
 names(input_list_AshleyDene_SD1)
 
-
+input_list_AshleyDene_SD1$SW_initials_AshleyDene_SD1
 ```
 # Debug sw initials
 
@@ -84,8 +84,10 @@ tar_load(starts_with("SW_sub"))
 tar_load(starts_with("sowingDates"))
 tar_load(starts_with("actual"))
 tar_load(starts_with("id_vars"))
+SW_sub_AshleyDene_SD1
 SW_initials_AshleyDene_SD1
 SW_initials_AshleyDene_SD2
+SW_initials_Iversen12_SD1
 sowingDates
 actualSD_AshleyDene_SD1
 id_vars
@@ -94,6 +96,19 @@ initialSWC(SW_sub_AshleyDene_SD1,
 
 
 ```
+# Check reset swc
+```{r}
+tar_load(starts_with("SW_initials_reset"))
+SW_initials_reset_AshleyDene_SD1
+SW_initials_reset_Iversen12_SD1
+tar_load(starts_with("SW_sub"))
+tar_load(starts_with("reset"))
+resetSD_AshleyDene_SD1
+resetDates
+resetSD_AshleyDene_SD1
+
+```
+
 
 
 # config file
