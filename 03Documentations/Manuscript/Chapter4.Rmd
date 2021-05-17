@@ -131,6 +131,9 @@ p_DUL_LL
 sowingDates <-  read_Sims(path_richard, source =  "sowingDate")
 # mimic the paper logic, force starting date to "2011-07-01"
 # The nearest measurements were "2011-06-25" for sd1 to sd5
+sw_initials <- initialSWC(SW_mean_new, sowingDates, id_vars)
+
+
 sowingDates[SowingDate%in% paste0("SD", 1:5), 
             Clock.Today := as.Date(magicDate)]
 data_SW <- read_Sims(path = path_richard)
@@ -139,7 +142,7 @@ value_vars <- readRDS(here("_targets/objects/value_vars"))
 SW_mean_new <- colwise_meanSW(DT = data_SW, 
                               id.vars = id_vars, 
                               col.vars = value_vars)
-sw_initials <- initialSWC(SW_mean_new, sowingDates, id_vars)
+sw_initials_RESET <- initialSWC(SW_mean_new, sowingDates, id_vars)
 
 # # SW_INITALS FROM 1 JULY 2011
 # sw_mean_new[Clock.Today >= "2011-06-25"
