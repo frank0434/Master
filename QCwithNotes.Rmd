@@ -13,6 +13,14 @@ source("02Scripts/R/functions.R")
 library(targets)
 ```
 
+# draw the visnetwork
+
+```{r}
+tar_visnetwork(targets_only = TRUE, allow = ends_with("SD1"), label = "time")
+```
+
+
+# load and check 
 ```{r}
 tar_load(starts_with("path_met"))
 grep("AshleyDene", x = path_met_Iversen12_SD1)
@@ -51,7 +59,7 @@ tar_load(id_vars)
 # SOIL PARAMS
 ```{r}
 tar_load(starts_with("DUL_LL_range_arbitrary"))
-DUL_LL_range_arbitrary_Iversen12_SD1
+# DUL_LL_range_arbitrary_Iversen12_SD1
 tar_load(starts_with("SW_sub"))
 SW_sub_AshleyDene_SD1
 
@@ -94,11 +102,10 @@ tar_load(template)
 tar_load(params)
 params
 temp <- gsub("(?<=\\=)\\s.+$","",template, perl = TRUE)
-input_list_AshleyDene_SD1$SW_initials_AshleyDene_SD1
 
 temp
-names(input_list_AshleyDene_SD1)
-names(input_list_AshleyDene_SD1$DUL_LL_range_arbitrary_AshleyDene_SD1)
+# names(input_list_AshleyDene_SD1)
+# names(input_list_AshleyDene_SD1$DUL_LL_range_arbitrary_AshleyDene_SD1)
 
 tar_load(params)
 parameters <- params[!is.na(parameter)
@@ -378,6 +385,11 @@ t2 = Sys.time()
 t2-t1
 ```
 
+```{r}
+tar_meta(fields = error, complete_only = TRUE)
+tar_meta(fields = warnings, complete_only = TRUE)
+```
+
 
 ```{r}
 plot(opt.res, plot.type = "bestmemit")
@@ -408,6 +420,41 @@ parameters$uppper %>%
   paste(., collapse = ",")
 
 ```
+
+
+# Check the optimisiation results after 24 hours 
+
+```{r}
+tar_load(starts_with("opt.res"))
+load("C:/Data/Master/01Data/ProcessedData/apsimxFiles/2021-05-16opt.res.RData")
+View(opt.res)
+# plot(opt.res, plot.type = "bestmemit")
+# plot(opt.res, plot.type = "storepop")
+parameters
+
+bestmemit <- as.data.table(opt.res$member$bestmemit, keep.rownames = TRUE) %>% 
+  melt.data.table(id.vars = "rn",variable.factor = FALSE)
+storepop <- rbindlist(lapply(opt.res$member$storepop, as.data.table, keep.rownames = TRUE), 
+                      idcol = "itr") %>% 
+  melt.data.table(id.vars = c("itr","rn"),variable.factor = FALSE)
+parnms <- parameters[,.(parameter)
+                     ][, variable := paste0("par", 1:.N)]
+storepop <- storepop[parnms, on = "variable"]
+
+base_p <- bestmemit[parnms, on = "variable"
+                    ][, rn := as.integer(rn)] %>% 
+  ggplot(aes(rn, value))+
+  geom_point(data = storepop, aes(itr, value), color = "grey80", alpha = 0.5) +
+  geom_point(color = "#FF0000") +
+  facet_wrap(~parameter, scales = "free_y")+
+  theme_water() +
+  theme(text = element_text(size = 20)) +
+  labs(x = "Iteration", y = "Value range")
+
+ggsave(filename = "03Documentations/20210516OptimisationDEMO.png",
+       base_p, dpi = 320, height = 7, width = 9)
+```
+
 
 # address issue 46
 
