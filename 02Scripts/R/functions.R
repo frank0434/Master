@@ -19,66 +19,59 @@ prepare_params <- function(params){
 #' @export
 #'
 #' @examples
-wrapper_deoptim <- function(parameters, par,  maxIt, np, ...){
+wrapper_deoptim <- function(parameters, par,  maxIt, np,...){
   # maxIt <- 10
   # np <- 3
-  # Capture the ellipsis 
-  l <- list(...)
-  # Examine the list 
-  # print(l)
-  # Get the name of the input objects
   arg_input <- as.character(as.list(substitute(list(...))))[-1]
-  # Examine the names
-  # print(arg_input)
-  # Remove the site and SD for input_list
   obj_nms <- gsub("_(Ash|Ive).+_SD\\d{1,}$","", arg_input, ignore.case = TRUE)
-  # print(obj_nms)
 
   # import necessary input from cache
-  for (i in seq_len(length(l))) {
-    assign(obj_nms[i], l[[i]],
+  for (i in seq_len(length(arg_input))) {
+    assign(obj_nms[i], readRDS(here::here("_targets/objects/", 
+                                            arg_input[i])),
            envir = .GlobalEnv
            )
   }
-  # print(ls(envir = .GlobalEnv))
-  # print(parameters)
-  # print(par)
-  
+
+
+  # input_list <- readRDS(here::here("_targets/objects/", 
+  #                                  arg_input[7]))
+  # arg_input[7] <- "input_list"
   # import necessary functions 
-  # source(here::here("02Scripts/R/functions.R"))
+  source(here::here("02Scripts/R/functions.R"))
+  # source(here::here("02Scripts/R/DEoptimCustomised.R"))
   low <- parameters$lower
   up <- parameters$uppper
   # The observaion value that will be used as the benchmark
   # obspara <- "SWCmm"
   
-  opt.res <- DEoptim::DEoptim(fn=cost.function,
-                              lower = low,
-                              upper = up,
-                              control=list(NP=np * 1, itermax=maxIt, parallelType=1,
-                                           storepopfrom = 1,
-                                           packages = c('RSQLite','here'),
-                                           parVar = c("APSIMEditFun",
-                                                      "APSIMRun",
-                                                      # "obspara",
-                                                      obj_nms))
-  )
-  return(opt.res)
+  opt.res <- DEoptim::DEoptim(fn=cost.function, 
+                     lower = low,
+                     upper = up,
+                     control=list(NP=np * 10, itermax=maxIt, parallelType=1,
+                                  storepopfrom = 1,
+                                  packages = c('RSQLite','here'),
+                                  parVar = c("APSIMEditFun",
+                                             "APSIMRun",
+                                             # "obspara",
+                                             obj_nms))
+                     )
   
   
-
+  save(opt.res, file =  file.path(apsimx_sims_dir,
+                                  paste0(Sys.Date(), 'opt.res', ".RData")))
+  
+  fit.par = data.frame(estimates = opt.res$optim$bestmem, 
+                       cost = opt.res$optim$bestval)
+  
+  
+  #output the statistical test
+  par = fit.par$estimates
+  
+  write.csv(par, here::here("01Data/ProcessedData/opt.par.csv"), row.names = F)
   
 }
-  # save(opt.res, file =  file.path(apsimx_sims_dir,
-  #                                 paste0(Sys.Date(), 'opt.res', ".RData")))
-  # 
-  # fit.par = data.frame(estimates = opt.res$optim$bestmem, 
-  #                      cost = opt.res$optim$bestval)
-  # 
-  # 
-  # #output the statistical test
-  # par = fit.par$estimates
-  # 
-  # write.csv(par, here::here("01Data/ProcessedData/opt.par.csv"), row.names = F)
+
 #' Title
 #'
 #' @param par 
@@ -95,7 +88,7 @@ cost.function <- function(par, obspara = "SWCmm", reset = magicDate){
   APSIMEditFun(par)
   APSIMRun(par)
   db <- RSQLite::dbConnect(RSQLite::SQLite(),
-                           paste0(apsimx_sims_dir, '/temp', Sites, "_", SD, "_", id,'.db'))
+                           paste0(apsimx_sims_dir, '/temp', id,'.db'))
   
   
   PredictedObserved <- data.table::as.data.table(
@@ -120,7 +113,7 @@ cost.function <- function(par, obspara = "SWCmm", reset = magicDate){
   rm(db)
   gc()
   
-  system(paste("rm", paste0(apsimx_sims_dir, "/temp", Sites, "_", SD, "_", id, "*")))
+  system(paste("rm", paste0(apsimx_sims_dir, "/temp", id, "*")))
   
   return(totalCost)
 }
@@ -137,9 +130,9 @@ APSIMRun <- function(par){
   # Create a new name for the apsimx file 
   id <- paste0(round(par, digits = 3), collapse = '_')
   path_config <- here::here("01Data/ProcessedData/ConfigurationFiles", 
-                            paste0("temp", Sites,"_", SD,"_", id, ".txt"))
+                            paste0("temp", id, ".txt"))
   # Create a new name for the apsimx file 
-  newname <- paste0(apsimx_sims_dir, '/temp', Sites,"_", SD, "_", id, ".apsimx")
+  newname <- paste0(apsimx_sims_dir, '/temp', id, ".apsimx")
   
   # Copy base apsimx file to its new name 
   system(paste("cp", apsimx_Basefile, newname))
@@ -168,7 +161,7 @@ APSIMRun <- function(par){
 #'
 #' @examples
 APSIMEditFun <- function( par, nodes = template,
-                          initial_cond = 16L,
+                          initial_cond = 13L,
                           input_list. = input_list){
   no.ofPara <- length(par)
   id <- paste0(round(par, digits = 3), collapse = '_')
@@ -196,16 +189,11 @@ APSIMEditFun <- function( par, nodes = template,
                                                    collapse = ",")
   temp_ini_list$`[Soil].Physical.LL15 =`<- paste(input_list.[[9]]$SW.LL,
                                                  collapse = ",")
-  temp_ini_list$`[ResetOnDate].Script.ResetDate =` <- paste(input_list.[[10]]$Clock.Today,
-                                                 collapse = ",")
-  temp_ini_list$`[ResetOnDate].Script.ResetWater =`<- "Yes"
-  temp_ini_list$`[ResetOnDate].Script.NewSW =`<- paste(input_list.[[11]]$SW,
-                                                       collapse = ",")
   for(i in (initial_cond+1):length(nodes)){
     temp_ini_list[[i]] <- par[i-initial_cond]
   }
   path_config <- here::here("01Data/ProcessedData/ConfigurationFiles", 
-                      paste0("temp", Sites, "_", SD, "_", id, ".txt"))
+                      paste0("temp", id, ".txt"))
   f<- file(path_config, "w")
   
   for(i in seq_len(length(nodes))){
@@ -310,12 +298,6 @@ prepare_obs <- function(DT, trts = c("AshleyDene", "SD1")){
   
 }
 
-
-subset_met <- function(met){
-  DT <- met[,.(Experiment, Clock.Today, AccumTT)]
-  return(DT)
-}
-
 #' filter_SD 
 #' @description Helper function to get the pipeline dependencies right.
 #'
@@ -342,9 +324,10 @@ filter_SD <- function(DT, trts){
 #' @export
 #'
 #' @examples
-filter_SW <- function(DT,  trts){
-  DT <- DT[Experiment == trts[1] &
-             SowingDate == trts[2]]
+filter_SW <- function(DT, date, trts){
+  DT <- DT[Clock.Today >= date
+           ][Experiment == trts[1] &
+               SowingDate == trts[2]]
   DT
   
   }
