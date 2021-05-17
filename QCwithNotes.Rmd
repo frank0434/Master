@@ -22,6 +22,7 @@ tar_visnetwork(targets_only = TRUE, allow = ends_with("SD1"), label = "time")
 
 # load and check 
 ```{r}
+tar_load(starts_with("Site"))
 tar_load(starts_with("path_met"))
 grep("AshleyDene", x = path_met_Iversen12_SD1)
 path_met_Iversen12_SD2
