@@ -6,14 +6,9 @@ invisible(lapply(list.files("02Scripts/R/functions/", pattern = "R", full.names 
 source("02Scripts/R/packages.R")
 source("02Scripts/R/functions.R")
 # plan(callr)
-tar_option_set(
-  packages = c("data.table", "here", "magrittr","readxl", "RSQLite","DBI",
-               "openxlsx", "autoapsimx", "DEoptim"), 
-  # imports = c("package1", "package2")
-)
 
 # If use job scheduler 
-REMOTE = FALSE
+REMOTE = TRUE
 
 if(REMOTE){
   # Set cluster 
@@ -22,15 +17,25 @@ if(REMOTE){
   # So we can Access LSF 
   RLinuxModules::module('load openlava') 
   
-  tar_option_set(deployment="main") # default to host
+  tar_option_set(deployment="main",  # default to host
+                 packages = c("data.table", "here", "magrittr","readxl", "RSQLite","DBI",
+                              "openxlsx", "autoapsimx", "DEoptim"), 
+                 library = here::here("renv/library/R-4.0/x86_64-pc-linux-gnu/")
+                 # imports = c("package1", "package2")
+                 )
+  keypath <- here::here("01Data/APSIM_Sim.xlsx")
+} else{
+  keypath <- here::here("~/Dropbox/Data/APSIM_Sim.xlsx")
+  
 }
+
 
 # Construct the instruction
 values <-  data.table::data.table(Site = c("AshleyDene","Iversen12"),
                                   SowingDate = rep(paste0("SD", 1:2), each = 2))
 # Raw data path
 targets0 <- list(
-  tar_target(path_richard,"~/Dropbox/Data/APSIM_Sim.xlsx"),
+  tar_target(path_richard, keypath),
   # Constants raw data
   tar_target(rawobs, read_excel(path_richard, 
                      guess_max = 10300, sheet = 2,
@@ -136,7 +141,8 @@ targets1 <- tar_map(
                              apsimx_sims_dir,
                              # APSIMEditFun,
                              # APSIMRun,
-                             input_list)
+                             input_list),
+             deployment = "main"
              )
 )
 
