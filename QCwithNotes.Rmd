@@ -13,6 +13,14 @@ source("02Scripts/R/functions.R")
 library(targets)
 ```
 
+# check opt.res 
+```{r}
+
+tar_load(starts_with("opt.res"))
+opt.res_AshleyDene_SD1
+```
+
+
 # apsimx edit is not working 
 
 ```{r}
@@ -462,15 +470,15 @@ parameters$uppper %>%
 
 ```{r}
 tar_load(starts_with("opt.res"))
-load("C:/Data/Master/01Data/ProcessedData/apsimxFiles/2021-05-16opt.res.RData")
+# load("C:/Data/Master/01Data/ProcessedData/apsimxFiles/2021-05-16opt.res.RData")
 View(opt.res)
 # plot(opt.res, plot.type = "bestmemit")
 # plot(opt.res, plot.type = "storepop")
 parameters
 
-bestmemit <- as.data.table(opt.res$member$bestmemit, keep.rownames = TRUE) %>% 
+bestmemit <- as.data.table(opt.res_AshleyDene_SD1$member$bestmemit, keep.rownames = TRUE) %>% 
   melt.data.table(id.vars = "rn",variable.factor = FALSE)
-storepop <- rbindlist(lapply(opt.res$member$storepop, as.data.table, keep.rownames = TRUE), 
+storepop <- rbindlist(lapply(opt.res_AshleyDene_SD1$member$storepop, as.data.table, keep.rownames = TRUE), 
                       idcol = "itr") %>% 
   melt.data.table(id.vars = c("itr","rn"),variable.factor = FALSE)
 parnms <- parameters[,.(parameter)

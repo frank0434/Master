@@ -54,7 +54,7 @@ wrapper_deoptim <- function(parameters, par,  maxIt, np, ...){
   opt.res <- DEoptim::DEoptim(fn=cost.function,
                               lower = low,
                               upper = up,
-                              control=list(NP=np * 1, itermax=maxIt, parallelType=1,
+                              control=list(NP=np * 10, itermax=maxIt, parallelType=1,
                                            storepopfrom = 1, trace = 1,
                                            packages = c('RSQLite','here'),
                                            parVar = c("APSIMEditFun",
@@ -313,8 +313,8 @@ prepare_obs <- function(DT, trts = c("AshleyDene", "SD1")){
 }
 
 
-subset_met <- function(met){
-  DT <- met[,.(Experiment, Clock.Today, AccumTT)]
+subset_met <- function(DT){
+  DT <- copy(DT)[,.(Experiment, Clock.Today, AccumTT)]
   return(DT)
 }
 
@@ -996,12 +996,12 @@ read_met <- function(path = path_met){
   met_col <- read_met_col(path = path, skip = skip_meta)
   colnames(met_LN) <- colnames(met_col)
   
-  met_LN <- met_LN[, Clock.Today := as.Date(day, origin = paste0(year, "-01-01"))
-  ][Clock.Today > start_date & Clock.Today < end_date
-  ][,Date := Clock.Today]
+  met_LN <- data.table::copy(met_LN)[, Clock.Today := as.Date(day, origin = paste0(year, "-01-01"))
+                         ][Clock.Today > start_date & Clock.Today < end_date
+                           ][,Date := Clock.Today]
   met_LN <- group_in_season(met_LN)[, AccumTT := cumsum(mean),
                                     by = Season
-  ][, Experiment:=site]
+                                    ][, Experiment:=site]
   
   return(met_LN)
 }
@@ -1123,8 +1123,8 @@ group_in_season <- function(DT){
   period <- range(DT$Date)
   noofyear <- diff.Date(period, unit = "year") %>% 
     as.numeric(.)/365
-  startyear <- year(period[1])
-  endyear <- year(period[2])
+  startyear <- data.table::year(period[1])
+  endyear <- data.table::year(period[2])
   startmd <- "-07-01"
   endmd <- "-06-30"
   noofseason <- round(noofyear, digits = 0)

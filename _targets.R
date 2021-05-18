@@ -1,4 +1,9 @@
 
+library(future)
+library(future.callr)
+plan(multiprocess)
+# future(packages = c("data.table", "here", "magrittr","readxl", "RSQLite","DBI",
+#                     "openxlsx", "autoapsimx", "DEoptim"))
 
 ## Source functions
 source("02Scripts/R/packages.R")
@@ -25,7 +30,7 @@ if(REMOTE){
 
 # Construct the instruction
 values <-  data.table::data.table(Site = c("AshleyDene","Iversen12"),
-                                  SowingDate = rep(paste0("SD", 1:2), each = 2))
+                                  SowingDate = rep(paste0("SD", 1:5), each = 2))
 # Raw data path
 targets0 <- list(
   tar_target(path_richard,here::here("01Data/APSIM_Sim.xlsx")),
@@ -84,7 +89,7 @@ targets1 <- tar_map(
   tar_target(SimName, paste0(Sites, "SowingDate", SD)),
   ## Observations
   tar_target(obs, prepare_obs(rawobs, trts = c(Sites, SD))),
-  tar_target(cumTT, met[,.(Experiment, Clock.Today, AccumTT)]),
+  tar_target(cumTT, subset_met(met)),
   tar_target(actualSD, filter_SD(sowingDates, trts = c(Sites, SD))),
   tar_target(resetSD, filter_SD(resetDates, trts = c(Sites, SD))),
   tar_target(CoverData, interp_LAI(biomass = LAI_Height,
@@ -122,7 +127,7 @@ targets1 <- tar_map(
              wrapper_deoptim(parameters = parameters,
                              par = parameters$initials,
                              # obspara =  "SWCmm",
-                             maxIt = 3,
+                             maxIt = 2,
                              np = length(par),
                              Sites, SD,
                              template,
