@@ -1,8 +1,6 @@
 
 
 ## Source functions
-invisible(lapply(list.files("02Scripts/R/functions/", pattern = "R", full.names = TRUE),
-                 source))
 source("02Scripts/R/packages.R")
 source("02Scripts/R/functions.R")
 # plan(callr)
@@ -30,7 +28,7 @@ values <-  data.table::data.table(Site = c("AshleyDene","Iversen12"),
                                   SowingDate = rep(paste0("SD", 1:2), each = 2))
 # Raw data path
 targets0 <- list(
-  tar_target(path_richard,"~/Dropbox/Data/APSIM_Sim.xlsx"),
+  tar_target(path_richard,here::here("01Data/APSIM_Sim.xlsx")),
   # Constants raw data
   tar_target(rawobs, read_excel(path_richard, 
                      guess_max = 10300, sheet = 2,

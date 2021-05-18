@@ -1,7 +1,7 @@
 source("renv/activate.R")
 .First <- function() {
-  # dir.create(paste0(getwd(), "/01raw-data"), showWarnings = F)
-  # dir.create(paste0(getwd(), "/02scripts"), showWarnings = F)
+  dir.create(paste0(getwd(), "/01Data/ProcessedData/apsimxFiles"), showWarnings = F)
+  dir.create(paste0(getwd(), "/01Data/ProcessedData/ConfigurationFiles"), showWarnings = F)
   # dir.create(paste0(getwd(), "/03processed-data"), showWarnings = F)
   # dir.create(paste0(getwd(), "/04manuscript"), showWarnings = F)
   # dir.create(paste0(getwd(), "/05figures"), showWarnings = F)

@@ -7,7 +7,7 @@ library(DBI)
 library(RSQLite)
 # library(RPostgreSQL)
 library(inspectdf)
-library(DataExplorer)
+# library(DataExplorer)
 # library(reticulate)
 # library(visNetwork) 
 # library(naniar)
@@ -37,7 +37,7 @@ library(future.batchtools)
 
 # Stats
 library(hydroGOF)
-
+library(DEoptim)
 # Customised package
 library(autoapsimx)
 
