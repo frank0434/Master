@@ -143,8 +143,9 @@ APSIMRun <- function(par){
   newname <- paste0(apsimx_sims_dir, '/temp', Sites,"_", SD, "_", id, ".apsimx")
   
   # Copy base apsimx file to its new name 
-  system(paste("cp", apsimx_Basefile, newname))
-  
+  print(path_apsimx)
+  print(newname)
+  file.copy(apsimx_Basefile, newname)
   # Modify the apsimx file 
   system(paste(path_apsimx, "--edit", path_config, newname))
   
@@ -860,16 +861,16 @@ outputLAIinput <- function(CoverData, site, SD,
 
 ##' @param biomass 
 ##'
-##' @param sowingDates 
+##' @param sowingDate 
 ##' @param accumTT 
 ##' @import zoo
 ##' @return
 ##' @author frank0434
 ##' @export
-interp_LAI <- function(biomass = LAI_Height, sowingDates, accumTT, 
+interp_LAI <- function(biomass = LAI_Height, sowingDate, accumTT, 
                        trts = c("AshleyDene", "SD1")) {
 
-  LAI_Height_SD <- merge.data.table(biomass, sowingDates, 
+  LAI_Height_SD <- merge.data.table(biomass, sowingDate, 
                                     by = c("Experiment", "Clock.Today" , "SowingDate"),
                                     all = TRUE)[,
                                                ':='(LAImod = ifelse(is.na(LAImod), 0, LAImod),
@@ -898,8 +899,11 @@ interp_LAI <- function(biomass = LAI_Height, sowingDates, accumTT,
   
 }
 
-
-
+reset_SD <- function(DT, reset_to = magicDate){
+  DT <- copy(DT)[SowingDate%in% paste0("SD", 1:5), 
+                 Clock.Today := reset_to]
+  return(DT)
+  }
 ##' .. content for \description{} (no empty lines) ..
 ##'
 ##' .. content for \details{} ..
@@ -910,24 +914,24 @@ interp_LAI <- function(biomass = LAI_Height, sowingDates, accumTT,
 
 ##' @param DT 
 ##'
-##' @param sowingDates 
+##' @param sowingDate 
 ##' @param id_vars 
 ##'
 ##' @import data.table
 ##' @return
 ##' @author frank0434
 ##' @export
-initialSWC <- function(DT, sowingDates, id_vars) {
+initialSWC <- function(DT, sowingDate, id_vars) {
   needed <- grep("SW.\\d.", colnames(DT), value = TRUE)
   needed <- c(id_vars, needed)
   
-  if(is.data.table(sowingDates) | is.data.frame(sowingDates)){
+  if(is.data.table(sowingDate) | is.data.frame(sowingDate)){
     
-  SW_initials = DT[,..needed][sowingDates, 
+  SW_initials = DT[,..needed][sowingDate, 
                               on = c("Experiment", "SowingDate", "Clock.Today"),
                               roll = "nearest"]
-  } else if(is.character(sowingDates)){
-    SW_initials = DT[Clock.Today == sowingDates][,..needed]
+  } else if(is.character(sowingDate)){
+    SW_initials = DT[Clock.Today == sowingDate][,..needed]
   } else{
     print("Please provide valid sowing dates or starting dates.")
   }

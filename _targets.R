@@ -47,14 +47,13 @@ targets0 <- list(
   # Get the actual dates of sowing
   tar_target(sowingDates, read_Sims(path_richard, source =  "sowingDate")),
   # Modify SD1:5 to magic dates for reset initial swc in the second season
-  tar_target(resetDates, sowingDates[SowingDate%in% paste0("SD", 1:5), 
-                                     Clock.Today := as.Date(magicDate)]),
+  tar_target(resetDates, reset_SD(sowingDates, magicDate)),
   # Get the LAI for daily value interpolation 
   tar_target(LAI_Height,  read_Sims(path = path_richard, source = "biomass")),
   
   # APSIMX constants
   tar_target(path_apsimx, 
-             "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"),
+             "c:/jianliu/ApsimXStable/Bin/Models.exe"),
   tar_target(template,
              readLines(here::here("01Data/ApsimxFiles/SlurpTemplate.txt")),
              cue = tar_cue(mode = "always")),
@@ -63,7 +62,7 @@ targets0 <- list(
   # tar_target(obs_para, "SWCmm"),
   tar_target(parameters, prepare_params(params = params)),
   tar_target(par, parameters$initials),
-  tar_target(apsimx_sims_dir, here("01Data/ProcessedData/apsimxFiles"))
+  tar_target(apsimx_sims_dir, here::here("01Data/ProcessedData/apsimxFiles"))
 )
 
 targets1 <- tar_map(
@@ -89,7 +88,7 @@ targets1 <- tar_map(
   tar_target(actualSD, filter_SD(sowingDates, trts = c(Sites, SD))),
   tar_target(resetSD, filter_SD(resetDates, trts = c(Sites, SD))),
   tar_target(CoverData, interp_LAI(biomass = LAI_Height,
-                                   sowingDates = actualSD, 
+                                   sowingDate = actualSD, 
                                    accumTT =  met[,.(Experiment, Clock.Today, AccumTT)], 
                                    trts = c(Sites, SD))),
   # Subset the raw sw into treatment level
@@ -97,8 +96,8 @@ targets1 <- tar_map(
   tar_target(SW_sub, colwise_meanSW(DT = SW,
                                      id.vars = id_vars,
                                      col.vars = value_vars)),
-  tar_target(SW_initials, initialSWC(SW_sub, sowingDates = actualSD, id_vars)),
-  tar_target(SW_initials_reset, initialSWC(SW_sub, sowingDates = resetSD, id_vars)),
+  tar_target(SW_initials, initialSWC(SW_sub, sowingDate = actualSD, id_vars)),
+  tar_target(SW_initials_reset, initialSWC(SW_sub, sowingDate = resetSD, id_vars)),
   tar_target(DUL_LL_range, doDUL_LL_range(SW = SW_sub,
                                           id.vars = id_vars)),
   # Manually adjust the DUL levels to 0.95

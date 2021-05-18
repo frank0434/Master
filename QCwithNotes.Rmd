@@ -13,6 +13,20 @@ source("02Scripts/R/functions.R")
 library(targets)
 ```
 
+# apsimx edit is not working 
+
+```{r}
+tar_load(path_apsimx)
+path_apsimx
+
+tar_load(apsimx_Basefile)
+tar_load(apsimx_sims_dir)
+apsimx_Basefile
+apsimx_sims_dir
+
+```
+
+
 # draw the visnetwork
 
 ```{r}
@@ -23,6 +37,9 @@ tar_visnetwork(targets_only = TRUE, allow = ends_with("SD1"), label = "time")
 # load and check 
 ```{r}
 tar_load(starts_with("Site"))
+Sites_Iversen12_SD1
+tar_load(starts_with("SD"))
+SD_AshleyDene_SD1
 tar_load(starts_with("path_met"))
 grep("AshleyDene", x = path_met_Iversen12_SD1)
 path_met_Iversen12_SD2
@@ -88,11 +105,14 @@ SW_sub_AshleyDene_SD1
 SW_initials_AshleyDene_SD1
 SW_initials_AshleyDene_SD2
 SW_initials_Iversen12_SD1
-sowingDates
+sowingDates %>% filter_SD(trts = c(
+  "AshleyDene", "SD1"
+))
 actualSD_AshleyDene_SD1
+actualSD_AshleyDene_SD2
 id_vars
 initialSWC(SW_sub_AshleyDene_SD1, 
-           sowingDates = actualSD_AshleyDene_SD1, id_vars)
+           sowingDate = actualSD_AshleyDene_SD1, id_vars)
 
 
 ```
