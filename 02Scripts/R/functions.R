@@ -54,7 +54,7 @@ wrapper_deoptim <- function(parameters, par,  maxIt, np, ...){
   opt.res <- DEoptim::DEoptim(fn=cost.function,
                               lower = low,
                               upper = up,
-                              control=list(NP=np * 10, itermax=maxIt, parallelType=1,
+                              control=list(NP=np * 1, itermax=maxIt, parallelType=1,
                                            storepopfrom = 1, trace = 1,
                                            packages = c('RSQLite','here'),
                                            parVar = c("APSIMEditFun",
@@ -120,8 +120,9 @@ cost.function <- function(par, obspara = "SWCmm", reset = magicDate){
   
   rm(db)
   gc()
-  
-  system(paste("rm", paste0(apsimx_sims_dir, "/temp", Sites, "_", SD, "_", id, "*")))
+  path_wild <- paste0(apsimx_sims_dir, "/temp", Sites, "_", SD, "_", id, "*")
+  unlink(path_wild)
+  # system(paste("rm", ))
   
   return(totalCost)
 }
