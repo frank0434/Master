@@ -127,7 +127,7 @@ targets1 <- tar_map(
              wrapper_deoptim(parameters = parameters,
                              par = parameters$initials,
                              # obspara =  "SWCmm",
-                             maxIt = 2,
+                             maxIt = 1000,
                              np = length(par),
                              Sites, SD,
                              template,
