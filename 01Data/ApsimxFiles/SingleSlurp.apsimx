@@ -48,7 +48,7 @@
       "$type": "Models.Core.Simulation, Models",
       "IsRunning": false,
       "Descriptors": null,
-      "Name": "AshleyDeneSowingDateSD1",
+      "Name": "Site",
       "Children": [
         {
           "$type": "Models.Climate.Weather, Models",

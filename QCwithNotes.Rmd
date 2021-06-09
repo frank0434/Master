@@ -96,10 +96,11 @@ SW_sub_Iversen12_SD1
 SW_sub_Iversen12_SD2
 deparse(substitute(SW_sub_Iversen12_SD2))
 tar_load(starts_with("input_list"))
-
+input_list_Iversen12_SD10$DUL_LL_range_arbitrary_Iversen12_SD10
 names(input_list_AshleyDene_SD1)
-
+input_list_AshleyDene_SD1$obs_AshleyDene_SD1
 input_list_AshleyDene_SD1$SW_initials_AshleyDene_SD1
+input_list_Iversen12_SD10
 ```
 # Debug sw initials
 

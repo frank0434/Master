@@ -1,5 +1,15 @@
 
 
+
+apsimx_path <- function(debug = TRUE){
+  if(isTRUE(debug)){
+    "c:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
+  } else{
+    
+    "c:/jianliu/ApsimXStable/Bin/Models.exe"
+  }
+}
+
 prepare_params <- function(params){
   params <- params[!is.na(parameter)
                    ][,.(parameter, lower, uppper, layer)
@@ -54,7 +64,7 @@ wrapper_deoptim <- function(parameters, par,  maxIt, np, ...){
   opt.res <- DEoptim::DEoptim(fn=cost.function,
                               lower = low,
                               upper = up,
-                              control=list(NP=np * 1, 
+                              control=list(NP=np, 
                                            itermax=maxIt, 
                                            parallelType=1,
                                            reltol=.000001,

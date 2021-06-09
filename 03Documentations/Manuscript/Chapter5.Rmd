@@ -69,7 +69,7 @@ when doing the optimisation with junqi.
 ## Best values 
 
 ```{r}
-rdsfiles <- list.files("c:/Users/cflfcl/Dropbox/Data/20210601Opt.res/",
+rdsfiles <- list.files("c:/Users/cflfcl/OneDrive - Lincoln University/transfer/",
                        full.names = TRUE)
 l <- lapply(rdsfiles, readRDS)
 

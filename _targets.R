@@ -57,8 +57,7 @@ targets0 <- list(
   tar_target(LAI_Height,  read_Sims(path = path_richard, source = "biomass")),
   
   # APSIMX constants
-  tar_target(path_apsimx, 
-             "c:/jianliu/ApsimXStable/Bin/Models.exe"),
+  tar_target(path_apsimx, apsimx_path(debug = TRUE)),
   tar_target(template,
              readLines(here::here("01Data/ApsimxFiles/SlurpTemplate.txt")),
              cue = tar_cue(mode = "always")),
@@ -108,7 +107,7 @@ targets1 <- tar_map(
   # Manually adjust the DUL levels to 0.95
   tar_target(DUL_LL_range_arbitrary, DUL_LL_range[,':='(SAT = SW.DUL* 1.05,
                                                         SW.DUL = SW.DUL * 0.95,
-                                                        SW.LL15 = SW.LL * 0.95)]),
+                                                        SW.LL = SW.LL * 0.95)]),
   # Combine all into one list
   tar_target(input_list, combine_input( SimName,
                                         obs, 
@@ -127,8 +126,8 @@ targets1 <- tar_map(
              wrapper_deoptim(parameters = parameters,
                              par = parameters$initials,
                              # obspara =  "SWCmm",
-                             maxIt = 1000,
-                             np = length(par),
+                             maxIt = 3,
+                             np = length(par)*10,
                              Sites, SD,
                              template,
                              path_apsimx,
