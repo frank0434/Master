@@ -29,8 +29,8 @@ if(REMOTE){
 }
 
 # Construct the instruction
-values <-  data.table::data.table(Site = c("AshleyDene","Iversen12"),
-                                  SowingDate = rep(paste0("SD", 1:5), each = 2))
+values <-  data.table::data.table(Site = c("Iversen12"),
+                                  SowingDate = paste0("SD", 6:10))
 # Raw data path
 targets0 <- list(
   tar_target(path_richard,here::here("01Data/APSIM_Sim.xlsx")),
