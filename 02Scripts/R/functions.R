@@ -54,7 +54,7 @@ wrapper_deoptim <- function(parameters, par,  maxIt, np, ...){
   opt.res <- DEoptim::DEoptim(fn=cost.function,
                               lower = low,
                               upper = up,
-                              control=list(NP=np * 10, 
+                              control=list(NP=np * 1, 
                                            itermax=maxIt, 
                                            parallelType=1,
                                            reltol=.000001,
@@ -184,7 +184,7 @@ APSIMEditFun <- function( par, nodes = template,
   names(temp_ini_list) <- temp_initial
   ## initial configuration
   temp_ini_list$`[Site].Name =` <- input_list.[[1]]
-  temp_ini_list$`[DataStore].ExcelInput.FileNames = ` <- input_list.[[2]]
+  temp_ini_list$`[DataStore].ExcelInput.FileNames =` <- input_list.[[2]]
   temp_ini_list$`[SlurpSowingRule].Script.SowingDate =` <- as.character(input_list.[[3]]$Clock.Today)
   temp_ini_list$`[Weather].FileName =` <- input_list.[[4]]
   temp_ini_list$`[SetCropVariables].Script.CoverFile =` <-  input_list.[[5]]
