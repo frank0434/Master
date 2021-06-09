@@ -66,5 +66,75 @@ when doing the optimisation with junqi.
 
 # Results 
 
+## Best values 
+
+```{r}
+rdsfiles <- list.files("c:/Users/cflfcl/Dropbox/Data/20210601Opt.res/",
+                       full.names = TRUE)
+l <- lapply(rdsfiles, readRDS)
+
+names(l) <- basename(rdsfiles)
+
+View(l$opt.res_AshleyDene_SD1)
+l$opt.res_AshleyDene_SD1$member$bestmemit %>% View()
+bestmemit <- as.data.table(l$opt.res_AshleyDene_SD1$member$bestmemit, keep.rownames = TRUE) %>% 
+  melt.data.table(id.vars = "rn",variable.factor = FALSE)
+storepop <- rbindlist(lapply(l$opt.res_AshleyDene_SD1$member$storepop, as.data.table, keep.rownames = TRUE), 
+                      idcol = "itr") %>% 
+  melt.data.table(id.vars = c("itr","rn"),variable.factor = FALSE)
+
+parameters <- readRDS(here::here("_targets/objects/parameters"))
+parnms <- parameters[,.(parameter)
+                     ][, variable := paste0("par", 1:.N)]
+storepop <- storepop[parnms, on = "variable"]
+
+base_p <- bestmemit[parnms, on = "variable"
+                    ][, rn := as.integer(rn)] %>% 
+  ggplot(aes(rn, value))+
+  geom_point(data = storepop, aes(itr, value), color = "grey80", alpha = 0.5) +
+  geom_point(color = "#FF0000") +
+  facet_wrap(~parameter, scales = "free_y")+
+  theme_water() +
+  theme(text = element_text(size = 20)) +
+  labs(x = "Iteration", y = "Value range")
+# ggsave(filename = "20210607ADsd1to.png",
+#        base_p, dpi = 320, height = 7, width = 9)
+```
+
+```{r}
+fit.par <- data.table(estimates = l$opt.res_AshleyDene_SD1$optim$nfeval, 
+                      cost = l$opt.res_AshleyDene_SD1$optim$bestval)
+
+cbind(parameters,fit.par)
+```
+
+```{r}
+
+cost <- data.table(bestval = l$opt.res_AshleyDene_SD1$member$bestvalit , 
+                   iter = 1:(l$opt.res_AshleyDene_SD1$optim$iter))
+
+cost %>% 
+  ggplot(aes(iter, bestval))+
+  geom_point(color = "#FF0000") +
+  # facet_wrap(~parameter, scales = "free_y")+
+  theme_water() +
+  theme(text = element_text(size = 20)) +
+  labs(x = "Iteration", y = "Value range")
+```
+```{r}
+dt <- read_dbtab("../../01Data/ApsimxFiles/SingleSlurp.db", "PredictedObserved")
+dt[Clock.Today>=magicDate] %>% 
+  ggplot(aes(Clock.Today, `Pred-Obs.SWCmm`))+
+  geom_point()
+dt[Clock.Today>=magicDate] %>% 
+  ggplot(aes(Clock.Today, Predicted.SWCmm))+
+  geom_line()+
+  geom_point(aes(y = Observed.SWCmm)) 
+
+(dt[Clock.Today>=magicDate]$`Pred-Obs.SWCmm`) ^ 2%>% 
+  sum(na.rm = TRUE)
+
+```
+
 
 # Discussion
