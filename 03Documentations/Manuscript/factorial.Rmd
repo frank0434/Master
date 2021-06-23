@@ -1,0 +1,28 @@
+---
+title: "Chapter 5"
+output:
+  word_document:
+    reference_docx: FRC dissertation template.docx
+  html_document:
+    df_print: paged
+always_allow_html: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.align = "center", fig.width = 10, fig.height = 7, 
+                      dpi = 300)
+options(scipen = 999)
+#Constants
+outlier.colour = "#ff0000"
+source(here::here("02Scripts/R/packages.R"))
+source(here::here("02Scripts/R/functions.R"))
+
+magicDate <- "2011-06-25"
+```
+
+# Define the directories 
+```{r}
+
+```
+
