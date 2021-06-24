@@ -70,38 +70,75 @@ when doing the optimisation with junqi.
 
 ```{r}
 rdsfiles <- list.files("c:/Users/cflfcl/OneDrive - Lincoln University/transfer/",
-                       full.names = TRUE)
+                       full.names = TRUE, pattern = "opt*")
 l <- lapply(rdsfiles, readRDS)
 
 names(l) <- basename(rdsfiles)
 
-View(l$opt.res_AshleyDene_SD1)
-l$opt.res_AshleyDene_SD1$member$bestmemit %>% View()
-bestmemit <- as.data.table(l$opt.res_AshleyDene_SD1$member$bestmemit, keep.rownames = TRUE) %>% 
-  melt.data.table(id.vars = "rn",variable.factor = FALSE)
-storepop <- rbindlist(lapply(l$opt.res_AshleyDene_SD1$member$storepop, as.data.table, keep.rownames = TRUE), 
-                      idcol = "itr") %>% 
-  melt.data.table(id.vars = c("itr","rn"),variable.factor = FALSE)
+# View(l$opt.res_AshleyDene_SD1)
 
+# l$opt.res_AshleyDene_SD1$member$bestmemit %>% View()
 parameters <- readRDS(here::here("_targets/objects/parameters"))
 parnms <- parameters[,.(parameter)
                      ][, variable := paste0("par", 1:.N)]
-storepop <- storepop[parnms, on = "variable"]
-
-base_p <- bestmemit[parnms, on = "variable"
-                    ][, rn := as.integer(rn)] %>% 
-  ggplot(aes(rn, value))+
-  geom_point(data = storepop, aes(itr, value), color = "grey80", alpha = 0.5) +
-  geom_point(color = "#FF0000") +
-  facet_wrap(~parameter, scales = "free_y")+
-  theme_water() +
-  theme(text = element_text(size = 20)) +
-  labs(x = "Iteration", y = "Value range")
+  
+for (i in seq_len(length(l))) {
+  
+  bestmemit <- as.data.table(l[[i]]$member$bestmemit, keep.rownames = TRUE) %>% 
+    melt.data.table(id.vars = "rn",variable.factor = FALSE)
+  storepop <- rbindlist(lapply(l[[i]]$member$storepop, as.data.table, keep.rownames = TRUE), 
+                        idcol = "itr") %>% 
+    melt.data.table(id.vars = c("itr","rn"),variable.factor = FALSE)
+  
+  storepop <- storepop[parnms, on = "variable"]
+  base_p <- bestmemit[parnms, on = "variable"
+                      ][, rn := as.integer(rn)] %>% 
+    ggplot(aes(rn, value))+
+    geom_point(data = storepop, aes(itr, value), color = "grey80", alpha = 0.5) +
+    geom_point(color = "#FF0000") +
+    facet_wrap(~parameter, scales = "free_y")+
+    theme_water() +
+    theme(text = element_text(size = 20)) +
+    labs(x = "Iteration", y = "Value range")
+  print(paste("Print", names(l[i])))
+  # ggsave(filename = here::here("03Documentations/Manuscript/Figures/", 
+  #                              paste0(names(l[i]), ".png")),
+  #        base_p, dpi = 320, height = 7, width = 9)
+  
+}
+# bestmemit <- as.data.table(l$opt.res_AshleyDene_SD1$member$bestmemit, keep.rownames = TRUE) %>% 
+#   melt.data.table(id.vars = "rn",variable.factor = FALSE)
+# storepop <- rbindlist(lapply(l$opt.res_AshleyDene_SD1$member$storepop, as.data.table, keep.rownames = TRUE), 
+#                       idcol = "itr") %>% 
+#   melt.data.table(id.vars = c("itr","rn"),variable.factor = FALSE)
+# 
+# parameters <- readRDS(here::here("_targets/objects/parameters"))
+# parnms <- parameters[,.(parameter)
+#                      ][, variable := paste0("par", 1:.N)]
+# storepop <- storepop[parnms, on = "variable"]
+# 
+# base_p <- bestmemit[parnms, on = "variable"
+#                     ][, rn := as.integer(rn)] %>% 
+#   ggplot(aes(rn, value))+
+#   geom_point(data = storepop, aes(itr, value), color = "grey80", alpha = 0.5) +
+#   geom_point(color = "#FF0000") +
+#   facet_wrap(~parameter, scales = "free_y")+
+#   theme_water() +
+#   theme(text = element_text(size = 20)) +
+#   labs(x = "Iteration", y = "Value range")
 # ggsave(filename = "20210607ADsd1to.png",
 #        base_p, dpi = 320, height = 7, width = 9)
 ```
+```{r}
+bestmemit <- l$opt.res_AshleyDene_SD1$member$bestmemit %>% 
+  as.data.table()
+bestmemit[, cost:=l$opt.res_AshleyDene_SD1$member$bestvalit]
+
+bestmemit
+```
 
 ```{r}
+
 fit.par <- data.table(estimates = l$opt.res_AshleyDene_SD1$optim$nfeval, 
                       cost = l$opt.res_AshleyDene_SD1$optim$bestval)
 
@@ -121,6 +158,33 @@ cost %>%
   theme(text = element_text(size = 20)) +
   labs(x = "Iteration", y = "Value range")
 ```
+
+### WHAT IS THE COST FOR ALL 
+```{r}
+# View(l)
+
+for (i in seq_len(length(l))) {
+  cost <- data.table(bestval = l[[i]]$member$bestvalit , 
+                     iter = 1:(l[[i]]$optim$iter))
+  title <- gsub("opt.res_","",names(l[i]))
+  p <- cost %>% 
+    ggplot(aes(iter, bestval))+
+    geom_point(color = "#FF0000") +
+    # facet_wrap(~parameter, scales = "free_y")+
+    theme_water() +
+    theme(text = element_text(size = 20)) +
+    labs(x = "Iteration", y = "Total sum of squares",
+         title = title)
+  print(paste("Print", title))
+  ggsave(filename = here::here("03Documentations/Manuscript/Figures/", 
+                               paste0(title, "cost.png")),
+         p, dpi = 320, height = 7, width = 9)
+  
+}
+
+```
+
+
 ```{r}
 dt <- read_dbtab("../../01Data/ApsimxFiles/SingleSlurp.db", "PredictedObserved")
 dt[Clock.Today>=magicDate] %>% 
@@ -136,5 +200,53 @@ dt[Clock.Today>=magicDate] %>%
 
 ```
 
+### iVERSEN12 SD1 TO5
+```{r}
+
+```
+
+### Examine the zipped config files
+
+```{r}
+configfiles <- unzip(zipfile = "C:/Users/cflfcl/OneDrive - Lincoln University/transfer/ConfigurationFiles.zip", list = TRUE)
+head(configfiles)
+
+test <- lapply(l, function(x){
+  xx <- x$optim$bestmem %>% 
+    round(digits = 3) %>% 
+    paste0( ., collapse = "_") 
+  pos <- grep(pattern = xx, x = configfiles$Name, ignore.case = TRUE,perl = TRUE)
+})
+
+pos <- unlist(test)
+if (is.na(test)) {
+  print("No configuration file found.")
+  
+}
+
+gemfiles <- configfiles$Name[pos]
+
+# UNZIP the gemfiles
+gemfilesunzip <- unzip(zipfile = "C:/Users/cflfcl/OneDrive - Lincoln University/transfer/ConfigurationFiles.zip",
+      files = gemfiles, 
+      exdir = here("01Data/ProcessedData/"))
+
+```
+
+
+```{r}
+
+path_apsimx <- apsimx_path(debug = TRUE)
+path_config <- list.files(here("01Data/ProcessedData/ConfigurationFiles"), 
+                          pattern = ".txt", full.names = TRUE)
+file.edit(path_config[1])
+for (i in path_config) {
+  
+  filename <- gsub("txt$", "apsimx", basename(i))
+  file.copy(here("01Data/ApsimxFiles/SingleSlurp.apsimx"), filename)
+  system(paste(path_apsimx, "--edit", i, filename))
+}
+
+```
 
 # Discussion

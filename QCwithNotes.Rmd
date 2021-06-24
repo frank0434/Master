@@ -20,6 +20,51 @@ tar_load(starts_with("opt.res"))
 opt.res_AshleyDene_SD1
 ```
 
+# QC CHECK PARAMTERS
+```{r}
+tar_load(parameters)
+parameters
+length(parameters$lower)
+parameters$uppper %>% 
+  paste(., collapse = ",")
+
+```
+
+
+# Check the optimisiation results after 24 hours 
+
+```{r}
+tar_load(starts_with("opt.res"))
+# load("C:/Data/Master/01Data/ProcessedData/apsimxFiles/2021-05-16opt.res.RData")
+View(opt.res)
+# plot(opt.res, plot.type = "bestmemit")
+# plot(opt.res, plot.type = "storepop")
+parameters
+
+bestmemit <- as.data.table(opt.res_AshleyDene_SD1$member$bestmemit, keep.rownames = TRUE) %>% 
+  melt.data.table(id.vars = "rn",variable.factor = FALSE)
+storepop <- rbindlist(lapply(opt.res_AshleyDene_SD1$member$storepop, as.data.table, keep.rownames = TRUE), 
+                      idcol = "itr") %>% 
+  melt.data.table(id.vars = c("itr","rn"),variable.factor = FALSE)
+parnms <- parameters[,.(parameter)
+                     ][, variable := paste0("par", 1:.N)]
+storepop <- storepop[parnms, on = "variable"]
+
+base_p <- bestmemit[parnms, on = "variable"
+                    ][, rn := as.integer(rn)] %>% 
+  ggplot(aes(rn, value))+
+  geom_point(data = storepop, aes(itr, value), color = "grey80", alpha = 0.5) +
+  geom_point(color = "#FF0000") +
+  facet_wrap(~parameter, scales = "free_y")+
+  theme_water() +
+  theme(text = element_text(size = 20)) +
+  labs(x = "Iteration", y = "Value range")
+base_p
+# ggsave(filename = "03Documentations/20210516OptimisationDEMO.png",
+       # base_p, dpi = 320, height = 7, width = 9)
+```
+
+
 
 # apsimx edit is not working 
 
@@ -38,7 +83,7 @@ apsimx_sims_dir
 # draw the visnetwork
 
 ```{r}
-tar_visnetwork(targets_only = TRUE, allow = ends_with("SD1"), label = "time")
+# tar_visnetwork(targets_only = TRUE, allow = ends_with("SD1"), label = "time")
 ```
 
 
@@ -158,6 +203,7 @@ parameters <- params[!is.na(parameter)
          ][, initials:= uppper/2][]
 
 ```
+
 
 ```{r}
 
@@ -385,7 +431,7 @@ cost.function <- function(par, obspara = "SWCmm", reset = magicDate){
 cost.function(par)
 ```
 # assemble the cost and DEoptim
-```{r}
+```{r, eval=FALSE}
 t1 <- Sys.time()
 #DEoptim
 maxIt <- 1
@@ -453,51 +499,6 @@ wrapper_deoptim(parameters, paravals, obspara, 1, 1,
                 obspara,                          
                 apsimx_sims_dir,
                 input_list_AshleyDene_SD1)
-```
-
-
-# QC CHECK PARAMTERS
-```{r}
-tar_load(parameters)
-parameters
-length(parameters$lower)
-parameters$uppper %>% 
-  paste(., collapse = ",")
-
-```
-
-
-# Check the optimisiation results after 24 hours 
-
-```{r}
-tar_load(starts_with("opt.res"))
-# load("C:/Data/Master/01Data/ProcessedData/apsimxFiles/2021-05-16opt.res.RData")
-View(opt.res)
-# plot(opt.res, plot.type = "bestmemit")
-# plot(opt.res, plot.type = "storepop")
-parameters
-
-bestmemit <- as.data.table(opt.res_AshleyDene_SD1$member$bestmemit, keep.rownames = TRUE) %>% 
-  melt.data.table(id.vars = "rn",variable.factor = FALSE)
-storepop <- rbindlist(lapply(opt.res_AshleyDene_SD1$member$storepop, as.data.table, keep.rownames = TRUE), 
-                      idcol = "itr") %>% 
-  melt.data.table(id.vars = c("itr","rn"),variable.factor = FALSE)
-parnms <- parameters[,.(parameter)
-                     ][, variable := paste0("par", 1:.N)]
-storepop <- storepop[parnms, on = "variable"]
-
-base_p <- bestmemit[parnms, on = "variable"
-                    ][, rn := as.integer(rn)] %>% 
-  ggplot(aes(rn, value))+
-  geom_point(data = storepop, aes(itr, value), color = "grey80", alpha = 0.5) +
-  geom_point(color = "#FF0000") +
-  facet_wrap(~parameter, scales = "free_y")+
-  theme_water() +
-  theme(text = element_text(size = 20)) +
-  labs(x = "Iteration", y = "Value range")
-
-ggsave(filename = "03Documentations/20210516OptimisationDEMO.png",
-       base_p, dpi = 320, height = 7, width = 9)
 ```
 
 
