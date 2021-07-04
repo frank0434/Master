@@ -1,6 +1,14 @@
 
 
 
+#' apsimx_path
+#' @description switch apsimx executable file paths.
+#'
+#' @param debug logical. TRUE return the apsimx model executable path in PFR pc.
+#' @return a string contains apsimx models.exe
+#' @export 
+#'
+#' @examples 
 apsimx_path <- function(debug = TRUE){
   if(isTRUE(debug)){
     "c:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
@@ -18,11 +26,14 @@ prepare_params <- function(params){
 }
 
 #' wrapper_deoptim
-#'
-#' @param parameters 
-#' @param obspara 
-#' @param maxIt 
-#' @param np 
+#' @description a wrapper function that invokes DEoptim to run optimisation on
+#' APSIMX via a TSS cost function 
+#' @param parameters string. what are the parameters you'd like to optimise. 
+#' current up to 9 params for soil water related ones. 
+#' @param obspara what are the parameters optimise for? soil water changes?
+#' biomass? leaf area index? 
+#' @param maxIt integer. How many iteration you'd like to run 
+#' @param np integer. How many populations within each iteration?
 #' @param ... , input object will be passed into functions within optimisation
 #'
 #' @return
@@ -92,11 +103,12 @@ wrapper_deoptim <- function(parameters, par,  maxIt, np, ...){
   # par = fit.par$estimates
   # 
   # write.csv(par, here::here("01Data/ProcessedData/opt.par.csv"), row.names = F)
-#' Title
+#' cost.function
+#' @description TSS cost function to optimise APSIMX-SLURP SWC changes.
 #'
 #' @param par 
 #' @param obspara 
-#' @param reset 
+#' @param reset Date. the date for resetting SWC
 #'
 #' @return
 #' @export
@@ -140,7 +152,8 @@ cost.function <- function(par, obspara = "SWCmm", reset = magicDate){
   return(totalCost)
 }
 
-#' Title
+#' APSIMRun
+#' @description wrapper for invoking APSIMX models.exe
 #'
 #' @param par 
 #'

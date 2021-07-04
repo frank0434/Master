@@ -1,13 +1,13 @@
+# Source packages and functions
+source("02Scripts/R/packages.R")
+source("02Scripts/R/functions.R")
 
-library(future)
-library(future.callr)
-plan(multiprocess)
+##  Parallel control ----
+# plan(multiprocess)
 # future(packages = c("data.table", "here", "magrittr","readxl", "RSQLite","DBI",
 #                     "openxlsx", "autoapsimx", "DEoptim"))
 
-## Source functions
-source("02Scripts/R/packages.R")
-source("02Scripts/R/functions.R")
+
 # plan(callr)
 tar_option_set(
   packages = c("data.table", "here", "magrittr","readxl", "RSQLite","DBI",
@@ -15,7 +15,7 @@ tar_option_set(
   # imports = c("package1", "package2")
 )
 
-# If use job scheduler 
+# If use job scheduler ----
 REMOTE = FALSE
 
 if(REMOTE){
@@ -28,10 +28,13 @@ if(REMOTE){
   tar_option_set(deployment="main") # default to host
 }
 
+
 # Construct the instruction
 values <-  data.table::data.table(Site = rep(c("AshleyDene", "Iversen12"),each = 10),
                                   SowingDate = rep(paste0("SD", 1:10), 2))
-# Raw data path
+
+
+# Raw data path ----
 targets0 <- list(
   tar_target(path_richard,here::here("01Data/APSIM_Sim.xlsx")),
   # Constants raw data
@@ -69,6 +72,8 @@ targets0 <- list(
   tar_target(apsimx_sims_dir, here::here("01Data/ProcessedData/apsimxFiles"))
 )
 
+
+## map through -----
 targets1 <- tar_map(
   values = values, 
   names = c("Site", "SowingDate"),
@@ -128,6 +133,7 @@ targets1 <- tar_map(
                              # obspara =  "SWCmm",
                              maxIt = 500,
                              np = length(par)*10,
+
                              Sites, SD,
                              template,
                              path_apsimx,
@@ -141,4 +147,12 @@ targets1 <- tar_map(
   )
 )
 
-list(targets0, targets1)
+targets_factorial <- list(
+  tar_target(factorialDB, here("01Data/ApsimxFiles/LucerneValidationOptimised.db")),
+  tar_target(report, read_dbtab( factorialDB,
+                                 table = "Report"), format = "fst_dt"),
+  tar_target(observed, read_dbtab( factorialDB,
+                                 table = "ObsAllData"), format = "fst_dt")
+  )
+# Combine plans ----
+list(targets0, targets1,targets_factorial)

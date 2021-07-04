@@ -41,7 +41,7 @@ library(DEoptim)
 # Customised package
 library(autoapsimx)
 
-potentialPKGS <- c("autoapsimx","clipr     "
+potentialPKGS <- c("autoapsimx","clipr"
 ,"dplyr     ","drake     "
 ,"DT        ","ggthemes  "
 ,"ggvis     ","inspectdf "
