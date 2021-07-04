@@ -29,8 +29,8 @@ if(REMOTE){
 }
 
 # Construct the instruction
-values <-  data.table::data.table(Site = c("Iversen12"),
-                                  SowingDate = paste0("SD", 6:10))
+values <-  data.table::data.table(Site = rep(c("AshleyDene", "Iversen12"),each = 10),
+                                  SowingDate = rep(paste0("SD", 1:10), 2))
 # Raw data path
 targets0 <- list(
   tar_target(path_richard,here::here("01Data/APSIM_Sim.xlsx")),
@@ -57,7 +57,7 @@ targets0 <- list(
   tar_target(LAI_Height,  read_Sims(path = path_richard, source = "biomass")),
   
   # APSIMX constants
-  tar_target(path_apsimx, apsimx_path(debug = TRUE)),
+  tar_target(path_apsimx, apsimx_path(debug = FALSE)),
   tar_target(template,
              readLines(here::here("01Data/ApsimxFiles/SlurpTemplate.txt")),
              cue = tar_cue(mode = "always")),
@@ -121,12 +121,12 @@ targets1 <- tar_map(
                                         resetSD,
                                         SW_initials_reset
                                         )),
-  # Construct the configuration file 
+  # Construct the configuration file
   tar_target(opt.res,
              wrapper_deoptim(parameters = parameters,
                              par = parameters$initials,
                              # obspara =  "SWCmm",
-                             maxIt = 3,
+                             maxIt = 500,
                              np = length(par)*10,
                              Sites, SD,
                              template,
@@ -138,7 +138,7 @@ targets1 <- tar_map(
                              # APSIMEditFun,
                              # APSIMRun,
                              input_list)
-             )
+  )
 )
 
 list(targets0, targets1)
