@@ -1,6 +1,6 @@
 {
   "$type": "Models.Core.Simulations, Models",
-  "ExplorerWidth": 282,
+  "ExplorerWidth": 300,
   "Version": 130,
   "ApsimVersion": "0.0.0.0",
   "Name": "Simulations",
@@ -51,7 +51,13 @@
       "Children": [
         {
           "$type": "Models.Factorial.Experiment, Models",
-          "DisabledSimNames": null,
+          "DisabledSimNames": [
+            "AshleyDeneSowingDateSD8",
+            "AshleyDeneSowingDateSD9",
+            "AshleyDeneSowingDateSD10",
+            "AshleyDeneSowingDateSD6",
+            "AshleyDeneSowingDateSD7"
+          ],
           "Name": "AshleyDene",
           "Children": [
             {
@@ -12007,7 +12013,13 @@
         },
         {
           "$type": "Models.Factorial.Experiment, Models",
-          "DisabledSimNames": null,
+          "DisabledSimNames": [
+            "Iversen12SowingDateSD6",
+            "Iversen12SowingDateSD7",
+            "Iversen12SowingDateSD8",
+            "Iversen12SowingDateSD9",
+            "Iversen12SowingDateSD10"
+          ],
           "Name": "Iversen12",
           "Children": [
             {
