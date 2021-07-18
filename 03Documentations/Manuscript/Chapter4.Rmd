@@ -1436,6 +1436,28 @@ ggsave("Figures/fw.png",
        width = 10, height = 10, dpi = 320)
 ```
 
+```{r}
+Fw$Clock.Today %>% range()
+# Spring 
+Fw[ round(Lucerne.Leaf.Fw,digits = 2) < 1.0 & Experiment == "AshleyDene" &  Clock.Today < "2011-12-01"
+    ][, .N, by = .(Experiment, SowingDate)
+      ][, list(range(N), mean(N), sd(N))]
+
+
+# Summer 
+
+Fw[ Experiment == "AshleyDene" & round(Lucerne.Leaf.Fw, digits = 2) <= 0.5 & 
+          Clock.Today < "2012-03-01" & Clock.Today > "2011-10-31"
+    ][, .N, by = .(Experiment, SowingDate)
+      ][, list(range(N), mean(N), sd(N))]
+# Autumn
+Fw[ Experiment == "AshleyDene" & round(Lucerne.Leaf.Fw, digits = 2) < 1 & 
+          Clock.Today >= "2012-03-01" & Clock.Today <= "2012-05-31"
+    ][, .N, by = .(Experiment, SowingDate)
+      ][, list(range(N), mean(N), sd(N))]
+```
+
+
 ### use met file from the excel 
 ```{r}
 excel_sheets("c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx")
