@@ -150,7 +150,8 @@ targets1 <- tar_map(
 targets_factorial <- list(
   tar_target(factorialDB, here("01Data/ApsimxFiles/LucerneValidationOptimised.db")),
   tar_target(report, read_dbtab( factorialDB,
-                                 table = "Report"), format = "fst_dt"),
+                                 table = "Report"), 
+             format = "fst_dt"),
   tar_target(observed, read_dbtab( factorialDB,
                                  table = "ObsAllData"), format = "fst_dt")
   )

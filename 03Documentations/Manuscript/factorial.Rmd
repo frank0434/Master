@@ -23,6 +23,66 @@ magicDate <- "2011-06-25"
 
 # Define the directories 
 ```{r}
+report <- fst::read_fst(here::here("_targets/objects/report"), 
+                        as.data.table = TRUE)
+head(report)
+uncols <- grep("KL", colnames(report), value = TRUE)
+report[, (uncols) := NULL]
+observed <- fst::read_fst(here::here("_targets/objects/observed"), 
+                        as.data.table = TRUE)
+simID <- read_dbtab(here::here("01Data/ApsimxFiles/LucerneValidationOptimised.db"), 
+                    table = "_Simulations")
+obsID <- simID[Name %like% c("SD6$|SD1$")]
+# OBSERVATION
+obsSD1_6 <- observed[ Clock.Today >= magicDate][obsID, on = c("SimulationID == ID")]
+obsSD1_6[, (c("Experiment", "SowingDate")):= tstrsplit(Name, split = "SowingDate")]
+# obsSD1_6[, (c("Name", "FolderName")) := NULL]
+unique(obsSD1_6)
+obsSD1_6[, lapply(.SD, function(x){
+  x <- ifelse(x == 0, NA, x)
+  x
+}), by = .(Experiment, SowingDate, Clock.Today, Name, FolderName)]
+
+commoncols <- colnames(obsSD1_6)[colnames(obsSD1_6) %in% colnames(report)]
+redundantcols <- c("CheckpointID", "SimulationID", "FolderName")
+# commoncols <- commoncols[! commoncols %in% redundantcols ]
+
+dt <- report[SimulationID > 20 & Clock.Today >= magicDate
+             ][simID[ID > 20], on = c("SimulationID == ID")
+               ]
+rm(report)
+gc()
+
+simnames <- unique(dt$Name)
+dt[Name == simnames[1]]
+
+
+nested_dt <- dt[, list(data=list(.SD)), by = .(Name), .SDcols = commoncols]
+
+nested_dt[, (c("Experiment", "SowingDate", "Params")) := tstrsplit(Name, split = "SowingDate|KL")]
+nested_dt
+nested_obs <- obsSD1_6[, list(data = list(.SD)), 
+                       by = .(Experiment, SowingDate), .SDcols = commoncols]
+
+pre_obs <- merge.data.table(nested_dt, nested_obs, suffixes = c("Pre", "Obs"),
+                            by = c("Experiment", "SowingDate"))
+
+test <- merge.data.table(pre_obs$dataPre[[1]][], pre_obs$dataObs[[1]], 
+                 by = c("Experiment", "SowingDate", "Clock.Today"),
+                 suffixes = c("_Pre", "_Obs"))
+
+precols <- grep(".Pre", x = colnames(test),value = TRUE)
+obscols <- grep(".Obs", x = colnames(test),value = TRUE)
+
+long <- test %>% 
+  melt.data.table(id.vars = c("Experiment", "SowingDate", "Clock.Today"), 
+                  variable.factor = FALSE)
+long$variable %>% unique()
+long[, (c("variable", "state")):=tstrsplit(variable, split = "_")]  
+long[, value:=as.numeric(value)]
+long[!is.na(value)] %>% 
+  dcast(Experiment + SowingDate+ Clock.Today + variable ~ state, fun.aggregate = )
+
 
 ```
 
