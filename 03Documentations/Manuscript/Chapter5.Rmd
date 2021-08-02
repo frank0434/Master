@@ -66,6 +66,36 @@ when doing the optimisation with junqi.
 
 # Results 
 
+## How much time spent on optimisation
+
+```{r}
+meta <- readRDS("c:/Users/cflfcl/OneDrive - Lincoln University/transfer/timecost.rds") %>% 
+  as.data.table()
+timecost <- meta[name %like% "^opt" & !is.na(data), .(name, time, seconds)
+     ][, endtime := time + seconds
+       ][, duration := endtime - time
+         ][, Hours := as.numeric(gsub("\\shours","", as.character(duration)))
+           ][, ':='(Experiment = gsub("(opt.+_)(.+)(_SD\\d{1,})","\\2", name),
+                    SowingDate = gsub("(opt.+_)(.+_)(SD\\d)","\\3", name))]
+timecost <- fix_SDorder(timecost)
+timecost[,.(Experiment, SowingDate, Hours)] %>% 
+  ggplot(aes(SowingDate, Hours,  fill = Experiment)) +
+  geom_col(position = "dodge") +
+  theme_water() +
+  theme(legend.position = c(0.8,0.8))+
+  scale_fill_manual(values = c("red", "black"))+
+  scale_x_discrete(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0,175))
+ggsave("Figures/timecost.png", width = 10, height =6, dpi = 320)
+
+timecost[, group := rep(1:2, each = 10)
+         ][, list(mean = mean(Hours),
+                sd = sd(Hours)), 
+         by = .(group)]
+
+```
+
+
 ## LAI interplotation
 
 ```{r}
@@ -259,7 +289,25 @@ dt[Clock.Today>=magicDate] %>%
 ```{r, eval=FALSE}
 configfiles <- unzip(zipfile = "C:/Users/cflfcl/OneDrive - Lincoln University/transfer/ConfigurationFiles.zip", list = TRUE)
 head(configfiles)
+nrow(configfiles)
+configfiles <- as.data.table(configfiles)
+counts <- configfiles[-1, .(Name)
+                      ][, Name := gsub("_\\d.+", "", basename(Name))
+                        ][, (c("Experiment", "SowingDate")) := tstrsplit(Name, split = "_")
+                          ][]
+countspertrt <- counts[, .N, by = .(Experiment, SowingDate)
+       ] %>% 
+  dcast(SowingDate ~ Experiment)
 
+fix_SDorder(countspertrt)[order(SowingDate)]
+counts[, .N, by = .(Experiment, SowingDate)
+       ][SowingDate %in% paste0("SD",1:5)
+             ][, lapply(.SD, mean)]
+counts[, .N, by = .(Experiment, SowingDate)
+       ][SowingDate %in% paste0("SD",1:5)
+             ][, lapply(.SD, sd)]
+157*3600/86814
+31*3600/81000
 test <- lapply(l, function(x){
   xx <- x$optim$bestmem %>% 
     round(digits = 3) %>% 
