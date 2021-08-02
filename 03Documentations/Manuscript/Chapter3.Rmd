@@ -43,6 +43,149 @@ ggplot(data.frame(x = blues, y = 1),aes(x, y, fill = x)) +
 magicDate <- "2011-06-25"
 ```
 
+
+### long term radiation and temp
+
+```{r}
+# devtools::install_github("ropensci/clifro")
+
+# Ed wants to extract  mint, maxt, rad and rain.
+# from 1981 ~ present 
+
+library(clifro)
+library(data.table)
+library(lubridate)
+cf_find_station("lincoln", search = "name") # not working any more
+
+lincoln = cf_station(17603)
+me <-  cf_user("frank0434",password = getPass::getPass())
+my.dts <- cf_datatype(c(4, 5), #temperature, radiation - 1,2,3 in this template
+                      c(2, 2),
+                      list(2, 2), # hourly and daily
+                      c(NA,NA))
+
+
+cf.datalist <- cf_query(user = me,
+                        datatype = my.dts,
+                        station = lincoln,
+                        start_date = "1999-07-01 00",
+                        end_date = "2019-07-01 00")
+
+saveRDS(cf.datalist, file = "../../_targets/objects/cf.datalist.rds")
+source(here::here("02Scripts/R/functions", "cliflo_list_converter.R"))
+
+# converting into the df --------------------------------------------------
+cf.datalist <- readRDS(file = "../../_targets/objects/cf.datalist.rds")
+
+# list_converter(cf.datalist)
+    dt <- as.data.table(cf.datalist,stringsAsFactors = F)
+    colnames(dt) <- gsub(pattern = "\\(|\\/","_",colnames(dt))
+    colnames(dt) <- gsub(pattern = "\\)","",colnames(dt))
+    
+    dt <- dt[,Date:= as.Date(lubridate::ymd_hms(Date_local))]
+
+
+theme_frnl <- function(){
+  theme_bw() +
+  theme(strip.background = element_blank(),
+        strip.placement = "outside",
+        plot.background = element_rect(inherit.blank = T),
+        plot.caption = element_text(hjust = 0.5, size = rel(2)),
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        legend.key = element_blank(),
+        legend.position = "bottom",
+        panel.background = element_rect(fill = "white",colour = "grey"))
+}
+period <- data.table(Date = seq.Date(as.Date("1999-07-01"),as.Date("2019-07-01"),by = 1),
+                     Julian = seq(julian(ymd("2019-07-01"),origin = ymd("1999-07-01"))))[,md:=gsub("\\d{4}-","",Date)]
+
+cftemp10_avg <- dt[,.(Date = Date_local, max = Tmax_C,min = Tmin_C)
+                   ][,':='(Date = gsub("\\d{4}-","",as.Date(Date)),
+                           Tmean = (max+min)/2)][order(Date)
+                                                 ][,.(Tmean_10 = mean(Tmean,na.rm = T)), by = .(Date)]
+cftemp10 <- merge(period,cftemp10_avg,by.x = "md",by.y = "Date")[order(Date)]
+
+
+Temp_NA_index <- which(is.na(cftemp10$Tmean))
+temp_gdd <- group_in_season(cftemp10)[,GDD_10_avg := cumsum(Tmean_10 - 1), by = .(Season)][]
+          
+temp_gdd[, list(temp = mean(Tmean_10, na.rm = TRUE), 
+                gdd = mean(GDD_10_avg)), by = .(md)
+         ][, Date := as.Date(paste0("2011-", md))] %>% 
+  ggplot() +
+  geom_area(aes(Date,temp,fill = "grey"))+
+  geom_point(aes(Date,gdd/200,color = "red"))+
+  # geom_line(aes(Date,GDD_10_avg/100,color = "grey"))+
+  scale_fill_manual(values = "grey", labels = "Daily Mean Temperature (°C)")+
+
+  scale_y_continuous(expand = c(0,0),limits = c(0,20),
+                     name = "Daily Mean Temperature (°C)",
+                     sec.axis = sec_axis(~.*200, name = "Cumulative Growing Degree Days (°Cd)"))+
+  scale_color_manual(values = c(red ="red"),
+                     labels= c(red = "Seasonal cumulative Growing Degree Days (°Cd)"))+
+  scale_x_date(expand = c(0,0))+
+  theme_frnl() +
+  theme(text = element_text(size = 16)) +
+  guides(
+    fill = guide_legend(order = 1))
+ggsave("Figures/ch3_temp.png", dpi = 300, width = 10, height = 7)
+
+temp_gdd[, list(temp = mean(Tmean_10, na.rm = TRUE), 
+                gdd_sd = sd(GDD_10_avg),
+                gdd = mean(GDD_10_avg)), by = .(md)
+         ]
+
+
+range(temp_gdd$GDD_10_avg)
+```
+
+### radiation
+
+```{r}
+cfrad10_avg <- dt_Radiation19990701to20190630[,.(Date_local, Amount = Amount_MJ_m2)
+                                               ][,Date := gsub("\\d{4}-","",as.Date(Date_local))
+                                                 ][order(Date)
+                                                   ][,.(Amount_10 = mean(Amount,na.rm = T)),by = .(Date)]
+cfrad10_avg <- merge(period,cfrad10_avg,by.x = "md",by.y = "Date")[order(Date)]
+
+rad <- group_in_season(cfrad10_avg)[,Cum_Radiation := cumsum(Amount_10), by = .(Season)][]
+          
+rad[, list(Amount = mean(Amount_10, na.rm = TRUE),
+                Cum_Radiation = mean(Cum_Radiation, na.rm = TRUE) ), by = .(md)
+         ][, Date := as.Date(paste0("2011-", md))] %>% 
+  ggplot()+
+  geom_area(aes(Date,Amount,fill = "grey"))+
+  geom_point(aes(Date,Cum_Radiation/200,color = "red"))+
+  # geom_line(aes(Date,Cumulative_Radiation_10_avg/100,color = "grey"))+
+  scale_y_continuous(expand = c(0,0),"Daily Radiation MJ " ~m^-2, 
+                     sec.axis = sec_axis(~.*200, name = "Cummulative Radiation MJ " ~m^-2))+
+  scale_color_manual(values = c(red ="red"),
+                     labels= c(red = "Cummulative Radiation"))+
+  scale_fill_manual(values = "grey", labels = "Daily Radiation")+
+  scale_x_date(expand = c(0,0))+
+    theme_frnl()+
+
+  theme(text = element_text(size = 16)) 
+  
+ggsave("Figures/ch3_rad.png", dpi = 300, width = 10, height = 7)
+
+rad[, list(Amount = mean(Amount_10, na.rm = TRUE),
+           cumrad_sd = sd(Cum_Radiation),
+                Cum_Radiation = mean(Cum_Radiation, na.rm = TRUE) ), by = .(md)
+         ]
+$Amount %>% 
+  range(na.rm = TRUE)
+
+
+temp_gdd[, list(temp = mean(Tmean_10, na.rm = TRUE), 
+                gdd_sd = sd(GDD_10_avg),
+                gdd = mean(GDD_10_avg)), by = .(md)
+         ]
+
+```
+
+
 ### LEAR response to temp and photoperiod
 ```{r}
 
