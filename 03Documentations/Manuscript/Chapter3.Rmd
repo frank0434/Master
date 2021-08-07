@@ -41,10 +41,59 @@ ggplot(data.frame(x = blues, y = 1),aes(x, y, fill = x)) +
   theme_void()
 
 magicDate <- "2011-06-25"
+theme_frnl <- function(){
+  theme_bw() +
+  theme(strip.background = element_blank(),
+        strip.placement = "outside",
+        plot.background = element_rect(inherit.blank = T),
+        plot.caption = element_text(hjust = 0.5, size = rel(2)),
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        legend.key = element_blank(),
+        legend.position = "bottom",
+        panel.background = element_rect(fill = "white",colour = "grey"))
+}
 ```
 
 
 ### long term radiation and temp
+
+manually download a montly weather file from cliflo
+```{r}
+monthly <- fread(input = "../../01Data/ClimateAndObserved/wgenf (1).txt", skip = "Stats: Monthly")
+monthlyRian_PET <- monthly[-(1:2), .(Date = `Mon-YYYY(local)`, variable = `Stat Code`, 
+            value = `Stat Value`)
+        ][, ':=' (year = as.integer(gsub("\\D", "", Date)),
+                        month = gsub("-.+", "", Date), 
+                        variable = ifelse(variable == 0, "Rainfall", "PET"))
+          ][, Date := as.Date(paste0("01-", Date), tryFormats = "%d-%b-%Y")] 
+
+seasonal <- group_in_season(monthlyRian_PET)
+seasonal[Season != "2021/2022", .(sum(value)) , by = .(Season, variable)
+         ][, .(mean(V1), sd(V1), range(V1)), by = .(variable)]
+seasonal[, .(value = mean(value)), by = .(variable, month)
+         ][, Date := as.Date(paste0("2020-", month, "-01"), format = "%Y-%b-%d")]%>% 
+  dcast(Date  ~ variable) %>% 
+  ggplot(aes(Date)) +
+  geom_line(aes(y = PET)) +
+  geom_col(aes(y = Rainfall)) +
+  theme_frnl()
+monthlyRian_PET %>% 
+  ggplot(aes(Date, value, color = variable)) +
+  geom_line() +
+  theme_frnl()
+```
+
+
+```{r}
+seasonal[Season == "2011/2012"] %>% 
+  dcast(Date  ~ variable) %>%  
+  ggplot(aes(Date)) +
+  geom_line(aes(y = PET)) +
+  geom_col(aes(y = Rainfall)) +
+  theme_frnl()
+```
+
 
 ```{r}
 # devtools::install_github("ropensci/clifro")
@@ -68,38 +117,122 @@ my.dts <- cf_datatype(c(4, 5), #temperature, radiation - 1,2,3 in this template
 cf.datalist <- cf_query(user = me,
                         datatype = my.dts,
                         station = lincoln,
-                        start_date = "1999-07-01 00",
-                        end_date = "2019-07-01 00")
+                        start_date = "2011-07-01 00",
+                        end_date = "2012-07-01 00")
 
-saveRDS(cf.datalist, file = "../../_targets/objects/cf.datalist.rds")
+# saveRDS(cf.datalist, file = "../../_targets/objects/cf.datalist.rds")
 source(here::here("02Scripts/R/functions", "cliflo_list_converter.R"))
 
 # converting into the df --------------------------------------------------
-cf.datalist <- readRDS(file = "../../_targets/objects/cf.datalist.rds")
+# cf.datalist <- readRDS(file = "../../_targets/objects/cf.datalist.rds")
 
-# list_converter(cf.datalist)
-    dt <- as.data.table(cf.datalist,stringsAsFactors = F)
-    colnames(dt) <- gsub(pattern = "\\(|\\/","_",colnames(dt))
-    colnames(dt) <- gsub(pattern = "\\)","",colnames(dt))
-    
-    dt <- dt[,Date:= as.Date(lubridate::ymd_hms(Date_local))]
+list_converter(cf.datalist)
+    # dt <- as.data.table(cf.datalist,stringsAsFactors = F)
+    # colnames(dt) <- gsub(pattern = "\\(|\\/","_",colnames(dt))
+    # colnames(dt) <- gsub(pattern = "\\)","",colnames(dt))
+    # 
+    # dt <- dt[,Date:= as.Date(lubridate::ymd_hms(Date_local))]
 
 
-theme_frnl <- function(){
-  theme_bw() +
-  theme(strip.background = element_blank(),
-        strip.placement = "outside",
-        plot.background = element_rect(inherit.blank = T),
-        plot.caption = element_text(hjust = 0.5, size = rel(2)),
-        legend.direction = "horizontal",
-        legend.title = element_blank(),
-        legend.key = element_blank(),
-        legend.position = "bottom",
-        panel.background = element_rect(fill = "white",colour = "grey"))
-}
-period <- data.table(Date = seq.Date(as.Date("1999-07-01"),as.Date("2019-07-01"),by = 1),
-                     Julian = seq(julian(ymd("2019-07-01"),origin = ymd("1999-07-01"))))[,md:=gsub("\\d{4}-","",Date)]
+# period <- data.table(Date = seq.Date(as.Date("1999-07-01"),
+#                                      as.Date("2019-07-01"),
+#                                      by = 1),
+#                      Julian = seq(julian(ymd("2019-07-01"),
+#                                          origin = ymd("1999-07-01"))))[,                                                                       md:=gsub("\\d{4}-","",Date)]
 
+```
+
+```{r}# fix NAs
+dt <- dt_Max_min20110701to20120701
+dt[is.na(Tmean_C), Tmean_C := (Tmin_C + Tmax_C) / 2
+   ][is.na(Tmin_C), Tmin_C := Tmean_C * 2 - Tmax_C]
+# Check any NAS
+dt[is.na(Tmean_C)]; dt[is.na(Tmin_C)];dt[is.na(Tmax_C)]
+
+dailyTT <- weaana::thermalTimeHourly(dt$Date_local, 
+                                     temperature = dt$Tmean_C,
+                                     x_temp = c(1,15,30,40), # LUCERNE CARDINAL 
+                                     y_temp = c(0,10,25,0)) # EFFECTIVE TT
+dailyTT <- as.data.table(dailyTT)
+setnames(dailyTT, "date", "Date")
+dailyTT <- group_in_season(as.data.table(dailyTT))
+dailymean <- dt[, Date := as.Date(Date_local, tz= "NZ" )
+                ][, .(dailymean = mean(Tmean_C, na.rm = TRUE)), by = .(Date)]
+range(dailymean$dailymean)
+sum(dailyTT$value)
+dailyTT[!is.na(Season)
+        ][, gdd := cumsum(value)][dailymean, on = "Date"] %>% 
+  ggplot() +
+  geom_area(aes(Date,dailymean,fill = "grey"))+
+  geom_point(aes(Date,gdd/200,color = "red"))+
+  # geom_line(aes(Date,GDD_10_avg/100,color = "grey"))+
+  scale_fill_manual(values = "grey", labels = "Daily Mean Temperature (°C)")+
+
+  scale_y_continuous(expand = c(0,0),limits = c(0,20),
+                     name = "Daily Mean Temperature (°C)",
+                     sec.axis = sec_axis(~.*200, name = "Cumulative Growing Degree Days (°Cd)"))+
+  scale_color_manual(values = c(red ="red"),
+                     labels= c(red = "Seasonal cumulative Growing Degree Days (°Cd)"))+
+  scale_x_date(expand = c(0,0))+
+  theme_frnl() +
+  theme(text = element_text(size = 16)) +
+  guides(
+    fill = guide_legend(order = 1))
+ggsave("Figures/ch3_cardinalTT.png", dpi = 300, width = 10, height = 7)
+
+
+```
+2011/2012 radiation 
+
+```{r}
+dt <- dt_Radiation20110701to20120701
+dt[is.na(Amount_MJ_m2)]
+dailymean <- dt[, Date := as.Date(Date_local, tz= "NZ" )
+                ][, .(Amount = sum(Amount_MJ_m2)), by = .(Date)
+                  ][, Cum_Radiation := cumsum(Amount)]
+dailymean %>% 
+  ggplot() +
+  geom_area(aes(Date,Amount,fill = "grey"))+
+  geom_point(aes(Date,Cum_Radiation/200,color = "red"))+
+  # geom_line(aes(Date,Cumulative_Radiation_10_avg/100,color = "grey"))+
+  scale_y_continuous(expand = c(0,0),bquote("Daily Radiation "~(MJ ~m^-2)), 
+                     sec.axis = sec_axis(~.*200, name = bquote("Cummulative Radiation "~(MJ ~m^-2))))+
+  scale_color_manual(values = c(red ="red"),
+                     labels= c(red = "Cummulative Radiation"))+
+  scale_fill_manual(values = "grey", labels = "Daily Radiation")+
+  scale_x_date(expand = c(0,0))+
+    theme_frnl()+
+
+  theme(text = element_text(size = 16)) 
+  
+ggsave("Figures/ch3_2011_2012rad.png", dpi = 300, width = 10, height = 7)
+
+```
+
+$$T^n_{diurnal} = [(0.931 + 0.114n - 0.0703n^2 + 0.0053n^3) \times (T_{max} - T_{min})] + T_{min}$$
+remotes::install_github('byzheng/weaana')
+this package has temperature calculation based on met file format 
+
+
+
+```{r}
+# Calculate the 3hour temperature
+hour <- seq(1, 8)
+frac <- 0.92105 + 0.1140 * hour - 0.0703 * 
+  hour * hour + 0.0053 * hour * hour * hour
+dt <- dt_Max_min19990701to20190630[, .(Date_local, Tmax_C, Tmin_C)]
+# Check if any abnormal records of min temp is greater than max temp
+pos <- dt$Tmax_C < dt$Tmin_C
+sum(pos, na.rm = TRUE)
+# an old code to swap those values
+# metdf_DT <- metdf_DT[pos,c("maxt","mint"):= .(mint,maxt)]
+# https://simplmodl.wordpress.com/2014/01/31/a-simple-way-to-repeat-replicate-or-explode-data-table-rows-in-r/
+dt <- dt[rep(seq(1, .N), length(hour))][order(Date_local)]
+dt[, ]
+
+```
+
+```{r}
 cftemp10_avg <- dt[,.(Date = Date_local, max = Tmax_C,min = Tmin_C)
                    ][,':='(Date = gsub("\\d{4}-","",as.Date(Date)),
                            Tmean = (max+min)/2)][order(Date)
