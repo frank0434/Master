@@ -55,6 +55,9 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
 options(scipen = 999)
 #Constants
 outlier.colour = "#ff0000"
+# define the java path
+Sys.setenv(JAVA_HOME='c:/Program Files/AdoptOpenJDK/')
+
 source(here::here("02Scripts/R/packages.R"))
 source(here::here("02Scripts/R/functions.R"))
 path_richard <- "C:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
