@@ -46,14 +46,14 @@ magicDate <- "2011-06-25"
 ### LEAR response to temp and photoperiod
 ```{r}
 
-
+linesize <- 1
 x = c(1, 15, 30, 40)
 y = c(0, 10, 25, 0)
 lab = c("T[b]", "T[i]", "T[o]", "T[m]")
 df_tt <- data.frame(x =  x, y =  y, z = lab)
 p_tt <- df_tt %>% 
   ggplot(aes(x, y )) +
-  geom_line(size = 1.5) + 
+  geom_line(size = linesize) + 
   geom_text(aes( y = y +3, label =  bquote(.(z))), size = 12, nudge_x = 1, nudge_y = 1,
             parse = TRUE) +
   scale_y_continuous(expand = c(0,0), limits = c(0, 35))+
@@ -70,7 +70,7 @@ lab = c(rep("Decreasing", 3), rep("Increasing", 3))
 df_pp <- data.frame(a , b , lab)
 p_pp <- df_pp %>% 
   ggplot(aes(a , b)) +
-  geom_line(size = 1.5) +
+  geom_line(size = linesize) +
   scale_y_continuous(expand = c(0,0), limits = c(0, 0.025))+
   scale_x_continuous(expand = c(0,0), limits = c(7, 17), n.breaks = 7) +
   facet_wrap(~ lab) +
@@ -78,22 +78,59 @@ p_pp <- df_pp %>%
   theme(panel.background = element_rect(fill = NA, colour = "black"),
         text = element_text(size = 16)) +
   labs( x = "Photoperiod (h)", 
-        y = bquote("LEAR (m"^2~"/m"^2~" \u00B0Cd)") )
+        y = bquote("LEAR (m"^2~" m"^-2~" \u00B0Cd)") )
 
 p_LEAR <- plot_grid(p_tt, p_pp, ncol = 1, align = "v", axis = "lr")
 ggsave("Figures/ch3_LEAR.png",plot = p_LEAR,
        width = 7, height = 7, dpi = 320)
 ```
 
-### RUE
+### LEAR on water stress levels 
+
 ```{r}
-x = c(0	,18,30,40)
-y = c(0,1.1,1.1,0)
+
+linesize <- 1
+x <- seq(0, 0.9, by = 0.1)
+y <- 0.03 * x - 0.009
+optLEAR <- 0.018
+df_tt <- data.frame(x =  x, y =  ifelse(y<0 , NA, y))
+p_tt <- df_tt %>% 
+  ggplot(aes(x, y )) +
+  geom_line(size = linesize) + 
+  geom_hline(yintercept =  optLEAR, linetype = 2, size = linesize)+
+  scale_y_continuous(expand = c(0,0), limits = c(0, 0.020))+
+  scale_x_continuous(expand = c(0,0), limits = c(0, 1.3), 
+                     labels = sprintf("%.1f", seq(0, 1.2, by = 0.2)),
+                     breaks = seq(0, 1.2, by = 0.2)) +
+  theme_classic()+
+  theme(panel.background = element_rect(fill = NA, colour = "black"),
+        text = element_text(size = 16)) +
+  labs( x = bquote("T/T"[D]), 
+        y = bquote("LEAR (LAI/\u00B0Cd)"))
+
+ggsave("Figures/ch3_LEARStress.png",plot = p_tt,
+       width = 7, height = 5, dpi = 320)
+```
+
+### RUE
+
+#### figure 2.6
+```{r}
+y <- round(runif(10, 0.8, 0.9), digits = 2)
+
+
+
+
+```
+
+```{r}
+x = c(0	,18,30, 40)
+y = c(0,1.1,1.1, 0)
 
 df_rue <- data.frame(x , y)
 p_rue <- df_rue %>% 
   ggplot(aes(x, y)) +
-  geom_line(size = 1.5) +
+  geom_line(size = linesize) +
   scale_y_continuous(expand = c(0,0), limits = c(0, 1.5))+
   scale_x_continuous(expand = c(0,0), limits = c(0, 42), n.breaks = 7) +
   
@@ -111,15 +148,15 @@ y = c(0,0.4,0.75,1,1)
 df_rue_fw <- data.frame(x , y)
 p_rue_fw <- df_rue_fw %>% 
   ggplot(aes(x, y)) +
-  geom_line(size = 1.5) +
+  geom_line(size = linesize) +
   scale_y_continuous(expand = c(0,0), limits = c(0, 1.1))+
-  scale_x_continuous(expand = c(0,0), limits = c(0, 1), n.breaks = 7) +
+  scale_x_continuous(expand = c(0,0), limits = c(0, 1.1), n.breaks = 7) +
   
   theme_classic()+
   theme(panel.background = element_rect(fill = NA, colour = "black"),
         text = element_text(size = 16)) +
   labs( x = bquote("T/T"["D"]), 
-        y = bquote("f"["stressed"]~"/f"["optimal"]) )
+        y = bquote(italic("f"["stressed"]~"/f"["optimal"]) ))
 ggsave("Figures/ch3_rue_FW.png",plot = p_rue_fw,
        width = 7, height = 3.5, dpi = 320)
 
@@ -133,7 +170,7 @@ lab = c(rep("Decreasing", 2), rep("Increasing", 3))
 df_pp <- data.frame(a , b , lab)
 p_pp <- df_pp %>% 
   ggplot(aes(a , b)) +
-  geom_line(size = 1.5) +
+  geom_line(size = linesize) +
   scale_y_continuous(expand = c(0,0), limits = c(30, 50))+
   scale_x_continuous(expand = c(0,0), limits = c(9, 18), n.breaks = 7) +
   facet_wrap(~ lab) +
@@ -155,7 +192,7 @@ b=c(2, 2,  1, 1)
 df_ph_fw <- data.frame(a, b)
 p_ph_fw <- df_ph_fw %>% 
   ggplot(aes(a, b)) +
-  geom_line(size = 1.5) +
+  geom_line(size = linesize) +
   scale_y_continuous(expand = c(0,0), limits = c(0.8, 2.2))+
   scale_x_continuous(expand = c(0,0), limits = c(0,1.1)) +
   
@@ -174,7 +211,7 @@ b = 0.62 + 9766 * exp(a*-1)
 df_height <- data.frame(a, b)
 p_height <- df_height %>% 
   ggplot( aes(a,b))+
-  geom_line(size = 1.5)+
+  geom_line(size = linesize)+
   # scale_y_continuous(exp+
   scale_x_continuous(expand = c(0,0)) +
   

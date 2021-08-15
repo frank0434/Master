@@ -552,7 +552,9 @@ timestep_p <- SWCprofile %>%
   geom_line(aes(y = .data[[pre_col]], color = {{pre_col}}), show.legend = TRUE,
             size = 1) +
   facet_wrap( ~  SowingDate + Experiment,
-              strip.position = "right", nrow = 10, scales = "free_y") +
+              strip.position = "right", nrow = 10,
+              # scales = "free_y"
+              ) +
   theme_water()  +
   theme(legend.position = "none", legend.key.size = unit(1, "cm")) +
   labs(y = paste0(gsub("Predicted\\.|mm", "", pre_col), " (mm)"), 
@@ -571,7 +573,7 @@ p <- timestep_p +
   geom_hline(data = DULmm, aes(yintercept = DULmm), linetype = 2, size = 0.5, 
              alpha = 0.6, inherits =FALSE)
 p
-#ggsa("Figures/sw_timestamp.png",plot = p, width = 10, height =14, dpi = 320)
+ggsave("Figures/sw_timestamp_whynotsamescale.png",plot = p, width = 10, height =14, dpi = 320)
 ```
 ```{r}
 p$data[Experiment == "Iversen12" & SowingDate == "SD6"] %>% 
