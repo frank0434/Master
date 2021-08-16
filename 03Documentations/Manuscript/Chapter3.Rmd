@@ -39,14 +39,16 @@ ggplot(data.frame(x = blues, y = 1),aes(x, y, fill = x)) +
   geom_col() +
   scale_fill_manual(name = "", values = blues)+
   theme_void()
-
+linesize <- 1
+pointsize <-  2
+labelsize <- 4
 magicDate <- "2011-06-25"
 ```
 
 ### LEAR response to temp and photoperiod
 ```{r}
 
-linesize <- 1
+
 x = c(1, 15, 30, 40)
 y = c(0, 10, 25, 0)
 lab = c("T[b]", "T[i]", "T[o]", "T[m]")
@@ -249,6 +251,116 @@ dt %>%
   geom_point() +
   facet_wrap( ~Site )
 
+
+```
+
+
+## Fig2.8
+```{r}
+
+inti <- 30
+x = seq(inti + 1, inti + 100, by = 1)
+
+y = 0.1 + 0.25 * exp(-0.06 * (x - inti))
+set.seed(42)
+z <- seq(1,100, by = 5)
+# noise <- jitter(y[z], 200)
+# plot(x,y)
+# plot(x,noise)
+dt <- data.table(x = x, y = y)
+dt[z, noise := jitter(y, 200)]
+
+dt_int <- data.table(x = 1:inti, y = y[1])
+dt_int[seq(1, inti, by = 5), noise := jitter(y, 0.5)]
+dt <- rbindlist(list(dt_int, dt))
+dt %>% 
+  ggplot(aes(x, y))+
+  geom_line(size = linesize) +
+  geom_point(aes(y = noise), size = pointsize) +
+  theme_water() +
+  theme(text = element_text(size = 16), 
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank()) +
+  labs(x = "Time",
+       y = bquote("Soil water content ("~theta~", mm"^3~"mm"^-3~")"))+
+  scale_x_continuous(expand = c(0, 0),limits = c(0, 131))+
+  # add the line to indicate RFV
+  geom_vline(xintercept = inti + 1, linetype = 5, size = linesize) +
+  annotate("text", x = dt$x[15], y = dt$y[35],
+           label = bquote(bold("Stage A")),size = labelsize)+
+  annotate("text", x = dt$x[70], y = dt$y[35],
+           label = bquote(bold("Stage B")),size = labelsize)+
+  annotate("text", x = dt$x[120], y = 0.225,
+           label = bquote(atop(bold("PAWC"),
+                               ~(italic(theta[DUL]~ - ~theta[CLL])))),size = labelsize)+
+  annotate("segment", x = dt$x[120], xend = dt$x[120], y = 0.2, yend = dt$y[110], size=0.8, alpha=0.8, 
+           arrow=arrow(length = unit(5, "mm"))) +
+  annotate("segment", x = dt$x[120], xend = dt$x[120], y = 0.25, yend = dt$y[1], size=0.8, alpha=0.8, 
+           arrow=arrow(length = unit(5, "mm"))) +
+  annotate("segment", x = inti + 15, xend = inti + 1, y = dt$y[32], yend = dt$y[1], size=0.8, alpha=0.8, 
+           arrow=arrow(length = unit(5, "mm"))) +
+  annotate("segment", x = dt$x[115], xend = dt$x[125], y =  dt$y[1], yend = dt$y[1], size=0.8) +
+  annotate("segment", x = dt$x[115], xend = dt$x[125], y =  0.1, yend = 0.1, size=0.8) +
+  # Add the text for dul and ll
+  annotate("text", x = dt$x[120], y =  dt$y[110]-0.01, label = bquote(italic(~theta[CLL])),size = labelsize) +
+  annotate("text", x = dt$x[120], y =  dt$y[1]+0.01, label = bquote(italic(~theta[DUL])),size = labelsize) +
+  annotate("text", x = inti + 18, y =  dt$y[32], label = bquote(italic(~t[c])),size = labelsize) 
+ggsave("Figures/fig2.8.png",
+       width = 7, height = 5, dpi = 320)
+```
+### fIG 2.9
+
+
+```{r}
+
+
+inti <- 6
+x = seq(inti + 1, inti + 12, by = 0.05)
+
+y = 1 + 7 * exp(-1 * (x - inti))
+# set.seed(42)
+z <- seq(1, length(x), by = 5)
+dt <- data.table(x = x, y = y)
+dt[z, noise := jitter(y, 40)]
+
+dt_int <- data.table(x = seq(1, inti, by = 0.5), y = y[1])
+dt_int[seq(1, nrow(dt_int), by = 1), noise := jitter(y, 1)]
+dt <- rbindlist(list(dt_int, dt))
+dt %>% 
+  ggplot(aes(x, y))+
+  # geom_line(size = linesize) +
+  geom_point(aes(y = noise), size = pointsize) +
+  theme_water() +
+  theme(text = element_text(size = 16)        ) +
+  labs(x = "Time (days)",
+       y = bquote("Evaporation rate (mm"~" day"^-1~")"))+
+  scale_x_continuous(expand = c(0, 0),limits = c(2, 15),
+                     breaks = seq(2, 14, by = 2),
+                     labels = seq(2, 14, by = 2))+
+  scale_y_continuous(expand = c(0, 0),limits = c(0,5))+
+  # add the line to indicate RFV
+  geom_vline(xintercept = inti + 1, linetype = 5, size = linesize) +
+  annotate("text", x = dt$x[7], y = 2,
+           label = bquote(bold("Stage I")),size = 5)+
+  annotate("text", x = dt$x[75], y = 2,
+           label = bquote(bold("Stage II")),size = 5)
+  # annotate("text", x = dt$x[120], y = 0.225,
+  #          label = bquote(atop(bold("PAWC"),
+  #                              ~(italic(theta[DUL]~ - ~theta[CLL])))),size = labelsize)+
+  # annotate("segment", x = dt$x[120], xend = dt$x[120], y = 0.2, yend = dt$y[110], size=0.8, alpha=0.8, 
+  #          arrow=arrow(length = unit(5, "mm"))) +
+  # annotate("segment", x = dt$x[120], xend = dt$x[120], y = 0.25, yend = dt$y[1], size=0.8, alpha=0.8, 
+  #          arrow=arrow(length = unit(5, "mm"))) +
+  # annotate("segment", x = inti + 15, xend = inti + 1, y = dt$y[32], yend = dt$y[1], size=0.8, alpha=0.8, 
+  #          arrow=arrow(length = unit(5, "mm"))) +
+  # annotate("segment", x = dt$x[115], xend = dt$x[125], y =  dt$y[1], yend = dt$y[1], size=0.8) +
+  # annotate("segment", x = dt$x[115], xend = dt$x[125], y =  0.1, yend = 0.1, size=0.8) +
+  # # Add the text for dul and ll
+  # annotate("text", x = dt$x[120], y =  dt$y[110]-0.01, label = bquote(italic(~theta[CLL])),size = labelsize) +
+  # annotate("text", x = dt$x[120], y =  dt$y[1]+0.01, label = bquote(italic(~theta[DUL])),size = labelsize) +
+  # annotate("text", x = inti + 18, y =  dt$y[32], label = bquote(italic(~t[c])),size = labelsize) 
+ggsave("Figures/fig2.9.png",
+       width = 7, height = 5, dpi = 320)
 
 ```
 
