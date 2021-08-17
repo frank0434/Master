@@ -437,14 +437,21 @@ plot_PreObs <- function(dt, col_obs, col_pre,
 #' @export
 #'
 #' @examples
-key_stats <- function(DT, key =c("Experiment"), pre_col, obs_col,
+key_stats <- function(DT, key = c("Experiment"), pre_col, obs_col,
                       nmethod = c("mean", "sd")){
   stats <-  sims_stats(DT, keys = key,
                        col_pred = pre_col,
                        col_obs = obs_col)
-  stats_rs <- stats[, unlist(stats, recursive = FALSE), by = .(Experiment)]
-  stats_rs[, `NRMSE %` := ifelse(nmethod == "sd", `NRMSE %`, 
-                                 `NRMSE %`/mean(DT[[obs_col]], na.rm = TRUE))]
+  stats_rs <- stats[, unlist(stats, recursive = FALSE), by = key]
+  if(nmethod == "mean"){
+    meanobs <- DT[, .(meanobs = mean(eval(parse(text = obs_col)),
+                                     na.rm = TRUE)),
+                  by = key]
+    stats_rs <- stats_rs[meanobs, on = key
+                         ][, `NRMSE %` := round(RMSE / meanobs, 
+                                                digits = 2) * 100]
+  }
+  
   stats_rs[, ':='(R2_str = paste0(as.character(expression(italic(R)^2 ~"=")), "~",R2),
                   NSE_str = paste0(as.character(expression(NSE~"=")), "~", NSE),
                   RMSE_str = paste0(as.character(expression(RMSE~" = ")), "~", RMSE),
