@@ -131,7 +131,7 @@ p_DUL_LL
 sowingDates <-  read_Sims(path_richard, source =  "sowingDate")
 # mimic the paper logic, force starting date to "2011-07-01"
 # The nearest measurements were "2011-06-25" for sd1 to sd5
-sw_initials <- initialSWC(SW_mean_new, sowingDates, id_vars)
+sw_initials <- initialSWC(sw_mean_new, sowingDates, id_vars)
 
 
 sowingDates[SowingDate%in% paste0("SD", 1:5), 
@@ -142,7 +142,7 @@ value_vars <- readRDS(here("_targets/objects/value_vars"))
 SW_mean_new <- colwise_meanSW(DT = data_SW, 
                               id.vars = id_vars, 
                               col.vars = value_vars)
-sw_initials_RESET <- initialSWC(SW_mean_new, sowingDates, id_vars)
+sw_initials_RESET <- initialSWC(sw_mean_new, sowingDates, id_vars)
 
 # # SW_INITALS FROM 1 JULY 2011
 # sw_mean_new[Clock.Today >= "2011-06-25"
@@ -904,17 +904,17 @@ stats_rs <- stats_rs[anchors, on = "Experiment"]
 
 abline_p +
   geom_text(data = stats_rs,
-            aes( x = x,  y = y, label = NSE_str), parse = TRUE,
+            aes( x = x,  y = y, label = NSE_str), 
             inherit.aes = FALSE) +
   geom_text(data = stats_rs,
             aes( x = x,  y = y*1.02, label = R2_str), parse = TRUE,
             inherit.aes = FALSE) +
   geom_text(data = stats_rs,
-            aes( x = x,  y = y*0.98, label = nRMSE_str), parse = TRUE,
+            aes( x = x,  y = y*0.98, label = nRMSE_str), 
             inherit.aes = FALSE) +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
-# ggsave("Figures/swc_preobs.png", width = 10, height =5, dpi = 320)
+ggsave("Figures/ch4_swc_preobs.png", width = 10, height =5, dpi = 320)
 ```
 
 
@@ -956,17 +956,17 @@ stats_rs <- stats_rs[anchors, on = "Experiment"]
 
 abline_p +
   geom_text(data = stats_rs,
-            aes( x = x,  y = y, label = NSE_str), parse = TRUE,
+            aes( x = x,  y = y, label = NSE_str), 
             inherit.aes = FALSE) +
   geom_text(data = stats_rs,
             aes( x = x,  y = y*1.3, label = R2_str), parse = TRUE,
             inherit.aes = FALSE) +
   geom_text(data = stats_rs,
-            aes( x = x,  y = y*0.7, label = nRMSE_str), parse = TRUE,
+            aes( x = x,  y = y*0.7, label = nRMSE_str), 
             inherit.aes = FALSE) +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
-ggsave("Figures/LAI_preobs.png", width = 10, height =5, dpi = 320)
+ggsave("Figures/ch4_LAI_preobs.png", width = 10, height =5, dpi = 320)
 ```
 
 
@@ -1012,13 +1012,13 @@ stats_rs <- stats_rs[anchors, on = "Experiment"]
 
 p_shoot <- abline_p +
   geom_text(data = stats_rs, 
-            aes( x = x,  y = y, label = NSE_str), parse = TRUE,
+            aes( x = x,  y = y, label = NSE_str), 
             inherit.aes = FALSE) +
   geom_text(data = stats_rs, 
             aes( x = x,  y = y + 250, label = R2_str), parse = TRUE,
             inherit.aes = FALSE) +
   geom_text(data = stats_rs, 
-            aes( x = x,  y = y - 250, label = nRMSE_str), parse = TRUE,
+            aes( x = x,  y = y - 250, label = nRMSE_str), 
             inherit.aes = FALSE) +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
@@ -1068,13 +1068,13 @@ stats_rs <- stats_rs[anchors, on = "Experiment"]
 
 p_leaf <- abline_p +
   geom_text(data = stats_rs, 
-            aes( x = x,  y = y, label = NSE_str), parse = TRUE,
+            aes( x = x,  y = y, label = NSE_str), 
             inherit.aes = FALSE) +
   geom_text(data = stats_rs, 
             aes( x = x,  y = y + 200, label = R2_str), parse = TRUE,
             inherit.aes = FALSE) +
   geom_text(data = stats_rs, 
-            aes( x = x,  y = y - 200, label = nRMSE_str), parse = TRUE,
+            aes( x = x,  y = y - 200, label = nRMSE_str), 
             inherit.aes = FALSE) +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
@@ -1122,13 +1122,13 @@ stats_rs <- stats_rs[anchors, on = "Experiment"]
 
 p_stem <- abline_p +
   geom_text(data = stats_rs, 
-            aes( x = x,  y = y, label = NSE_str), parse = TRUE,
+            aes( x = x,  y = y, label = NSE_str), 
             inherit.aes = FALSE) +
   geom_text(data = stats_rs, 
             aes( x = x,  y = y + 200, label = R2_str), parse = TRUE,
             inherit.aes = FALSE) +
   geom_text(data = stats_rs, 
-            aes( x = x,  y = y - 200, label = nRMSE_str), parse = TRUE,
+            aes( x = x,  y = y - 200, label = nRMSE_str), 
             inherit.aes = FALSE) +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
@@ -1139,7 +1139,7 @@ combine shoot component
 ```{r}
 
 p_aboveground <- plot_grid(p_shoot, p_leaf, ncol = 1)
-ggsave("Figures/aboveground_preobs.png",plot = p_aboveground,
+ggsave("Figures/ch4_aboveground_preobs.png",plot = p_aboveground,
        width = 10, height =9, dpi = 320)
 ```
 
@@ -1185,18 +1185,18 @@ stats_rs <- stats_rs[anchors, on = "Experiment"]
 
 p_height <- abline_p +
   geom_text(data = stats_rs, 
-            aes( x = x,  y = y, label = NSE_str), parse = TRUE,
+            aes( x = x,  y = y, label = NSE_str), 
             inherit.aes = FALSE) +
   geom_text(data = stats_rs, 
             aes( x = x,  y = y + 5, label = R2_str), parse = TRUE,
             inherit.aes = FALSE) +
   geom_text(data = stats_rs, 
-            aes( x = x,  y = y - 5, label = nRMSE_str), parse = TRUE,
+            aes( x = x,  y = y - 5, label = nRMSE_str), 
             inherit.aes = FALSE) +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
 p_height
-ggsave("Figures/height_preobs.png",plot = p_height, width = 10, height =5, dpi = 320)
+ggsave("Figures/ch4_height_preobs.png",plot = p_height, width = 10, height =5, dpi = 320)
 ```
 
 #### Phenology
@@ -1251,18 +1251,18 @@ stats_rs <- stats_rs[anchors, on = "Experiment"]
 
 p_MS.node.No <- abline_p +
   geom_text(data = stats_rs, 
-            aes( x = x,  y = y, label = NSE_str), parse = TRUE,
+            aes( x = x,  y = y, label = NSE_str), 
             inherit.aes = FALSE) +
   geom_text(data = stats_rs, 
             aes( x = x,  y = y + 1, label = R2_str), parse = TRUE,
             inherit.aes = FALSE) +
   geom_text(data = stats_rs, 
-            aes( x = x,  y = y - 1, label = nRMSE_str), parse = TRUE,
+            aes( x = x,  y = y - 1, label = nRMSE_str), 
             inherit.aes = FALSE) +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
 p_MS.node.No
-ggsave("Figures/MSNN_preobs.png",plot = p_MS.node.No, width = 10, height =5, dpi = 320)
+ggsave("Figures/ch4_MSNN_preobs.png",plot = p_MS.node.No, width = 10, height =5, dpi = 320)
 plotly::ggplotly(p_MS.node.No)
 ```
 ```{r}
@@ -1306,13 +1306,13 @@ stats_rs <- stats_rs[anchors, on = "Experiment"]
 
 p_GrowthStage <- abline_p +
   geom_text(data = stats_rs, 
-            aes( x = x,  y = y, label = NSE_str), parse = TRUE,
+            aes( x = x,  y = y, label = NSE_str), 
             inherit.aes = FALSE) +
   geom_text(data = stats_rs, 
             aes( x = x,  y = y + 0.25, label = R2_str), parse = TRUE,
             inherit.aes = FALSE) +
   geom_text(data = stats_rs, 
-            aes( x = x,  y = y - 0.25, label = nRMSE_str), parse = TRUE,
+            aes( x = x,  y = y - 0.25, label = nRMSE_str), 
             inherit.aes = FALSE) +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
@@ -1333,10 +1333,8 @@ p_MS.node.No$data[!is.na(Observed.MS.node.No) & Experiment == "AshleyDene" & Obs
 #### Need the rainfall
 boardfield rainfall
 ```{r}
-met_AD <- read_met(here::here("01Data/ClimateAndObserved/AshleyDene.met"),
-                   skip_unit = 10, skip_meta = 8)
-met_i12 <- read_met(here::here("01Data/ClimateAndObserved/lincoln.met"),
-                    skip_unit =  7, skip_meta = 6, site = "Iversen12")
+met_AD <- read_met(here::here("01Data/ClimateAndObserved/AshleyDene.met"))
+met_i12 <- read_met(here::here("01Data/ClimateAndObserved/lincoln.met"))
 met <- rbindlist(list(met_AD,met_i12))
 
 
