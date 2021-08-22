@@ -71,6 +71,25 @@ when doing the optimisation with junqi.
 ```{r}
 meta <- readRDS("c:/Users/cflfcl/OneDrive - Lincoln University/transfer/timecost.rds") %>% 
   as.data.table()
+
+# overall time cost
+meta[name %like% "AshleyDene_SD|Iversen12_SD" & 
+       (seconds != 0) &
+       (!is.na(seconds)) &
+       (!is.na(time)), .(name, time, seconds),
+     ][, trts := gsub("(\\w.+_)(\\w.+_SD\\d{1,2})", "\\2", x =  name)
+       ][, endtime := time + seconds
+       ][, duration := difftime(endtime, time, units = "hours")
+         ][, sum(duration), by = .(trts)
+           ][,hours:=as.numeric(gsub("\\shours","", as.character(V1)))
+             ][V1>1
+               ][, group := rep(1:2, each = 10)
+         ][, list(mean = mean(hours),
+                sd = sd(hours)), 
+         by = .(group)]
+
+
+# optimisation time expense 
 timecost <- meta[name %like% "^opt" & !is.na(data), .(name, time, seconds)
      ][, endtime := time + seconds
        ][, duration := endtime - time
@@ -86,7 +105,7 @@ timecost[,.(Experiment, SowingDate, Hours)] %>%
   scale_fill_manual(values = c("red", "black"))+
   scale_x_discrete(expand = c(0,0)) +
   scale_y_continuous(expand = c(0, 0), limits = c(0,175))
-ggsave("Figures/timecost.png", width = 10, height =6, dpi = 320)
+ggsave("Figures/ch5_timecost.png", width = 10, height =6, dpi = 320)
 
 timecost[, group := rep(1:2, each = 10)
          ][, list(mean = mean(Hours),
@@ -94,7 +113,6 @@ timecost[, group := rep(1:2, each = 10)
          by = .(group)]
 
 ```
-
 
 ## LAI interplotation
 
@@ -131,7 +149,7 @@ DT[, LAI:=ifelse(LAI == 0, NA, LAI)]%>%
   facet_grid(SowingDate ~ Experiment) +
   theme_water()
 
-ggsave("Figures/LAIinterp.png", width = 10, height = 14, dpi = 320)
+ggsave("Figures/ch5_LAIinterp.png", width = 10, height = 14, dpi = 320)
 
 ```
 
@@ -381,6 +399,50 @@ names(Observe) <-   gsub("[[:punct:]]", ".", colnames(Observe))
 
 DBI::dbDisconnect(conn)
 ```
+
+
+```{r}
+# Define variable components
+variable <- "SWC"
+var_unit <- "mm"
+var_unit_lab <- paste0("(", var_unit, ")")
+# Assemble the variable names 
+pre_col <- paste0("Predicted.", variable, var_unit)
+obs_col <- paste0("Observed.", variable, var_unit)
+pre_color <- "black"
+obs_color <- "#FF0000"
+pre_label <- paste("Predicted", variable, var_unit_lab)
+obs_label <- paste("Observed", variable, var_unit_lab)
+# Assemble necessary variable names 
+var_subset <- c("Experiment","SowingDate", "Clock.Today",
+                pre_col, obs_col)
+SWCprofile <- unique(pre_obs[Clock.Today >= magicDate, 
+                             ..var_subset])
+# Fix the factor order 
+SWCprofile <- fix_SDorder(SWCprofile)
+
+timestep_colors <- c(pre_color,obs_color)
+names(timestep_colors) <- c(pre_col, obs_col)
+timestep_labels <- c(pre_label, obs_label)
+names(timestep_labels) <- c(pre_col, obs_col)
+timestep_p <- SWCprofile %>% 
+  ggplot(.,aes(Clock.Today )) +
+  geom_point(aes(y = .data[[obs_col]], color = {{obs_col}}),
+             size = 3)+
+  geom_line(aes(y = .data[[pre_col]], color = {{pre_col}}), show.legend = TRUE,
+            size = 1) +
+  facet_wrap( ~  SowingDate + Experiment,
+              strip.position = "right", nrow = 10, scales = "free_y") +
+  theme_water()  +
+  theme(legend.position = "none", legend.key.size = unit(1, "cm")) +
+  labs(y = paste0(gsub("Predicted\\.|mm", "", pre_col), " (mm)"), 
+       x = "Date") +
+  scale_colour_manual(name = "col", values = timestep_colors, labels = timestep_labels)
+timestep_p
+#https://stackoverflow.com/questions/49740215/ggplot-facet-grid-label-cut-off
+
+```
+
 ## Best performer 
 
 ```{r}
@@ -432,9 +494,41 @@ DT%>%
   facet_wrap(~ variable, scales = "free_y") +
   theme_water()+
   theme(axis.text.x = element_text(angle = 90), text = element_text(size = 16))
-ggsave("Figures/bestfits.png", width = 10, height =6, dpi = 320)
+ggsave("Figures/ch5_bestfits.png", width = 10, height =6, dpi = 320)
+
+DT[variable %like% "*U|*Cona"]
+
 
 ```
+#### what is the kl in each layer looks like
+
+```{r}
+
+kl_klr <- unique(DT[ variable %like% "KL|KLR", .(SowingDate,variable, value)
+                     ]) %>% 
+  dcast(SowingDate ~ variable)
+# Duplicated to 22 layers 
+
+kls <- kl_klr[rep(1:.N, 22)
+              ][, layers := 1:.N, by = .(SowingDate)
+                ][order(SowingDate)
+                  ][, depth := ifelse(layers == 1, 20, 
+                                      (layers + 1)*10)
+                    ][, actualKL := ifelse(layers == 1, `KL[1:22] `,
+                                           `KL[1:22] ` * exp(-`KLR `*(depth - 15)))][]
+kls[SowingDate %like% "AD" & actualKL < 0.2]$actualKL %>% 
+  range()
+kls[SowingDate %like% "AD" & actualKL < 0.2]$SowingDate %>% unique()
+kls %>% 
+  ggplot(aes(actualKL, layers,  group = SowingDate)) +
+  geom_point()+
+  geom_line()+
+  scale_y_reverse() +
+  facet_wrap(~SowingDate) +
+  theme_water() 
+```
+
+
 ```{r}
 sd1to5 <- c(5.425 , 5.022 , 5.125 , 4.45 , 4.459)
 mean(sd1to5)
@@ -522,7 +616,7 @@ rainfall recharged the SWC from 588 to 619
 #### Soil moisture deficit wording
 
 ```{r}
-SWCmm <- SW_mean_new[ , SWCmm := rowSums(.SD, na.rm = TRUE), 
+SWCmm <- sw_mean_new[ , SWCmm := rowSums(.SD, na.rm = TRUE), 
                       by = .(Experiment,SowingDate, Clock.Today, DAS), 
                       .SDcols = grep("SWmm.\\d.+mean", 
                                      colnames(sw_mean_new), value = TRUE)
@@ -585,7 +679,7 @@ abline_p +
             inherit.aes = FALSE) +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
-ggsave("Figures/swc_preobs.png", width = 10, height =5, dpi = 320)
+ggsave("Figures/ch5_swc_preobs.png", width = 10, height =5, dpi = 320)
 ```
 ```{r}
 changes_nRMSEAD <- (0.395 - 0.337)/0.395
@@ -601,8 +695,8 @@ changes_nRMSEI12 <- (0.548 - 0.686) / 0.548
 
 
 # Aboveground biomass
-(1.909 - 1.124)/1.909
-(0.664 - 0.793)/0.664
+(132 - 98)/132
+(39 - 46)/39
 
 (0.733 - 0.584)/ 0.733
 (1.216 - 0.953)/1.216
@@ -612,7 +706,7 @@ changes_nRMSEI12 <- (0.548 - 0.686) / 0.548
 (0.46 - 0.66)/ 0.46
 (-0.48 - 0.06)/ -0.48
 0.48*1.125
-
+(39-46)/46
 
 # pheno
 (0.648 - 0.564) / 0.648
@@ -650,7 +744,7 @@ DT_sub %>%
   labs(y = paste0(gsub("Predicted\\.|mm", "", pre_col), " (mm)"), 
        x = "Date") +
   scale_colour_manual(name = "col", values = timestep_colors, labels = timestep_labels)
-ggsave("Figures/LAI_timecourse.png", width = 7, height =10, dpi = 320)
+ggsave("Figures/ch5_LAI_timecourse.png", width = 7, height =10, dpi = 320)
 
 base_p <- DT_sub %>%
   plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
@@ -685,7 +779,7 @@ DT_sub[SowingDate == "SD8" & Experiment == "Iversen12"] %>%
   ggplot(aes(Clock.Today, Observed.LAI)) +
   geom_point()+
   geom_line(aes( y = Predicted.LAI))
-ggsave("Figures/LAI_preobs.png",plot = p, width = 10, height =5, dpi = 320)
+ggsave("Figures/ch5_LAI_preobs.png",plot = p, width = 10, height =5, dpi = 320)
 ```
 
 
@@ -794,7 +888,7 @@ DT_sub%>%
   labs(y = paste0(gsub("Predicted\\.|mm", "", pre_col), " (mm)"), 
        x = "Date") +
   scale_colour_manual(name = "col", values = timestep_colors, labels = timestep_labels)
-ggsave("Figures/LeafWt_timecourse.png", width = 7, height =10, dpi = 320)
+ggsave("Figures/ch5_LeafWt_timecourse.png", width = 7, height =10, dpi = 320)
 
 p_leaf <- abline_p +
   geom_text(data = stats_rs, 
@@ -814,7 +908,7 @@ combine shoot component
 ```{r}
 
 p_aboveground <- plot_grid(p_shoot, p_leaf, ncol = 1)
-ggsave("Figures/aboveground_preobs.png",plot = p_aboveground,
+ggsave("Figures/ch5_aboveground_preobs.png",plot = p_aboveground,
        width = 10, height =9, dpi = 320)
 ```
 
@@ -871,7 +965,7 @@ p_height <- abline_p +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
 p_height
-ggsave("Figures/height_preobs.png",plot = p_height, width = 10, height =5, dpi = 320)
+ggsave("Figures/ch5_height_preobs.png",plot = p_height, width = 10, height =5, dpi = 320)
 ```
 
 #### Phenology
@@ -938,7 +1032,7 @@ p_MS.node.No <- abline_p +
   labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
 p_MS.node.No
-ggsave("Figures/MSNN_preobs.png",plot = p_MS.node.No, width = 10, height =5, dpi = 320)
+ggsave("Figures/ch5_MSNN_preobs.png",plot = p_MS.node.No, width = 10, height =5, dpi = 320)
 plotly::ggplotly(p_MS.node.No)
 ```
 ```{r}
@@ -998,9 +1092,9 @@ combine phenology
 
 ```{r}
 p_phenology <- plot_grid(p_MS.node.No, p_GrowthStage, ncol = 1)
-#ggsave("Figures/height_preobs.png",plot = p_height, 
+#ggsave("Figures/ch5_height_preobs.png",plot = p_height, 
        # width = 10, height = 5, dpi = 320)
-ggsave("Figures/phenology_preobs.png",plot = p_MS.node.No,
+ggsave("Figures/ch5_phenology_preobs.png",plot = p_MS.node.No,
        width = 10, height = 5, dpi = 320)
 
 plotly::ggplotly(p_MS.node.No)
@@ -1023,7 +1117,7 @@ met[Clock.Today >= magicDate] %>%
   theme_water() +
   scale_y_continuous(expand = c(0,0), limits = c(0,70)) +
   labs(x = "Date", y = "Rainfall (mm)")
-#ggsave("Figures/rainfall_daily.png", 
+#ggsave("Figures/ch5_rainfall_daily.png", 
        # width = 10, height = 5, dpi = 320)
 
 met_monthly <- met[Clock.Today >= magicDate
@@ -1043,7 +1137,7 @@ met_monthly %>%
   theme_water() +
   scale_y_continuous(expand = c(0,0), limits = c(0,70)) +
   labs(x = "Date", y = "Rainfall (mm)")
-#ggsave("Figures/rainfall_monthly.png", 
+#ggsave("Figures/ch5_rainfall_monthly.png", 
        # width = 10, height = 5, dpi = 320)
 met_monthly[, sum(rain), by = .(Experiment)]
 ```
@@ -1057,7 +1151,7 @@ met[Clock.Today >= magicDate] %>%
   scale_y_continuous(expand = c(0,0), limits = c(0,25)) +
   labs(x = "Date", y = "Temperature (\u00B0C)")+
   scale_color_manual(name = "Site", values = c("blue", "red"))
-ggsave("Figures/temp_daily.png",
+ggsave("Figures/ch5_temp_daily.png",
 width = 10, height = 5, dpi = 320)
 met[Clock.Today >= "2011-07-01" ] %>% 
   ggplot(aes(Clock.Today, AccumTT)) +
@@ -1066,7 +1160,7 @@ met[Clock.Today >= "2011-07-01" ] %>%
   # scale_y_continuous(expand = c(0,0), limits = c(0,25)) +
   labs(x = "Date", y = "Accumulative thermal time (\u00B0Cd)") +
   facet_wrap( ~ Experiment)
-ggsave("Figures/cum_TT.png", 
+ggsave("Figures/ch5_cum_TT.png", 
        width = 10, height = 5, dpi = 320)
 
 met[Clock.Today >= "2011-07-01" ]$AccumTT %>% max()
@@ -1082,11 +1176,16 @@ met[Clock.Today >= "2011-07-01"
   theme_water() +
   # scale_y_continuous(expand = c(0,0), limits = c(0,25)) +
   labs(x = "Date", y = expression("Accumlative solar radiation (MJ "~ m^-2 ~ d^-1~")"))
-ggsave("Figures/cum_radn.png", 
+ggsave("Figures/ch5_cum_radn.png", 
        width = 10, height = 5, dpi = 320)
 met[Clock.Today >= "2011-07-01" ]$AccumRadn %>% max()
+
 ```
 
+https://cliflo.niwa.co.nz/pls/niwp/wh.do_help?id=ls_rad
+$MJ/m^2$ to $W/m^2$
+
+$MJ/m^2/day \times 11.574$ 
 #### Supply and demand
 
 ```{r}
@@ -1110,7 +1209,7 @@ p_fw <-  Fw %>%
 
 # plotly::ggplotly(p_fw)
 
-ggsave("Figures/fw.png",
+ggsave("Figures/ch5_fw.png",
        width = 10, height = 10, dpi = 320)
 ```
 
@@ -1180,7 +1279,7 @@ met[Clock.Today >= "2011-07-01" ] %>%
   # scale_y_continuous(expand = c(0,0), limits = c(0,25)) +
   labs(x = "Date", y = "Accumulative thermal time (\u00B0Cd)") +
   facet_wrap( ~ Experiment)
-ggsave("Figures/cum_radn.png", 
+ggsave("Figures/ch5_cum_radn.png", 
        width = 10, height = 5, dpi = 320)
 
 ```
@@ -1195,7 +1294,7 @@ met[Clock.Today >= magicDate] %>%
   theme_water() +
   scale_y_continuous(expand = c(0,0), limits = c(0,70)) +
   labs(x = "Date", y = "Rainfall (mm)")
-#ggsave("Figures/rainfall_daily.png", 
+#ggsave("Figures/ch5_rainfall_daily.png", 
        # width = 10, height = 5, dpi = 320)
 
 met_monthly <- met[Clock.Today >= magicDate
@@ -1215,7 +1314,7 @@ met_monthly %>%
   theme_water() +
   scale_y_continuous(expand = c(0,0), limits = c(0,70)) +
   labs(x = "Date", y = "Rainfall (mm)")
-ggsave("Figures/rainfall_monthly.png",
+ggsave("Figures/ch5_rainfall_monthly.png",
        width = 10, height = 5, dpi = 320)
 met_monthly[, sum(rain), by = .(Experiment)]
 ```
