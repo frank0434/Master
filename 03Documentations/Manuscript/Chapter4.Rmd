@@ -131,11 +131,12 @@ p_DUL_LL
 sowingDates <-  read_Sims(path_richard, source =  "sowingDate")
 # mimic the paper logic, force starting date to "2011-07-01"
 # The nearest measurements were "2011-06-25" for sd1 to sd5
+sowingDates <- sowingDates[SowingDate%in% paste0("SD", 1:5),
+                           Clock.Today := as.Date(magicDate)]
 sw_initials <- initialSWC(sw_mean_new, sowingDates, id_vars)
 
 
-sowingDates[SowingDate%in% paste0("SD", 1:5), 
-            Clock.Today := as.Date(magicDate)]
+
 data_SW <- read_Sims(path = path_richard)
 id_vars <- readRDS(here("_targets/objects/id_vars"))
 value_vars <- readRDS(here("_targets/objects/value_vars"))
@@ -150,7 +151,7 @@ sw_initials_RESET <- initialSWC(sw_mean_new, sowingDates, id_vars)
 # # Both sites had measurements on "2011-06-25"
 # sw_initials <- initialSWC(SW_mean_new, sowingDates = "2011-06-25", id_vars)
 # sw_initials
-# sw_initials <- readRDS(here::here("_targets/objects/SW_initials"))
+# sw_initials <- readRDS(here::here("_targets/objects/SW_initials_reset_Iversen12_SD1"))
 sw_initials <- fix_SDorder(sw_initials)
 
 ```
@@ -200,23 +201,30 @@ Automation login?
 if the dul is smaller than sw, reset it back to DUL.
 
 ```{r}
+# Sometime the DUL is smaller than SW, this is gonna be a problem in apsimx 
+# the extra initial soil water will lost quickly, which is not exact right.
+# Fix this by adjusting the DUL to its 95%
 keySoilParams[,':=' (i.SW.DUL = ifelse(i.SW.DUL < SW, SW, i.SW.DUL))]
 missDULlayers <- keySoilParams[, .I[which(i.SW.DUL < SW)]]
 all.equal(keySoilParams[missDULlayers], 
           keySoilParams[, .SD[which(i.SW.DUL < SW)]])
 keySoilParams[missDULlayers, ':=' (i.SW.DUL = i.SW.DUL/0.95,
                                    i.SW.LL = i.SW.LL/0.95)]
+# Fiddle with labelling 
+Layer = ifelse(1:22 == 1, 20, (1:22 + 1) * 10)
 
+# Too crowed if label all, chose the odd position to label
+pos <- 1:22 %% 3 == 1
 
-keySoilParams  %>% 
+keySoilParams %>% 
   ggplot(aes(x = Depth))+
   geom_col(aes(y = SW, fill = "SWC"), position = "dodge", width = 1)+
-  geom_line(aes(y = i.SW.DUL, color = "DUL")) +
+  geom_line(aes(y = i.SW.DUL, color = "DUL"), size = 1) +
   geom_point(aes(y = i.SW.DUL, color = "DUL"))+
-  geom_line(aes(y = i.SW.LL, color = "LL"))+
+  geom_line(aes(y = i.SW.LL, color = "LL"), size = 1)+
   geom_point(aes(y = i.SW.LL, color = "LL")) +
   # geom_line(aes(y = SW))+
-  scale_x_reverse() +
+  scale_x_reverse(breaks = (1:22)[pos], labels = Layer[pos], name = "Depth (cm)") +
   scale_y_continuous(expand = c(0, 0), 
                      name = expression("Volumetric water content"~ (mm^3 ~ mm^{-3}))) +
   coord_flip() +
@@ -228,6 +236,7 @@ keySoilParams  %>%
   scale_fill_manual(name = "", values = "#74ccf4") +
   scale_colour_manual(name = "", values = c("#0000FF", "#FF0000"))
 
+ggsave("Figures/ch4_initialSW.png", width = 10, height =14, dpi = 320)
 
 write.xlsx(keySoilParams, here::here("01Data/keySoilParamsFixIssue34.xlsx"))
 
@@ -541,33 +550,20 @@ var_subset <- c("Experiment","SowingDate", "Clock.Today",
 SWCprofile <- unique(pre_obs[Clock.Today >= magicDate, 
                              ..var_subset])
 # Fix the factor order 
-SWCprofile <- fix_SDorder(SWCprofile)
+# SWCprofile <- fix_SDorder(SWCprofile)
 
 timestep_colors <- c(pre_color,obs_color)
 names(timestep_colors) <- c(pre_col, obs_col)
 timestep_labels <- c(pre_label, obs_label)
 names(timestep_labels) <- c(pre_col, obs_col)
-timestep_p1 <- SWCprofile[Experiment == "AshleyDene"] %>% 
-  ggplot(.,aes(Clock.Today )) +
-  geom_point(aes(y = .data[[obs_col]], color = {{obs_col}}),
-             size = 3)+
-  geom_line(aes(y = .data[[pre_col]], color = {{pre_col}}), show.legend = TRUE,
-            size = 1) +
-  facet_wrap( ~  SowingDate + Experiment,
-              strip.position = "right", nrow = 10) +
-  theme_water()  +
-  theme(legend.position = "none", legend.key.size = unit(1, "cm")) +
-  labs(y = paste0(gsub("Predicted\\.|mm", "", pre_col), " (mm)"), 
-       x = "Date") +
-  scale_colour_manual(name = "col", values = timestep_colors, labels = timestep_labels)
-timestep_p
+# timestep_p
 #https://stackoverflow.com/questions/49740215/ggplot-facet-grid-label-cut-off
 
 timestep_p1 <- plot_timecourse(SWCprofile[Experiment == "AshleyDene"], 
-                               obs_col, pre_col, timestep_labels)
+                               variable, var_unit, var_unit_lab)
 
 timestep_p2 <- plot_timecourse(SWCprofile[Experiment == "Iversen12"], 
-                               obs_col, pre_col, timestep_labels)
+                               variable, var_unit, var_unit_lab)
 ```
 Add DUL to time stamp graph
 ```{r}
@@ -580,15 +576,15 @@ p2 <- timestep_p2 +
   geom_hline(data = DULmm[Experiment == "Iversen12"], aes(yintercept = DULmm), linetype = 2, size = 0.5, 
              alpha = 0.6)
 p_water <- plot_grid(p1, p2 +
-                       theme(axis.text.y = element_blank(),
-                             axis.title.y = element_blank(),
-                             axis.ticks.y = element_blank()), 
+                       theme(
+                             axis.title.y = element_blank()
+                             ), align = "hv",
                      ncol = 2)
 
 ggsave("Figures/ch4_sw_timestamp.png",plot = p_water, width = 10, height =14, dpi = 320)
 ```
 ```{r}
-p$data[Experiment == "Iversen12" & SowingDate == "SD6"] %>% 
+p2$data[SowingDate == "SD6"] %>% 
   qplot(Clock.Today, Predicted.SWCmm, data = .) %>% 
   plotly::ggplotly()
 ```
