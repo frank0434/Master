@@ -519,7 +519,7 @@ plot_timecourse <- function(DT, var, unit, label){
     geom_line(aes(y = .data[[pre_col]], color = {{pre_col}}), 
               show.legend = TRUE,size = 1) +
     facet_wrap( ~  SowingDate + Experiment,
-                strip.position = "right", nrow = 10, scales = "free_y") +
+                strip.position = "right", nrow = 10) +
     theme_water()  +
     theme(legend.position = "none", legend.key.size = unit(1, "cm")) +
     labs(y = paste(gsub("Predicted\\.|mm", "", pre_col), label), 
