@@ -547,14 +547,14 @@ timestep_colors <- c(pre_color,obs_color)
 names(timestep_colors) <- c(pre_col, obs_col)
 timestep_labels <- c(pre_label, obs_label)
 names(timestep_labels) <- c(pre_col, obs_col)
-timestep_p <- SWCprofile %>% 
+timestep_p1 <- SWCprofile[Experiment == "AshleyDene"] %>% 
   ggplot(.,aes(Clock.Today )) +
   geom_point(aes(y = .data[[obs_col]], color = {{obs_col}}),
              size = 3)+
   geom_line(aes(y = .data[[pre_col]], color = {{pre_col}}), show.legend = TRUE,
             size = 1) +
   facet_wrap( ~  SowingDate + Experiment,
-              strip.position = "right", nrow = 10, scales = "free_y") +
+              strip.position = "right", nrow = 10) +
   theme_water()  +
   theme(legend.position = "none", legend.key.size = unit(1, "cm")) +
   labs(y = paste0(gsub("Predicted\\.|mm", "", pre_col), " (mm)"), 
@@ -563,17 +563,29 @@ timestep_p <- SWCprofile %>%
 timestep_p
 #https://stackoverflow.com/questions/49740215/ggplot-facet-grid-label-cut-off
 
+timestep_p1 <- plot_timecourse(SWCprofile[Experiment == "AshleyDene"], 
+                               obs_col, pre_col, timestep_labels)
 
+timestep_p2 <- plot_timecourse(SWCprofile[Experiment == "Iversen12"], 
+                               obs_col, pre_col, timestep_labels)
 ```
 Add DUL to time stamp graph
 ```{r}
 DULmm <- unique(Report[!is.na(DULmm), .(DULmm, Experiment, SowingDate)])
 DULmm <- fix_SDorder(DULmm)
-p <- timestep_p +
-  geom_hline(data = DULmm, aes(yintercept = DULmm), linetype = 2, size = 0.5, 
-             alpha = 0.6, inherits =FALSE)
-p
-#ggsa("Figures/sw_timestamp.png",plot = p, width = 10, height =14, dpi = 320)
+p1 <- timestep_p1 +
+  geom_hline(data = DULmm[Experiment != "Iversen12"], aes(yintercept = DULmm), linetype = 2, size = 0.5, 
+             alpha = 0.6)
+p2 <- timestep_p2 +
+  geom_hline(data = DULmm[Experiment == "Iversen12"], aes(yintercept = DULmm), linetype = 2, size = 0.5, 
+             alpha = 0.6)
+p_water <- plot_grid(p1, p2 +
+                       theme(axis.text.y = element_blank(),
+                             axis.title.y = element_blank(),
+                             axis.ticks.y = element_blank()), 
+                     ncol = 2)
+
+ggsave("Figures/ch4_sw_timestamp.png",plot = p_water, width = 10, height =14, dpi = 320)
 ```
 ```{r}
 p$data[Experiment == "Iversen12" & SowingDate == "SD6"] %>% 
@@ -895,7 +907,8 @@ abline_p <- base_p+
   geom_abline()+
   geom_smooth(method =  "lm", se = FALSE)
 
-stats_rs <- key_stats(DT_sub, key =c("Experiment"), pre_col, obs_col)
+stats_rs <- key_stats(DT_sub, key =c("Experiment"), pre_col, obs_col, 
+                      nmethod = "mean")
 ## Has to customise
 anchors <- DT_sub[, .(x = min(eval(parse(text = obs_col)), na.rm = TRUE) * 1.1,
                       y = max(eval(parse(text = pre_col)), na.rm = TRUE)* 0.9), 
@@ -949,7 +962,8 @@ abline_p <- base_p+
   geom_smooth(method =  "lm", se = FALSE)
 
 stats_rs <- key_stats(DT_sub, key = c("Experiment"),
-                       pre_col, obs_col)
+                       pre_col, obs_col, 
+                      nmethod = "mean")
 
 anchors <- data.table(Experiment = c("AshleyDene", "Iversen12"), x = 6, y = 1)
 stats_rs <- stats_rs[anchors, on = "Experiment"]
