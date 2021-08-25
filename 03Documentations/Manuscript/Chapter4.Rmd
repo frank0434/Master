@@ -369,8 +369,9 @@ EFV %>%
   melt.data.table(measure.vars = c("AshleyDene", "Iversen12"),
                   variable.name = "Site",
                   value.name = "EFV",
-                  variable.factor = FALSE) %>% 
-  kable()
+                  variable.factor = FALSE) 
+# %>% 
+#   kable()
 # %>%
 #   kbl(col.names = c("Site", "Root Front Velocity (SE) (mm/d)")) %>%
 #   kable_classic()
@@ -616,16 +617,29 @@ SMD[DULmm[, SowingDate:=as.character(SowingDate)],
 variable <- "LAI"
 var_unit <- ""
 var_unit_lab <- ""
+
 p_LAI <- plot_timecourse(pre_obs[Clock.Today >= magicDate], variable, var_unit, var_unit_lab)
-# ggsave("Figures/LAI_timestamp.png",plot = p_LAI, width = 10, height =14, dpi = 320)
+
+p_LAI_1 <- plot_timecourse(pre_obs[Clock.Today >= magicDate & 
+                                     (Experiment != "Iversen12")], variable, var_unit, var_unit_lab)
+p_LAI_2 <- plot_timecourse(pre_obs[Clock.Today >= magicDate & 
+                                     (Experiment == "Iversen12")], variable, var_unit, var_unit_lab)
+p <- plot_grid(p_LAI_1, p_LAI_2 +
+                       theme(
+                             axis.title.y = element_blank()
+                             ), align = "hv",
+                     ncol = 2)
+
+ggsave("Figures/ch4_LAI_timestamp.png",plot = p, width = 10, height =14, dpi = 320)
 
 ```
 need some numbers to states
 ```{r}
+
 DT_LAI <- merge(unique(p_LAI$data), DefoliationMethod[Clock.Today >= magicDate], all.x = TRUE,
                     by = c("Experiment", "SowingDate", "Clock.Today"))
 
-p_LAI$data[DefoliationMethod[Clock.Today >= magicDate],
+pre_obs[DefoliationMethod[Clock.Today >= magicDate],
            on = c("Experiment", "SowingDate", "Clock.Today")]
 setnames(DT_LAI, "Clock.Today", "Date")
 DT_LAI <- group_in_season(DT_LAI)
@@ -658,8 +672,20 @@ var_unit <- "Wt"
 var_unit_lab <- paste0("(kg/ha)")
 
 
-p_shootwt <- plot_timecourse(pre_obs, variable, var_unit, var_unit_lab)
-#ggsave("Figures/shoot_timestamp.png",plot = p_shootwt, width = 10, height =14, dpi = 320)
+p_shootwt <- plot_timecourse(pre_obs[Clock.Today >= magicDate], variable, var_unit, var_unit_lab)
+
+# Not worth to glue 
+# p_1 <- plot_timecourse(pre_obs[Clock.Today >= magicDate & 
+#                                      (Experiment != "Iversen12")], variable, var_unit, var_unit_lab)
+# p_2 <- plot_timecourse(pre_obs[Clock.Today >= magicDate & 
+#                                      (Experiment == "Iversen12")], variable, var_unit, var_unit_lab)
+# p <- plot_grid(p_1, p_2 +
+#                  theme(
+#                    axis.title.y = element_blank()
+#                    ), align = "hv",
+#                ncol = 2)
+
+ggsave("Figures/ch4_shoot_timestamp.png",plot = p_shootwt, width = 10, height =14, dpi = 320)
 DT <- merge(unique(p_shootwt$data), DefoliationMethod[Clock.Today >= magicDate],
             all.x = TRUE,
             by = c("Experiment", "SowingDate", "Clock.Today"))
@@ -697,7 +723,16 @@ var_unit_lab <- paste0("(kg/ha)")
 
 
 p_leafwt <- plot_timecourse(pre_obs, variable, var_unit, var_unit_lab)
-#ggsave("Figures/leaf_timestamp.png",plot = p_leafwt, width = 10, height =14, dpi = 320)
+p_1 <- plot_timecourse(pre_obs[Clock.Today >= magicDate &
+                                     (Experiment != "Iversen12")], variable, var_unit, var_unit_lab)
+p_2 <- plot_timecourse(pre_obs[Clock.Today >= magicDate &
+                                     (Experiment == "Iversen12")], variable, var_unit, var_unit_lab)
+p <- plot_grid(p_1, p_2 +
+                 theme(
+                   axis.title.y = element_blank()
+                   ), align = "hv",
+               ncol = 2)
+ggsave("Figures/ch4_leaf_timestamp.png",plot = p, width = 10, height =14, dpi = 320)
 DT <- merge(unique(p_leafwt$data), DefoliationMethod[Clock.Today >= magicDate],
             all.x = TRUE,
             by = c("Experiment", "SowingDate", "Clock.Today"))
@@ -786,7 +821,7 @@ obs_col <- paste0("Observed.", var, unit)
   timestep_labels <- c(pre_label, obs_label)
   names(timestep_labels) <- c(pre_col, obs_col)
   # Graphing
-p_height <- timestep_p <- DT_sub %>% 
+p_height <- DT_sub %>% 
     ggplot(.,aes(Clock.Today )) +
     geom_point(aes(y = .data[[obs_col]], color = {{obs_col}}),
                size = 3)+
@@ -801,7 +836,7 @@ p_height <- timestep_p <- DT_sub %>%
     scale_colour_manual(name = "col", values = timestep_colors, labels = timestep_labels)
   
 
-# ggsave("Figures/height_timestamp.png",plot = p_height, width = 10, height = 7, dpi = 320)
+ggsave("Figures/ch4_height_timestamp.png",plot = p_height, width = 10, height = 7, dpi = 320)
 obs_height <- Observe[Clock.Today >= magicDate &
                       (Name %like% "AshleyDeneSow"| Name %like% "Iversen12Sow"),
                     .(Experiment, SowingDate, Clock.Today,Height)] 
@@ -858,7 +893,7 @@ var_unit_lab <- "Main Stem Node Number"
 p_node <- plot_timecourse(pre_obs, variable, var_unit, var_unit_lab) +
   ylab(var_unit_lab)
 # plotly::ggplotly(p_node)
-# ggsave("Figures/node_timestamp.png",plot = p_node, width = 10, height = 10, dpi = 320)
+ggsave("Figures/ch4_node_timestamp.png",plot = p_node, width = 10, height = 10, dpi = 320)
 
 variable <- "GrowthStage"
 var_unit <- ""
@@ -927,7 +962,7 @@ ggsave("Figures/ch4_swc_preobs.png", width = 10, height =5, dpi = 320)
 ```
 
 
-```{r}
+```{r LAI}
 variable <- "LAI"
 var_unit <- ""
 var_unit_lab <- ""
@@ -1440,7 +1475,7 @@ Fw <- fix_SDorder(Fw)
     labs(y = "Ratio of leaf transpiration and water demand", 
          x = "Date") +
     scale_colour_manual(name = "col", values = timestep_colors, labels = timestep_labels)
-ggsave("Figures/fw.png",
+ggsave("Figures/ch4_fw.png",
        width = 10, height = 10, dpi = 320)
 ```
 
