@@ -147,7 +147,8 @@ DT[, LAI:=ifelse(LAI == 0, NA, LAI)]%>%
   geom_point(data =  LAI_Height_SD, aes(Clock.Today, LAImod), color = "red", size = 3) +
   geom_line(size = 1)+
   facet_grid(SowingDate ~ Experiment) +
-  theme_water()
+  theme_water() +
+  scale_x_date(date_labels = "%b %Y", name = "Date") 
 
 ggsave("Figures/ch5_LAIinterp.png", width = 10, height = 14, dpi = 320)
 
