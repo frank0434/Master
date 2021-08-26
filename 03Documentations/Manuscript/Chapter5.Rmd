@@ -432,7 +432,7 @@ timestep_p <- SWCprofile %>%
   geom_line(aes(y = .data[[pre_col]], color = {{pre_col}}), show.legend = TRUE,
             size = 1) +
   facet_wrap( ~  SowingDate + Experiment,
-              strip.position = "right", nrow = 10, scales = "free_y") +
+              strip.position = "right", ncol = 2, scales = "free_y") +
   theme_water()  +
   theme(legend.position = "none", legend.key.size = unit(1, "cm")) +
   labs(y = paste0(gsub("Predicted\\.|mm", "", pre_col), " (mm)"), 
@@ -712,7 +712,7 @@ changes_nRMSEI12 <- (0.548 - 0.686) / 0.548
 (0.648 - 0.564) / 0.648
 (0.541 - 0.485)/0.541
 ```
-
+### LAI OVERTIME
 
 ```{r}
 variable <- "LAI"
@@ -738,9 +738,13 @@ DT_sub %>%
   ggplot(aes(Clock.Today, Observed.LAI))+
   geom_point(size = 3, color = "red")+
   geom_line(aes(y = Predicted.LAI),size = 1)+
-  facet_grid( SowingDate ~ Experiment )+
+  facet_grid( SowingDate ~ Experiment  ) +
+    geom_line(size = 1)+
+  facet_grid(SowingDate ~ Experiment) +
+  theme_water()
   theme_water()  +
-  theme(legend.position = "none", legend.key.size = unit(1, "cm")) +
+  theme(legend.position = "none", legend.key.size = unit(1, "cm"),
+        panel.spacing.x = unit(2, "lines")) +
   labs(y = paste0(gsub("Predicted\\.|mm", "", pre_col), " (mm)"), 
        x = "Date") +
   scale_colour_manual(name = "col", values = timestep_colors, labels = timestep_labels)
