@@ -1,0 +1,212 @@
+---
+title: "APSIM_edit_fun"
+author: "Junqi Zhu"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# Protocol
+
+- Load data from sqlite   
+- Set constants. e.g. colours and keys  
+- Set target  
+    Key outcomes:   
+    - Initial soil water content[Initial soil water]      
+    - A set of DUL[DUL AND LL]  
+    - A set of LL[DUL AND LL]  
+- Calculation and summarising  
+- Joining[Combine Soil Paras]  
+- Set up directory structure[Set directory structure]  
+- Invoke **Edit**  [Invoke Apsimx]  
+
+
+```{r setup, include=FALSE}
+ Sys.setenv(R_LIBS_USER  = "H:/Rlibs") 
+.libPaths( c("H:/Rlibs", .libPaths()))
+  
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.align = "center", 
+                      fig.width = 10, fig.height = 7, dpi = 300)
+#Constants
+outlier.colour = "#ff0000"
+
+```
+
+
+
+# Set directory structure
+
+```{r}
+
+  #path to apsimx 
+  apsimx <- "C:/ApsimX/Bin/Models.exe"
+  apsimx_flag <- "/Edit"
+  apsimx_file <- "C:/APSIM_opt/grapevine_base.apsimx"
+  apsimx_sims_temp <- "C:/APSIM_opt/temp.apsimx"
+  apsimx_sims_dir <- "C:/APSIM_opt/"
+  apsimx_config <- "C:/APSIM_opt/grapeConfig_"
+  
+par <- c(1)
+
+APSIMEditFun <- function(par)
+{
+
+  # Node Path - copied from ApsimX UI
+  RUE_JV <- ".Simulations.Replacements.Grapevine.Leaf.Photosynthesis.RUE.Juvenile.Constant.FixedValue ="
+  
+  # RUE_VE <- ".Simulations.Replacements.Grapevine.Leaf.Photosynthesis.RUE.Vegetative.Constant.FixedValue ="
+
+# Vectorise the values 
+  # for(i in SDs){
+    # Filter the right values 
+    apsimx_RUE_JV <- paste0(RUE_JV, par[1])
+    # apsimx_RUE_VE <- paste0(RUE_VE, par[2])
+                         # paste(j,collapse = ","))
+    # Open a text file
+    f <- file(paste0(apsimx_config, "RUE.txt"), "w")
+    # Write values into the file 
+    cat(
+        apsimx_RUE_JV,"\r",
+        # apsimx_RUE_VE,"\r",
+        sep = "\r", 
+        file = f, 
+        append = TRUE)
+    # Close the file and clean it from memory 
+    close(f)
+    rm(f)
+    gc()
+  
+}
+
+APSIMRun <- function()
+{
+  # Edit the base apsimx file and save it to a new name
+    ## copy file into a new dir and rename it temp 
+    system(paste("cp", apsimx_file, apsimx_sims_temp))
+    ## modify the apsimx file 
+    system(paste(apsimx, apsimx_sims_temp, apsimx_flag, 
+                 paste0(apsimx_config, "RUE.txt")))
+
+    system(paste(apsimx, apsimx_sims_temp, 
+                 "/NumberOfProcessors:8"))
+    
+}
+
+library(RSQLite)
+cost.function <- function(par)
+{
+  APSIMEditFun(par)
+  
+  APSIMRun()
+  
+  gc()
+  
+  db <- RSQLite::dbConnect(RSQLite::SQLite(),
+              paste0(apsimx_sims_dir, 'temp.db'))
+  
+  dbListTables(db)
+  #dbWriteTable(con, "mtcars", mtcars) #add a table into database
+  PredictedObserved <-   dbReadTable(db,"PredictedObserved")
+  
+  shoot.dw <- na.omit(PredictedObserved$Observed.shoot.dw - 
+                      PredictedObserved$Predicted.shoot.dw)
+  
+  cost1 <- sum(shoot.dw^2)
+  
+  RSQLite::dbDisconnect(db)
+  
+  rm(db)
+  gc()
+  
+  system(paste("rm", paste0(apsimx_sims_dir, "temp*")))
+  
+  return(cost1)
+}
+
+```
+
+
+#run the optim function
+```{r}
+
+#DEoptim
+maxIt <- 1
+n <- 1
+
+opt.res <-
+  DEoptim::DEoptim(fn=cost.function,
+                   lower = c(0.8),
+                   upper = c(1.3),
+                   control=list(NP=1, itermax=maxIt, parallelType=0,
+                                packages = c('RSQLite'),
+                                parVar = c(
+                                'apsimx',
+                                'apsimx_flag',
+                                'apsimx_file',
+                                'apsimx_sims_temp',
+                                'apsimx_sims_dir',
+                                'apsimx_config',
+                                'APSIMEditFun', 
+                                'APSIMRun' ))
+  )
+
+
+save(opt.res, file =  file.path(apsimx_sims_dir,
+                                paste0('opt.res', ".RData")))
+
+fit.par <- data.frame(estimates = opt.res$optim$bestmem, cost = opt.res$optim$bestval)
+
+ 
+#output the statistical test
+par <- fit.par$estimates
+
+write.csv(par, 'opt.par.csv', row.names = F)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+It only takes 6 seconds for the apsimx ui to run 10 simulations. 

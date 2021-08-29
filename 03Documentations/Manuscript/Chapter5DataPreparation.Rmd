@@ -1,0 +1,179 @@
+---
+title: "Chapter 5"
+output:
+  word_document:
+    reference_docx: FRC dissertation template.docx
+  html_document:
+    df_print: paged
+always_allow_html: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.align = "center", fig.width = 10, fig.height = 7, 
+                      dpi = 300)
+options(scipen = 999)
+#Constants
+outlier.colour = "#ff0000"
+source(here::here("02Scripts/R/packages.R"))
+source(here::here("02Scripts/R/functions.R"))
+
+magicDate <- "2011-06-25"
+```
+
+# Define the directories 
+
+```{r}
+#path to apsimx 
+Local <- TRUE
+#Running locally or not
+if(Local){
+  apsimx <- "C:/Data/ApsimxLatest/ApsimX/Bin/Models.exe"
+} else { 
+  library(RLinuxModules)
+  module("load apsimx")
+  module("load openlava")
+  module("load asub/2.1")
+  module ("load R")
+  
+  apsimx <- ""
+}
+#Apsimx edit flag
+apsimx_flag <- "--edit"
+
+#Directories for file management 
+## Input files
+path_BD <- here::here("01Data/BulkDensity.xlsx")
+apsimx_Basefile <- here::here("01Data/ApsimxFiles/SlurpBase.apsimx")
+apsimx_sims_temp <- gsub(basename(apsimx_file),"temp.apsimx",apsimx_file)
+path_lincoln <- here::here("01Data/ClimateAndObserved/Iversen12.met")
+path_AD <- here::here("01Data/ClimateAndObserved/AshleyDene.met")
+dir_tempalte <- here::here("01Data/ApsimxFiles/SlurpTemplateFirstPhase.txt")
+dir_tempalte2 <- here::here("01Data/ApsimxFiles/SlurpTemplateSecondPhase.txt")
+dir_met <- here::here("01Data/ClimateAndObserved")
+dir_cover <- here::here("01Data/ProcessedData/CoverData")
+dir_config <- here::here("01Data/ProcessedData/ConfigurationFiles/")
+
+## Output directory
+dir_simulations <- here::here("01Data/ProcessedData/apsimxFiles/")
+#Update the output apsimx directory
+if(dir.exists(dir_simulations)){
+  timestamp <- gsub("\\D",".",Sys.time())
+  dir_simulations <- paste0(here::here("01Data/ProcessedData/apsimxFiles"), timestamp)
+  dir.create(path = dir_simulations)
+  
+} else{
+  dir.create(dir_simulations)
+}
+
+```
+
+# Test edit 
+
+## Load objects from the pipeline
+```{r}
+BDs <- readRDS("../../_targets/objects/BDs")
+dulll <- readRDS("../../_targets/objects/DUL_LL_range_arbitrary")
+SWinitials <- readRDS("../../_targets/objects/SW_initials")
+SowingDates <- readRDS("../../_targets/objects/sowingDates")
+Sites <- readRDS("../../_targets/objects/Sites")
+template <- readRDS("../../_targets/objects/template")
+BDs <- readRDS("../../_targets/objects/BDs")
+
+template
+
+# create value list
+values <- vector("list", length = length(template))
+names(values) <- template
+values
+dulll
+BDs[, list(Data = list(.SD)), by = .(Experiment)]
+dulll[, list(Data = list(.SD)), by = .(Experiment,SowingDate)]
+SWinitials[, list(Data = list(.SD)), by = .(Experiment,SowingDate)]
+
+
+simname <- template[1]
+
+teststring <- paste0(simname, "=", "ridiculors")
+    # Open a text file
+    f <- file(paste0(dir_config, "/test.txt"), "w")
+    # Write values into the file 
+    cat(
+        teststring,"\r",
+        # apsimx_RUE_VE,"\r",
+        sep = "\r", 
+        file = f, 
+        append = TRUE)
+    # Close the file and clean it from memory 
+    close(f)
+
+    system(paste("cp", apsimx_file, apsimx_sims_temp))
+    ## modify the apsimx file 
+    system(paste(apsimx, apsimx_flag, paste0(dir_config, "/test.txt"), 
+                 apsimx_sims_temp
+                 ))
+
+    system(paste(apsimx, apsimx_sims_temp, 
+                 "/NumberOfProcessors:8"))
+```
+
+
+
+# fig 5.5
+```{r}
+
+x = seq(-5, 6.5, by = 0.1)
+y = (x - 6 )*(x + 4)*(x^2 + x + 2)
+dt <- data.table(x = x, y = y)
+# plot(x, y, type = "line" )
+label <- dt[, group:=ifelse(x < 0, 1, 2)
+            ][, .(min(y)), by = .(group)]
+
+dt %>% 
+  ggplot(aes(x, y)) +
+  geom_line(size = 0.8) +
+  theme_water() +
+  theme(axis.text = element_blank(),
+        axis.ticks = element_blank()) +
+  labs(x = "Search space",
+       y = "Evaluation function") +
+  # add labels
+  geom_point(data = dt[y %in% label$V1], aes(x, y), size = 5) + 
+  annotate("text", 
+           x = dt[y %in% label$V1]$x, 
+           y = dt[y %in% label$V1]$y - 20,label = c("local minimum","global minimum"),
+           size = 5)
+ggsave("../Manuscript/Figures/fig5.5.png", width = 5, height = 5)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

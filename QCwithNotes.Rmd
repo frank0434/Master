@@ -8,10 +8,530 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-source("R/packages.R")
-source("r/functions/functions.R")
+source("02Scripts/R/packages.R")
+source("02Scripts/R/functions.R")
 library(targets)
 ```
+
+# check opt.res 
+```{r}
+
+tar_load(starts_with("opt.res"))
+opt.res_AshleyDene_SD1
+```
+
+# QC CHECK PARAMTERS
+```{r}
+tar_load(parameters)
+parameters
+length(parameters$lower)
+parameters$uppper %>% 
+  paste(., collapse = ",")
+
+```
+
+
+# Check the optimisiation results after 24 hours 
+
+```{r}
+tar_load(starts_with("opt.res"))
+# load("C:/Data/Master/01Data/ProcessedData/apsimxFiles/2021-05-16opt.res.RData")
+View(opt.res)
+# plot(opt.res, plot.type = "bestmemit")
+# plot(opt.res, plot.type = "storepop")
+parameters
+
+bestmemit <- as.data.table(opt.res_AshleyDene_SD1$member$bestmemit, keep.rownames = TRUE) %>% 
+  melt.data.table(id.vars = "rn",variable.factor = FALSE)
+storepop <- rbindlist(lapply(opt.res_AshleyDene_SD1$member$storepop, as.data.table, keep.rownames = TRUE), 
+                      idcol = "itr") %>% 
+  melt.data.table(id.vars = c("itr","rn"),variable.factor = FALSE)
+parnms <- parameters[,.(parameter)
+                     ][, variable := paste0("par", 1:.N)]
+storepop <- storepop[parnms, on = "variable"]
+
+base_p <- bestmemit[parnms, on = "variable"
+                    ][, rn := as.integer(rn)] %>% 
+  ggplot(aes(rn, value))+
+  geom_point(data = storepop, aes(itr, value), color = "grey80", alpha = 0.5) +
+  geom_point(color = "#FF0000") +
+  facet_wrap(~parameter, scales = "free_y")+
+  theme_water() +
+  theme(text = element_text(size = 20)) +
+  labs(x = "Iteration", y = "Value range")
+base_p
+# ggsave(filename = "03Documentations/20210516OptimisationDEMO.png",
+       # base_p, dpi = 320, height = 7, width = 9)
+```
+
+
+
+# apsimx edit is not working 
+
+```{r}
+tar_load(path_apsimx)
+path_apsimx
+
+tar_load(apsimx_Basefile)
+tar_load(apsimx_sims_dir)
+apsimx_Basefile
+apsimx_sims_dir
+
+```
+
+
+# draw the visnetwork
+
+```{r}
+# tar_visnetwork(targets_only = TRUE, allow = ends_with("SD1"), label = "time")
+```
+
+
+# load and check 
+```{r}
+tar_load(starts_with("Site"))
+Sites_Iversen12_SD1
+tar_load(starts_with("SD"))
+SD_AshleyDene_SD1
+tar_load(starts_with("path_met"))
+grep("AshleyDene", x = path_met_Iversen12_SD1)
+path_met_Iversen12_SD2
+
+tar_load(starts_with("lucerne_height"))
+lucerne_height_AshleyDene_SD1
+
+
+tar_load(starts_with("obs"))
+obs_AshleyDene_SD1
+
+tar_load(starts_with("BD"))
+BD_AshleyDene_SD1
+
+tar_read(magicDate)
+
+tar_read(sowingDates)
+
+tar_load(starts_with("met"))
+
+met_AshleyDene_SD1
+
+
+met_Iversen12_SD1
+tar_load(LAI_Height)
+tar_load(sowingDates)
+sowingDates
+tar_load(starts_with("CoverData"))
+CoverData_AshleyDene_SD1
+tar_load(data_SW)
+data_SW
+tar_load(value_vars)
+tar_load(id_vars)
+```
+# SOIL PARAMS
+```{r}
+tar_load(starts_with("DUL_LL_range_arbitrary"))
+# DUL_LL_range_arbitrary_Iversen12_SD1
+tar_load(starts_with("SW_sub"))
+SW_sub_AshleyDene_SD1
+
+# DT = data_SW[Experiment == "AshleyDene" & SowingDate == "SD1"]
+
+
+SW_sub_Iversen12_SD1
+SW_sub_Iversen12_SD2
+deparse(substitute(SW_sub_Iversen12_SD2))
+tar_load(starts_with("input_list"))
+input_list_Iversen12_SD10$DUL_LL_range_arbitrary_Iversen12_SD10
+names(input_list_AshleyDene_SD1)
+input_list_AshleyDene_SD1$obs_AshleyDene_SD1
+input_list_AshleyDene_SD1$SW_initials_AshleyDene_SD1
+input_list_Iversen12_SD10
+```
+# Debug sw initials
+
+```{r}
+tar_load(starts_with("SW_initials"))
+tar_load(starts_with("SW_sub"))
+tar_load(starts_with("sowingDates"))
+tar_load(starts_with("actual"))
+tar_load(starts_with("id_vars"))
+SW_sub_AshleyDene_SD1
+SW_initials_AshleyDene_SD1
+SW_initials_AshleyDene_SD2
+SW_initials_Iversen12_SD1
+sowingDates %>% filter_SD(trts = c(
+  "AshleyDene", "SD1"
+))
+actualSD_AshleyDene_SD1
+actualSD_AshleyDene_SD2
+id_vars
+initialSWC(SW_sub_AshleyDene_SD1, 
+           sowingDate = actualSD_AshleyDene_SD1, id_vars)
+
+
+```
+# Check reset swc
+```{r}
+tar_load(starts_with("SW_initials_reset"))
+SW_initials_reset_AshleyDene_SD1
+SW_initials_reset_Iversen12_SD1
+tar_load(starts_with("SW_sub"))
+tar_load(starts_with("reset"))
+resetSD_AshleyDene_SD1
+resetDates
+resetSD_AshleyDene_SD1
+
+```
+
+
+
+# config file
+
+```{r}
+tar_load(template)
+tar_load(params)
+params
+temp <- gsub("(?<=\\=)\\s.+$","",template, perl = TRUE)
+
+temp
+# names(input_list_AshleyDene_SD1)
+# names(input_list_AshleyDene_SD1$DUL_LL_range_arbitrary_AshleyDene_SD1)
+
+tar_load(params)
+parameters <- params[!is.na(parameter)
+       ][,.(parameter, lower, uppper, layer)
+         ][, initials:= uppper/2][]
+
+```
+
+
+```{r}
+
+
+temp_list <- vector("list", length = length(temp))
+names(temp_list) <- temp
+# for(i in seq_len(length(template))){
+#   temp_list[[i]] <- template[i]
+# }
+tar_load(starts_with("SimName"))
+
+# the code below was for construct the value list object 
+## initial configuration
+temp_list$`[Site].Name =` <- SimName_AshleyDene_SD1
+temp_list$`[DataStore].ExcelInput.FileNames = ` <- obs_AshleyDene_SD1
+temp_list$`[SlurpSowingRule].Script.SowingDate =` <- as.character(actualSD_AshleyDene_SD1$Clock.Today)
+temp_list$`[Weather].FileName =` <-  path_met_AshleyDene_SD1
+temp_list$`[SetCropVariables].Script.CoverFile =` <- CoverData_AshleyDene_SD1
+temp_list$`[SetCropVariables].Script.MaximumHeight =` <- lucerne_height_AshleyDene_SD1
+temp_list$`[Soil].Physical.BD =` <- paste(BD_AshleyDene_SD1$adjustedBD/1000, collapse = ",")
+temp_list$`[Soil].InitialConditions.SW =` <- paste(SW_initials_AshleyDene_SD1$SW,
+                                                   collapse = ",")
+temp_list$`[Soil].Physical.DUL =` <- paste(DUL_LL_range_arbitrary_AshleyDene_SD1$SW.DUL,
+                                           collapse = ",")
+temp_list$`[Soil].Physical.SlurpSoil.LL =`<- paste(DUL_LL_range_arbitrary_AshleyDene_SD1$SW.LL,
+                                           collapse = ",")
+
+
+temp_list$`[Soil].Physical.SAT =`<- paste(DUL_LL_range_arbitrary_AshleyDene_SD1$SAT,
+                                           collapse = ",")
+temp_list$`[Soil].Physical.AirDry =`<- paste(DUL_LL_range_arbitrary_AshleyDene_SD1$SW.LL,
+                                           collapse = ",")
+
+temp_list$`[Soil].Physical.LL15 =`<- paste(DUL_LL_range_arbitrary_AshleyDene_SD1$SW.LL,
+                                           collapse = ",")
+## parameters that need optimisation
+
+temp_list$`[Soil].Physical.SlurpSoil.KL[1:22] =` <- parameters[parameter == "KL"]$initials
+temp_list$`[SlurpSowingRule].Script.RFV =`<- parameters[parameter %like% "RFV"]$initials
+temp_list$`[SlurpSowingRule].Script.KLReductionFactor =`<- parameters[parameter %like% "KLR"]$initials
+temp_list$`[SlurpSowingRule].Script.MaxG =`<- parameters[parameter %like% "gsmax350"]$initials
+temp_list$`[SlurpSowingRule].Script.R50 =`<- parameters[parameter %like% "R50"]$initials
+temp_list$`[SlurpSowingRule].Script.SummerU =`<- parameters[parameter %like% "SummerU"]$initials
+temp_list$`[SlurpSowingRule].Script.SummerCona =`<- parameters[parameter %like% "SummerCona"]$initials
+temp_list$`[SlurpSowingRule].Script.WinterU =`<- parameters[parameter %like% "WinterU"]$initials
+temp_list$`[SlurpSowingRule].Script.WinterCona =`<- parameters[parameter %like% "WinterCona"]$initials
+
+
+## Could be messed up by the order
+# value_list <- list(SimName_AshleyDene_SD1,
+#                    obs_AshleyDene_SD1,
+#                    as.character(actualSD_AshleyDene_SD1$Clock.Today),
+#                    path_met_AshleyDene_SD1,
+#                    CoverData_AshleyDene_SD1,
+#                    lucerne_height_AshleyDene_SD1,
+#                    paste(BD_AshleyDene_SD1$adjustedBD/1000, collapse = ","),
+#                    paste(SW_initials_AshleyDene_SD1$SW, collapse = ","),
+#                    paste(DUL_LL_range_arbitrary_AshleyDene_SD1$SW.DUL, collapse = ","),
+#                    parameters[parameter == "KL"]$initials,
+#                    paste(DUL_LL_range_arbitrary_AshleyDene_SD1$SW.LL, collapse = ","),
+#                    paste(DUL_LL_range_arbitrary_AshleyDene_SD1$SAT, collapse = ","),
+#                    paste(DUL_LL_range_arbitrary_AshleyDene_SD1$SW.LL, collapse = ","),
+#                    paste(DUL_LL_range_arbitrary_AshleyDene_SD1$SW.LL, collapse = ","),
+#                    parameters[parameter %like% "RFV"]$initials,
+#                    parameters[parameter %like% "KLR"]$initials,
+#                    parameters[parameter %like% "gsmax350"]$initials,
+#                    parameters[parameter %like% "R50"]$initials,
+#                    parameters[parameter %like% "SummerU"]$initials,
+#                    parameters[parameter %like% "SummerCona"]$initials,
+#                    parameters[parameter %like% "WinterU"]$initials,
+#                    parameters[parameter %like% "WinterCona"]$initials)
+# 
+# if(length(temp_list) == length(value_list)){
+#   for(i in seq_len(length(temp_list))){
+#     temp_list[[i]] <- value_list[[i]]
+#     }
+# }
+
+```
+## Test the config file
+```{r}
+id <- "test"
+path_config <- here(paste0("01Data/ProcessedData/ConfigurationFiles/","temp", id, ".txt"))
+f = file(path_config, "w")
+  for(i in seq_len(length(temp_list))){
+    line = paste0(names(temp_list[i]) ," ", temp_list[[i]])
+    cat(line, "\r",
+        file = f, 
+        append = TRUE)
+  }
+  # Close the file and clean it from memory 
+  close(f)
+  rm(f)
+  gc()
+  
+  
+  
+id <- "test"
+apsimx_sims_dir <- here("01Data/ProcessedData/apsimxFiles2021.04.29.22.29.31/")
+apsimx_file <- here("01Data/ApsimxFiles/SingleSlurp.apsimx")
+tar_load(path_apsimx)
+  # Create a new name for the apsimx file 
+  newname = paste0(apsimx_sims_dir, '/temp', id, ".apsimx")
+ 
+  # Copy base apsimx file to its new name 
+  system(paste("cp", apsimx_file, newname))
+  
+  # Modify the apsimx file 
+  # system(paste(path_apsimx, "--edit", path_config, newname))
+  
+
+```
+# get DEOPTIM?
+
+
+```{r}
+paravals <- c(0.25, 0.005,12,0.008,200,10,5,4,2)
+# Edit fun
+APSIMEditFun <- function( par, nodes = template,
+                         initial_cond = 13L,
+                         input_list = input_list_AshleyDene_SD1){
+  no.ofPara <- length(par)
+  id <- paste0(round(par, digits = 3), collapse = '_')
+  
+  temp_initial <- gsub("(?<=\\=)\\s.+$","",nodes, perl = TRUE)
+  temp_ini_list <- vector("list", length = length(temp_initial))
+  names(temp_ini_list) <- temp_initial
+  ## initial configuration
+  temp_ini_list$`[Site].Name =` <- input_list[[1]]
+  temp_ini_list$`[DataStore].ExcelInput.FileNames = ` <- input_list[[2]]
+  temp_ini_list$`[SlurpSowingRule].Script.SowingDate =` <- as.character(input_list[[3]]$Clock.Today)
+  temp_ini_list$`[Weather].FileName =` <- input_list[[4]]
+  temp_ini_list$`[SetCropVariables].Script.CoverFile =` <-  input_list[[5]]
+  temp_ini_list$`[SetCropVariables].Script.MaximumHeight =` <-  input_list[[6]]
+  temp_ini_list$`[Soil].Physical.BD =` <- paste( input_list[[7]]$adjustedBD/1000, collapse = ",")
+  temp_ini_list$`[Soil].InitialConditions.SW =` <- paste( input_list[[8]]$SW,
+                                                     collapse = ",")
+  temp_ini_list$`[Soil].Physical.DUL =` <- paste( input_list[[9]]$SW.DUL,
+                                             collapse = ",")
+  temp_ini_list$`[Soil].Physical.SlurpSoil.LL =`<- paste(input_list[[9]]$SW.LL,
+                                             collapse = ",")
+  temp_ini_list$`[Soil].Physical.SAT =`<- paste(input_list[[9]]$SAT,
+                                             collapse = ",")
+  temp_ini_list$`[Soil].Physical.AirDry =`<- paste(input_list[[9]]$SW.LL,
+                                             collapse = ",")
+  temp_ini_list$`[Soil].Physical.LL15 =`<- paste(input_list[[9]]$SW.LL,
+                                             collapse = ",")
+  for(i in (initial_cond+1):length(nodes)){
+    temp_ini_list[[i]] <- par[i-initial_cond]
+  }
+  path_config <- here("01Data/ProcessedData/ConfigurationFiles", 
+                      paste0("temp", id, ".txt"))
+  f<- file(path_config, "w")
+  
+  for(i in seq_len(length(nodes))){
+    line <- paste0(names(temp_ini_list[i]) ," ", temp_ini_list[[i]])
+    cat(line, "\r",
+        file = f, 
+        append = TRUE)
+  }
+  # Close the file and clean it from memory 
+  close(f)
+  rm(f)
+  gc()
+}
+APSIMEditFun(par = paravals)
+APSIMRun = function(par){
+  # Create a new name for the apsimx file 
+  id <- paste0(round(par, digits = 3), collapse = '_')
+  path_config <- here("01Data/ProcessedData/ConfigurationFiles", 
+                      paste0("temp", id, ".txt"))
+  # Create a new name for the apsimx file 
+  newname <- paste0(apsimx_sims_dir, '/temp', id, ".apsimx")
+ 
+  # Copy base apsimx file to its new name 
+  system(paste("cp", apsimx_file, newname))
+  
+  # Modify the apsimx file 
+  system(paste(path_apsimx, "--edit", path_config, newname))
+  
+  # # Execute the new apsimx file 
+  # system(paste(apsimx, newname, 
+  #                "/NumberOfProcessors:8"))
+    
+}
+APSIMRun(par = paravals)
+# The cost
+tar_load(magicDate)
+cost.function <- function(par, obspara = "SWCmm", reset = magicDate){
+  id <- paste0(round(par, digits = 3), collapse = '_')
+  cat("Processing param combination: ",par, "\r\n")
+  APSIMEditFun(par)
+  APSIMRun(par)
+  db <- RSQLite::dbConnect(RSQLite::SQLite(),
+                           paste0(apsimx_sims_dir, '/temp', id,'.db'))
+  
+
+  PredictedObserved <- data.table::as.data.table(
+    RSQLite::dbReadTable(db,"PredictedObserved"))
+  PredictedObserved <- PredictedObserved[Clock.Today >= reset]
+  # Generate multiple cost depends on user input of observation variables 
+  no.ofobspara <- length(obspara)
+  l <- vector("list", length = no.ofobspara)
+  names(l) <- obspara
+  for (i in seq_len(no.ofobspara)){
+    pre_col <- paste0("Predicted.", obspara[i])
+    obs_col <- paste0("Observed.", obspara[i])
+    l[[i]] <- sum(na.omit(PredictedObserved[[pre_col]]- 
+                          PredictedObserved[[obs_col]])^2)
+  }
+
+  totalCost = 0 
+  totalCost = sum(unlist(l))
+
+  RSQLite::dbDisconnect(db)
+  
+  rm(db)
+  gc()
+  
+  system(paste("rm", paste0(apsimx_sims_dir, "/temp", id, "*")))
+  
+  return(totalCost)
+}
+
+cost.function(par)
+```
+# assemble the cost and DEoptim
+```{r, eval=FALSE}
+t1 <- Sys.time()
+#DEoptim
+maxIt <- 1
+np <- 3
+
+lower <- parameters$lower
+upper <- parameters$uppper
+# The observaion value that will be used as the benchmark
+obspara <- "SWCmm"
+
+opt.res <- 
+  DEoptim::DEoptim(fn=cost.function, 
+                   lower = lower,
+                   upper = upper,
+                   control=list(NP=np * 10, itermax=maxIt, parallelType=1,
+                                storepopfrom = 1,
+                                packages = c('RSQLite','here'),
+                                parVar = c(
+                                'template',
+                                'path_apsimx',
+                                'magicDate',
+                                'apsimx_file',
+                                'obspara',
+                                'apsimx_sims_dir',
+                                'APSIMEditFun', 
+                                'APSIMRun',
+                                'input_list_AshleyDene_SD1'))
+  )
+
+
+save(opt.res, file =  file.path(apsimx_sims_dir,
+                                paste0(Sys.Date(), 'opt.res', ".RData")))
+
+fit.par = data.frame(estimates = opt.res$optim$bestmem, cost = opt.res$optim$bestval)
+
+ 
+#output the statistical test
+par = fit.par$estimates
+
+write.csv(par, 'C:/Data/Master/03processed-data/opt.par.csv', row.names = F)
+t2 = Sys.time()
+t2-t1
+```
+
+```{r}
+tar_meta(fields = error, complete_only = TRUE)
+tar_meta(fields = warnings, complete_only = TRUE)
+```
+
+
+```{r}
+plot(opt.res, plot.type = "bestmemit")
+plot(opt.res, plot.type = "storepop")
+
+```
+
+# Test wrapper here
+```{r}
+parameters <- readRDS("_targets/objects/parameters")
+wrapper_deoptim(parameters, paravals, obspara, 1, 1, 
+                template,
+                path_apsimx,                              
+                magicDate,                              
+                apsimx_Basefile,
+                obspara,                          
+                apsimx_sims_dir,
+                input_list_AshleyDene_SD1)
+```
+
+
+# address issue 46
+
+```{r}
+input_list_AshleyDene_SD1$DUL_LL_range_arbitrary_AshleyDene_SD1 %>% 
+  ggplot(aes(x = Depth))+
+  geom_point(aes(y = SW.DUL , color = "DUL"))+
+  geom_line(aes(y = SW.DUL, color = "DUL")) +
+  geom_line(aes(y = SW.LL, color = "LL"))+
+  geom_point(aes(y = SW.LL, color = "LL")) +
+  scale_x_reverse() +
+  coord_flip() +
+  geom_ribbon(aes(ymin = SW.LL, ymax = SW.DUL), fill = "#1ca3ec") +
+  facet_grid(  SowingDate ~ Experiment) +
+  theme_water() +
+  scale_color_manual(name = "", values = c("#0000FF", "#FF0000"))
+```
+
+
+
+```{r}
+variables <- regmatches(temp, 
+                        regexpr("(?=)\\.\\w{1,}\\s=$", temp, perl = TRUE)) %>% 
+  gsub("\\W", "", .)
+variables 
+
+
+
+
+```
+
 
 
 # Debug couldn't find objects

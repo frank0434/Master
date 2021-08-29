@@ -1,0 +1,375 @@
+---
+title: "1. Debug targets"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2 
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+source(here::here("02Scripts/R/packages.R"))
+source(here::here("02Scripts/R/functions.R"))
+path_richard <- "C:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
+id_vars <- c("Experiment", "SowingDate", "Clock.Today", "DAS")
+
+data_sw <- read_Sims(path = path_richard)
+
+value_vars <-  grep("SWmm\\.\\d.", colnames(data_sw), value = TRUE)
+sw_mean_new <- colwise_meanSW(data_sw)
+
+```
+
+
+# Inspect ranges
+
+```{r fig.height=10}
+DUL_LL_range <- doDUL_LL_range(SW = sw_mean_new,
+                               startd = "2011-06-25")
+# CF 0.95
+DUL_LL_range[, ':=' (i.SW.DUL = i.SW.DUL * 0.95,
+                     i.SW.LL = i.SW.LL * 0.95)]
+DUL_LL_range
+
+SW_mean_new
+
+data_SW
+range_check <- function(DT,  layer, boundry = c("DUL","LL")){
+  yval <-  paste0("SWmm.",layer, "..mean")
+  cols <- c("Experiment", "Clock.Today", "SowingDate",yval)
+  DT <- DT[,..cols]
+  # yval <- paste0("`",layer,"`")
+  P <- DT[,..cols] %>% 
+    ggplot(aes_string("Clock.Today", yval)) + 
+    geom_point() +
+    facet_grid(SowingDate  ~ Experiment) 
+  if(boundry =="LL"){
+    dt_sub <- DT[order(SWmm.1..mean), .SD[1], by = .(Experiment, SowingDate)]
+    P <- P + 
+      geom_point(data = dt_sub , aes_string("Clock.Today", yval),  color ="red", size = 5)
+  } else if (boundry == "DUL"){
+    dt_sub <- DT[order(SWmm.1..mean, decreasing = TRUE), .SD[1], by = .(Experiment, SowingDate)]
+    P <- P + 
+      geom_point(data =dt_sub, aes_string("Clock.Today", yval),  color ="red", size = 5)
+  } else{
+    print("Don't know what to draw. DUL or LL")
+  }
+  return(P)
+  
+}
+range_check(SW_mean_new, 1, boundry = "DUL")
+range_check(SW_mean_new, 1, boundry = "LL")
+
+SW_mean_new[Experiment !="AshleyDene" & SowingDate == "SD9"] %>% 
+  ggplot(aes(Clock.Today, SWmm.1..mean)) +
+  geom_point()
+
+```
+It is not ideal to have a DUL from the end of the experiments. 
+need to constrain the period 
+**action** - modify the DUL and LL finder to lock the period. 
+
+LL seems not the lowest since we constrian the period. 
+maybe the end of June is good?
+```{r fig.height=10}
+
+range_check(SW_mean_new, 1, boundry = "DUL")
+range_check(SW_mean_new, 1, boundry = "LL")
+```
+
+```{r, fig.height=14, fig.width=9}
+sdcols <- grep("sd", colnames(SW_mean_new), value = TRUE)
+neededcols <- c(id_vars, sdcols)
+DT_sd <- SW_mean_new[,..neededcols
+                 ][, SWmm.1..sd := SWmm.1..sd /200
+                   ][, (paste0("SWmm.", 2:22,"..sd")) := lapply(.SD, function(x) x/100),
+                     .SDcols = paste0("SWmm.", 2:22,"..sd"),
+                     by = id_vars]
+
+tar_load(DUL_LL_range)
+
+
+DUL_sd <- DT_sd %>% 
+  melt.data.table(id.vars = id_vars, value.name = "SW.sd.DUL",
+                  variable.name = "Depth",
+                  variable.factor = FALSE)
+DUL_sd[, Depth := as.integer(gsub("\\D", "", Depth))]
+LL_sd <- DT_sd %>% 
+  melt.data.table(id.vars = id_vars, value.name = "SW.sd.LL",
+                  variable.name = "Depth",
+                  variable.factor = FALSE)
+LL_sd[, Depth := as.integer(gsub("\\D", "", Depth))]
+
+DUL_LL_range <- DUL_sd[DUL_LL_range, on = c("Experiment", "SowingDate", "Depth"," Clock.Today == Clock.Today.DUL")] 
+DUL_LL_range <- LL_sd[DUL_LL_range, on = c("Experiment", "SowingDate", "Depth"," Clock.Today == Clock.Today.LL")] 
+
+
+DUL_LL_range[SowingDate %in% paste0("SD", 1:5)]%>% 
+  ggplot(aes(x = Depth))+
+  geom_point(aes(y = SW.DUL))+
+  geom_line(aes(y = SW.DUL)) +
+   geom_line(aes(y = SW.LL))+
+  # geom_point()+
+  scale_x_reverse() +
+  coord_flip() +
+  geom_point(aes(y = SW.LL)) +
+  geom_errorbar(aes(ymin = SW.DUL - SW.sd.DUL, ymax = SW.DUL + SW.sd.DUL))+
+  # geom_point(aes(y = Low.DUL), color = "red") +
+  # geom_point(aes(y = High.DUL), color = "blue") +
+  geom_errorbar(aes(ymin = SW.LL - SW.sd.LL, ymax = SW.LL + SW.sd.LL))+
+  # geom_point(aes(y = Low.LL), color = "red") +
+  # geom_point(aes(y = High.LL), color = "blue") +
+  facet_grid(  SowingDate ~ Experiment) +
+  theme_water() 
+ggsave("Data/images/DUL_LL.png", width = 9, height = 12, dpi = 320)
+```
+# check met files and cumTT
+```{r}
+tar_load(starts_with("met"))
+met_AshleyDene
+met_Iversen12
+tar_load("cumTT")
+cumTT %>% 
+  ggplot(aes(Clock.Today, AccumTT)) +
+  geom_point() +
+  facet_grid( Experiment ~ . ) +
+  theme_water()
+
+```
+# Check observed LAI and SW
+```{r}
+tar_read(observed)
+
+```
+# Check template
+```{r}
+tar_read(template)
+```
+# Check CoverData
+```{r}
+tar_load(CoverData)
+CoverData[ SowingDate == "SD2"] %>% 
+   ggplot(aes(Clock.Today, AccumTT)) +
+  geom_point() +
+  facet_grid( Experiment ~ . ) +
+  theme_water()
+CoverData[ SowingDate == "SD2" & Experiment == "AshleyDene"] %>% 
+   ggplot(aes(Clock.Today, LAI)) +
+  geom_point() +
+  geom_line() +
+  facet_grid( Experiment ~ . ) +
+  theme_water()
+
+# BRING IN THE RAW VALUES 
+sd2LAI <- read_excel("C:/Data/Master/Data/ProcessedData/CoverData/ObservedAshleyDeneSD2.xlsx")
+sd2LAI %>% 
+  ggplot(aes(Clock.Today, LAImod)) +
+  geom_point() +
+  geom_line() +
+  facet_grid( Experiment ~ . ) +
+  theme_water() +
+  ggtitle("AshleyDene SD2")
+
+```
+## Debug for LAI interpolatation 
+
+```{r}
+tar_load(LAI_Height)
+tar_load(sowingDates)
+tar_load(cumTT)
+LAI_Height
+sowingDates
+cumTT
+interp_LAI(biomass = LAI_Height, sowingDates, cumTT)[]
+# observation <- LAI_Height[Experiment == "AshleyDene" & SowingDate == "SD2"]
+
+
+LAI_Height_SD <- merge.data.table(LAI_Height, sowingDates,
+                                  by = c("Experiment", "Clock.Today" , "SowingDate"), 
+                                    all= TRUE)[,':='(LAImod = ifelse(is.na(LAImod), 0, LAImod),
+                                                     Height = ifelse(is.nan(Height), NA, Height))]
+  
+  LAI_wide <- dcast.data.table(LAI_Height_SD, 
+                               Experiment + Clock.Today ~ SowingDate, 
+                               value.var = "LAImod" )
+
+  
+  
+  DT <- merge.data.table(cumTT, LAI_wide, by = c("Experiment", "Clock.Today"), 
+                         all.x = TRUE)
+  # DT[, SD2:= zoo::na.approx(SD2, na.rm =FALSE)]
+  
+  
+  DT <- melt.data.table(data = DT, 
+                        id.vars = c("Experiment", "Clock.Today", "AccumTT"), 
+                        value.name = "LAI",
+                        variable.name = "SowingDate", variable.factor = FALSE)
+  
+  DT <- DT[, LAI:= zoo::na.approx(LAI,  na.rm = FALSE) , by = .(Experiment, SowingDate) ]
+  
+  DT <- DT[, LAI:= zoo::na.approx(LAI, na.rm = FALSE) ]
+  DT %>% 
+    ggplot(aes(Clock.Today, LAI)) +
+  geom_point() +
+  geom_line() +
+  facet_grid( Experiment ~ . ) +
+  theme_water() +
+  ggtitle("AshleyDene SD2")
+  DT <- DT[, ':='(k = 0.94)
+     ][Experiment == "AshleyDene" & Clock.Today %between% c( '2011-11-30','2012-03-01'),
+       k:= 0.66][, LI := 1 - exp(-k * LAI) ]
+  
+
+```
+# Check SW_INITIALS
+```{r}
+tar_load(SW_initials)
+SW_initials[]
+cbp1 <- c("#FF0000", "#00FF00", "#0000FF", "#fab80a","#8c06ff", 
+          "#dceeff", "#c6deff", "#a7ccff", "#85a8e3","#6c9bd0")
+p_initialSW <- SW_initials %>% 
+   ggplot(aes(x = Depth, color = SowingDate))+
+  geom_point(aes(y = SW))+
+  geom_line(aes(y = SW)) +
+  scale_x_reverse() +
+  coord_flip() +
+  facet_grid(  ~ Experiment ) +
+  theme_water() +
+  scale_color_manual(values = cbp1)
+SW_initials
+
+
+errorbar <- dcast.data.table(SW_initials[SowingDate%in%paste0("SD",1:5)],Experiment + SowingDate + Clock.Today + Depth ~ Stats, value.var = "SW")
+errorbar[Depth == 1, se := sd/200/2
+         ][Depth != 1, se:= sd/100/2]
+p_initialSW <- p_initialSW + 
+  geom_errorbar(data = errorbar,
+                aes(ymin = mean - se, ymax = mean + se), color = "grey")
+p_initialSW
+ggsave("Data/images/initialSW.png",plot = p_initialSW, width = 7, height =6, dpi = 320)
+
+```
+
+# Check DUL AND LL 
+
+```{r}
+tar_load(DUL_LL_range_arbitrary)
+tar_load(esti_DUL_LL)
+DUL_shift <- esti_DUL_LL %>% 
+  ggplot(aes(Depth)) +
+  geom_point(aes(y = DUL, color = "DUL")) + 
+  geom_smooth(aes(y = DUL, color = "DUL"), se = FALSE,) +
+  geom_point(aes(y = SW.DUL, color = "POSTDUL")) + 
+  geom_smooth(aes(y = SW.DUL, color = "POSTDUL"), se = FALSE) +
+   geom_point(aes(y = DUL * 0.95, color = "arbitraryDUL")) + 
+  geom_smooth(aes(y = DUL * 0.95, color = "arbitraryDUL"), se = FALSE) +
+  coord_flip()+
+  facet_wrap(Experiment ~ .)+
+  scale_x_reverse(limits = c(23, 0), expand = c(0,0)) 
+  
+DUL_shift +
+  theme_water()+
+  scale_color_manual(values = c("DUL" = "#FF0000", "POSTDUL" = "#0000FF", 
+                                "arbitraryDUL" = "#00FF00"))
+```
+
+
+.Simulations.Slurp
+.Simulations.SlurpMorris
+
+# Check BDs
+
+```{r}
+tar_load(BDs)
+p_BD <- BDs %>% 
+  ggplot(aes(x = Depth))+
+  geom_point(aes(y = Low))+
+  geom_line(aes(y = Low)) +
+  geom_line(aes(y = High))+
+  geom_point(aes(y = High)) +
+  scale_x_reverse() +
+  coord_flip() +
+  facet_grid(  ~ Experiment , scales = "free_x") +
+  theme_water()
+ggsave("Data/images/p_BD.png",plot = p_BD, width = 7, height =6, dpi = 320)
+
+```
+
+# Check LAI_input 
+
+```{r}
+tar_load(LAI_input)
+LAI_input[1:5]
+tar_load(observed)
+observed
+```
+
+# Check relativeSW
+```{r}
+tar_load(relativeSW)
+
+relativeSW %>% 
+  ggplot(aes(Clock.Today, relativeSW, color = SowingDate)) +
+  geom_point() +
+  geom_line()+
+  scale_x_date(date_breaks = "8 weeks") +
+  geom_smooth() + 
+  facet_grid( Experiment ~.)
+
+```
+
+
+# Check winter_AD/I12
+```{r}
+tar_load(winter_AD)
+tar_load(winter_I12)
+winter_AD
+winter_I12
+tar_load(list_AD)
+tar_read(list_I12)
+list_AD$data[[1]]
+```
+
+# check DUL estimation 
+```{r}
+tar_load(esti_DUL_AD)
+
+esti_DUL_AD$results[[1]]
+esti_DUL_AD$esti[[1]]
+esti_DUL_AD$data[[1]]
+esti_DUL_AD[1,]
+tar_load(DUL_LL_range)
+DUL_LL_range
+
+esti_DUL_AD[, unlist(results, recursive = FALSE), by = .(Experiment, SowingDate, Depth)]
+
+
+rbindlist(esti_DUL_AD$results)
+tar_load(esti_DUL_LL)
+esti_DUL_LL
+```
+
+
+
+# Check parameter ranges 
+
+```{r}
+tar_load(params_ranges)
+names(params_ranges)[1:2]
+```
+
+# Check morris model & sampled values 
+
+```{r}
+
+tar_read(MorrisModels_0008acad)
+tar_load(MorrisModels_0008acad)
+
+MorrisModels_0008acad$meta
+
+tar_load(sampledvalues)
+nrow(sampledvalues)
+lapply(sampledvalues, function(x){length(unique(x))})
+
+```
+

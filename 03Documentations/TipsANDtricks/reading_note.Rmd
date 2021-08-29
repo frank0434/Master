@@ -1,0 +1,453 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+#20190822
+
+## To read:
+Quantifying variability of soil physical properties within soil series to address modern land-use issues on the Canterbury Plains
+
+Yield and water use of temperate pastures in summer dry environments.
+
+
+EP calculation  - French, B. K. and Legg, B. J. 1979. Rothamsted irrigation 1964-76. Journal of Agricultural Science, U.K., 92, 15-37.
+
+_Vapour pressure deficit (VPD)_  Jenson, M. E., Burman, R. D. and Allen, R. G. eds). 1990. Evapotranspiration and irrigation requirements: a manual. New York, U.S.A: American Society of Civil Engineers, pp. 332.
+
+
+_Thermal time_ 
+Jones, C. A. and Kiniry, J. R. 1986. CERES-Maize: a simulation model of maize growth and development.College Station: Texas A&M University Press. 194 pp.
+
+
+## To clarify
+
+**the development stage of the crop**
+trifoliate??
+why post-grazing cuts?
+
+1. no relationship between days to 50% seedling emergence or rate of emergence and soil tmep. this indicates that the conditions were not non-limiting. other variables to consider 
+
+## Equations
+
+PSMD = PSMDi-1 + EPi – rainfalli
+
+## Yield difference driver
+
+1. Moot, D. J., Brown, H. E., Pollock, K. and Mills, A. 2008. Yield and water use of
+temperate pastures in summer dry environments. Proceedings of the New
+Zealand Grassland Association, 70, 51-57.
+
+
+
+
+
+#20190904
+
+_Note_
+
+1. temp was not the only factro affecting DM production rate. section 4.3.2.5
+
+2. Seedling lucerne did not display constant DM partitioning below ground which suggests
+a single Proot value was inappropriate for seedling growth
+
+3. a desired root biomass is 4 to 5 t DM/ha
+
+_Questions_
+
+1. what are the rules to decide the regrowth cycle?
+
+2. section 4.3.2.5. growth rate differed at the same mean air temperature dependingon the direction of temperature change? -- is it ture temperature effect of photoperiod? 
+
+
+3. Pp effect on DM partitioning to the root were not consistent in two sites?  -
+**Seedling lucerne grown at Ashley Dene did not show the same seasonal variation, which suggests crop ontogeny when under water stress overrides the environmental signals which regulate partitioning. The Proot of seedling crops was maintained at 0.53 for all sowing dates (Figure 4.10).** -- is this ture?
+
+4. self-thinning - what is the driver? resources?
+
+@BROWN2006319
+How to calculate $\theta$
+short and long regrowth durations. what were the exact days??
+
+
+_To read_
+
+self-thinning 
+
+Moot, D. J., Pollock, K. M. and Lewis, B. 2012. Plant population, yield and water use of
+lucerne sown in autumn at four sowing rates. Proceedings of the New Zealand
+Grassland Association, 74, 97-102.
+
+hydrothermal time 
+
+Watt, M. S., Bloomberg, M. and Finch-Savage, W. E. 2011. Development of a
+hydrothermal time model that accurately characterises how thermoinhibition
+regulates seed germination. Plant, Cell and Environment, 34, 870-876.
+
+
+#20190924
+
+
+Variation in water extraction with maize plant density and its impact on model
+application
+
+Incorrect parameterisation using constant kl values across plant populations could therefore cause erroneous  recommendations to be made, and these results have implications for any previously conducted crop simulations that use similar methods to model soil water extraction
+when investigating a range of plant populations
+
+
+Effect of irrigation methods and quota on root water
+uptake and biomass of alfalfa in the Wulanbuhe
+sandy region of China
+
+
+the order of dry weight of root was W3 > W2 > W1 and their values were 516.86, 445.25 and 301.57 gm−2, respectively 
+
+[web](http://lvec.ibcas.ac.cn/BaiWenMing)
+
+#20190926
+
+Richard PHD thesis
+
+Water use (WU) is often calculated as the minimum of the actual crop transpiration (ET)
+and the potential transpiration which represents the demand for water from the canopy
+(EPT) (Ritchie, 1972; Monteith, 1986) (Equation 6.1);
+Equation 6.1 $WU = min(ET, EPT )$
+The amount of water in the soil, soil water content (SWC) was calculated to a depth of
+2.3 m using Equation 6.2 Equation 6.2 $SWC = \sum_{bot}^{top} \theta*d$
+
+Where θ is the volumetric water content (VWC) of individual layers as measured in
+Section 6.2.1.2, d is the depth of the layer, top is the 0 to 0.2 m layer and bot is the 2.2
+to 2.3 m layer.
+
+
+
+The water use (WU, mm per period) was calculated for each measurement period using
+Equation 6.3;
+Equation 6.3 $WU = PR – (SWC_E – SWC_S)$
+Where PR is the sum of rainfall for the same period, SWCS and SWCE represent the
+actual soil water content of the profile as measured (Section 6.2.1.2) for the start and
+end of the period, respectively. This equation assumes no rainfall is lost as drainage or
+runoff.
+
+Future research should use the supply and demand method rather than the site and crop
+specific critical limiting deficit framework to quantify water stress. Water stress can be
+quantified as transpiration (ET) in relation to demand (EPT) and related to yield forming
+components to allow comparisons between crops and sites. This is important because
+the critical limiting deficit method is site and species specific. This method uses SWD
+as a measure of water stress and relates it to yield to define a critical level where yield is
+decreased (Penman, 1971). Furthermore, it offers no explanation of the mechanisms
+responsible for the yield decrease
+
+
+# 20190929
+
+A Comparison Between **Major Artificial Intelligence Models** for Crop Yield Prediction: Case Study of the Midwestern United States, 2006–2015
+
+_Note_ explain the major AL models in R and py. could be a great ref
+
+**thoughts about the objectives**
+
+1. working water stress model 
+2. comparison machine learning models 
+3. apsim compares to machine learning models 
+4. causal interferene??
+
+
+# 20191012
+
+Hamish 2012 
+
+Paddock |Trt| Period | Method
+-----|------|------|---
+Iv8|irri|30 November 1996 ~ ?| rain fall on site / broadfields
+Iv9| irri|24 October 2000 ~ ?| rain fall on site / broadfields
+Iv9|dry|2001–2002 rain-shelters as required from August to May|
+
+Measurements were made over a 5-year period from 18 August
+1997 to 30 June 2002
+
+SWC was measured the same way as Richard's
+
+
+[fig6 is a must](../imgs/water_stressVS_EP.png)
+
+
+While the relationship between T
+and water stress provides insight into the effects of water stress on
+crop water use, it is not necessary to consider in the prediction of
+transpiration when transpiration is constrained to the minimum of
+supply and demand (Eq. (1)). In contrast, biomass production must
+be constrained by water stress. Using the transpiration efficiency
+approach, the daily growth increment (G) is first calculated in
+the absence of water stress and used to estimate EPD. Then G is
+reduced to account for the effects of water stress by multiplying by
+a water stress factor, f(W) = EPS/EPD
+
+# 20191013
+
+ideal test data set for apsimx
+
+1. crop phenology development 
+2. biomass and nutrient accumulatoin of crop organs
+3. measurements of canopy and leaf characteristics
+4. soil water and N status across a range fo environments under stressed and unstressed conditions 
+
+water use and stress responses in wheat
+
+1. actual water uptake is the minimum of demand and the water supply that can be extracted by the root system
+2. water supply relative to demand S/D
+3. stress factor is calculated from S/D that is applied to potential RUE and leaf area expansion each day 
+4. water stress effcts on senescence - $TT_{accum}$ 
+Efficiency (NSE), Model Error (ME) and Mean Absolute Error
+(MAE). When plotting observed vs predicted for all treatment values,
+the spread of absolute values is often dominated by environmental
+variation from site to site, particularly when the dataset includes experimental
+results from a wide range of soil and climate situations. This
+tends to obscure how well the model is predicting response to variation
+in management (i.e. different experimental treatments) at specific locations
+(Mitchell 1997).
+
+**challenges that using large datasets**
+1. specific elments lost in the large number of data points.
+2. one change can worsen another aspect
+
+a smarter system where developers can fast track the changes effects and the overall model performance. 
+
+`build-test-document procedure`
+is `FW` under photosynthesis folder still the water stress function ?
+
+
+current lucerne model phenolodogy based on Ed's 2011 paper
+
+
+Specifically, to
+account for sub-optimal growth conditions, lucerne reserve organs
+(e.g. crowns and taproots) have to be implemented to store nitrogen,
+a root nodule organ is required to fix atmospheric nitrogen and
+water stress responses have to be parameterised
+
+# 20191014
+
+Harmonization and translation of crop modeling data to ensure interoperability.
+
+While the various models may implement different algorithms for crop, soil and atmospheric processes, 
+the driving data are generally similar. 
+They typically include:
+daily weather records, 
+soil physical and
+chemical properties, and
+information related to management practices such as planting, fertilization, irrigation and harvest.
+
+**is aspimx adapted from agmip for the json format file?**
+
+
+
+# 20191025
+
+Gunarathna mhjp 2019 sugar cane sensitivity analysis via R and GEM-SA
+
+manual choose the parameters 
+13 paras over 4 traits (biomass, fresh cane yield, sucrose weight, commercial cane sugar yield)
+2 water trts
+2 locations
+
+# 20191031
+A clear indicator that a soil has not been wet to depth is when the DUL graph line at depth does not meet the crop lower limit line (that is the bucket does not join at depth). 
+
++XF Root exploration factor
+
+XF = 0 no extration 
+XF = 1  Where CLL is measured and water extraction is observed set XF=1
+
+
+# apsim understanding 
+
+https://www.sciencedirect.com/science/article/abs/pii/S1161030118300406?via%3Dihub
+
+
+# 20191004
+
+First attempt to integrate the data sets together from github. 
+There are 12 `Excel` files. 
+Some of them are duplicated. 
+Some of them have insufficient information about the variables and expt locations.
+All lack of metadata. 
+
+**To do**
+
+1. Ask if xiumei knows the story behind the data sets.
+2. Use only Richard data as a starting point. 
+
+# 20191012
+
+
+
+# 20191029
+
+apsimx trials
+
+adjust `FW` in the photosynothesis part does not seem to affect the `swc`
+
+**double check the cutting date!!**
+
+# 20191103
+
+
+
+# Potential reference papers
+
+1. Dolling PJ et al 2005 Soil water extration and biomass production by lucerne in the south of Western Australia
+
+   At least two sites in the paper: 
+
+	i. Moora
+	ii. Quairading
+
+
+# 20191104
+
+Suggestions from Rog:
+1. the tipping point for two sets of soil paras: a, thermal time; b, root reserves (**need to locate some good reference papers**) 
+2. 
+
+----
+
+  **Learning PEST**
+  
+  - APSIM FILE AND `tpl` must have the same structure and content _try a working one first and then save is as tpl
+  - 
+  
+  
+# 20191105
+
+call apsimx via command line, use `model.exe` rather than `apsimNG.exe` which is for the UI
+
+# 20191111
+di he et al 2017
+
+model calibaration usually means estimation of the key model parameters by fitting the overall model to observed data
+this is necessary because not all the model parameters can be directly measured. 
+
+**How to decide what are the key paremeters?**
+
+equifinality - multiple combinations of model paremeters can be derived which lead to similar model performance to match the limited data 
+
+<<<<<<< HEAD
+
+# 20191118
+
+error when using slurp to re-run land and pasture expt. 
+
+```
+System.Exception: ERROR in file: C:\Data\Lucerne-and-Pasture\ModelOptimisation\LandPoptimisation.apsimx
+Simulation name: LnPIrrNonCroLuc
+System.ArgumentException: Property set method not found.
+   at System.Reflection.RuntimePropertyInfo.SetValue(Object obj, Object value, BindingFlags invokeAttr, Binder binder, Object[] index, CultureInfo culture)
+   at System.Reflection.RuntimePropertyInfo.SetValue(Object obj, Object value, Object[] index)
+   at Models.Script.OnDoManagement(Object sender, EventArgs e) in c:\Users\cflfcl\AppData\Local\Temp\ApsimXManager45f055fd-3ca0-4095-97d3-85732c7fe6ef.cs:line 78
+   at System.EventHandler.Invoke(Object sender, EventArgs e)
+   at Models.Clock.OnDoCommence(Object sender, CommenceArgs e)
+   at Models.Core.Simulation.Run(CancellationTokenSource cancelToken) ---> System.ArgumentException: Property set method not found.
+   at System.Reflection.RuntimePropertyInfo.SetValue(Object obj, Object value, BindingFlags invokeAttr, Binder binder, Object[] index, CultureInfo culture)
+   at System.Reflection.RuntimePropertyInfo.SetValue(Object obj, Object value, Object[] index)
+   at Models.Script.OnDoManagement(Object sender, EventArgs e) in c:\Users\cflfcl\AppData\Local\Temp\ApsimXManager45f055fd-3ca0-4095-97d3-85732c7fe6ef.cs:line 78
+   at System.EventHandler.Invoke(Object sender, EventArgs e)
+   at Models.Clock.OnDoCommence(Object sender, CommenceArgs e)
+   at Models.Core.Simulation.Run(CancellationTokenSource cancelToken)
+   --- End of inner exception stack trace ---
+   at Models.Core.Simulation.Run(CancellationTokenSource cancelToken)
+   at APSIM.Shared.JobRunning.JobRunner.RunActualJob(IRunnable job, IJobManager jobManager)
+```
+
+# 20191118
+
+the `PredictedObserved` tab
+
+
+# 20191126
+
+**autocorrelation book**
+Bowerman & O’Connell 1990,
+Neter et al. 1996
+
+autocorrelation can be temporal and spatial
+
+Diggle (1990), the latter with a biological
+emphasis.
+
+# 20191211
+
+steps of stats
+
+1. plot out the overall info
+2. identify key factors 
+3. isolate/combine the factors and plotting out 
+4. choose a model: linear/ ploynomial?
+5. run model for stats results to decide which model is better based on stats results 
+
+
+Rog's help to add the mofidier
+
+the steps:
+1. figure out which part of the model wanted to change. e.g, phenology/root/other parts?
+2. which variable want to change 
+3. A `VariableReference` to have the access to the variable 
+4. A `Target` to have the value changed 
+
+Note, **Progression** is sum of previous values 
+the submodel is isolated to each other, only move to next stage if the target has been 
+meet in the curret stage 
+
+
+##### A plan 
+
+Two approaches: 
+
+1. manual setup (not good - why)
+
+  a. background:
+  
+  there are two different stages for lucerne: seedling and established. 
+  Two sets of soil characteristic values are therefore avaiable from Richard's work. 
+  how can i implement the seedling stage when the root of the crop still growing in apsimx 
+  
+  b. juvenile stage can be treated as seedling
+  BUT, the seedling stage is not a real `phenological stage` since the crop still have the full
+  life cycle from vegetative to reproductive stages 
+  
+  c. can i add a additional model to handle this? 
+  d. even though i can add an additional model to do this process. 
+  there is still issues like equifinality or strongly affect other parameters
+  
+  something to validate thoughts:
+
+  - comparing with the original setup 
+  - stats (Eg. nse) gets worse then show it is no good  
+
+
+
+2. slurp exercise (better - how)
+
+  a. finish the execise of the L & P
+  b. standarise the process 
+  c. implement the process to Richard's data set:
+    i. all aboveground data as input configuration files
+    ii. tidy format of richard data
+  
+
+
+
+#### 20200414
+Repeated measures: There's added value in modelling over time.
+
+what is the experimenta units -- Plot? 
+
+#### 20200429
+
+Catch up with Harris:  
+design the directory first 
+the workflow will come naturely. 
+
+

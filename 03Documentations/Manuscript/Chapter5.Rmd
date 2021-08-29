@@ -1,0 +1,1329 @@
+---
+title: "Chapter 5"
+output:
+  word_document:
+    reference_docx: FRC dissertation template.docx
+  html_document:
+    df_print: paged
+always_allow_html: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.align = "center", fig.width = 10, fig.height = 7, 
+                      dpi = 300)
+options(scipen = 999)
+#Constants
+outlier.colour = "#ff0000"
+source(here::here("02Scripts/R/packages.R"))
+source(here::here("02Scripts/R/functions.R"))
+path_richard <- "C:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
+id_vars <- c("Experiment", "SowingDate", "Clock.Today", "DAS")
+
+data_sw <- read_Sims(path = path_richard)
+
+value_vars <-  grep("SWmm\\.\\d.", colnames(data_sw), value = TRUE)
+sw_mean_new <- colwise_meanSW(data_sw)
+
+# Colour p
+blues <- c("#0f5e9c",
+           "#2389da",
+           "#1ca3ec",
+           "#5abcd8",
+           "#74ccf4")
+names(blues) <- blues 
+ggplot(data.frame(x = blues, y = 1),aes(x, y, fill = x)) +
+  geom_col() +
+  scale_fill_manual(name = "", values = blues)+
+  theme_void()
+
+magicDate <- "2011-06-25"
+```
+
+
+# Introduction 
+
+
+# Material and method 
+
+## Workflow description 
+
+1. slurp simulation configuration. one base apsimx and modified into 20 or one 
+apsimx file has 20 simulations in it.   
+2. edit apsimx file. the difficult part is to find a reliable tool to modify apsimx 
+files.  
+3. optimisation. DEoptim function choices, had a SSR calculation for a cost function 
+when doing the optimisation with junqi. 
+
+
+
+## APSIMX-Slurp
+
+## APSIMX-Lucerne
+
+## Workflow 
+
+
+# Results 
+
+## How much time spent on optimisation
+
+```{r}
+meta <- readRDS("c:/Users/cflfcl/OneDrive - Lincoln University/transfer/timecost.rds") %>% 
+  as.data.table()
+
+# overall time cost
+meta[name %like% "AshleyDene_SD|Iversen12_SD" & 
+       (seconds != 0) &
+       (!is.na(seconds)) &
+       (!is.na(time)), .(name, time, seconds),
+     ][, trts := gsub("(\\w.+_)(\\w.+_SD\\d{1,2})", "\\2", x =  name)
+       ][, endtime := time + seconds
+       ][, duration := difftime(endtime, time, units = "hours")
+         ][, sum(duration), by = .(trts)
+           ][,hours:=as.numeric(gsub("\\shours","", as.character(V1)))
+             ][V1>1
+               ][, group := rep(1:2, each = 10)
+         ][, list(mean = mean(hours),
+                sd = sd(hours)), 
+         by = .(group)]
+
+
+# optimisation time expense 
+timecost <- meta[name %like% "^opt" & !is.na(data), .(name, time, seconds)
+     ][, endtime := time + seconds
+       ][, duration := endtime - time
+         ][, Hours := as.numeric(gsub("\\shours","", as.character(duration)))
+           ][, ':='(Experiment = gsub("(opt.+_)(.+)(_SD\\d{1,})","\\2", name),
+                    SowingDate = gsub("(opt.+_)(.+_)(SD\\d)","\\3", name))]
+timecost <- fix_SDorder(timecost)
+timecost[,.(Experiment, SowingDate, Hours)] %>% 
+  ggplot(aes(SowingDate, Hours,  fill = Experiment)) +
+  geom_col(position = "dodge") +
+  theme_water() +
+  theme(legend.position = c(0.8,0.8))+
+  scale_fill_manual(values = c("red", "black"))+
+  scale_x_discrete(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0,175))
+ggsave("Figures/ch5_timecost.png", width = 10, height =6, dpi = 320)
+
+timecost[, group := rep(1:2, each = 10)
+         ][, list(mean = mean(Hours),
+                sd = sd(Hours)), 
+         by = .(group)]
+
+```
+
+## LAI interplotation
+
+```{r}
+
+sowingDates <- readRDS(here::here("_targets/objects/sowingDates"))
+met_Iversen12 <- readRDS(here::here("_targets/objects/met_Iversen12_SD1"))
+met_AshleyDene <- readRDS(here::here("_targets/objects/met_AshleyDene_SD1"))
+LAI_Height <- read_Sims(path = path_richard, source = "biomass")
+
+LAI_Height_SD <- merge.data.table(LAI_Height, sowingDates, 
+                                  by = c("Experiment", "Clock.Today" , "SowingDate"), 
+                                  all= TRUE)[,
+                                             ':='(LAImod = ifelse(is.na(LAImod), 0, LAImod),
+                                                  Height = ifelse(is.nan(Height), NA, Height))]
+daily_lai <- list.files(here::here("01Data/ProcessedData/CoverData/"), 
+                        pattern = "LAI", full.names = TRUE) %>% 
+  sapply(., fread, USE.NAMES = TRUE, simplify = FALSE)
+
+
+DT <- rbindlist(daily_lai, idcol = "Name")
+DT[, Name := basename(Name)
+   ][, Name := gsub("LAI_|.csv", "", Name)
+     ][, (c("Experiment", "SowingDate")) := tstrsplit(Name, "_")]
+# slurp need LAI WITH k
+
+# plot(na.approx(DT$SD1, x = DT$AccumTT, na.rm = FALSE))
+DT <- fix_SDorder(DT)
+LAI_Height_SD <- fix_SDorder(LAI_Height_SD)
+DT[, LAI:=ifelse(LAI == 0, NA, LAI)]%>% 
+  ggplot(aes(Clock.Today, LAI)) +
+  geom_point(data =  LAI_Height_SD, aes(Clock.Today, LAImod), color = "red", size = 3) +
+  geom_line(size = 1)+
+  facet_grid(SowingDate ~ Experiment) +
+  theme_water() +
+  scale_x_date(date_labels = "%b %Y", name = "Date") 
+
+ggsave("Figures/ch5_LAIinterp.png", width = 10, height = 14, dpi = 320)
+
+```
+
+
+## Best values 
+
+```{r, eval=FALSE}
+rdsfiles <- list.files("c:/Users/cflfcl/OneDrive - Lincoln University/transfer/",
+                       full.names = TRUE, pattern = "opt*")
+l <- lapply(rdsfiles, readRDS)
+
+names(l) <- basename(rdsfiles)
+
+# View(l$opt.res_AshleyDene_SD1)
+
+# l$opt.res_AshleyDene_SD1$member$bestmemit %>% View()
+parameters <- readRDS(here::here("_targets/objects/parameters"))
+parnms <- parameters[,.(parameter)
+                     ][, variable := paste0("par", 1:.N)]
+
+for (i in seq_len(length(l))) {
+  
+  bestmemit <- as.data.table(l[[i]]$member$bestmemit, keep.rownames = TRUE) %>% 
+    melt.data.table(id.vars = "rn",variable.factor = FALSE)
+  bestmemit <- bestmemit[parnms, on = "variable"
+                         ][, rn := as.integer(rn)
+                           ][, parameter := as.factor(parameter)]
+  bestmemit$parameter <- factor(bestmemit$parameter, 
+                                levels = levels(bestmemit$parameter)[c(5, 2:3, 1,4, 6:9)])
+  
+  storepop <- rbindlist(lapply(l[[i]]$member$storepop, as.data.table, keep.rownames = TRUE), 
+                        idcol = "itr") %>% 
+    melt.data.table(id.vars = c("itr","rn"),variable.factor = FALSE)
+  
+  storepop <- storepop[parnms, on = "variable"]
+  storepop$parameter <- as.factor(storepop$parameter)
+  storepop$parameter <- factor(storepop$parameter, levels = levels(storepop$parameter)[c(5, 2:3, 1,4, 6:9)])
+  
+
+  base_p <- bestmemit %>% 
+    ggplot(aes(rn, value))+
+    geom_point(data = storepop, aes(itr, value), color = "grey80", alpha = 0.5) +
+    geom_point(color = "#FF0000") +
+    facet_wrap(~parameter, scales = "free_y")+
+    theme_water() +
+    theme(text = element_text(size = 20)) +
+    labs(x = "Iteration", y = "Value range")
+  print(paste("Print", names(l[i])))
+  ggsave(filename = here::here("03Documentations/Manuscript/Figures/",
+                               paste0(names(l[i]), ".png")),
+         base_p, dpi = 320, height = 7, width = 9)
+
+}
+# bestmemit <- as.data.table(l$opt.res_AshleyDene_SD1$member$bestmemit, keep.rownames = TRUE) %>% 
+#   melt.data.table(id.vars = "rn",variable.factor = FALSE)
+# storepop <- rbindlist(lapply(l$opt.res_AshleyDene_SD1$member$storepop, as.data.table, keep.rownames = TRUE), 
+#                       idcol = "itr") %>% 
+#   melt.data.table(id.vars = c("itr","rn"),variable.factor = FALSE)
+# 
+# parameters <- readRDS(here::here("_targets/objects/parameters"))
+# parnms <- parameters[,.(parameter)
+#                      ][, variable := paste0("par", 1:.N)]
+# storepop <- storepop[parnms, on = "variable"]
+# 
+# base_p <- bestmemit[parnms, on = "variable"
+#                     ][, rn := as.integer(rn)] %>% 
+#   ggplot(aes(rn, value))+
+#   geom_point(data = storepop, aes(itr, value), color = "grey80", alpha = 0.5) +
+#   geom_point(color = "#FF0000") +
+#   facet_wrap(~parameter, scales = "free_y")+
+#   theme_water() +
+#   theme(text = element_text(size = 20)) +
+#   labs(x = "Iteration", y = "Value range")
+# ggsave(filename = "20210607ADsd1to.png",
+#        base_p, dpi = 320, height = 7, width = 9)
+```
+```{r,eval=FALSE}
+bestmemit <- l$opt.res_AshleyDene_SD1$member$bestmemit %>% 
+  as.data.table()
+bestmemit[, cost:=l$opt.res_AshleyDene_SD1$member$bestvalit]
+
+bestmemit
+```
+
+```{r,eval=FALSE}
+
+fit.par <- data.table(estimates = l$opt.res_AshleyDene_SD1$optim$nfeval, 
+                      cost = l$opt.res_AshleyDene_SD1$optim$bestval)
+
+cbind(parameters,fit.par)
+```
+
+```{r, eval=FALSE}
+
+cost <- data.table(bestval = l$opt.res_AshleyDene_SD1$member$bestvalit , 
+                   iter = 1:(l$opt.res_AshleyDene_SD1$optim$iter))
+
+cost %>% 
+  ggplot(aes(iter, bestval))+
+  geom_point(color = "#FF0000") +
+  # facet_wrap(~parameter, scales = "free_y")+
+  theme_water() +
+  theme(text = element_text(size = 20)) +
+  labs(x = "Iteration", y = "Value range")
+```
+
+### WHAT IS THE COST FOR ALL 
+```{r, eval=FALSE}
+# View(l)
+
+for (i in seq_len(length(l))) {
+  cost <- data.table(bestval = l[[i]]$member$bestvalit , 
+                     iter = 1:(l[[i]]$optim$iter))
+  title <- gsub("opt.res_","",names(l[i]))
+  p <- cost %>% 
+    ggplot(aes(iter, bestval))+
+    geom_point(color = "#FF0000") +
+    # facet_wrap(~parameter, scales = "free_y")+
+    theme_water() +
+    theme(text = element_text(size = 20)) +
+    labs(x = "Iteration", y = "Total sum of squares",
+         title = title)
+  print(paste("Print", title))
+  ggsave(filename = here::here("03Documentations/Manuscript/Figures/", 
+                               paste0(title, "cost.png")),
+         p, dpi = 320, height = 5, width = 5)
+  
+}
+
+```
+
+
+```{r}
+dt <- read_dbtab("../../01Data/ApsimxFiles/SingleSlurp.db", "PredictedObserved")
+dt[Clock.Today>=magicDate] %>% 
+  ggplot(aes(Clock.Today, `Pred-Obs.SWCmm`))+
+  geom_point()
+dt[Clock.Today>=magicDate] %>% 
+  ggplot(aes(Clock.Today, Predicted.SWCmm))+
+  geom_line()+
+  geom_point(aes(y = Observed.SWCmm)) 
+
+(dt[Clock.Today>=magicDate]$`Pred-Obs.SWCmm`) ^ 2%>% 
+  sum(na.rm = TRUE)
+
+```
+
+### iVERSEN12 SD1 TO5
+```{r}
+
+```
+
+### Examine the zipped config files
+
+```{r, eval=FALSE}
+configfiles <- unzip(zipfile = "C:/Users/cflfcl/OneDrive - Lincoln University/transfer/ConfigurationFiles.zip", list = TRUE)
+head(configfiles)
+nrow(configfiles)
+configfiles <- as.data.table(configfiles)
+counts <- configfiles[-1, .(Name)
+                      ][, Name := gsub("_\\d.+", "", basename(Name))
+                        ][, (c("Experiment", "SowingDate")) := tstrsplit(Name, split = "_")
+                          ][]
+countspertrt <- counts[, .N, by = .(Experiment, SowingDate)
+       ] %>% 
+  dcast(SowingDate ~ Experiment)
+
+fix_SDorder(countspertrt)[order(SowingDate)]
+counts[, .N, by = .(Experiment, SowingDate)
+       ][SowingDate %in% paste0("SD",1:5)
+             ][, lapply(.SD, mean)]
+counts[, .N, by = .(Experiment, SowingDate)
+       ][SowingDate %in% paste0("SD",1:5)
+             ][, lapply(.SD, sd)]
+157*3600/86814
+31*3600/81000
+test <- lapply(l, function(x){
+  xx <- x$optim$bestmem %>% 
+    round(digits = 3) %>% 
+    paste0( ., collapse = "_") 
+  pos <- grep(pattern = xx, x = configfiles$Name, ignore.case = TRUE,perl = TRUE)
+})
+
+pos <- unlist(test)
+if (is.na(test)) {
+  print("No configuration file found.")
+  
+}
+
+gemfiles <- configfiles$Name[pos]
+
+# UNZIP the gemfiles
+gemfilesunzip <- unzip(zipfile = "C:/Users/cflfcl/OneDrive - Lincoln University/transfer/ConfigurationFiles.zip",
+                       files = gemfiles, 
+                       exdir = here("01Data/ProcessedData/"))
+
+```
+
+
+```{r}
+# 
+# path_apsimx <- apsimx_path(debug = TRUE)
+# path_config <- list.files(here("01Data/ProcessedData/ConfigurationFiles"), 
+#                           pattern = ".txt", full.names = TRUE)
+# file.edit(path_config[1])
+# for (i in path_config) {
+#   
+#   filename <- gsub("txt$", "apsimx", basename(i))
+#   file.copy(here("01Data/ApsimxFiles/SingleSlurp.apsimx"), filename)
+#   system(paste(path_apsimx, "--edit", i, filename))
+# }
+
+```
+
+
+# Results for 4.3.1.2 onwards
+
+## Connect to db and extract the predict and observed
+```{r}
+conn <- DBI::dbConnect(drv = SQLite(), 
+                       here::here("01Data/ApsimxFiles/LucerneValidationUseSlurpValue.db"))
+dbListTables(conn)
+sql <- 'SELECT * FROM PredictedObserved INNER JOIN _Simulations ON PredictedObserved.SimulationID = _Simulations.ID'
+rs <- dbSendQuery(conn, sql)
+pre_obs <- DBI::dbFetch(rs) %>% 
+  as.data.table()
+
+sql <- 'SELECT * FROM Report INNER JOIN _Simulations ON Report.SimulationID = _Simulations.ID'
+rs <- dbSendQuery(conn, sql)
+Report <- DBI::dbFetch(rs) %>% 
+  as.data.table()
+
+sql <- 'SELECT * FROM ObsAllData INNER JOIN _Simulations ON ObsAllData.SimulationID = _Simulations.ID'
+rs <- dbSendQuery(conn, sql)
+Observe <- DBI::dbFetch(rs) %>% 
+  as.data.table()
+
+
+pre_obs[, Clock.Today:=as.Date(Clock.Today)
+        ][, (c("Experiment", "SowingDate")) := tstrsplit(Name, split = "SowingDate")]
+setnames(pre_obs, colnames(pre_obs), gsub("[[:punct:]]", ".", colnames(pre_obs)))
+Report[, Clock.Today:=as.Date(Clock.Today)]
+names(Report) <-   gsub("[[:punct:]]", ".", colnames(Report))
+Observe[, Clock.Today:=as.Date(Clock.Today)
+        ][, (c("Experiment", "SowingDate")) := tstrsplit(Name, split = "SowingDate")]
+names(Observe) <-   gsub("[[:punct:]]", ".", colnames(Observe))
+
+DBI::dbDisconnect(conn)
+```
+
+
+```{r}
+# Define variable components
+variable <- "SWC"
+var_unit <- "mm"
+var_unit_lab <- paste0("(", var_unit, ")")
+# Assemble the variable names 
+pre_col <- paste0("Predicted.", variable, var_unit)
+obs_col <- paste0("Observed.", variable, var_unit)
+pre_color <- "black"
+obs_color <- "#FF0000"
+pre_label <- paste("Predicted", variable, var_unit_lab)
+obs_label <- paste("Observed", variable, var_unit_lab)
+# Assemble necessary variable names 
+var_subset <- c("Experiment","SowingDate", "Clock.Today",
+                pre_col, obs_col)
+SWCprofile <- unique(pre_obs[Clock.Today >= magicDate, 
+                             ..var_subset])
+# Fix the factor order 
+SWCprofile <- fix_SDorder(SWCprofile)
+
+timestep_colors <- c(pre_color,obs_color)
+names(timestep_colors) <- c(pre_col, obs_col)
+timestep_labels <- c(pre_label, obs_label)
+names(timestep_labels) <- c(pre_col, obs_col)
+timestep_p <- SWCprofile %>% 
+  ggplot(.,aes(Clock.Today )) +
+  geom_point(aes(y = .data[[obs_col]], color = {{obs_col}}),
+             size = 3)+
+  geom_line(aes(y = .data[[pre_col]], color = {{pre_col}}), show.legend = TRUE,
+            size = 1) +
+  facet_wrap( ~  SowingDate + Experiment,
+              strip.position = "right", ncol = 2, scales = "free_y") +
+  theme_water()  +
+  theme(legend.position = "none", legend.key.size = unit(1, "cm")) +
+  labs(y = paste0(gsub("Predicted\\.|mm", "", pre_col), " (mm)"), 
+       x = "Date") +
+  scale_colour_manual(name = "col", values = timestep_colors, labels = timestep_labels)
+timestep_p
+#https://stackoverflow.com/questions/49740215/ggplot-facet-grid-label-cut-off
+
+```
+
+## Best performer 
+
+```{r}
+
+# Aim
+# Graph the fitted values over treatment 
+
+filepath <- list.files(here::here("01Data/ProcessedData/ConfigurationFiles/"),
+                       full.names = TRUE)
+
+list_files <- sapply(filepath, readLines, USE.NAMES = TRUE, simplify = FALSE)
+info <- lapply(list_files, function(x){
+  treatment <- x[1]
+  values <- x[17:25]
+  dt <- data.table(SowingDate = treatment, 
+                   info = values)
+  }
+  )
+excluded <- names(info) %>% 
+  grep("Iversen12_SD1_", x = .)
+DT <- rbindlist(info[-(excluded)])
+DT[, (c("variable", "value")) := tstrsplit(info, split = "=")]
+DT[, value := as.numeric(value)
+   ][, SowingDate := gsub("AshleyDene", "AD", SowingDate)
+     ][, SowingDate:= gsub("Iversen12", "I12", SowingDate)]
+DT[, SowingDate:=gsub(".+= |SowingDate", "", SowingDate)]
+DT %>% 
+  ggplot(aes(value)) +
+  geom_histogram()+
+  facet_wrap(~ variable, scales = "free_x")
+
+
+DT$SowingDate <- as.factor(DT$SowingDate)
+DT$SowingDate <- factor(DT$SowingDate, levels = levels(DT$SowingDate)[c(1,3:10, 2, 12:19,11)])
+
+# More fixing for the graph manually 
+
+## change maxg to gsmax350
+DT[, variable := gsub("MaxG", "gsmax350", variable)
+   ][, variable := gsub("eductionFactor", "", variable)]
+
+DT[, variable := gsub("^.+(.Script|.SlurpSoil)\\.", "", variable)] 
+DT$variable <- as.factor(DT$variable)
+DT$variable <- factor(DT$variable, levels = levels(DT$variable)[c(5, 2:3, 1,4, 6:9)])
+
+DT%>% 
+  ggplot(aes(SowingDate, value)) +
+  geom_point(size = 3)+
+  facet_wrap(~ variable, scales = "free_y") +
+  theme_water()+
+  theme(axis.text.x = element_text(angle = 90), text = element_text(size = 16))
+ggsave("Figures/ch5_bestfits.png", width = 10, height =6, dpi = 320)
+
+DT[variable %like% "*U|*Cona"]
+
+
+```
+#### what is the kl in each layer looks like
+
+```{r}
+
+kl_klr <- unique(DT[ variable %like% "KL|KLR", .(SowingDate,variable, value)
+                     ]) %>% 
+  dcast(SowingDate ~ variable)
+# Duplicated to 22 layers 
+
+kls <- kl_klr[rep(1:.N, 22)
+              ][, layers := 1:.N, by = .(SowingDate)
+                ][order(SowingDate)
+                  ][, depth := ifelse(layers == 1, 20, 
+                                      (layers + 1)*10)
+                    ][, actualKL := ifelse(layers == 1, `KL[1:22] `,
+                                           `KL[1:22] ` * exp(-`KLR `*(depth - 15)))][]
+kls[SowingDate %like% "AD" & actualKL < 0.2]$actualKL %>% 
+  range()
+kls[SowingDate %like% "AD" & actualKL < 0.2]$SowingDate %>% unique()
+kls %>% 
+  ggplot(aes(actualKL, layers,  group = SowingDate)) +
+  geom_point()+
+  geom_line()+
+  scale_y_reverse() +
+  facet_wrap(~SowingDate) +
+  theme_water() 
+```
+
+
+```{r}
+sd1to5 <- c(5.425 , 5.022 , 5.125 , 4.45 , 4.459)
+mean(sd1to5)
+sd(sd1to5)
+
+sd1345 <- c(1.54761799648701,
+            1.12164135037648 ,1.2769669482633,
+            1.44858759846621 )
+mean(sd1345)
+sd(sd1345)
+
+```
+
+
+## Soil water profile
+## after Reset the soil 
+### Time course
+```{r, fig.height=10}
+# Define variable components
+variable <- "SWC"
+var_unit <- "mm"
+var_unit_lab <- paste0("(", var_unit, ")")
+# Assemble the variable names 
+pre_col <- paste0("Predicted.", variable, var_unit)
+obs_col <- paste0("Observed.", variable, var_unit)
+pre_color <- "black"
+obs_color <- "#FF0000"
+pre_label <- paste("Predicted", variable, var_unit_lab)
+obs_label <- paste("Observed", variable, var_unit_lab)
+# Assemble necessary variable names 
+var_subset <- c("Experiment","SowingDate", "Clock.Today",
+                pre_col, obs_col)
+SWCprofile <- unique(pre_obs[Clock.Today >= magicDate, 
+                             ..var_subset])
+# Fix the factor order 
+SWCprofile <- fix_SDorder(SWCprofile)
+
+timestep_colors <- c(pre_color,obs_color)
+names(timestep_colors) <- c(pre_col, obs_col)
+timestep_labels <- c(pre_label, obs_label)
+names(timestep_labels) <- c(pre_col, obs_col)
+timestep_p <- SWCprofile %>% 
+  ggplot(.,aes(Clock.Today )) +
+  geom_point(aes(y = .data[[obs_col]], color = {{obs_col}}),
+             size = 3)+
+  geom_line(aes(y = .data[[pre_col]], color = {{pre_col}}), show.legend = TRUE,
+            size = 1) +
+  facet_wrap( ~  SowingDate + Experiment,
+              strip.position = "right", nrow = 10, scales = "free_y") +
+  theme_water()  +
+  theme(legend.position = "none", legend.key.size = unit(1, "cm")) +
+  labs(y = paste0(gsub("Predicted\\.|mm", "", pre_col), " (mm)"), 
+       x = "Date") +
+  scale_colour_manual(name = "col", values = timestep_colors, labels = timestep_labels)
+timestep_p
+#https://stackoverflow.com/questions/49740215/ggplot-facet-grid-label-cut-off
+
+
+```
+Add DUL to time stamp graph
+```{r}
+DULmm <- unique(Report[!is.na(DULmm), .(DULmm, Experiment, SowingDate)])
+DULmm <- fix_SDorder(DULmm)
+p <- timestep_p +
+  geom_hline(data = DULmm, aes(yintercept = DULmm), linetype = 2, size = 0.5, 
+             alpha = 0.6, inherits =FALSE)
+p
+#ggsa("Figures/sw_timestamp.png",plot = p, width = 10, height =14, dpi = 320)
+```
+
+
+
+
+```{r}
+p$data[Experiment == "Iversen12" & SowingDate == "SD6"] %>% 
+  qplot(Clock.Today, Predicted.SWCmm, data = .) %>% 
+  plotly::ggplotly()
+```
+
+SD6 in Iversen12 extracted `r 747-588` mm water from 2011-12-19 to 2012-02-29
+rainfall recharged the SWC from 588 to 619 
+
+**Manually edit** SD10 LAYER 1 from 0.333 to 0.320 
+
+#### Soil moisture deficit wording
+
+```{r}
+SWCmm <- sw_mean_new[ , SWCmm := rowSums(.SD, na.rm = TRUE), 
+                      by = .(Experiment,SowingDate, Clock.Today, DAS), 
+                      .SDcols = grep("SWmm.\\d.+mean", 
+                                     colnames(sw_mean_new), value = TRUE)
+                      ][,.(Experiment, SowingDate, Clock.Today, DAS, SWCmm)]
+SMD <- SWCmm[order(SWCmm), .SD[1], by = .(Experiment, SowingDate)] 
+
+SMD[DULmm[, SowingDate:=as.character(SowingDate)], 
+    on = c("Experiment", "SowingDate")
+    ][, SMD.mm := DULmm - SWCmm][order(DAS)]
+```
+## Biomass and LAI
+
+### Pre vs obs
+
+```{r}
+variable <- "SWC"
+var_unit <- "mm"
+var_unit_lab <- " (mm)"
+
+pre_col <- paste0("Predicted.", variable, var_unit)
+obs_col <- paste0("Observed.", variable, var_unit)
+pre_color <- "black"
+obs_color <- "#FF0000"
+pre_label <- paste("Predicted", variable, var_unit_lab)
+obs_label <- paste("Observed", variable, var_unit_lab)
+
+
+var_subset <- c("Experiment","SowingDate", "Clock.Today",
+                pre_col, obs_col)
+DT_sub <- pre_obs[Clock.Today >= magicDate & Name != "Iversen12SowingDateSD1",
+                      ..var_subset]
+
+DT_sub <- fix_SDorder(DT_sub)
+base_p <- DT_sub %>%
+  plot_PreObs(., col_obs = obs_col, col_pre = pre_col,scale = "free")+
+  theme_water()
+
+# Add stats
+abline_p <- base_p+
+  geom_abline()+
+  geom_smooth(method =  "lm", se = FALSE)
+
+stats_rs <- key_stats(DT_sub, key =c("Experiment"), 
+                      pre_col, obs_col, nmethod = "mean")
+## Has to customise
+anchors <- DT_sub[, .(x = min(eval(parse(text = obs_col)), na.rm = TRUE) * 1.1,
+                      y = max(eval(parse(text = pre_col)), na.rm = TRUE)* 0.9), 
+                  by = .(Experiment)]
+stats_rs <- stats_rs[anchors, on = "Experiment"]
+
+abline_p +
+  geom_text(data = stats_rs,
+            aes( x = x,  y = y, label = NSE_str),
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs,
+            aes( x = x,  y = y*1.02, label = R2_str), parse = TRUE,
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs,
+            aes( x = x,  y = y*0.98, label = nRMSE_str),
+            inherit.aes = FALSE) +
+  labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
+       x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
+ggsave("Figures/ch5_swc_preobs.png", width = 10, height =5, dpi = 320)
+```
+```{r}
+changes_nRMSEAD <- (0.395 - 0.337)/0.395
+changes_nRMSEI12 <- (0.548 - 0.686) / 0.548
+
+
+#LAI metric calculation
+#ADSD
+(2.563 - 1.906)/2.563
+
+#i12
+(0.633 - 0.56) / 0.633
+
+
+# Aboveground biomass
+(132 - 98)/132
+(39 - 46)/39
+
+(0.733 - 0.584)/ 0.733
+(1.216 - 0.953)/1.216
+
+
+#nse shoot and leaf
+(0.46 - 0.66)/ 0.46
+(-0.48 - 0.06)/ -0.48
+0.48*1.125
+(39-46)/46
+
+# pheno
+(0.648 - 0.564) / 0.648
+(0.541 - 0.485)/0.541
+```
+### LAI OVERTIME
+
+```{r}
+variable <- "LAI"
+var_unit <- ""
+var_unit_lab <- ""
+
+pre_col <- paste0("Predicted.", variable, var_unit)
+obs_col <- paste0("Observed.", variable, var_unit)
+pre_color <- "black"
+obs_color <- "#FF0000"
+pre_label <- paste("Predicted", variable, var_unit_lab)
+obs_label <- paste("Observed", variable, var_unit_lab)
+
+
+var_subset <- c("Experiment","SowingDate", "Clock.Today",
+                pre_col, obs_col)
+DT_sub <- pre_obs[Clock.Today >= magicDate,
+                      ..var_subset]
+
+DT_sub <- fix_SDorder(DT_sub)
+colnames(DT_sub)
+DT_sub %>% 
+  ggplot(aes(Clock.Today, Observed.LAI))+
+  geom_point(size = 3, color = "red")+
+  geom_line(aes(y = Predicted.LAI),size = 1)+
+  facet_grid( SowingDate ~ Experiment  ) +
+    geom_line(size = 1)+
+  facet_grid(SowingDate ~ Experiment) +
+  theme_water()
+  theme_water()  +
+  theme(legend.position = "none", legend.key.size = unit(1, "cm"),
+        panel.spacing.x = unit(2, "lines")) +
+  labs(y = paste0(gsub("Predicted\\.|mm", "", pre_col), " (mm)"), 
+       x = "Date") +
+  scale_colour_manual(name = "col", values = timestep_colors, labels = timestep_labels)
+ggsave("Figures/ch5_LAI_timecourse.png", width = 7, height =10, dpi = 320)
+
+base_p <- DT_sub %>%
+  plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
+  theme_water()
+
+# Add stats
+abline_p <- base_p+
+  geom_abline()+
+  geom_smooth(method =  "lm", se = FALSE)
+
+stats_rs <- key_stats(DT_sub, key = c("Experiment"),
+                       pre_col, obs_col, 
+                      nmethod = "mean")
+
+anchors <- data.table(Experiment = c("AshleyDene", "Iversen12"), x = 6, y = 1)
+stats_rs <- stats_rs[anchors, on = "Experiment"]
+
+p <- abline_p +
+  geom_text(data = stats_rs,
+            aes( x = x,  y = y, label = NSE_str), 
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs,
+            aes( x = x,  y = y*1.3, label = R2_str), parse = TRUE,
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs,
+            aes( x = x,  y = y*0.7, label = nRMSE_str), 
+            inherit.aes = FALSE) +
+  labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
+       x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab)) 
+plotly::ggplotly(p)
+DT_sub[SowingDate == "SD8" & Experiment == "Iversen12"] %>% 
+  ggplot(aes(Clock.Today, Observed.LAI)) +
+  geom_point()+
+  geom_line(aes( y = Predicted.LAI))
+ggsave("Figures/ch5_LAI_preobs.png",plot = p, width = 10, height =5, dpi = 320)
+```
+
+
+### Shootwt
+```{r}
+variable <- "Shoot"
+var_unit <- "Wt"
+var_unit_lab <- " (kg/ha)"
+
+pre_col <- paste0("Predicted.", variable, var_unit)
+obs_col <- paste0("Observed.", variable, var_unit)
+pre_color <- "black"
+obs_color <- "#FF0000"
+pre_label <- paste("Predicted", variable, var_unit_lab)
+obs_label <- paste("Observed", variable, var_unit_lab)
+
+
+var_subset <- c("Experiment","SowingDate", "Clock.Today",
+                pre_col, obs_col)
+DT_sub <- pre_obs[Clock.Today >= magicDate, 
+                      ..var_subset]
+
+DT_sub <- fix_SDorder(DT_sub)
+colnames(DT_sub)
+
+base_p <- DT_sub %>% 
+  plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
+  theme_water()
+
+# Add stats
+abline_p <- base_p+
+  geom_abline()+
+  geom_smooth(method =  "lm", se = FALSE)
+
+
+anchors <-  data.table(Experiment = c("AshleyDene", "Iversen12"), 
+                       x = c(3000,1000), y = c(1000,3000))
+stats_rs <- key_stats(DT_sub, key = c("Experiment"),
+                    pre_col, obs_col, nmethod = "mean")
+
+stats_rs <- stats_rs[anchors, on = "Experiment"]
+
+
+p_shoot <- abline_p +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y, label = NSE_str), 
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y + 250, label = R2_str), parse = TRUE,
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y - 250, label = nRMSE_str), 
+            inherit.aes = FALSE) +
+  labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
+       x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
+# check the weired overestimation 
+plotly::ggplotly(p_shoot)
+DT_sub[Clock.Today == "2011-11-03"]
+```
+
+```{r}
+variable <- "Leaf"
+var_unit <- "Wt"
+var_unit_lab <- " (kg/ha)"
+
+pre_col <- paste0("Predicted.", variable, var_unit)
+obs_col <- paste0("Observed.", variable, var_unit)
+pre_color <- "black"
+obs_color <- "#FF0000"
+pre_label <- paste("Predicted", variable, var_unit_lab)
+obs_label <- paste("Observed", variable, var_unit_lab)
+
+
+var_subset <- c("Experiment","SowingDate", "Clock.Today",
+                pre_col, obs_col)
+DT_sub <- pre_obs[Clock.Today >= magicDate, 
+                      ..var_subset]
+
+DT_sub <- fix_SDorder(DT_sub)
+colnames(DT_sub)
+
+base_p <- DT_sub %>% 
+  plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
+  theme_water()
+
+# Add stats
+abline_p <- base_p+
+  geom_abline()+
+  geom_smooth(method =  "lm", se = FALSE)
+
+
+anchors <-  data.table(Experiment = c("AshleyDene", "Iversen12"), 
+                       x = c(3000,1000), y = c(1000,3000))
+stats_rs <- key_stats(DT_sub, key = c("Experiment"),
+                    pre_col, obs_col, nmethod = "mean")
+
+stats_rs <- stats_rs[anchors, on = "Experiment"]
+DT_sub%>% 
+  ggplot(aes(Clock.Today, Observed.LeafWt)) +
+  geom_line(aes( y = Predicted.LeafWt))+
+  geom_point(size = 3)+
+  # geom_line(aes(y = Predicted.LAI),size = 1, color = "red")+
+  facet_grid( SowingDate ~ Experiment )+
+  theme_water()  +
+  theme(legend.position = "none", legend.key.size = unit(1, "cm")) +
+  labs(y = paste0(gsub("Predicted\\.|mm", "", pre_col), " (mm)"), 
+       x = "Date") +
+  scale_colour_manual(name = "col", values = timestep_colors, labels = timestep_labels)
+ggsave("Figures/ch5_LeafWt_timecourse.png", width = 7, height =10, dpi = 320)
+
+p_leaf <- abline_p +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y, label = NSE_str), 
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y + 200, label = R2_str), parse = TRUE,
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y - 200, label = nRMSE_str), 
+            inherit.aes = FALSE) +
+  labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
+       x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
+
+```
+combine shoot component
+```{r}
+
+p_aboveground <- plot_grid(p_shoot, p_leaf, ncol = 1)
+ggsave("Figures/ch5_aboveground_preobs.png",plot = p_aboveground,
+       width = 10, height =9, dpi = 320)
+```
+
+#### Height
+```{r}
+variable <- "Height"
+var_unit <- ""
+var_unit_lab <- " (cm)"
+
+pre_col <- paste0("Predicted.", variable, var_unit)
+obs_col <- paste0("Observed.", variable, var_unit)
+pre_color <- "black"
+obs_color <- "#FF0000"
+pre_label <- paste("Predicted", variable, var_unit_lab)
+obs_label <- paste("Observed", variable, var_unit_lab)
+
+
+var_subset <- c("Experiment","SowingDate", "Clock.Today",
+                pre_col, obs_col)
+DT_sub <- pre_obs[Clock.Today >= magicDate, 
+                      ..var_subset]
+
+DT_sub <- fix_SDorder(DT_sub)
+colnames(DT_sub)
+
+base_p <- DT_sub %>% 
+  plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
+  theme_water()
+
+# Add stats
+abline_p <- base_p+
+  geom_abline()+
+  geom_smooth(method =  "lm", se = FALSE)
+
+
+anchors <-  data.table(Experiment = c("AshleyDene", "Iversen12"), 
+                       x = c(40,40), y = c(10,10))
+stats_rs <- key_stats(DT_sub, key = c("Experiment"),
+                    pre_col, obs_col, nmethod = "mean")
+
+stats_rs <- stats_rs[anchors, on = "Experiment"]
+
+
+p_height <- abline_p +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y, label = NSE_str), 
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y + 5, label = R2_str), parse = TRUE,
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y - 5, label = nRMSE_str), 
+            inherit.aes = FALSE) +
+  labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
+       x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
+p_height
+ggsave("Figures/ch5_height_preobs.png",plot = p_height, width = 10, height =5, dpi = 320)
+```
+
+#### Phenology
+
+```{r}
+variable <- "MS.node.No"
+var_unit <- ""
+var_unit_lab <- ""
+
+pre_col <- paste0("Predicted.", variable, var_unit)
+obs_col <- paste0("Observed.", variable, var_unit)
+pre_color <- "black"
+obs_color <- "#FF0000"
+pre_label <- paste("Predicted", variable, var_unit_lab)
+obs_label <- paste("Observed", variable, var_unit_lab)
+check <- merge(Report[,.(Experiment, SowingDate, Clock.Today, MS.node.No)], 
+      Observe[!is.na(SowingDate) & !is.na(MS.node.No),
+              .(Experiment, SowingDate, Clock.Today, MS.node.No)], 
+      by = c("Experiment", "SowingDate", "Clock.Today"))
+p <- check %>% 
+  ggplot(aes(MS.node.No.x, MS.node.No.y)) +
+  geom_point() 
+  plotly::ggplotly(p)
+  
+Observe[Clock.Today == "2012-04-12", .(MS.node.No, Name)]
+Report[Clock.Today == "2012-04-12", .(Clock.Today,MS.node.No, Name)]
+var_subset <- c("Experiment","SowingDate", "Clock.Today",
+                pre_col, obs_col)
+DT_sub <- pre_obs[Clock.Today >= magicDate, 
+                      ..var_subset]
+
+DT_sub <- fix_SDorder(DT_sub)
+colnames(DT_sub)
+
+base_p <- DT_sub %>% 
+  plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
+  theme_water()
+
+# Add stats
+abline_p <- base_p+
+  geom_abline()+
+  geom_smooth(method =  "lm", se = FALSE)
+
+
+anchors <-  data.table(Experiment = c("AshleyDene", "Iversen12"), 
+                       x = c(3, 3), y = c(15,15))
+stats_rs <- key_stats(DT_sub, key = c("Experiment"),
+                      pre_col, obs_col, nmethod = "mean" )
+DT_sub[, .(nrmse = nrmse(Predicted.MS.node.No, Observed.MS.node.No, norm = "maxmin")), by = .(Experiment)]
+DT_sub[, .(nrmse = rmse(Predicted.MS.node.No, Observed.MS.node.No)/mean(Observed.MS.node.No, na.rm = TRUE)), by = .(Experiment)]
+stats_rs <- stats_rs[anchors, on = "Experiment"]
+
+
+p_MS.node.No <- abline_p +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y, label = NSE_str), 
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y + 1, label = R2_str), parse = TRUE,
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y - 1, label = nRMSE_str), 
+            inherit.aes = FALSE) +
+  labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
+       x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
+p_MS.node.No
+ggsave("Figures/ch5_MSNN_preobs.png",plot = p_MS.node.No, width = 10, height =5, dpi = 320)
+plotly::ggplotly(p_MS.node.No)
+```
+```{r}
+variable <- "GrowthStage"
+var_unit <- ""
+var_unit_lab <- ""
+
+pre_col <- paste0("Predicted.", variable, var_unit)
+obs_col <- paste0("Observed.", variable, var_unit)
+pre_color <- "black"
+obs_color <- "#FF0000"
+pre_label <- paste("Predicted", variable, var_unit_lab)
+obs_label <- paste("Observed", variable, var_unit_lab)
+
+
+var_subset <- c("Experiment","SowingDate", "Clock.Today",
+                pre_col, obs_col)
+DT_sub <- pre_obs[Clock.Today >= magicDate, 
+                      ..var_subset]
+
+DT_sub <- fix_SDorder(DT_sub)
+colnames(DT_sub)
+
+base_p <- DT_sub %>% 
+  plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
+  theme_water()
+
+# Add stats
+abline_p <- base_p+
+  geom_abline()+
+  geom_smooth(method =  "lm", se = FALSE)
+
+
+anchors <-  data.table(Experiment = c("AshleyDene", "Iversen12"), 
+                       x = c(2, 2), y = c(4,4))
+stats_rs <- key_stats(DT_sub, key = c("Experiment"),
+                    pre_col, obs_col, nmethod = "mean")
+
+stats_rs <- stats_rs[anchors, on = "Experiment"]
+
+
+p_GrowthStage <- abline_p +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y, label = NSE_str),
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y + 0.25, label = R2_str), parse = TRUE,
+            inherit.aes = FALSE) +
+  geom_text(data = stats_rs, 
+            aes( x = x,  y = y - 0.25, label = nRMSE_str),
+            inherit.aes = FALSE) +
+  labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
+       x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
+p_GrowthStage
+```
+combine phenology
+
+```{r}
+p_phenology <- plot_grid(p_MS.node.No, p_GrowthStage, ncol = 1)
+#ggsave("Figures/ch5_height_preobs.png",plot = p_height, 
+       # width = 10, height = 5, dpi = 320)
+ggsave("Figures/ch5_phenology_preobs.png",plot = p_MS.node.No,
+       width = 10, height = 5, dpi = 320)
+
+plotly::ggplotly(p_MS.node.No)
+p_MS.node.No$data[!is.na(Observed.MS.node.No) & Experiment == "AshleyDene" & Observed.MS.node.No >13]
+```
+#### Need the rainfall
+boardfield rainfall
+```{r}
+met_AD <- read_met(here::here("01Data/ClimateAndObserved/AshleyDene.met"),
+                   skip_unit = 10, skip_meta = 8)
+met_i12 <- read_met(here::here("01Data/ClimateAndObserved/lincoln.met"),
+                    skip_unit =  7, skip_meta = 6, site = "Iversen12")
+met <- rbindlist(list(met_AD,met_i12))
+
+
+met[Clock.Today >= magicDate] %>% 
+  ggplot(aes(Clock.Today, rain)) +
+  geom_col(color = "#0f5e9c", width = 0.1) +
+  facet_wrap( ~ Experiment, ncol = 1) +
+  theme_water() +
+  scale_y_continuous(expand = c(0,0), limits = c(0,70)) +
+  labs(x = "Date", y = "Rainfall (mm)")
+#ggsave("Figures/ch5_rainfall_daily.png", 
+       # width = 10, height = 5, dpi = 320)
+
+met_monthly <- met[Clock.Today >= magicDate
+                   ][, Month := gsub("^\\d{4}-|-\\d{2}$", "", Clock.Today)
+                     ][, .(rain = sum(rain, na.rm = TRUE)), 
+                       by = .(Month, Season,Experiment)]
+
+met_monthly[, Date := as.Date(paste0(c(rep("2011",7), 
+                                       rep("2012", 7)), 
+                                     "-",Month,"-", 
+                                     rep("01",14))), # RESOTRE THE DATE TIME FOR PLOTTING
+            by = .(Experiment)]
+met_monthly %>% 
+   ggplot(aes(Date, rain)) +
+  geom_col(fill = "#0f5e9c") +
+  facet_wrap( ~ Experiment, ncol = 2) +
+  theme_water() +
+  scale_y_continuous(expand = c(0,0), limits = c(0,70)) +
+  labs(x = "Date", y = "Rainfall (mm)")
+#ggsave("Figures/ch5_rainfall_monthly.png", 
+       # width = 10, height = 5, dpi = 320)
+met_monthly[, sum(rain), by = .(Experiment)]
+```
+#### Need the temperature
+
+```{r}
+met[Clock.Today >= magicDate] %>% 
+  ggplot(aes(Clock.Today, mean, color = Experiment)) +
+  geom_line(width = 1) +
+  theme_water() +
+  scale_y_continuous(expand = c(0,0), limits = c(0,25)) +
+  labs(x = "Date", y = "Temperature (\u00B0C)")+
+  scale_color_manual(name = "Site", values = c("blue", "red"))
+ggsave("Figures/ch5_temp_daily.png",
+width = 10, height = 5, dpi = 320)
+met[Clock.Today >= "2011-07-01" ] %>% 
+  ggplot(aes(Clock.Today, AccumTT)) +
+  geom_point(size = 1) +
+  theme_water() +
+  # scale_y_continuous(expand = c(0,0), limits = c(0,25)) +
+  labs(x = "Date", y = "Accumulative thermal time (\u00B0Cd)") +
+  facet_wrap( ~ Experiment)
+ggsave("Figures/ch5_cum_TT.png", 
+       width = 10, height = 5, dpi = 320)
+
+met[Clock.Today >= "2011-07-01" ]$AccumTT %>% max()
+```
+
+#### Need radiation 
+
+```{r}
+met[Clock.Today >= "2011-07-01"
+    ][,AccumRadn := cumsum(radn), by = .(Season, Experiment)][] %>% 
+  ggplot(aes(Clock.Today, AccumRadn)) +
+  geom_point(size = 1) +
+  theme_water() +
+  # scale_y_continuous(expand = c(0,0), limits = c(0,25)) +
+  labs(x = "Date", y = expression("Accumlative solar radiation (MJ "~ m^-2 ~ d^-1~")"))
+ggsave("Figures/ch5_cum_radn.png", 
+       width = 10, height = 5, dpi = 320)
+met[Clock.Today >= "2011-07-01" ]$AccumRadn %>% max()
+
+```
+
+https://cliflo.niwa.co.nz/pls/niwp/wh.do_help?id=ls_rad
+$MJ/m^2$ to $W/m^2$
+
+$MJ/m^2/day \times 11.574$ 
+#### Supply and demand
+
+```{r}
+Fw_new <- Report[Experiment %in% c("AshleyDene", "Iversen12") &
+               SowingDate %in% paste0("SD", 1:10)&
+               Clock.Today >= magicDate,
+       .(Experiment,SowingDate, Clock.Today, Lucerne.Leaf.Fw)]
+Fw_new <- fix_SDorder(Fw_new)
+p_fw <-  Fw %>% 
+    ggplot(.,aes(Clock.Today, Lucerne.Leaf.Fw )) +
+    # geom_point(size = 3)+
+    geom_line(size = 0.6) +
+    facet_grid( SowingDate ~  Experiment) +
+    theme_water()  +
+    theme(legend.position = "none", 
+          legend.key.size = unit(1, "cm"),
+          axis.title = element_text(size = 20)) +
+    labs(y = "Ratio of leaf transpiration and water demand", 
+         x = "Date") +
+    scale_colour_manual(name = "col", values = timestep_colors, labels = timestep_labels)
+
+# plotly::ggplotly(p_fw)
+
+ggsave("Figures/ch5_fw.png",
+       width = 10, height = 10, dpi = 320)
+```
+
+###### HOW MANY DAYS FW BELOW 0.5?
+```{r}
+Fw_new[ Experiment == "AshleyDene" & round(Lucerne.Leaf.Fw, digits = 2) < 1 & Clock.Today < "2011-12-01"
+    ][order(Clock.Today)]
+Fw_new[ Experiment == "AshleyDene" & round(Lucerne.Leaf.Fw, digits = 2) < 1 & Clock.Today < "2011-12-01"
+    ][, .N, by = .(Experiment, SowingDate)
+      ][, list(range(N), mean(N), sd(N))]
+
+
+Fw_new[ Experiment == "AshleyDene" & round(Lucerne.Leaf.Fw, digits = 2) <= 0.5 & 
+          Clock.Today < "2012-03-01" & Clock.Today > "2011-10-31"
+    ][, .N, by = .(Experiment, SowingDate)
+      ][, list(range(N), mean(N), sd(N))]
+
+
+Fw_new[ Experiment == "AshleyDene" & round(Lucerne.Leaf.Fw, digits = 2) < 1 & 
+          Clock.Today >= "2012-03-01" & Clock.Today <= "2012-05-31"
+    ][, .N, by = .(Experiment, SowingDate)
+      ][, list(range(N), mean(N), sd(N))]
+```
+
+
+### use met file from the excel 
+```{r}
+excel_sheets("c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx")
+met_AD <- read_excel("c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx", 
+                     sheet = "AshleyDene.met", range = "a10:i802") %>% 
+  as.data.table()
+
+met_AD_col <- read_excel("c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx", 
+                     sheet = "AshleyDene.met", range = "A9:I10")
+colnames(met_AD) <- colnames(met_AD_col)
+startd = "2010-10-01"
+endd = "2012-08-01"
+site = "AshleyDene"
+met_AD <- met_AD[, Clock.Today := as.Date(day, origin = paste0(year, "-01-01"))
+                 ][Clock.Today > startd & Clock.Today < endd
+                   ][,Date := Clock.Today]
+met_AD <- group_in_season(met_AD)[, AccumTT := cumsum(mean),
+                                  by = Season
+                                  ][, Experiment:=site]
+met_i12 <- read_excel("c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx", 
+                     sheet = "Iversen12.met", range = "a18639:i19581") %>% 
+  as.data.table()
+
+met_i12_col <- read_excel("c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx", 
+                     sheet = "Iversen12.met", range = "A9:I10") 
+colnames(met_i12) <- colnames(met_i12_col)
+startd = "2010-10-01"
+endd = "2012-08-01"
+site = "AshleyDene"
+met_i12 <- met_i12[, Clock.Today := as.Date(day, origin = paste0(year, "-01-01"))
+                 ][Clock.Today > startd & Clock.Today < endd
+                   ][,Date := Clock.Today]
+met_i12 <- group_in_season(met_i12)[, AccumTT := cumsum(mean),
+                                    by = Season
+                                  ][, Experiment:= "Iversen12"]
+
+met <- rbindlist(list(met_AD, met_i12))
+met[Clock.Today >= "2011-07-01" ] %>% 
+  ggplot(aes(Clock.Today, AccumTT)) +
+  geom_point(size = 1) +
+  theme_water() +
+  # scale_y_continuous(expand = c(0,0), limits = c(0,25)) +
+  labs(x = "Date", y = "Accumulative thermal time (\u00B0Cd)") +
+  facet_wrap( ~ Experiment)
+ggsave("Figures/ch5_cum_radn.png", 
+       width = 10, height = 5, dpi = 320)
+
+```
+
+local rainfall
+
+```{r}
+met[Clock.Today >= magicDate] %>% 
+  ggplot(aes(Clock.Today, rain)) +
+  geom_col(color = "#0f5e9c", width = 0.1) +
+  facet_wrap( ~ Experiment, ncol = 1) +
+  theme_water() +
+  scale_y_continuous(expand = c(0,0), limits = c(0,70)) +
+  labs(x = "Date", y = "Rainfall (mm)")
+#ggsave("Figures/ch5_rainfall_daily.png", 
+       # width = 10, height = 5, dpi = 320)
+
+met_monthly <- met[Clock.Today >= magicDate
+                   ][, Month := gsub("^\\d{4}-|-\\d{2}$", "", Clock.Today)
+                     ][, .(rain = sum(rain, na.rm = TRUE)), 
+                       by = .(Month, Season,Experiment)]
+
+met_monthly[, Date := as.Date(paste0(c(rep("2011",7), 
+                                       rep("2012", 7)), 
+                                     "-",Month,"-", 
+                                     rep("01",14))), # RESOTRE THE DATE TIME FOR PLOTTING
+            by = .(Experiment)]
+met_monthly %>% 
+   ggplot(aes(Date, rain)) +
+  geom_col(fill = "#0f5e9c") +
+  facet_wrap( ~ Experiment, ncol = 2) +
+  theme_water() +
+  scale_y_continuous(expand = c(0,0), limits = c(0,70)) +
+  labs(x = "Date", y = "Rainfall (mm)")
+ggsave("Figures/ch5_rainfall_monthly.png",
+       width = 10, height = 5, dpi = 320)
+met_monthly[, sum(rain), by = .(Experiment)]
+```
+
+
+
+# Discussion

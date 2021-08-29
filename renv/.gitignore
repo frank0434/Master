@@ -1,4 +1,10 @@
+<<<<<<< HEAD
 lock/
 library/
+=======
+local/
+library/
+lock/
+>>>>>>> ch5
 python/
 staging/
