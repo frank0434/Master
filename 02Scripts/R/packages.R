@@ -40,7 +40,7 @@ library(hydroGOF)
 library(DEoptim)
 # Customised package
 library(autoapsimx)
-
+library(mcp)
 potentialPKGS <- c("autoapsimx","clipr"
 ,"dplyr     ","drake     "
 ,"DT        ","ggthemes  "
