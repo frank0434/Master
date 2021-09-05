@@ -1,13 +1,6 @@
 ---
 title: "Data_EDA"
-author: "jian (AKA Frank) liu"
-  - name: Jeffrey W. Hollister
-    affilnum: '1,2'
-    affiliation:
-    - affilnum: 1
-  affil: US Environmental Protection Agency, Office of Research and Development, National Health and Environmental Effects Research Laboratory, Atlantic Ecology Division, 27 Tarzwell Drive  Narragansett, RI, 02882, USA
-- affilnum: 2
-  affil: Big Name University, Department of R, City, BN, 01020, USA
+author: "Jian (AKA Frank) Liu"
 date: "04/10/2019"
 output:
   bookdown::html_document2:
