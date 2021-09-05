@@ -1,0 +1,196 @@
+---
+title: "Chapter4"
+author: "jian (AKA Frank) liu"
+date: "17/01/2021"
+output:
+  html_document:
+    df_print: paged
+  word_document:
+    reference_docx: dissertationTemplate.docx
+always_allow_html: yes
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.align = "center", fig.width = 10, fig.height = 7, 
+                      dpi = 300)
+options(scipen = 999)
+#Constants
+outlier.colour = "#ff0000"
+source(here::here("02Scripts/R/packages.R"))
+source(here::here("02Scripts/R/functions.R"))
+path_richard <- "C:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
+
+theme_frnl <- function(){
+  theme_bw() +
+  theme(strip.background = element_blank(),
+        strip.placement = "outside",
+        plot.background = element_rect(inherit.blank = T),
+        plot.caption = element_text(hjust = 0.5, size = rel(2)),
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        legend.key = element_blank(),
+        legend.position = "bottom",
+        panel.background = element_rect(fill = "white",colour = "grey"))
+}
+```
+
+## Converting cutting frequencies to acuumulate thermal time
+
+Read the france weather data
+
+$T_b = 5^oC\ \ \ \ \ if\ T > 15^o$ in France  
+
+Thiébeau, P., Beaudoin, N., Justes, E., Allirand, J.-M., & Lemaire, G. (2011). Radiation use efficiency and shoot:root dry matter partitioning in seedling growths and regrowth crops of lucerne (Medicago sativa L.) after spring and autumn sowings. European Journal of Agronomy, 35(4), 255–268. https://doi.org/10.1016/j.eja.2011.07.002
+
+Baldissera, T. C., Frak, E., Carvalho, P. C. de F., & Louarn, G. (2014). Plant development controls leaf area expansion in alfalfa plants competing for light. Annals of Botany, 113(1), 145–157. https://doi.org/10.1093/aob/mct251
+$T_b = 1^oC$ in NZ  
+
+
+```{r}
+france <- readxl::read_excel(here::here("01Data/ClimateAndObserved/Lusignan_Quo_1994_RR_TN-TX.xlsx")) %>% 
+  as.data.table()
+# check if min > max; any NAs
+temp <- france[, .(DATE, TN, TX)]
+temp[which(TX<TN)];temp[is.na(TX)]; temp[is.na(TN)]
+
+```
+
+```{r}
+
+dailyTT <- weaana::thermalTimeDaily(temp$TN,
+                                    temp$TX,
+                                    method = "3hr",
+                                    x_temp = c(1,15,30,40), # LUCERNE CARDINAL 
+                                     y_temp = c(0,10,25,0)) # EFFECTIVE TT
+
+dailyTT <- as.data.table(dailyTT)
+dailyTT[, Date := temp$DATE]
+
+
+```
+a fre- quent cutting treatment (first cut on 5May, followedby 2 harvests at 30-day intervals i.e. on 6 June and 6 July) or an infrequent cutting treatment (first cut on 24 May, followed by a harvest at a 45-day regrowth interval
+
+
+```{r}
+# 30 days
+cut1 <- dailyTT[Date > "1994-05-05" & (Date < "1994-07-06")
+                ][, interval := ifelse(Date <= "1994-06-05", 1, 2)
+                  ][, cumTT := cumsum(dailyTT), by = . (interval)]
+cut1[, max(cumTT), by = .(interval)
+     ][, list(mean = mean(V1), sd = sd(V1))]
+# 45 days
+cut2 <- dailyTT[Date > "1994-05-24" & (Date <= "1994-07-06")
+                ][, cumTT := cumsum(dailyTT)]
+
+cut2[, max(cumTT)]
+```
+
+```{r}
+
+library(clifro)
+library(data.table)
+library(lubridate)
+cf_find_station("lincoln", search = "name") # not working any more
+
+lincoln = cf_station(17603)
+me <-  cf_user("frank0434",password = getPass::getPass())
+my.dts <- cf_datatype(c(4), #temperature, radiation - 1,2,3 in this template
+                      c(2),
+                      list(2), # hourly and daily
+                      c(NA))
+
+
+cf.datalist <- cf_query(user = me,
+                        datatype = my.dts,
+                        station = lincoln,
+                        start_date = "2002-09-18 00",
+                        end_date = "2004-06-13 00")
+
+# converting into the df --------------------------------------------------
+nz <- as.data.table(cf.datalist)
+```
+
+```{r}
+temp <- nz[, .(Date = `Date(local)`, TN = `Tmin(C)`, TX = `Tmax(C)`)]
+temp[which(TX<TN)];temp[is.na(TX)]; temp[is.na(TN)]
+# fill the NA with previous year value
+temp[Date =="2003-06-02"]
+temp[is.na(TN), TN:= temp[Date =="2003-06-02"]$TN]
+temp[, Tmean := (TN+TX)/2]
+```
+
+```{r}
+# Effective thermal time 
+
+dailyTT <- weaana::thermalTimeHourly(temp$Date, 
+                                     temperature = temp$Tmean,
+                                     x_temp = c(1,15,30,40), # LUCERNE CARDINAL 
+                                     y_temp = c(0,10,25,0)) # EFFECTIVE TT
+
+dailyTT <- as.data.table(dailyTT)
+
+
+
+```
+1 st growth season 2002/03
+Actual experimental period
+From 14 June 2002 to 12 June 2003
+2nd growth season 2003/04
+From 13 June 2003 to 12 June 2004
+
+Sep 18 2002 starts the SS regrowth period to 8 true 28 cycles? 
+
+```{r}
+intervals <- 28
+first <- as.Date("2002-09-18") + intervals
+second <- first + intervals
+thrid <- second + intervals
+
+l <- list()
+init <- as.Date("2002-09-18")
+i <- 1L
+while(init < "2004-06-14"){
+  first <- init + intervals
+  init <- first
+  l[i] <- init
+  i <- i + 1L
+}
+
+l %>%
+  unlist() %>% 
+  as.Date(origin = "1970-01-01")
+```
+too complex 
+found information from the thesis 
+
+
+```{r}
+init <- as.Date(c("2002-09-20",
+          "2002-10-18",
+          "2002-11-14",
+          "2002-12-12",
+          "2003-01-09",
+          "2003-02-11",
+          "2003-03-08",
+          "2003-04-05"))
+
+intervals <- c(25,23,24,24,29,21,25,28)
+period <- init + intervals
+# dailyTT[date > init[1] & (date < period[1]), interval := 1][]
+l <- vector(mode = "list", length = length(init))
+for( i in seq_len(length(init))){
+  print(i)
+  DT <- dailyTT[(date >= init[i]) & (date <= period[i]), interval := i]
+  l[[i]] <- DT[!is.na(interval)]
+
+  
+}
+DT[!is.na(interval)
+   ][, cumTT:=cumsum(value), by = .(interval)
+     ][, max(cumTT), by = .(interval)
+       ][, list(mean = mean(V1),
+                sd = sd(V1))]
+```
+
