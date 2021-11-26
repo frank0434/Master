@@ -1,0 +1,339 @@
+---
+title: "Look into height"
+author: "Jian(Frank)"
+date: "21/11/2021"
+output:
+  bookdown::html_document2: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+source(here::here("02Scripts/R/packages.R"))
+source(here::here("02Scripts/R/functions.R"))
+path_richard = "c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
+dt = read_excel(path_richard, guess_max = 10300, sheet = 2,
+                          .name_repair ="universal",
+                          skip = 9 )%>% # fix the names 
+  as.data.table() 
+
+
+setnames(dt, c("Site", "Date", "Sowing.Date"), c("Experiment", "Clock.Today", "SowingDate"))
+
+```
+
+# Import the biomass data
+
+```{r Biomass tab}
+biomass <- dt[Data == "Biomass"]
+
+col_good <- choose_cols(biomass) # identify the right cols 
+
+biomass <- biomass[,..col_good] # subset the right cols
+
+# drop the extra cols in place 
+
+SowingDates <- biomass[!is.na(AD)][, .(SD =...120, AD = as.character(AD), I12 = as.character(I12))]
+biomass[, c("...120", "AD", "I12") := NULL]
+# biomass %>% 
+#   inspect_na() %>% 
+#   show_plot()
+
+```
+
+# 2021-11-21 examine how much height data 
+
+Figure \@ref(fig:heightfig) shows how many height measurements in both sites. Six 
+measurements were made in Ashley Dene for the second year crop while 12 measurements
+occurred in Iversen12. Height was measured roughly at the beginning and prior to 
+harvest in each rotation. 
+```{r height}
+height <- biomass[Seed == "CS", .(Experiment, Rotation.No., Clock.Today, Season, SowingDate, Rep, Height)
+        ][!is.na(Height)][, ':=' (Clock.Today = as.Date(Clock.Today),
+                                  Rotation.No. = as.character(Rotation.No.))]
+```
+```{r heightfig, fig.cap="How many height measurements"}
+# height[]
+height %>% 
+  ggplot(aes(Clock.Today, Height, colour = Rotation.No.)) +
+  geom_point() +
+  facet_grid(SowingDate ~ Experiment) +
+  theme_water()
+```
+
+# Can I draw any relationships between the two sites? 
+
+Assumptions:  
+1. Iversen12 had no water stresses while Ashley Dene as the stress site.  
+2. Height measurements were aligned.  
+
+So I could draw the relationship 
+$$height \tilde\ SWC_{AD}/SWC_{I12}$$
+
+then this relationship could be incorporated into APSIMX
+
+Figure \@ref(fig:MeasurementDates) examines the measurements dates between soil moisture and plant height 
+measurements. They are not exactly aligned. So use a _loess_ model to do predictions on SWC.
+Then I could joined the height measurements with a close enough SWC measurements on the same dates. 
+
+```{r}
+SWC <- read_Sims(path = path_richard)
+PSWC <- SWC[, .(Experiment, Clock.Today, Season, SowingDate, Rep, PSWC)] 
+
+# HOW MUCH off the two data set? 
+
+PSWC_sub <- PSWC[(SowingDate %in% paste0("SD", 1:5)) &
+                       (Season == "2011/12")] 
+p <- PSWC_sub %>% 
+  ggplot(aes(Clock.Today)) +
+  geom_point(aes(y = PSWC)) +
+  theme_water() +
+  geom_point(data = height, aes(Clock.Today, Height, color = "Height measured"), size = 3, color = "Red")+
+  geom_vline(data = height, aes(xintercept = Clock.Today))+
+  
+  facet_grid(SowingDate ~ Experiment) 
+
+```
+
+```{r MeasurementDates, fig.cap="Alignments of the data", fig.width=10, out.width="80%"}
+p
+```
+
+
+# Do the loess model 
+
+The model structure as below. 
+
+`loess(PSWC.bar ~ dates, data = x, span = 0.2)`
+
+
+```{r}
+# Get a smooth line to see the rough values everyday for SWC
+
+smoothline <- PSWC_sub %>% 
+  ggplot(aes(Clock.Today, PSWC)) +
+  geom_smooth(stat = "smooth", method = "loess") +
+  geom_point() +
+    facet_grid(SowingDate ~ Experiment) 
+
+dt <- PSWC_sub[, .(PSWC.bar = mean(PSWC)), 
+               by = .(Experiment, Clock.Today, Season, SowingDate)
+               ][, list(data = list(.SD)), by = .(Experiment, SowingDate, Season)
+                 ]
+# x <- dt$data[[1]]
+# fulldate <-  seq.Date(x$Clock.Today[1],x$Clock.Today[nrow(x)], by = "day")
+# 
+# stats::loess(PSWC.bar ~ Clock.Today, data = dt$data[[1]])
+
+dt[,model := lapply(data, function(x){
+  fulldate <-  data.table(Clock.Today = seq.Date(x$Clock.Today[1],x$Clock.Today[nrow(x)], by = "day"))
+  x <- x[fulldate, on = "Clock.Today"]
+  x <- copy(x)[, id := 1:.N]
+     loess.data <- stats::loess(PSWC.bar ~ id, data = x, span = 0.2)
+     loess.predict <- predict(loess.data, newdata = x[,.(Clock.Today, id)] )
+     loess.df <- data.table( Clock.Today = x$Clock.Today, fit = loess.predict)
+     loess.df <- loess.df[x, on = "Clock.Today"]
+     loess.df
+   })]
+dt[, fitplot := lapply( model,function(x){
+  p <- ggplot( data = x, aes(Clock.Today, fit)) + 
+       geom_point() +
+       geom_point( aes(y = PSWC.bar), color = "red", size = 5)
+  p
+})]
+```
+
+Figure \@ref(fig:checkfitted) and \@ref(fig:checkfitted2) verified if the model did a OK job. 
+Black dots represent the predicted value via the loess model. Red dots are the observed SWC.
+
+
+```{r checkfitted, fig.cap="Check the loess fit"}
+dt$fitplot[[1]]+ ggtitle(paste(dt[1]$Experiment, dt[1]$SowingDate))
+
+```
+
+
+```{r checkfitted2, fig.cap="Check the loess fit in I12"}
+dt$fitplot[[10]] + ggtitle(paste(dt[10]$Experiment, dt[10]$SowingDate))
+```
+
+```{r}
+# join by nearest date and experiment, season, sowing dates
+dt_unnest <- dt[,.(Experiment, SowingDate, model)
+   ][, unlist(model, recursive = FALSE), by = .(Experiment, SowingDate)]
+height.bar <- height[ , .(height.bar = mean(Height),
+                          sd = sd(Height)), by = .(Experiment, SowingDate, Clock.Today, Rotation.No.)]
+Water_height <- dt_unnest[height.bar, on = c("Experiment", "Clock.Today", "SowingDate")]
+```
+
+Figure \@ref(fig:aligned) checks the alignment of SWC and height data after using predicted SWC. 
+
+
+```{r aligned, fig.cap="have the fitted SWCs matched the height measurements"}
+Water_height %>% 
+  ggplot(aes(Clock.Today)) +
+  geom_point(aes(y = fit)) +
+  theme_water() +
+  geom_point(aes(y = height.bar, color = "Height measured"), size = 3, color = "Red")+
+  facet_grid(SowingDate ~ Experiment)
+```
+
+
+
+```{r }
+
+wide <- Water_height %>% 
+  dcast(...~ Experiment, value.var = c("fit", "height.bar") ) 
+highlight <- wide[is.na(fit_Iversen12), which = TRUE]
+
+```
+
+
+Table \@ref(tab:tab) displays the height and SWC data for two sites. 
+They are not well aligned to do the calculation. 
+
+```{r tab}
+wide %>% 
+  kable(caption = "Height and SWC data") %>% 
+  kableExtra::kable_styling() %>% 
+  row_spec(highlight, bold = T, color = "white", background = "red")
+
+```
+
+
+# Data summarised by Xiumei 
+
+```{r}
+dt <- read_excel("c:/Users/cflfcl/Dropbox/Data/Height data from Sim.xlsx") %>% 
+  as.data.table()
+dt[, ':='(Experiment = gsub("\\d", "", Experiment),
+          Clock.Today = as.Date(Clock.Today))
+   ][, Experiment:= gsub("Lincoln", "Iversen12", Experiment)]
+dt  %>% 
+  ggplot(aes(Clock.Today)) +
+  # geom_point(aes(y = fit)) +
+  theme_water() +
+  geom_point(aes(y = Observed, color = "Height measured"), size = 3, color = "Red")+
+  geom_point(data = Water_height, aes(y = height.bar*10, color = "Height measured"), size = 1.5, color = "Blue")+
+
+  facet_grid(SowingDate ~ Experiment)
+```
+# Let's do a linear interplotation of height 
+
+```{r}
+# Need the height data that roughly lined up 
+# the measurements are not aligned 
+height_usable <- height[Rotation.No.%in% c(1,2,3)] 
+height_usable %>% 
+  ggplot(aes(Clock.Today, Height, colour = Rotation.No.)) +
+  geom_point() +
+  facet_grid(SowingDate ~ Experiment) +
+  theme_water() +
+  geom_smooth(method = "lm")
+
+```
+### bring in the cuttng dates 
+```{r}
+# chapter4.Rmd line 412-497
+cutdates <- DefoliationMethod[Season == "2011/12" & 
+                                (SowingDate %in% paste0("SD", 1:5)) &
+                                (Rotation.No. %in% c(1:3))
+                              ][, Rotation.No.:= as.character(Rotation.No.)]
+```
+### Join the cut dates and height 
+```{r}
+height.bar_usable <- height.bar[Rotation.No.%in% c(1,2,3)]
+height.bar_usable %>% 
+  dcast(...~Experiment, value.var = c("height.bar","sd"))
+# make a date object to cover the whole period 
+daterange <- height.bar_usable$Clock.Today %>% 
+  range()
+
+fulldate <- seq.Date(daterange[1], 
+                     daterange[2], by = "day") %>% 
+  data.table(Clock.Today = .)
+joined <- merge(fulldate, height.bar_usable, by = "Clock.Today", all.x = TRUE) %>% 
+  merge(., cutdates, by = c("Clock.Today","Experiment", "SowingDate", "Rotation.No."), all.x = TRUE)
+joined[!is.na(Experiment)] %>% 
+  ggplot(aes(Clock.Today, height.bar, colour = Rotation.No.)) +
+  geom_point() +
+  geom_line() +
+  geom_vline( aes(xintercept = Dates))+
+  facet_wrap(SowingDate ~ Experiment, ncol = 1, strip.position = "right") +
+  theme_water()
+
+```
+
+# The big leap 
+
+logic:   
+1. only use rotation number as the key. match the first two rotation and ignore the sampling dates.  
+2. assume linear for AD 2nd rotation and only use the start and end points 
+3. assume the plant behave consistent in different time frame 
+4. assume SWC is behave the same in different time frame 
+5. Use AD time stamp to coordinate things with swc measurements. 
+6. linear interpolotation 
+
+
+```{r}
+height.bar_usable[order(Clock.Today)]
+clockremoved <- height.bar_usable[Rotation.No. != 3][, Clock.Today := NULL] %>% 
+  dcast(SowingDate + Rotation.No. ~ Experiment, value.var = "height.bar", fun.aggregate = list )
+joined <- merge(fulldate, height.bar_usable, by = "Clock.Today", all.x = TRUE) %>% 
+  merge(., cutdates, by = c("Clock.Today","Experiment", "SowingDate", "Rotation.No."), all.x = TRUE)
+
+```
+
+
+```{r}
+TEST1 <- clockremoved$AshleyDene[[2]] %>% 
+  data.table(height.bar = .)
+TEST1[, sampleID := 1:.N]
+
+clockremoved[, AshleyDene := lapply(AshleyDene, function(x){
+  dt <- data.table(height.bar = x)
+  dt[, sampleID := 1:.N]
+  if(nrow(dt) > 2){
+    dt <- dt[sampleID!=2]
+    dt <- dt[sampleID == 3, sampleID:=2]
+  }
+  
+  dt
+})]
+clockremoved[, Iversen12 := lapply(Iversen12, function(x){
+  dt <- data.table(height.bar = x)
+  dt[, sampleID := 1:.N]
+  dt
+})]
+merge(clockremoved[, unlist(AshleyDene, recursive = FALSE), by = .(SowingDate, Rotation.No.)],
+      clockremoved[, unlist(Iversen12, recursive = FALSE), by = .(SowingDate, Rotation.No.)], 
+      by = c("SowingDate", "Rotation.No.", "sampleID"), suffixes = c("Ashley Dene", "Iversen12"))
+```
+
+```{r}
+period <- wide[!is.na(height.bar_AshleyDene),.(Clock.Today)]
+wide[!is.na(height.bar_AshleyDene),]
+```
+# too much effort doing here, use excel 
+
+## still need soil water data from the fit 
+```{r}
+
+dt_unnest[period, on = "Clock.Today"
+          ][Experiment == "Iversen12"
+            ] %>% 
+  ggplot(aes(Clock.Today, fit)) +
+  geom_line() +
+  geom_point(aes(y = PSWC.bar), color = "red")+
+  facet_grid(Experiment ~ SowingDate)
+dt_unnest[Experiment == "Iversen12"
+          ][wide[!is.na(height.bar_AshleyDene)], on = c("SowingDate", "Clock.Today")]
+```
+
+```{r}
+df <- read_excel("c:/Users/cflfcl/Dropbox/Data/manulepreparedheightstresslevel.xlsx")
+df %>% ggplot(aes(`T/Td`, fw)) +
+  geom_point(aes(, color = SowingDate...3)) +
+  geom_smooth(method = "lm")
+  
+```
+
