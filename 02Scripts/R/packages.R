@@ -24,7 +24,7 @@ library(latex2exp)
 # library(dplyr)
 # library(tidyr)
 library(kableExtra)
-# library(tabulizer)
+library(tabulizer)
 # library(bookdown)
 library(here)
 

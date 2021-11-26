@@ -173,7 +173,7 @@ SoilWater[, Data:=NULL
 # Fix the name to match APSIM soil
 
 swc_vars <- grep("SWC", colnames(SoilWater), value = TRUE)
-setnames(SoilWater, swc_vars[-length(swc_vars)], paste0("SW(", seq(1, 23, 1), ")"))
+setnames(SoilWater, swc_vars[-length(swc_vars)], paste0("SW(", seq(1, 22, 1), ")"))
 setnames(SoilWater, "SWC.2.3.m..mm.", "SWC")
 SoilWater[Experiment == "AshleyDene"]$Clock.Today %>% unique() %>% length()
 SoilWater[Experiment != "AshleyDene"]$Clock.Today %>% unique() %>% length()

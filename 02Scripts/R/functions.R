@@ -500,7 +500,7 @@ plot_PreObs <- function(dt, col_obs, col_pre,
                # shape = SowingDate,
                # colour = .data[[color]]
     )) +
-    geom_point(size = 3, alpha = 0.8) +
+    # geom_point(size = 3, alpha = 0.8) +
     facet_wrap( ~ Experiment, scales = scale)
   return(base_p)
 }
