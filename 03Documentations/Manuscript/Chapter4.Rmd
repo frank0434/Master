@@ -1229,8 +1229,8 @@ DT_sub <- pre_obs[Clock.Today >= magicDate,
 
 DT_sub <- fix_SDorder(DT_sub)
 colnames(DT_sub)
-
-base_p <- DT_sub %>% 
+DT_sub[, .(max(Predicted.Height), max(Observed.Height, na.rm = TRUE)), by = .(Experiment)]
+base_p <- DT_sub[!is.na(Observed.Height)] %>% 
   plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
   theme_water() +
   geom_point(aes(color = SowingDate, shape = SowingDate, fill = SowingDate), size = 3)+

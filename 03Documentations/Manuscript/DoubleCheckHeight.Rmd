@@ -240,7 +240,7 @@ cutdates <- DefoliationMethod[Season == "2011/12" &
                               ][, Rotation.No.:= as.character(Rotation.No.)]
 ```
 ### Join the cut dates and height 
-```{r}
+```{r, fig.height=8, fig.width=6}
 height.bar_usable <- height.bar[Rotation.No.%in% c(1,2,3)]
 height.bar_usable %>% 
   dcast(...~Experiment, value.var = c("height.bar","sd"))
@@ -259,7 +259,9 @@ joined[!is.na(Experiment)] %>%
   geom_line() +
   geom_vline( aes(xintercept = Dates))+
   facet_wrap(SowingDate ~ Experiment, ncol = 1, strip.position = "right") +
-  theme_water()
+  theme_water() +
+  scale_color_manual(name = "Rotation", values = c("red", "blue", "black"))
+  
 
 ```
 
@@ -271,7 +273,7 @@ logic:
 3. assume the plant behave consistent in different time frame 
 4. assume SWC is behave the same in different time frame 
 5. Use AD time stamp to coordinate things with swc measurements. 
-6. linear interpolotation 
+6. linear interpolation 
 
 
 ```{r}
@@ -331,9 +333,15 @@ dt_unnest[Experiment == "Iversen12"
 
 ```{r}
 df <- read_excel("c:/Users/cflfcl/Dropbox/Data/manulepreparedheightstresslevel.xlsx")
+
+model <- lm(fw ~ `T/Td`, data = df)
+summary(model)
+
 df %>% ggplot(aes(`T/Td`, fw)) +
-  geom_point(aes(, color = SowingDate...3)) +
-  geom_smooth(method = "lm")
+  geom_point(aes(, color = SowingDate...3), size = 3) +
+  geom_smooth(method = "lm")+
+  theme_water() +
+  scale_color_brewer(name = "Sowing Date", palette = "Spectral")
   
 ```
 
