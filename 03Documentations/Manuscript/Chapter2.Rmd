@@ -323,7 +323,7 @@ ggsave("Figures/ch3_ph_fw.png",plot = p_ph_fw,
 ### Heightchron
 ```{r}
 a = seq(8, 16.5, by = 0.5)
-b = 0.62 + 9766 * exp(a*-1)
+b = 1.62 + 19766 * exp(a*-1)
 df_height <- data.frame(a, b)
 p_height <- df_height %>% 
   ggplot( aes(a,b))+

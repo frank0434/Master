@@ -338,10 +338,16 @@ model <- lm(fw ~ `T/Td`, data = df)
 summary(model)
 
 df %>% ggplot(aes(`T/Td`, fw)) +
-  geom_point(aes(, color = SowingDate...3), size = 3) +
+  geom_point(aes( color = SowingDate...3), size = 3) +
   geom_smooth(method = "lm")+
   theme_water() +
   scale_color_brewer(name = "Sowing Date", palette = "Spectral")
   
+```
+# the heightchron
+
+```{r}
+
+x = 
 ```
 
