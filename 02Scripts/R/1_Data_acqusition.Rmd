@@ -11,14 +11,16 @@ output:
 
 ```{r setup, include=FALSE,warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
-source(here::here("Scripts/R/packages.R"))
-source(here::here("Scripts/R/functions.R"))
+source(here::here("02Scripts/R/packages.R"))
+source(here::here("02Scripts/R/functions.R"))
 ```
 
 ## Richard data set into sqlite?
 
-```{r richard}
+```{r richard, warning=FALSE, message=FALSE}
 path_richard = "c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
+meta_data <- read_excel(path_richard)
+
 dt = read_excel(path_richard, guess_max = 10300, sheet = 2,
                           .name_repair ="universal",
                           skip = 9 )%>% # fix the names 
@@ -150,8 +152,8 @@ col_good <- choose_cols(Phenology) # identify the right cols
 Phenology <- Phenology[,..col_good]
 ```
 
-
-```{r Soil water tab}
+**retired**
+```{r Soil water tab, eval=FALSE, include=FALSE}
 
 
 SoilWater <- dt[Data == "Soil water"]
@@ -178,6 +180,13 @@ SoilWater[Experiment != "AshleyDene"]$Clock.Today %>% unique() %>% length()
 SoilWater[Experiment == "AshleyDene"][, mean(Rep), by = .(Clock.Today)]
 
 ```
+```{r final version read soilwater, message=FALSE,warning=FALSE}
+SoilWater <- read_Sims(path = path_richard)
+```
+```{r final version read sowing dates}
+SowingDates <- read_Sims(path = path_richard, source = "sowingDate")
+```
+
 
 
 ```{r ES tab}
@@ -262,11 +271,11 @@ There are quite a few `.met` files.
 
 
 ```{r read mets}
-climate_units <- read_met_col(here::here("Data/ClimateAndObserved/lincoln.met"), skip = 6)
-Iversen12 <- read_met(here::here("Data/ClimateAndObserved/lincoln.met"), skip_unit =  7, skip_meta = 6)
+climate_units <- read_met_col(here::here("01Data/ClimateAndObserved/lincoln.met"), skip = 6)
+Iversen12 <- read_met(here::here("01Data/ClimateAndObserved/lincoln.met"))
 head(Iversen12)
 
-AshleyDene <- read_met(here::here("Data/ClimateAndObserved/AshleyDene.met"), skip_unit = 10, skip_meta = 8)
+AshleyDene <- read_met(here::here("01Data/ClimateAndObserved/AshleyDene.met"))
 
 
 ```
@@ -276,7 +285,7 @@ AshleyDene <- read_met(here::here("Data/ClimateAndObserved/AshleyDene.met"), ski
 
 ```{r sqlite}
 
-con <- dbConnect(SQLite(), here::here("Data/ProcessedData/Richard.sqlite3"))
+con <- dbConnect(SQLite(), here::here("01Data/ProcessedData/Richard.sqlite3"))
 DBI::dbListTables(con)
 # The sowing date tab first
 
@@ -300,6 +309,8 @@ purrr::map2(list(biomass, root, Phenology, SoilWater, ES), tab_names, ~ dbWriteT
 dbWriteTable(con, "met_Iversen12", Iversen12, overwrite = TRUE)
 dbWriteTable(con, "met_AshleyDene", AshleyDene, overwrite = TRUE)
 dbWriteTable(con, "SowingDates", SowingDates, overwrite = TRUE)
+dbWriteTable(con, "meta_data", meta_data, overwrite = TRUE)
+
 DBI::dbDisconnect(con)
 ```
 

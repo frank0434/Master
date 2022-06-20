@@ -1,14 +1,22 @@
-
-
-## Source functions
-invisible(lapply(list.files("02Scripts/R/functions/", pattern = "R", full.names = TRUE),
-                 source))
+# Source packages and functions
 source("02Scripts/R/packages.R")
 source("02Scripts/R/functions.R")
+
+##  Parallel control ----
+# plan(multiprocess)
+# future(packages = c("data.table", "here", "magrittr","readxl", "RSQLite","DBI",
+#                     "openxlsx", "autoapsimx", "DEoptim"))
+
+
 # plan(callr)
 
+<<<<<<< HEAD
 # If use job scheduler 
 REMOTE = TRUE
+=======
+# If use job scheduler ----
+REMOTE = FALSE
+>>>>>>> 9aa5da8bcb50dc483bd041c76bb2d5a9b25048b5
 
 if(REMOTE){
   # Set cluster 
@@ -31,11 +39,17 @@ if(REMOTE){
 
 
 # Construct the instruction
-values <-  data.table::data.table(Site = c("AshleyDene","Iversen12"),
-                                  SowingDate = rep(paste0("SD", 1:2), each = 2))
-# Raw data path
+values <-  data.table::data.table(Site = rep(c("AshleyDene", "Iversen12"),each = 10),
+                                  SowingDate = rep(paste0("SD", 1:10), 2))
+
+
+# Raw data path ----
 targets0 <- list(
+<<<<<<< HEAD
   tar_target(path_richard, keypath),
+=======
+  tar_target(path_richard,here::here("01Data/APSIM_Sim.xlsx")),
+>>>>>>> 9aa5da8bcb50dc483bd041c76bb2d5a9b25048b5
   # Constants raw data
   tar_target(rawobs, read_excel(path_richard, 
                      guess_max = 10300, sheet = 2,
@@ -54,14 +68,12 @@ targets0 <- list(
   # Get the actual dates of sowing
   tar_target(sowingDates, read_Sims(path_richard, source =  "sowingDate")),
   # Modify SD1:5 to magic dates for reset initial swc in the second season
-  tar_target(resetDates, sowingDates[SowingDate%in% paste0("SD", 1:5), 
-                                     Clock.Today := as.Date(magicDate)]),
+  tar_target(resetDates, reset_SD(sowingDates, magicDate)),
   # Get the LAI for daily value interpolation 
   tar_target(LAI_Height,  read_Sims(path = path_richard, source = "biomass")),
   
   # APSIMX constants
-  tar_target(path_apsimx, 
-             "C:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"),
+  tar_target(path_apsimx, apsimx_path(debug = FALSE)),
   tar_target(template,
              readLines(here::here("01Data/ApsimxFiles/SlurpTemplate.txt")),
              cue = tar_cue(mode = "always")),
@@ -70,9 +82,11 @@ targets0 <- list(
   # tar_target(obs_para, "SWCmm"),
   tar_target(parameters, prepare_params(params = params)),
   tar_target(par, parameters$initials),
-  tar_target(apsimx_sims_dir, here("01Data/ProcessedData/apsimxFiles"))
+  tar_target(apsimx_sims_dir, here::here("01Data/ProcessedData/apsimxFiles"))
 )
 
+
+## map through -----
 targets1 <- tar_map(
   values = values, 
   names = c("Site", "SowingDate"),
@@ -92,11 +106,11 @@ targets1 <- tar_map(
   tar_target(SimName, paste0(Sites, "SowingDate", SD)),
   ## Observations
   tar_target(obs, prepare_obs(rawobs, trts = c(Sites, SD))),
-  tar_target(cumTT, met[,.(Experiment, Clock.Today, AccumTT)]),
+  tar_target(cumTT, subset_met(met)),
   tar_target(actualSD, filter_SD(sowingDates, trts = c(Sites, SD))),
   tar_target(resetSD, filter_SD(resetDates, trts = c(Sites, SD))),
   tar_target(CoverData, interp_LAI(biomass = LAI_Height,
-                                   sowingDates = actualSD, 
+                                   sowingDate = actualSD, 
                                    accumTT =  met[,.(Experiment, Clock.Today, AccumTT)], 
                                    trts = c(Sites, SD))),
   # Subset the raw sw into treatment level
@@ -104,14 +118,14 @@ targets1 <- tar_map(
   tar_target(SW_sub, colwise_meanSW(DT = SW,
                                      id.vars = id_vars,
                                      col.vars = value_vars)),
-  tar_target(SW_initials, initialSWC(SW_sub, sowingDates = actualSD, id_vars)),
-  tar_target(SW_initials_reset, initialSWC(SW_sub, sowingDates = resetSD, id_vars)),
+  tar_target(SW_initials, initialSWC(SW_sub, sowingDate = actualSD, id_vars)),
+  tar_target(SW_initials_reset, initialSWC(SW_sub, sowingDate = resetSD, id_vars)),
   tar_target(DUL_LL_range, doDUL_LL_range(SW = SW_sub,
                                           id.vars = id_vars)),
   # Manually adjust the DUL levels to 0.95
   tar_target(DUL_LL_range_arbitrary, DUL_LL_range[,':='(SAT = SW.DUL* 1.05,
                                                         SW.DUL = SW.DUL * 0.95,
-                                                        SW.LL15 = SW.LL * 0.95)]),
+                                                        SW.LL = SW.LL * 0.95)]),
   # Combine all into one list
   tar_target(input_list, combine_input( SimName,
                                         obs, 
@@ -125,13 +139,14 @@ targets1 <- tar_map(
                                         resetSD,
                                         SW_initials_reset
                                         )),
-  # Construct the configuration file 
+  # Construct the configuration file
   tar_target(opt.res,
              wrapper_deoptim(parameters = parameters,
                              par = parameters$initials,
                              # obspara =  "SWCmm",
-                             maxIt = 3,
-                             np = length(par),
+                             maxIt = 500,
+                             np = length(par)*10,
+
                              Sites, SD,
                              template,
                              path_apsimx,
@@ -141,9 +156,23 @@ targets1 <- tar_map(
                              apsimx_sims_dir,
                              # APSIMEditFun,
                              # APSIMRun,
+<<<<<<< HEAD
                              input_list),
              deployment = "main"
              )
+=======
+                             input_list)
+  )
+>>>>>>> 9aa5da8bcb50dc483bd041c76bb2d5a9b25048b5
 )
 
-list(targets0, targets1)
+targets_factorial <- list(
+  tar_target(factorialDB, here("01Data/ApsimxFiles/LucerneValidationOptimised.db")),
+  tar_target(report, read_dbtab( factorialDB,
+                                 table = "Report"), 
+             format = "fst_dt"),
+  tar_target(observed, read_dbtab( factorialDB,
+                                 table = "ObsAllData"), format = "fst_dt")
+  )
+# Combine plans ----
+list(targets0, targets1,targets_factorial)

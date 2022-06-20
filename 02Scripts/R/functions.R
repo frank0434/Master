@@ -1,5 +1,107 @@
 
 
+#' doDUL_LL_range
+#'
+#' @param SW data.table. Mean soil water content measurments with `Experiment`,
+#' `SowingDate` and `Depth` as three key columns.
+#' @param id.vars
+#' @param startd
+#' @param endd
+#'
+#' @description A wrapper function to be used in data.table syntax with lappy.
+#'   `DUL_LL` function will find the maximum and minimum water content (mm) in a
+#'   given layer of soil and return its volumetric water content.
+#'
+#'
+#' @return Max and Min VWC
+#' @export
+#'
+
+doDUL_LL_range <- function(SW, id.vars = id_vars,
+                           startd = "2011-01-01", endd = "2012-06-30") {
+  
+  SW <- SW[Clock.Today %between% c(as.Date(startd), as.Date(endd))]
+  # should only choose first 5 sowing dates for this
+  needed <- grep("VWC", colnames(SW), value = TRUE)
+  needed <- c(id.vars, needed)
+  VWC <- SW[,..needed]
+  
+  Dates_max <- filter_datemax(mean_SW = VWC, id.vars = id.vars, mode = "max")
+  Dates_min <- filter_datemax(mean_SW = VWC, id.vars = id.vars, mode = "min")
+  
+  DT <- data.table::melt.data.table(VWC, id.vars = id.vars,
+                                    # measure.vars = value.vars,
+                                    variable.name = "Depth",
+                                    variable.factor = FALSE,
+                                    value.name = "SW")
+  
+  DUL_range <- DT[setDT(Dates_max), on = c("Experiment", "SowingDate", "Depth",
+                                           "Clock.Today")]
+  LL_range <- DT[setDT(Dates_min), on = c("Experiment", "SowingDate", "Depth",
+                                          "Clock.Today")]
+  ranges <- merge.data.table(DUL_range, LL_range,
+                             by = c("Experiment", "SowingDate", "Depth"),
+                             suffixes = c(".DUL", ".LL"))
+  ranges <- ranges[, Depth := as.integer(gsub("\\D", "", Depth))
+  ][order(Experiment, SowingDate, Depth)]
+  return(ranges)
+  
+}
+
+#' filter_datemax
+#' @description need to know which date has the maximum and minimum SW to figure
+#'   out the range from the replicates
+#'
+#' @param mean_SW data.table has mean soil water measurements.
+#' @param mode character string to indicate which mode to filter: "max" or "min"
+#' @param id.vars a character vector indicates the grouping variables
+#'
+#' @return
+#' @import dplyr
+#'
+#' @examples
+filter_datemax <- function(mean_SW, mode = c("max", "min"), id.vars = id_vars){
+  if(mode == "max"){
+    TEST <- data.table::melt.data.table(mean_SW, id.vars = id.vars,
+                                        variable.name = "Depth",
+                                        variable.factor = FALSE,
+                                        value.name = "SW") %>%
+      dplyr::group_by(Experiment, SowingDate, Depth) %>%
+      dplyr::filter(SW == max(SW)) %>%
+      dplyr::group_by(Experiment, SowingDate, Depth, SW) %>%
+      dplyr::filter(Clock.Today == first(Clock.Today))
+  } else if(mode == "min"){
+    TEST <- data.table::melt.data.table(mean_SW, id.vars = id.vars,
+                                        variable.name = "Depth",
+                                        variable.factor = FALSE,
+                                        value.name = "SW") %>%
+      dplyr::group_by(Experiment, SowingDate, Depth) %>%
+      dplyr::filter(SW == min(SW)) %>%
+      dplyr::group_by(Experiment, SowingDate, Depth,SW) %>%
+      dplyr::filter(Clock.Today == first(Clock.Today))
+  }
+  
+  
+  return(TEST)
+}
+
+#' apsimx_path
+#' @description switch apsimx executable file paths.
+#'
+#' @param debug logical. TRUE return the apsimx model executable path in PFR pc.
+#' @return a string contains apsimx models.exe
+#' @export 
+#'
+#' @examples 
+apsimx_path <- function(debug = TRUE){
+  if(isTRUE(debug)){
+    "c:/Data/ApsimX/ApsimXLatest/Bin/Models.exe"
+  } else{
+    
+    "c:/jianliu/ApsimXStable/Bin/Models.exe"
+  }
+}
+
 prepare_params <- function(params){
   params <- params[!is.na(parameter)
                    ][,.(parameter, lower, uppper, layer)
@@ -8,87 +110,102 @@ prepare_params <- function(params){
 }
 
 #' wrapper_deoptim
-#'
-#' @param parameters 
-#' @param obspara 
-#' @param maxIt 
-#' @param np 
+#' @description a wrapper function that invokes DEoptim to run optimisation on
+#' APSIMX via a TSS cost function 
+#' @param parameters string. what are the parameters you'd like to optimise. 
+#' current up to 9 params for soil water related ones. 
+#' @param obspara what are the parameters optimise for? soil water changes?
+#' biomass? leaf area index? 
+#' @param maxIt integer. How many iteration you'd like to run 
+#' @param np integer. How many populations within each iteration?
 #' @param ... , input object will be passed into functions within optimisation
 #'
 #' @return
 #' @export
 #'
 #' @examples
-wrapper_deoptim <- function(parameters, par,  maxIt, np,...){
+wrapper_deoptim <- function(parameters, par,  maxIt, np, ...){
   # maxIt <- 10
   # np <- 3
+  # Capture the ellipsis 
+  l <- list(...)
+  # Examine the list 
+  # print(l)
+  # Get the name of the input objects
   arg_input <- as.character(as.list(substitute(list(...))))[-1]
+  # Examine the names
+  # print(arg_input)
+  # Remove the site and SD for input_list
   obj_nms <- gsub("_(Ash|Ive).+_SD\\d{1,}$","", arg_input, ignore.case = TRUE)
+  # print(obj_nms)
 
   # import necessary input from cache
-  for (i in seq_len(length(arg_input))) {
-    assign(obj_nms[i], readRDS(here::here("_targets/objects/", 
-                                            arg_input[i])),
+  for (i in seq_len(length(l))) {
+    assign(obj_nms[i], l[[i]],
            envir = .GlobalEnv
            )
   }
-
-
-  # input_list <- readRDS(here::here("_targets/objects/", 
-  #                                  arg_input[7]))
-  # arg_input[7] <- "input_list"
+  # print(ls(envir = .GlobalEnv))
+  # print(parameters)
+  # print(par)
+  
   # import necessary functions 
-  source(here::here("02Scripts/R/functions.R"))
-  # source(here::here("02Scripts/R/DEoptimCustomised.R"))
+  # source(here::here("02Scripts/R/functions.R"))
   low <- parameters$lower
   up <- parameters$uppper
   # The observaion value that will be used as the benchmark
   # obspara <- "SWCmm"
   
-  opt.res <- DEoptim::DEoptim(fn=cost.function, 
-                     lower = low,
-                     upper = up,
-                     control=list(NP=np * 10, itermax=maxIt, parallelType=1,
-                                  storepopfrom = 1,
-                                  packages = c('RSQLite','here'),
-                                  parVar = c("APSIMEditFun",
-                                             "APSIMRun",
-                                             # "obspara",
-                                             obj_nms))
-                     )
+  opt.res <- DEoptim::DEoptim(fn=cost.function,
+                              lower = low,
+                              upper = up,
+                              control=list(NP=np, 
+                                           itermax=maxIt, 
+                                           parallelType=1,
+                                           reltol=.000001,
+                                           storepopfrom = 1, trace = 200,
+                                           packages = c('RSQLite','here'),
+                                           parVar = c("APSIMEditFun",
+                                                      "APSIMRun",
+                                                      # "obspara",
+                                                      obj_nms))
+  )
+  return(opt.res)
   
   
-  save(opt.res, file =  file.path(apsimx_sims_dir,
-                                  paste0(Sys.Date(), 'opt.res', ".RData")))
-  
-  fit.par = data.frame(estimates = opt.res$optim$bestmem, 
-                       cost = opt.res$optim$bestval)
-  
-  
-  #output the statistical test
-  par = fit.par$estimates
-  
-  write.csv(par, here::here("01Data/ProcessedData/opt.par.csv"), row.names = F)
+
   
 }
-
-#' Title
+  # save(opt.res, file =  file.path(apsimx_sims_dir,
+  #                                 paste0(Sys.Date(), 'opt.res', ".RData")))
+  # 
+  # fit.par = data.frame(estimates = opt.res$optim$bestmem, 
+  #                      cost = opt.res$optim$bestval)
+  # 
+  # 
+  # #output the statistical test
+  # par = fit.par$estimates
+  # 
+  # write.csv(par, here::here("01Data/ProcessedData/opt.par.csv"), row.names = F)
+#' cost.function
+#' @description TSS cost function to optimise APSIMX-SLURP SWC changes.
 #'
 #' @param par 
 #' @param obspara 
-#' @param reset 
+#' @param reset Date. the date for resetting SWC
 #'
 #' @return
 #' @export
 #'
 #' @examples
 cost.function <- function(par, obspara = "SWCmm", reset = magicDate){
+  
   id <- paste0(round(par, digits = 3), collapse = '_')
   cat("Processing param combination: ",par, "\r\n")
   APSIMEditFun(par)
   APSIMRun(par)
   db <- RSQLite::dbConnect(RSQLite::SQLite(),
-                           paste0(apsimx_sims_dir, '/temp', id,'.db'))
+                           paste0(apsimx_sims_dir, '/temp', Sites, "_", SD, "_", id,'.db'))
   
   
   PredictedObserved <- data.table::as.data.table(
@@ -112,13 +229,15 @@ cost.function <- function(par, obspara = "SWCmm", reset = magicDate){
   
   rm(db)
   gc()
-  
-  system(paste("rm", paste0(apsimx_sims_dir, "/temp", id, "*")))
+  path_wild <- paste0(apsimx_sims_dir, "/temp", Sites, "_", SD, "_", id, "*")
+  unlink(path_wild)
+  # system(paste("rm", ))
   
   return(totalCost)
 }
 
-#' Title
+#' APSIMRun
+#' @description wrapper for invoking APSIMX models.exe
 #'
 #' @param par 
 #'
@@ -130,13 +249,14 @@ APSIMRun <- function(par){
   # Create a new name for the apsimx file 
   id <- paste0(round(par, digits = 3), collapse = '_')
   path_config <- here::here("01Data/ProcessedData/ConfigurationFiles", 
-                            paste0("temp", id, ".txt"))
+                            paste0("temp", Sites,"_", SD,"_", id, ".txt"))
   # Create a new name for the apsimx file 
-  newname <- paste0(apsimx_sims_dir, '/temp', id, ".apsimx")
+  newname <- paste0(apsimx_sims_dir, '/temp', Sites,"_", SD, "_", id, ".apsimx")
   
   # Copy base apsimx file to its new name 
-  system(paste("cp", apsimx_Basefile, newname))
-  
+  print(path_apsimx)
+  print(newname)
+  file.copy(apsimx_Basefile, newname)
   # Modify the apsimx file 
   system(paste(path_apsimx, "--edit", path_config, newname))
   
@@ -161,7 +281,7 @@ APSIMRun <- function(par){
 #'
 #' @examples
 APSIMEditFun <- function( par, nodes = template,
-                          initial_cond = 13L,
+                          initial_cond = 16L,
                           input_list. = input_list){
   no.ofPara <- length(par)
   id <- paste0(round(par, digits = 3), collapse = '_')
@@ -171,12 +291,12 @@ APSIMEditFun <- function( par, nodes = template,
   names(temp_ini_list) <- temp_initial
   ## initial configuration
   temp_ini_list$`[Site].Name =` <- input_list.[[1]]
-  temp_ini_list$`[DataStore].ExcelInput.FileNames = ` <- input_list.[[2]]
+  temp_ini_list$`[DataStore].ExcelInput.FileNames =` <- input_list.[[2]]
   temp_ini_list$`[SlurpSowingRule].Script.SowingDate =` <- as.character(input_list.[[3]]$Clock.Today)
   temp_ini_list$`[Weather].FileName =` <- input_list.[[4]]
   temp_ini_list$`[SetCropVariables].Script.CoverFile =` <-  input_list.[[5]]
   temp_ini_list$`[SetCropVariables].Script.MaximumHeight =` <-  input_list.[[6]]
-  temp_ini_list$`[Soil].Physical.BD =` <- paste( input_list.[[7]]$adjustedBD/1000, collapse = ",")
+  temp_ini_list$`[Soil].Physical.BD =` <- paste( input_list.[[7]]$BD_kg.m3/1000, collapse = ",")
   temp_ini_list$`[Soil].InitialConditions.SW =` <- paste( input_list.[[8]]$SW,
                                                           collapse = ",")
   temp_ini_list$`[Soil].Physical.DUL =` <- paste( input_list.[[9]]$SW.DUL,
@@ -189,11 +309,16 @@ APSIMEditFun <- function( par, nodes = template,
                                                    collapse = ",")
   temp_ini_list$`[Soil].Physical.LL15 =`<- paste(input_list.[[9]]$SW.LL,
                                                  collapse = ",")
+  temp_ini_list$`[ResetOnDate].Script.ResetDate =` <- paste(input_list.[[10]]$Clock.Today,
+                                                 collapse = ",")
+  temp_ini_list$`[ResetOnDate].Script.ResetWater =`<- "Yes"
+  temp_ini_list$`[ResetOnDate].Script.NewSW =`<- paste(input_list.[[11]]$SW,
+                                                       collapse = ",")
   for(i in (initial_cond+1):length(nodes)){
     temp_ini_list[[i]] <- par[i-initial_cond]
   }
   path_config <- here::here("01Data/ProcessedData/ConfigurationFiles", 
-                      paste0("temp", id, ".txt"))
+                      paste0("temp", Sites, "_", SD, "_", id, ".txt"))
   f<- file(path_config, "w")
   
   for(i in seq_len(length(nodes))){
@@ -298,6 +423,12 @@ prepare_obs <- function(DT, trts = c("AshleyDene", "SD1")){
   
 }
 
+
+subset_met <- function(DT){
+  DT <- copy(DT)[,.(Experiment, Clock.Today, AccumTT)]
+  return(DT)
+}
+
 #' filter_SD 
 #' @description Helper function to get the pipeline dependencies right.
 #'
@@ -324,10 +455,9 @@ filter_SD <- function(DT, trts){
 #' @export
 #'
 #' @examples
-filter_SW <- function(DT, date, trts){
-  DT <- DT[Clock.Today >= date
-           ][Experiment == trts[1] &
-               SowingDate == trts[2]]
+filter_SW <- function(DT,  trts){
+  DT <- DT[Experiment == trts[1] &
+             SowingDate == trts[2]]
   DT
   
   }
@@ -378,24 +508,38 @@ plot_PreObs <- function(dt, col_obs, col_pre,
 
 #' Title
 #'
-#' @param DT 
-#' @param key 
-#' @param pre_col 
-#' @param obs_col 
+#' @param DT the data.table contain simulated and observed values
+#' @param key grouping factors
+#' @param pre_col single character. column name for predicted value 
+#' @param obs_col single character. column name for observed value
+#' @param nmethod a character value indicates which normalise RMSE method,
+#' the hydroGOF package defualt is "sd" of observations. 
+#' However, normalised by "mean" of observations seems more common in simulation
+#' model literatures. 
 #'
-#' @return
+#' @return a data.table with annotated stats value ready for plotting
 #' @export
 #'
 #' @examples
-key_stats <- function(DT, key =c("Experiment"), pre_col, obs_col){
+key_stats <- function(DT, key = c("Experiment"), pre_col, obs_col,
+                      nmethod = c("mean", "sd")){
   stats <-  sims_stats(DT, keys = key,
                        col_pred = pre_col,
                        col_obs = obs_col)
-  stats_rs <- stats[, unlist(stats, recursive = FALSE), by = .(Experiment)]
+  stats_rs <- stats[, unlist(stats, recursive = FALSE), by = key]
+  if(nmethod == "mean"){
+    meanobs <- DT[, .(meanobs = mean(eval(parse(text = obs_col)),
+                                     na.rm = TRUE)),
+                  by = key]
+    stats_rs <- stats_rs[meanobs, on = key
+                         ][, `NRMSE %` := round(RMSE / meanobs, 
+                                                digits = 2) * 100]
+  }
+  
   stats_rs[, ':='(R2_str = paste0(as.character(expression(italic(R)^2 ~"=")), "~",R2),
-                  NSE_str = paste0(as.character(expression(NSE~"=")), "~", NSE),
-                  RMSE_str = paste0(as.character(expression(RMSE~" = ")), "~", RMSE),
-                  nRMSE_str = paste0(as.character(expression(nRMSE~" = ")), "~", `NRMSE %`/100))]
+                  NSE_str = paste0("NSE = ", NSE),
+                  RMSE_str = paste0("RMSE =", RMSE),
+                  nRMSE_str = paste0("nRMSE = ",`NRMSE %`,"%"))]
   return(stats_rs)
 }
 #' norm_stats
@@ -458,8 +602,7 @@ plot_timecourse <- function(DT, var, unit, label){
                size = 3)+
     geom_line(aes(y = .data[[pre_col]], color = {{pre_col}}), 
               show.legend = TRUE,size = 1) +
-    facet_wrap( ~  SowingDate + Experiment,
-                strip.position = "right", nrow = 10, scales = "free_y") +
+    facet_grid(SowingDate ~ Experiment) +
     theme_water()  +
     theme(legend.position = "none", legend.key.size = unit(1, "cm")) +
     labs(y = paste(gsub("Predicted\\.|mm", "", pre_col), label), 
@@ -642,40 +785,7 @@ colwise_meanSW <- function(DT, id.vars = id_vars, col.vars = value_vars){
 }
 
 
-#' filter_datemax
-#' @description need to know which date has the maximum and minimum SW to figure
-#'   out the range from the replicates
-#'
-#' @param mean_SW 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-filter_datemax <- function(mean_SW, mode = c("max", "min"), id.vars = id_vars){
-  if(mode == "max"){
-    TEST <- data.table::melt.data.table(mean_SW, id.vars = id.vars, 
-                                        variable.name = "Depth", 
-                                        variable.factor = FALSE,
-                                        value.name = "SW") %>% 
-      dplyr::group_by(Experiment, SowingDate, Depth) %>% 
-      dplyr::filter(SW == max(SW)) %>% 
-      dplyr::group_by(Experiment, SowingDate, Depth, SW) %>% 
-      dplyr::filter(Clock.Today == first(Clock.Today))
-  } else if(mode == "min"){
-    TEST <- data.table::melt.data.table(mean_SW, id.vars = id.vars, 
-                                        variable.name = "Depth", 
-                                        variable.factor = FALSE,
-                                        value.name = "SW") %>% 
-      dplyr::group_by(Experiment, SowingDate, Depth) %>% 
-      dplyr::filter(SW == min(SW)) %>% 
-      dplyr::group_by(Experiment, SowingDate, Depth,SW) %>% 
-      dplyr::filter(Clock.Today == first(Clock.Today))
-  }
 
-  
-  return(TEST)
-}
 
 ##' .. content for \description{} 
 ##'
@@ -842,16 +952,16 @@ outputLAIinput <- function(CoverData, site, SD,
 
 ##' @param biomass 
 ##'
-##' @param sowingDates 
+##' @param sowingDate 
 ##' @param accumTT 
 ##' @import zoo
 ##' @return
 ##' @author frank0434
 ##' @export
-interp_LAI <- function(biomass = LAI_Height, sowingDates, accumTT, 
+interp_LAI <- function(biomass = LAI_Height, sowingDate, accumTT, 
                        trts = c("AshleyDene", "SD1")) {
 
-  LAI_Height_SD <- merge.data.table(biomass, sowingDates, 
+  LAI_Height_SD <- merge.data.table(biomass, sowingDate, 
                                     by = c("Experiment", "Clock.Today" , "SowingDate"),
                                     all = TRUE)[,
                                                ':='(LAImod = ifelse(is.na(LAImod), 0, LAImod),
@@ -880,8 +990,11 @@ interp_LAI <- function(biomass = LAI_Height, sowingDates, accumTT,
   
 }
 
-
-
+reset_SD <- function(DT, reset_to = magicDate){
+  DT <- copy(DT)[SowingDate%in% paste0("SD", 1:5), 
+                 Clock.Today := reset_to]
+  return(DT)
+  }
 ##' .. content for \description{} (no empty lines) ..
 ##'
 ##' .. content for \details{} ..
@@ -892,24 +1005,24 @@ interp_LAI <- function(biomass = LAI_Height, sowingDates, accumTT,
 
 ##' @param DT 
 ##'
-##' @param sowingDates 
+##' @param sowingDate 
 ##' @param id_vars 
 ##'
 ##' @import data.table
 ##' @return
 ##' @author frank0434
 ##' @export
-initialSWC <- function(DT, sowingDates, id_vars) {
+initialSWC <- function(DT, sowingDate, id_vars) {
   needed <- grep("SW.\\d.", colnames(DT), value = TRUE)
   needed <- c(id_vars, needed)
   
-  if(is.data.table(sowingDates) | is.data.frame(sowingDates)){
+  if(is.data.table(sowingDate) | is.data.frame(sowingDate)){
     
-  SW_initials = DT[,..needed][sowingDates, 
+  SW_initials = DT[,..needed][sowingDate, 
                               on = c("Experiment", "SowingDate", "Clock.Today"),
                               roll = "nearest"]
-  } else if(is.character(sowingDates)){
-    SW_initials = DT[Clock.Today == sowingDates][,..needed]
+  } else if(is.character(sowingDate)){
+    SW_initials = DT[Clock.Today == sowingDate][,..needed]
   } else{
     print("Please provide valid sowing dates or starting dates.")
   }
@@ -974,12 +1087,12 @@ read_met <- function(path = path_met){
   met_col <- read_met_col(path = path, skip = skip_meta)
   colnames(met_LN) <- colnames(met_col)
   
-  met_LN <- met_LN[, Clock.Today := as.Date(day, origin = paste0(year, "-01-01"))
-  ][Clock.Today > start_date & Clock.Today < end_date
-  ][,Date := Clock.Today]
+  met_LN <- data.table::copy(met_LN)[, Clock.Today := as.Date(day, origin = paste0(year, "-01-01"))
+                         ][Clock.Today > start_date & Clock.Today < end_date
+                           ][,Date := Clock.Today]
   met_LN <- group_in_season(met_LN)[, AccumTT := cumsum(mean),
                                     by = Season
-  ][, Experiment:=site]
+                                    ][, Experiment:=site]
   
   return(met_LN)
 }
@@ -1101,8 +1214,8 @@ group_in_season <- function(DT){
   period <- range(DT$Date)
   noofyear <- diff.Date(period, unit = "year") %>% 
     as.numeric(.)/365
-  startyear <- year(period[1])
-  endyear <- year(period[2])
+  startyear <- data.table::year(period[1])
+  endyear <- data.table::year(period[2])
   startmd <- "-07-01"
   endmd <- "-06-30"
   noofseason <- round(noofyear, digits = 0)

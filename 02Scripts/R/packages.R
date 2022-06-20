@@ -6,7 +6,7 @@ library(magrittr)
 library(DBI)
 library(RSQLite)
 # library(RPostgreSQL)
-# library(inspectdf)
+library(inspectdf)
 # library(DataExplorer)
 # library(reticulate)
 # library(visNetwork) 
@@ -23,8 +23,9 @@ library(ggplot2)
 # library(broom)
 # library(dplyr)
 # library(tidyr)
-# library(kableExtra)
-# library(tabulizer)
+library(kableExtra)
+library(tabulizer)
+
 # library(bookdown)
 library(here)
 
@@ -36,12 +37,13 @@ library(future.callr)
 library(future.batchtools)
 
 # Stats
-# library(hydroGOF)
 
+library(hydroGOF)
+library(DEoptim)
 # Customised package
 library(autoapsimx)
-
-potentialPKGS <- c("autoapsimx","clipr     "
+library(mcp)
+potentialPKGS <- c("autoapsimx","clipr"
 ,"dplyr     ","drake     "
 ,"DT        ","ggthemes  "
 ,"ggvis     ","inspectdf "

@@ -1,17 +1,22 @@
+
+source("02Scripts/R/packages.R")
+source("02Scripts/R/functions.R")
 path_richard = "c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx"
-loadd(sowingDates)
-loadd(starts_with("met"))
+sowingDates <- readRDS(here::here("_targets/objects/sowingDates"))
+met_Iversen12 <- readRDS(here::here("_targets/objects/met_Iversen12_SD1"))
+met_AshleyDene <- readRDS(here::here("_targets/objects/met_AshleyDene_SD1"))
+LAI_Height <- read_Sims(path = path_richard, source = "biomass")
 
-biomass <- read_Sims(path = path_richard, source = "biomass")
+#### Already in the read_sims function
+# biomass_cols <- c('Experiment', 'Clock.Today', 'SowingDate', 'Rep',
+#                   'Plot', 'Rotation.No.', 'Harvest.No.', 'Height','LAImod')
 
-biomass_cols <- c('Experiment', 'Clock.Today', 'SowingDate', 'Rep',
-                  'Plot', 'Rotation.No.', 'Harvest.No.', 'Height','LAImod')
-
-LAI_Height <-  biomass[Seed== 'CS' & Harvest.No.!= "Post"
-                       ][,..biomass_cols
-                         ][, unlist(list(lapply(.SD, mean, na.rm = TRUE)), recursive = FALSE),
-                           by = .(Experiment, SowingDate, Clock.Today),
-                           .SDcols = c("Height", "LAImod")]
+# LAI_Height <-  biomass[Seed== 'CS' & Harvest.No.!= "Post"
+#                        ][,..biomass_cols
+#                          ][, unlist(list(lapply(.SD, mean, na.rm = TRUE)), recursive = FALSE),
+#                            by = .(Experiment, SowingDate, Clock.Today),
+#                            .SDcols = c("Height", "LAImod")]
+######
 LAI_Height_SD <- merge.data.table(LAI_Height, sowingDates, 
                                   by = c("Experiment", "Clock.Today" , "SowingDate"), 
                                   all= TRUE)[,
@@ -23,7 +28,7 @@ LAI_wide <- dcast.data.table(LAI_Height_SD,
                              value.var = "LAImod" )
 
 accumTT <- rbindlist(list(met_Iversen12[, Experiment := "Iversen12"],
-                      met_AshleyDene), use.names = TRUE)[,.(Experiment, Clock.Today, AccumTT)]
+                          met_AshleyDene), use.names = TRUE)[,.(Experiment, Clock.Today, AccumTT)]
 DT <- merge.data.table(accumTT, LAI_wide, by = c("Experiment", "Clock.Today"), 
                  all.x = TRUE)
 
