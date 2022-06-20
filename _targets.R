@@ -10,13 +10,8 @@ source("02Scripts/R/functions.R")
 
 # plan(callr)
 
-<<<<<<< HEAD
-# If use job scheduler 
-REMOTE = TRUE
-=======
 # If use job scheduler ----
 REMOTE = FALSE
->>>>>>> 9aa5da8bcb50dc483bd041c76bb2d5a9b25048b5
 
 if(REMOTE){
   # Set cluster 
@@ -45,11 +40,7 @@ values <-  data.table::data.table(Site = rep(c("AshleyDene", "Iversen12"),each =
 
 # Raw data path ----
 targets0 <- list(
-<<<<<<< HEAD
   tar_target(path_richard, keypath),
-=======
-  tar_target(path_richard,here::here("01Data/APSIM_Sim.xlsx")),
->>>>>>> 9aa5da8bcb50dc483bd041c76bb2d5a9b25048b5
   # Constants raw data
   tar_target(rawobs, read_excel(path_richard, 
                      guess_max = 10300, sheet = 2,
@@ -156,15 +147,11 @@ targets1 <- tar_map(
                              apsimx_sims_dir,
                              # APSIMEditFun,
                              # APSIMRun,
-<<<<<<< HEAD
                              input_list),
              deployment = "main"
              )
-=======
-                             input_list)
   )
->>>>>>> 9aa5da8bcb50dc483bd041c76bb2d5a9b25048b5
-)
+
 
 targets_factorial <- list(
   tar_target(factorialDB, here("01Data/ApsimxFiles/LucerneValidationOptimised.db")),
