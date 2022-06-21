@@ -15,11 +15,8 @@ REMOTE = FALSE
 
 if(REMOTE){
   # Set cluster 
-  plan(batchtools_lsf,template='./openlava_batchtools.tmpl')
-  
-  # So we can Access LSF 
-  RLinuxModules::module('load openlava') 
-  
+  # plan(batchtools_lsf,template='./openlava_batchtools.tmpl')
+
   tar_option_set(deployment="main",  # default to host
                  packages = c("data.table", "here", "magrittr","readxl", "RSQLite","DBI",
                               "openxlsx", "autoapsimx", "DEoptim"), 
@@ -64,7 +61,7 @@ targets0 <- list(
   tar_target(LAI_Height,  read_Sims(path = path_richard, source = "biomass")),
   
   # APSIMX constants
-  tar_target(path_apsimx, apsimx_path(debug = FALSE)),
+  tar_target(path_apsimx, apsimx_path(debug = TRUE)),
   tar_target(template,
              readLines(here::here("01Data/ApsimxFiles/SlurpTemplate.txt")),
              cue = tar_cue(mode = "always")),
@@ -104,6 +101,7 @@ targets1 <- tar_map(
                                    sowingDate = actualSD, 
                                    accumTT =  met[,.(Experiment, Clock.Today, AccumTT)], 
                                    trts = c(Sites, SD))),
+  # tar_target(outputobs, outputobserved(biomass = ))
   # Subset the raw sw into treatment level
   tar_target(SW, filter_SW(data_SW, trts = c(Sites, SD))), 
   tar_target(SW_sub, colwise_meanSW(DT = SW,
@@ -135,7 +133,7 @@ targets1 <- tar_map(
              wrapper_deoptim(parameters = parameters,
                              par = parameters$initials,
                              # obspara =  "SWCmm",
-                             maxIt = 500,
+                             maxIt = 2,
                              np = length(par)*10,
 
                              Sites, SD,
@@ -153,13 +151,13 @@ targets1 <- tar_map(
   )
 
 
-targets_factorial <- list(
-  tar_target(factorialDB, here("01Data/ApsimxFiles/LucerneValidationOptimised.db")),
-  tar_target(report, read_dbtab( factorialDB,
-                                 table = "Report"), 
-             format = "fst_dt"),
-  tar_target(observed, read_dbtab( factorialDB,
-                                 table = "ObsAllData"), format = "fst_dt")
-  )
+# targets_factorial <- list(
+#   tar_target(factorialDB, here("01Data/ApsimxFiles/LucerneValidationOptimised.db")),
+#   tar_target(report, read_dbtab( factorialDB,
+#                                  table = "Report"), 
+#              format = "fst_dt"),
+#   tar_target(observed, read_dbtab( factorialDB,
+#                                  table = "ObsAllData"), format = "fst_dt")
+#   )
 # Combine plans ----
-list(targets0, targets1,targets_factorial)
+list(targets0, targets1)
