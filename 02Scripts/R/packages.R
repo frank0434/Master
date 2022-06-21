@@ -24,11 +24,9 @@ library(ggplot2)
 # library(dplyr)
 # library(tidyr)
 library(kableExtra)
-<<<<<<< HEAD
-=======
-library(tabulizer)
+# library(tabulizer)
 # library(bookdown)
->>>>>>> e56f7e4... env updates
+
 library(here)
 
 # Workflow control 

@@ -127,8 +127,9 @@ targets1 <- tar_map(
                                         DUL_LL_range_arbitrary,
                                         resetSD,
                                         SW_initials_reset
-                                        )),
+                                        ))
   # Construct the configuration file
+
   tar_target(opt.res,
              wrapper_deoptim(parameters = parameters,
                              par = parameters$initials,
@@ -159,5 +160,34 @@ targets1 <- tar_map(
 #   tar_target(observed, read_dbtab( factorialDB,
 #                                  table = "ObsAllData"), format = "fst_dt")
 #   )
+  # tar_target(opt.res,
+  #            wrapper_deoptim(parameters = parameters,
+  #                            par = parameters$initials,
+  #                            # obspara =  "SWCmm",
+  #                            maxIt = 500,
+  #                            np = length(par)*10,
+  # 
+  #                            Sites, SD,
+  #                            template,
+  #                            path_apsimx,
+  #                            magicDate,
+  #                            apsimx_Basefile,
+  #                            # obspara,
+  #                            apsimx_sims_dir,
+  #                            # APSIMEditFun,
+  #                            # APSIMRun,
+  #                            input_list)
+  # )
+# )
+
+# targets_factorial <- list(
+  # tar_target(factorialDB, here("01Data/ApsimxFiles/LucerneValidationOptimised.db")),
+  # tar_target(report, read_dbtab( factorialDB,
+  #                                table = "Report"), 
+  #            format = "fst_dt"),
+  # tar_target(observed, read_dbtab( factorialDB,
+  #                                table = "ObsAllData"), format = "fst_dt")
+  )
+
 # Combine plans ----
 list(targets0, targets1)
