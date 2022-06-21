@@ -1,0 +1,30 @@
+Bootstrap: docker
+From: rocker/r-ver:4.0.2
+
+%labels
+  Maintainer Jian Liu
+  Version 4.0.2
+  
+%environment
+  DOTNET_CLI_TELEMETRY_OPTOUT=1
+  export DOTNET_CLI_TELEMETRY_OPTOUT
+  
+%post
+  apt-get update
+  apt-get -y install curl libcurl4-openssl-dev 
+  apt-get -y install apt-transport-https 
+  apt-get -y install libssl-dev 
+  apt-get -y install libxml2-dev
+  apt-get -y install zlib1g-dev 
+  apt-get -y install pandoc 
+  #https://stackoverflow.com/questions/43102546/install-package-png-on-rstudio-on-docker-but-failed
+  apt-get -y install libpng-dev 
+  #https://stackoverflow.com/questions/29732990/installing-a-gcc-compiler-onto-a-docker-container
+  apt-get -y install gcc mono-mcs && \
+  rm -rf /var/lib/apt/lists/*
+  
+
+R -e "options(repos = list(CRAN = 'https://cran.rstudio.com')); install.packages('renv')"
+
+%runscript
+exec R
