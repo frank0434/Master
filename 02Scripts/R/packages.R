@@ -6,7 +6,7 @@ library(magrittr)
 library(DBI)
 library(RSQLite)
 # library(RPostgreSQL)
-library(inspectdf)
+# library(inspectdf)
 # library(DataExplorer)
 # library(reticulate)
 # library(visNetwork) 
@@ -24,9 +24,6 @@ library(ggplot2)
 # library(dplyr)
 # library(tidyr)
 library(kableExtra)
-library(tabulizer)
-
-# library(bookdown)
 library(here)
 
 # Workflow control 

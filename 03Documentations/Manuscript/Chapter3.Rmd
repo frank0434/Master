@@ -124,7 +124,7 @@ cf.datalist <- cf_query(user = me,
 source(here::here("02Scripts/R/functions", "cliflo_list_converter.R"))
 
 # converting into the df --------------------------------------------------
-# cf.datalist <- readRDS(file = "../../_targets/objects/cf.datalist.rds")
+cf.datalist <- readRDS(file = "../../_targets/objects/cf.datalist.rds")
 
 list_converter(cf.datalist)
     # dt <- as.data.table(cf.datalist,stringsAsFactors = F)
@@ -142,7 +142,8 @@ list_converter(cf.datalist)
 
 ```
 
-```{r}# fix NAs
+```{r}
+# fix NAs
 dt <- dt_Max_min20110701to20120701
 dt[is.na(Tmean_C), Tmean_C := (Tmin_C + Tmax_C) / 2
    ][is.na(Tmin_C), Tmin_C := Tmean_C * 2 - Tmax_C]
@@ -307,8 +308,6 @@ rad[, list(Amount = mean(Amount_10, na.rm = TRUE),
            cumrad_sd = sd(Cum_Radiation),
                 Cum_Radiation = mean(Cum_Radiation, na.rm = TRUE) ), by = .(md)
          ]
-$Amount %>% 
-  range(na.rm = TRUE)
 
 
 temp_gdd[, list(temp = mean(Tmean_10, na.rm = TRUE), 
