@@ -653,7 +653,11 @@ DT_sub <- pre_obs[Clock.Today >= magicDate & Name != "Iversen12SowingDateSD1",
 DT_sub <- fix_SDorder(DT_sub)
 base_p <- DT_sub %>%
   plot_PreObs(., col_obs = obs_col, col_pre = pre_col,scale = "free")+
-  theme_water()
+  theme_water()+
+  geom_point(aes(color = SowingDate, shape = SowingDate, fill = SowingDate), size = 3)+
+  scale_shape_manual(values = 15:25)+
+  scale_color_brewer(palette = "Spectral") +
+  scale_fill_brewer(palette = "Spectral")
 
 # Add stats
 abline_p <- base_p+
@@ -742,7 +746,7 @@ DT_sub %>%
   facet_grid( SowingDate ~ Experiment  ) +
     geom_line(size = 1)+
   facet_grid(SowingDate ~ Experiment) +
-  theme_water()
+  # theme_water()
   theme_water()  +
   theme(legend.position = "none", legend.key.size = unit(1, "cm"),
         panel.spacing.x = unit(2, "lines")) +
@@ -753,7 +757,11 @@ ggsave("Figures/ch5_LAI_timecourse.png", width = 7, height =10, dpi = 320)
 
 base_p <- DT_sub %>%
   plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
-  theme_water()
+  theme_water()+
+  geom_point(aes(color = SowingDate, shape = SowingDate, fill = SowingDate), size = 3)+
+  scale_shape_manual(values = 15:25)+
+  scale_color_brewer(palette = "Spectral") +
+  scale_fill_brewer(palette = "Spectral")
 
 # Add stats
 abline_p <- base_p+
@@ -812,7 +820,11 @@ colnames(DT_sub)
 
 base_p <- DT_sub %>% 
   plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
-  theme_water()
+  theme_water()+
+  geom_point(aes(color = SowingDate, shape = SowingDate, fill = SowingDate), size = 3)+
+  scale_shape_manual(values = 15:25)+
+  scale_color_brewer(palette = "Spectral") +
+  scale_fill_brewer(palette = "Spectral")
 
 # Add stats
 abline_p <- base_p+
@@ -845,6 +857,7 @@ plotly::ggplotly(p_shoot)
 DT_sub[Clock.Today == "2011-11-03"]
 ```
 
+
 ```{r}
 variable <- "Leaf"
 var_unit <- "Wt"
@@ -868,7 +881,11 @@ colnames(DT_sub)
 
 base_p <- DT_sub %>% 
   plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
-  theme_water()
+  theme_water()+
+  geom_point(aes(color = SowingDate, shape = SowingDate, fill = SowingDate), size = 3)+
+  scale_shape_manual(values = 15:25)+
+  scale_color_brewer(palette = "Spectral") +
+  scale_fill_brewer(palette = "Spectral")
 
 # Add stats
 abline_p <- base_p+
@@ -911,8 +928,10 @@ p_leaf <- abline_p +
 ```
 combine shoot component
 ```{r}
-
-p_aboveground <- plot_grid(p_shoot, p_leaf, ncol = 1)
+legends <- get_legend(p_shoot)
+p_aboveground <- plot_grid(p_shoot+theme(legend.position = "none"),
+                           p_leaf + theme(legend.position = "none"), ncol = 1)
+p_aboveground <- plot_grid(p_aboveground, legends, rel_widths = c(1, 0.2))
 ggsave("Figures/ch5_aboveground_preobs.png",plot = p_aboveground,
        width = 10, height =9, dpi = 320)
 ```
@@ -941,7 +960,11 @@ colnames(DT_sub)
 
 base_p <- DT_sub %>% 
   plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
-  theme_water()
+  theme_water()+
+  geom_point(aes(color = SowingDate, shape = SowingDate, fill = SowingDate), size = 3)+
+  scale_shape_manual(values = 15:25)+
+  scale_color_brewer(palette = "Spectral") +
+  scale_fill_brewer(palette = "Spectral")
 
 # Add stats
 abline_p <- base_p+
@@ -1007,7 +1030,11 @@ colnames(DT_sub)
 
 base_p <- DT_sub %>% 
   plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
-  theme_water()
+  theme_water()+
+  geom_point(aes(color = SowingDate, shape = SowingDate, fill = SowingDate), size = 3)+
+  scale_shape_manual(values = 15:25)+
+  scale_color_brewer(palette = "Spectral") +
+  scale_fill_brewer(palette = "Spectral")
 
 # Add stats
 abline_p <- base_p+

@@ -29,8 +29,8 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
                       fig.width = 10, fig.height = 7, dpi = 300)
 #Constants
 outlier.colour = "#ff0000"
-source("R/packages.R")
-source("R/EditApsimx.R")
+source(here::here("02Scripts/R/packages.R"))
+source(here::here("02Scripts/R/EditApsimx.R"))
 ```
 
 

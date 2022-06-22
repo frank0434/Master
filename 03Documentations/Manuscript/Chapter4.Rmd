@@ -156,7 +156,6 @@ sw_initials <- fix_SDorder(sw_initials)
 
 ```
 
-
 ```{r}
 p_sw_initials <- sw_initials %>% 
   ggplot(aes(x = Depth))+
@@ -183,6 +182,7 @@ p_sw_initials
 ```
 
 # Output an excel file for Fullvalidation apsimx manual configuration
+
 ```{r}
 keySoilParams <- sw_initials[DUL_LL_range, on = .(Experiment, SowingDate, Depth)
                              ][, .(Experiment, SowingDate, Depth, 
@@ -194,9 +194,10 @@ keySoilParams <- sw_initials[DUL_LL_range, on = .(Experiment, SowingDate, Depth)
 ```
 
 ##### Fix issue 34
+
 edit the dul value for SD6 to 10 to get initial soil water right.
 
-Automation login? 
+Automation login?
 
 if the dul is smaller than sw, reset it back to DUL.
 
@@ -242,10 +243,10 @@ write.xlsx(keySoilParams, here::here("01Data/keySoilParamsFixIssue34.xlsx"))
 
 ```
 
+# Results wording
 
-# Results wording 
-what were the absolute values for profile initial swc?
-what were the absolute values for profile initial DUL AND CLL?
+what were the absolute values for profile initial swc? what were the absolute values for profile initial DUL AND CLL?
+
 ```{r}
 
 sw_dul_ll <-  sw_initials[DUL_LL_range, on = .(Experiment, SowingDate, Depth)]
@@ -377,7 +378,6 @@ EFV %>%
 #   kable_classic()
 ```
 
-
 # Combine and formatting
 
 ```{r}
@@ -410,11 +410,12 @@ This is for calibrate the model for Potential Ep since there is no crop growing 
 ```
 
 # MANAGEMENT MODULE
-## sowing and cutting dates 
 
-apsimx has a `mower` function in the factor to mimic harvest.   
-the harvest date always one day after the actual harvest date.  
-Probably because the `mower` just an simple remove all above ground function.  
+## sowing and cutting dates
+
+apsimx has a `mower` function in the factor to mimic harvest.\
+the harvest date always one day after the actual harvest date.\
+Probably because the `mower` just an simple remove all above ground function.
 
 ```{r}
 data_biomass <- read_Sims(path = path_richard,source = "biomass" )
@@ -435,11 +436,11 @@ dt[, (col_date) := lapply(.SD, function(x) as.Date(x,  tz = "Pacific/Auckland"))
 manage <- dt[Seed == "CS" & !is.na(Total.FW..g.),.(Experiment, Clock.Today, Season, SowingDate, Seed, Harvest.No.,Rotation.No.)]
 manage <- unique(manage)
 ```
-**Harvest.No** is for drawing the growth curve.  
-**Rotation.No** is for the cutting dates. 
-Need to extract the last date of a rotation.no.  
 
-altought it said grazed in the thesis. the actual cutting still happened as a 
+**Harvest.No** is for drawing the growth curve.\
+**Rotation.No** is for the cutting dates. Need to extract the last date of a rotation.no.
+
+altought it said grazed in the thesis. the actual cutting still happened as a
 
 ```{r}
 # good cutting dates
@@ -499,6 +500,7 @@ tab_cutDates[order(Season, SDorder, Rotation.No., AshleyDene)
 # Results for 4.3.1.2 onwards
 
 ## Connect to db and extract the predict and observed
+
 ```{r}
 conn <- DBI::dbConnect(drv = SQLite(), 
                        here::here("01Data/ApsimxFiles/LucerneValidation.db"))
@@ -530,9 +532,13 @@ names(Observe) <-   gsub("[[:punct:]]", ".", colnames(Observe))
 
 DBI::dbDisconnect(conn)
 ```
+
 ## Soil water profile
-## after Reset the soil 
+
+## after Reset the soil
+
 ### Time course
+
 ```{r, fig.height=10}
 # Define variable components
 variable <- "SWC"
@@ -566,7 +572,9 @@ timestep_p1 <- plot_timecourse(SWCprofile[Experiment == "AshleyDene"],
 timestep_p2 <- plot_timecourse(SWCprofile[Experiment == "Iversen12"], 
                                variable, var_unit, var_unit_lab)
 ```
+
 Add DUL to time stamp graph
+
 ```{r}
 DULmm <- unique(Report[!is.na(DULmm), .(DULmm, Experiment, SowingDate)])
 DULmm <- fix_SDorder(DULmm)
@@ -584,15 +592,16 @@ p_water <- plot_grid(p1, p2 +
 
 ggsave("Figures/ch4_sw_timestamp.png",plot = p_water, width = 10, height =14, dpi = 320)
 ```
+
 ```{r}
 p2$data[SowingDate == "SD6"] %>% 
   qplot(Clock.Today, Predicted.SWCmm, data = .) %>% 
   plotly::ggplotly()
 ```
-SD6 in Iversen12 extracted `r 747-588` mm water from 2011-12-19 to 2012-02-29
-rainfall recharged the SWC from 588 to 619 
 
-**Manually edit** SD10 LAYER 1 from 0.333 to 0.320 
+SD6 in Iversen12 extracted `r 747-588` mm water from 2011-12-19 to 2012-02-29 rainfall recharged the SWC from 588 to 619
+
+**Manually edit** SD10 LAYER 1 from 0.333 to 0.320
 
 #### Soil moisture deficit wording
 
@@ -608,11 +617,13 @@ SMD[DULmm[, SowingDate:=as.character(SowingDate)],
     on = c("Experiment", "SowingDate")
     ][, SMD.mm := DULmm - SWCmm][order(DAS)]
 ```
+
 ## Biomass and LAI
 
 ### Time course graph
 
 #### LAI
+
 ```{r}
 variable <- "LAI"
 var_unit <- ""
@@ -633,7 +644,9 @@ p <- plot_grid(p_LAI_1, p_LAI_2 +
 ggsave("Figures/ch4_LAI_timestamp.png",plot = p_LAI, width = 10, height =14, dpi = 320)
 
 ```
+
 need some numbers to states
+
 ```{r}
 
 DT_LAI <- merge(unique(p_LAI$data), DefoliationMethod[Clock.Today >= magicDate], all.x = TRUE,
@@ -662,10 +675,11 @@ LAI_sumary[, .(max(Predicted.LAI),
            by = .(Experiment, SowingDate, Rotation.No.)
            ][Rotation.No. ==2]
 ```
-4.3.2.1 the rate of LAI per day was 0.12 for prediction VS 0.053 for observation in spring. 
 
+4.3.2.1 the rate of LAI per day was 0.12 for prediction VS 0.053 for observation in spring.
 
 #### SHOOT WT
+
 ```{r}
 variable <- "Shoot"
 var_unit <- "Wt"
@@ -714,8 +728,8 @@ sum_yield %>%
   # geom_text(aes(x = SDorder, y = obs, label = obs), inherit.aes = FALSE)
 ```
 
+#### leaf wt
 
-#### leaf wt 
 ```{r}
 variable <- "Leaf"
 var_unit <- "Wt"
@@ -761,6 +775,7 @@ sum_yield
 
 
 ```
+
 #### stem wt
 
 ```{r}
@@ -797,6 +812,7 @@ p_stemwt$data[, unlist(lapply(.SD, function(x){
 ```
 
 #### height
+
 ```{r}
 var <- "Height"
 unit <- ""
@@ -883,6 +899,7 @@ sum_yield %>%
 sum_yield[, .(mean(obs),sd(obs),  mean(pre), sd(pre)), by = .(Experiment)]
 
 ```
+
 #### Phenology
 
 ```{r}
@@ -933,12 +950,16 @@ DT_sub <- fix_SDorder(DT_sub)
 
 base_p <- DT_sub %>%
   plot_PreObs(., col_obs = obs_col, col_pre = pre_col,scale = "free")+
-  theme_water()
+  theme_water() +
+  geom_point(aes(color = SowingDate, shape = SowingDate, fill = SowingDate), size = 3)+
+  scale_shape_manual(values = 15:25)+
+  scale_color_brewer(palette = "Spectral") +
+  scale_fill_brewer(palette = "Spectral")
 
 # Add stats
 abline_p <- base_p+
   geom_abline()+
-  geom_smooth(method =  "lm", se = FALSE)
+  geom_smooth(method =  "lm", se = FALSE) 
 
 stats_rs <- key_stats(DT_sub, key =c("Experiment"), pre_col, obs_col, 
                       nmethod = "mean")
@@ -963,7 +984,6 @@ abline_p +
 ggsave("Figures/ch4_swc_preobs.png", width = 10, height =5, dpi = 320)
 ```
 
-
 ```{r LAI}
 variable <- "LAI"
 var_unit <- ""
@@ -987,7 +1007,11 @@ colnames(DT_sub)
 
 base_p <- DT_sub %>%
   plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
-  theme_water()
+  theme_water()+
+  geom_point(aes(color = SowingDate, shape = SowingDate, fill = SowingDate), size = 3)+
+  scale_shape_manual(values = 15:25)+
+  scale_color_brewer(palette = "Spectral") +
+  scale_fill_brewer(palette = "Spectral")
 
 # Add stats
 abline_p <- base_p+
@@ -1016,8 +1040,8 @@ abline_p +
 ggsave("Figures/ch4_LAI_preobs.png", width = 10, height =5, dpi = 320)
 ```
 
-
 ### Shootwt
+
 ```{r}
 variable <- "Shoot"
 var_unit <- "Wt"
@@ -1041,7 +1065,11 @@ colnames(DT_sub)
 
 base_p <- DT_sub %>% 
   plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
-  theme_water()
+  theme_water()+
+  geom_point(aes(color = SowingDate, shape = SowingDate, fill = SowingDate), size = 3)+
+  scale_shape_manual(values = 15:25)+
+  scale_color_brewer(palette = "Spectral") +
+  scale_fill_brewer(palette = "Spectral")
 
 # Add stats
 abline_p <- base_p+
@@ -1097,7 +1125,11 @@ colnames(DT_sub)
 
 base_p <- DT_sub %>% 
   plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
-  theme_water()
+  theme_water()+
+  geom_point(aes(color = SowingDate, shape = SowingDate, fill = SowingDate), size = 3)+
+  scale_shape_manual(values = 15:25)+
+  scale_color_brewer(palette = "Spectral") +
+  scale_fill_brewer(palette = "Spectral")
 
 # Add stats
 abline_p <- base_p+
@@ -1127,70 +1159,74 @@ p_leaf <- abline_p +
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
 
 ```
+
 #### Disable stemwt since not many observations available
-```
-variable <- "Stem"
-var_unit <- "Wt"
-var_unit_lab <- " (kg/ha)"
 
-pre_col <- paste0("Predicted.", variable, var_unit)
-obs_col <- paste0("Observed.", variable, var_unit)
-pre_color <- "black"
-obs_color <- "#FF0000"
-pre_label <- paste("Predicted", variable, var_unit_lab)
-obs_label <- paste("Observed", variable, var_unit_lab)
+    variable <- "Stem"
+    var_unit <- "Wt"
+    var_unit_lab <- " (kg/ha)"
 
-
-var_subset <- c("Experiment","SowingDate", "Clock.Today",
-                pre_col, obs_col)
-DT_sub <- pre_obs[Clock.Today >= magicDate, 
-                      ..var_subset]
-
-DT_sub <- fix_SDorder(DT_sub)
-colnames(DT_sub)
-
-base_p <- DT_sub %>% 
-  plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
-  theme_water()
-
-# Add stats
-abline_p <- base_p+
-  geom_abline()+
-  geom_smooth(method =  "lm", se = FALSE)
+    pre_col <- paste0("Predicted.", variable, var_unit)
+    obs_col <- paste0("Observed.", variable, var_unit)
+    pre_color <- "black"
+    obs_color <- "#FF0000"
+    pre_label <- paste("Predicted", variable, var_unit_lab)
+    obs_label <- paste("Observed", variable, var_unit_lab)
 
 
-anchors <-  data.table(Experiment = c("AshleyDene", "Iversen12"), 
-                       x = c(700,600), y = c(2500,2500))
-stats_rs <- key_stats(DT_sub, key = c("Experiment"),
+    var_subset <- c("Experiment","SowingDate", "Clock.Today",
                     pre_col, obs_col)
+    DT_sub <- pre_obs[Clock.Today >= magicDate, 
+                          ..var_subset]
 
-stats_rs <- stats_rs[anchors, on = "Experiment"]
+    DT_sub <- fix_SDorder(DT_sub)
+    colnames(DT_sub)
+
+    base_p <- DT_sub %>% 
+      plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
+      theme_water()
+
+    # Add stats
+    abline_p <- base_p+
+      geom_abline()+
+      geom_smooth(method =  "lm", se = FALSE)
 
 
-p_stem <- abline_p +
-  geom_text(data = stats_rs, 
-            aes( x = x,  y = y, label = NSE_str), 
-            inherit.aes = FALSE) +
-  geom_text(data = stats_rs, 
-            aes( x = x,  y = y + 200, label = R2_str), parse = TRUE,
-            inherit.aes = FALSE) +
-  geom_text(data = stats_rs, 
-            aes( x = x,  y = y - 200, label = nRMSE_str), 
-            inherit.aes = FALSE) +
-  labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
-       x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
-p_stem
-```
+    anchors <-  data.table(Experiment = c("AshleyDene", "Iversen12"), 
+                           x = c(700,600), y = c(2500,2500))
+    stats_rs <- key_stats(DT_sub, key = c("Experiment"),
+                        pre_col, obs_col)
+
+    stats_rs <- stats_rs[anchors, on = "Experiment"]
+
+
+    p_stem <- abline_p +
+      geom_text(data = stats_rs, 
+                aes( x = x,  y = y, label = NSE_str), 
+                inherit.aes = FALSE) +
+      geom_text(data = stats_rs, 
+                aes( x = x,  y = y + 200, label = R2_str), parse = TRUE,
+                inherit.aes = FALSE) +
+      geom_text(data = stats_rs, 
+                aes( x = x,  y = y - 200, label = nRMSE_str), 
+                inherit.aes = FALSE) +
+      labs(y = paste0(gsub("\\.|mm", " ", pre_col), var_unit_lab),
+           x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
+    p_stem
 
 combine shoot component
-```{r}
 
-p_aboveground <- plot_grid(p_shoot, p_leaf, ncol = 1)
+```{r}
+legends <- get_legend(p_shoot)
+p_aboveground <- plot_grid(p_shoot+theme(legend.position = "none"),
+                           p_leaf + theme(legend.position = "none"), ncol = 1)
+p_aboveground <- plot_grid(p_aboveground, legends, rel_widths = c(1, 0.2))
 ggsave("Figures/ch4_aboveground_preobs.png",plot = p_aboveground,
        width = 10, height =9, dpi = 320)
 ```
 
 #### Height
+
 ```{r}
 variable <- "Height"
 var_unit <- ""
@@ -1211,10 +1247,14 @@ DT_sub <- pre_obs[Clock.Today >= magicDate,
 
 DT_sub <- fix_SDorder(DT_sub)
 colnames(DT_sub)
-
-base_p <- DT_sub %>% 
+DT_sub[, .(max(Predicted.Height), max(Observed.Height, na.rm = TRUE)), by = .(Experiment)]
+base_p <- DT_sub[!is.na(Observed.Height)] %>% 
   plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
-  theme_water()
+  theme_water() +
+  geom_point(aes(color = SowingDate, shape = SowingDate, fill = SowingDate), size = 3)+
+  scale_shape_manual(values = 15:25)+
+  scale_color_brewer(palette = "Spectral") +
+  scale_fill_brewer(palette = "Spectral")
 
 # Add stats
 abline_p <- base_p+
@@ -1280,7 +1320,11 @@ colnames(DT_sub)
 
 base_p <- DT_sub %>% 
   plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
-  theme_water()
+  theme_water()+
+  geom_point(aes(color = SowingDate, shape = SowingDate, fill = SowingDate), size = 3)+
+  scale_shape_manual(values = 15:25)+
+  scale_color_brewer(palette = "Spectral") +
+  scale_fill_brewer(palette = "Spectral")
 
 # Add stats
 abline_p <- base_p+
@@ -1312,6 +1356,7 @@ p_MS.node.No
 ggsave("Figures/ch4_MSNN_preobs.png",plot = p_MS.node.No, width = 10, height =5, dpi = 320)
 plotly::ggplotly(p_MS.node.No)
 ```
+
 ```{r}
 variable <- "GrowthStage"
 var_unit <- ""
@@ -1335,7 +1380,11 @@ colnames(DT_sub)
 
 base_p <- DT_sub %>% 
   plot_PreObs(., col_obs = obs_col, col_pre = pre_col)+
-  theme_water()
+  theme_water()+
+  geom_point(aes(color = SowingDate, shape = SowingDate, fill = SowingDate), size = 3)+
+  scale_shape_manual(values = 15:25)+
+  scale_color_brewer(palette = "Spectral") +
+  scale_fill_brewer(palette = "Spectral")
 
 # Add stats
 abline_p <- base_p+
@@ -1365,6 +1414,7 @@ p_GrowthStage <- abline_p +
        x = paste0(gsub("\\.|mm", " ", obs_col), var_unit_lab))
 p_GrowthStage
 ```
+
 combine phenology
 
 ```{r}
@@ -1377,8 +1427,11 @@ ggsave("Figures/phenology_preobs.png",plot = p_MS.node.No,
 plotly::ggplotly(p_MS.node.No)
 p_MS.node.No$data[!is.na(Observed.MS.node.No) & Experiment == "AshleyDene" & Observed.MS.node.No >13]
 ```
+
 #### Need the rainfall
+
 boardfield rainfall
+
 ```{r}
 met_AD <- read_met(here::here("01Data/ClimateAndObserved/AshleyDene.met"))
 met_i12 <- read_met(here::here("01Data/ClimateAndObserved/lincoln.met"))
@@ -1416,6 +1469,7 @@ met_monthly %>%
        # width = 10, height = 5, dpi = 320)
 met_monthly[, sum(rain), by = .(Experiment)]
 ```
+
 #### Need the temperature
 
 ```{r}
@@ -1441,7 +1495,7 @@ ggsave("Figures/cum_TT.png",
 met[Clock.Today >= "2011-07-01" ]$AccumTT %>% max()
 ```
 
-#### Need radiation 
+#### Need radiation
 
 ```{r}
 met[Clock.Today >= "2011-07-01"
@@ -1502,8 +1556,8 @@ Fw[ Experiment == "AshleyDene" & round(Lucerne.Leaf.Fw, digits = 2) < 1 &
       ][, list(range(N), mean(N), sd(N))]
 ```
 
+### use met file from the excel
 
-### use met file from the excel 
 ```{r}
 excel_sheets("c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx")
 met_AD <- read_excel("c:/Users/cflfcl/Dropbox/Data/APSIM_Sim.xlsx", 
@@ -1586,4 +1640,3 @@ ggsave("Figures/rainfall_monthly.png",
        width = 10, height = 5, dpi = 320)
 met_monthly[, sum(rain), by = .(Experiment)]
 ```
-

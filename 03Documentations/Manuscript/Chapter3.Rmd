@@ -124,7 +124,7 @@ cf.datalist <- cf_query(user = me,
 source(here::here("02Scripts/R/functions", "cliflo_list_converter.R"))
 
 # converting into the df --------------------------------------------------
-# cf.datalist <- readRDS(file = "../../_targets/objects/cf.datalist.rds")
+cf.datalist <- readRDS(file = "../../_targets/objects/cf.datalist.rds")
 
 list_converter(cf.datalist)
     # dt <- as.data.table(cf.datalist,stringsAsFactors = F)
@@ -142,7 +142,8 @@ list_converter(cf.datalist)
 
 ```
 
-```{r}# fix NAs
+```{r}
+# fix NAs
 dt <- dt_Max_min20110701to20120701
 dt[is.na(Tmean_C), Tmean_C := (Tmin_C + Tmax_C) / 2
    ][is.na(Tmin_C), Tmin_C := Tmean_C * 2 - Tmax_C]
@@ -307,8 +308,6 @@ rad[, list(Amount = mean(Amount_10, na.rm = TRUE),
            cumrad_sd = sd(Cum_Radiation),
                 Cum_Radiation = mean(Cum_Radiation, na.rm = TRUE) ), by = .(md)
          ]
-$Amount %>% 
-  range(na.rm = TRUE)
 
 
 temp_gdd[, list(temp = mean(Tmean_10, na.rm = TRUE), 
@@ -318,176 +317,4 @@ temp_gdd[, list(temp = mean(Tmean_10, na.rm = TRUE),
 
 ```
 
-
-### LEAR response to temp and photoperiod
-```{r}
-
-
-x = c(1, 15, 30, 40)
-y = c(0, 10, 25, 0)
-lab = c("T[b]", "T[i]", "T[o]", "T[m]")
-df_tt <- data.frame(x =  x, y =  y, z = lab)
-p_tt <- df_tt %>% 
-  ggplot(aes(x, y )) +
-  geom_line(size = 1.5) + 
-  geom_text(aes( y = y +3, label =  bquote(.(z))), size = 12, nudge_x = 1, nudge_y = 1,
-            parse = TRUE) +
-  scale_y_continuous(expand = c(0,0), limits = c(0, 35))+
-  scale_x_continuous(expand = c(0,0), limits = c(0, 43)) +
-  theme_classic()+
-  theme(panel.background = element_rect(fill = NA, colour = "black"),
-        text = element_text(size = 16)) +
-  labs( x = "Air Temperature (\u00B0C)", 
-        y = "Thermal time (\u00B0Cd)")
-
-a = c(8, 10, 16.5,  11.5, 12, 16.5)
-b = c(0, 0.0056, 0.015,  0, 0.018, 0.02)
-lab = c(rep("Decreasing", 3), rep("Increasing", 3))
-df_pp <- data.frame(a , b , lab)
-p_pp <- df_pp %>% 
-  ggplot(aes(a , b)) +
-  geom_line(size = 1.5) +
-  scale_y_continuous(expand = c(0,0), limits = c(0, 0.025))+
-  scale_x_continuous(expand = c(0,0), limits = c(7, 17), n.breaks = 7) +
-  facet_wrap(~ lab) +
-  theme_classic()+
-  theme(panel.background = element_rect(fill = NA, colour = "black"),
-        text = element_text(size = 16)) +
-  labs( x = "Photoperiod (h)", 
-        y = bquote("LEAR (m"^2~"/m"^2~" \u00B0Cd)") )
-
-p_LEAR <- plot_grid(p_tt, p_pp, ncol = 1, align = "v", axis = "lr")
-ggsave("Figures/ch3_LEAR.png",plot = p_LEAR,
-       width = 7, height = 7, dpi = 320)
-```
-
-### RUE
-```{r}
-x = c(0	,18,30,40)
-y = c(0,1.1,1.1,0)
-
-df_rue <- data.frame(x , y)
-p_rue <- df_rue %>% 
-  ggplot(aes(x, y)) +
-  geom_line(size = 1.5) +
-  scale_y_continuous(expand = c(0,0), limits = c(0, 1.5))+
-  scale_x_continuous(expand = c(0,0), limits = c(0, 42), n.breaks = 7) +
-  
-  theme_classic()+
-  theme(panel.background = element_rect(fill = NA, colour = "black"),
-        text = element_text(size = 16)) +
-  labs( x = "Mean Air Temperature (\u00B0C)", 
-        y = bquote("RUE (g DM MJ"^-1~")") )
-p_rue
-ggsave("Figures/ch3_rue.png",plot = p_rue,
-       width = 7, height = 3.5, dpi = 320)
-
-x = c(0,0.15,0.75,0.9,1)
-y = c(0,0.4,0.75,1,1)
-df_rue_fw <- data.frame(x , y)
-p_rue_fw <- df_rue_fw %>% 
-  ggplot(aes(x, y)) +
-  geom_line(size = 1.5) +
-  scale_y_continuous(expand = c(0,0), limits = c(0, 1.1))+
-  scale_x_continuous(expand = c(0,0), limits = c(0, 1), n.breaks = 7) +
-  
-  theme_classic()+
-  theme(panel.background = element_rect(fill = NA, colour = "black"),
-        text = element_text(size = 16)) +
-  labs( x = bquote("T/T"["D"]), 
-        y = bquote("f"["stressed"]~"/f"["optimal"]) )
-ggsave("Figures/ch3_rue_FW.png",plot = p_rue_fw,
-       width = 7, height = 3.5, dpi = 320)
-
-```
-
-### Phyllochron
-```{r}
-a = c(10, 16.5,  10, 12, 16.5)
-b = c(49, 35, 49,  31, 31)
-lab = c(rep("Decreasing", 2), rep("Increasing", 3))
-df_pp <- data.frame(a , b , lab)
-p_pp <- df_pp %>% 
-  ggplot(aes(a , b)) +
-  geom_line(size = 1.5) +
-  scale_y_continuous(expand = c(0,0), limits = c(30, 50))+
-  scale_x_continuous(expand = c(0,0), limits = c(9, 18), n.breaks = 7) +
-  facet_wrap(~ lab) +
-  theme_classic()+
-  theme(panel.background = element_rect(fill = NA, colour = "black"),
-        text = element_text(size = 16),
-        panel.spacing = unit(5, "mm")) +
-  labs( x = "Photoperiod (h)", 
-        y = bquote("Phyllochron (\u00B0Cd)") )
-ggsave("Figures/ch3_phyllochron.png",plot = p_pp,
-       width = 7, height = 3.5, dpi = 320)
-
-```
-
-### Water stress on phyllochron
-```{r}
-a=c(0, 0.5,  0.7, 1)
-b=c(2, 2,  1, 1)
-df_ph_fw <- data.frame(a, b)
-p_ph_fw <- df_ph_fw %>% 
-  ggplot(aes(a, b)) +
-  geom_line(size = 1.5) +
-  scale_y_continuous(expand = c(0,0), limits = c(0.8, 2.2))+
-  scale_x_continuous(expand = c(0,0), limits = c(0,1.1)) +
-  
-  theme_classic()+
-  theme(panel.background = element_rect(fill = NA, colour = "black"),
-        text = element_text(size = 16)) +
-  labs( x = bquote("T/T"["D"]), 
-        y = bquote("f"["stressed"]~"/f"["optimal"]) )
-ggsave("Figures/ch3_ph_fw.png",plot = p_ph_fw,
-       width = 7, height = 3.5, dpi = 320)
-```
-### Heightchron
-```{r}
-a = seq(8, 16.5, by = 0.5)
-b = 0.62 + 9766 * exp(a*-1)
-df_height <- data.frame(a, b)
-p_height <- df_height %>% 
-  ggplot( aes(a,b))+
-  geom_line(size = 1.5)+
-  # scale_y_continuous(exp+
-  scale_x_continuous(expand = c(0,0)) +
-  
-  theme_classic()+
-  theme(panel.background = element_rect(fill = NA, colour = "black"),
-        text = element_text(size = 16)) +
-  labs( x = bquote("Photoperiod (h)"), 
-        y = bquote("Heightchron ( ˚Cd mm "^-1~")") )
-p_height
-ggsave("Figures/ch3_p_height.png",plot = p_height,
-       width = 7, height = 3.5, dpi = 320)
-```
-
-
-### Flowering?
-```{r}
-DT <- as.data.table(read_excel(path_richard, sheet = 2, skip = 9,
-                               guess_max = 10000, .name_repair = "universal"))
-pheno <- DT[Data == "Phenology"]
-cols <- choose_cols(pheno)
-pheno <- pheno[,..cols]
-pheno %>% 
-  ggplot(aes(Date, Fi_No)) +
-  geom_point() +
-  facet_wrap( Site ~ Sowing.Date)
-## number 1 to 10 represent how many branches 
-pheno[, Fi:=Fi/10]
-
-dt <- pheno[, .(meanfi = mean(Fi, na.rm = TRUE)), 
-            by = .(Site, Sowing.Date, Date)
-            ][!is.nan(meanfi)]
-
-dt %>% 
-  ggplot(aes(Date, meanfi, color = Sowing.Date)) +
-  geom_point() +
-  facet_wrap( ~Site )
-
-
-```
 
