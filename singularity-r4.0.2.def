@@ -8,15 +8,26 @@ From: rocker/r-ver:4.0.2
 %environment
   DOTNET_CLI_TELEMETRY_OPTOUT=1
   export DOTNET_CLI_TELEMETRY_OPTOUT
-  
+  # the location of the renv cache on the host machine
+  RENV_PATHS_CACHE_HOST=/software/statistical/R-4.0.0/lib64/R/library/
+  RENV_PATHS_CACHE_CONTAINER=/renv/cache
+  # where the cache should be mounted in the container
+
 %post
   apt-get update
   apt-get -y install curl libcurl4-openssl-dev 
-  apt-get -y install apt-transport-https 
-  apt-get -y install libssl-dev 
-  apt-get -y install libxml2-dev
-  apt-get -y install zlib1g-dev 
-  apt-get -y install pandoc 
+   apt-transport-https \
+   libssl-dev \
+   libxml2-dev \
+   zlib1g-dev \
+   pandoc \
+   git
+  
+  cd /opt && \
+  git clone https://github.com/libuv/libuv.git && \
+  cd /opt/libuv && \
+  git checkout ${LIBUV_VERSION} && \
+  git clone https://chromium.googlesource.com/external/gyp build/gyp
   #https://stackoverflow.com/questions/43102546/install-package-png-on-rstudio-on-docker-but-failed
   apt-get -y install libpng-dev 
   #https://stackoverflow.com/questions/29732990/installing-a-gcc-compiler-onto-a-docker-container

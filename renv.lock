@@ -712,13 +712,6 @@
       "Repository": "CRAN",
       "Hash": "0bde42ee282efb18c7c4e63822f5b4f7"
     },
-    "magick": {
-      "Package": "magick",
-      "Version": "2.6.0",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "ffc87958461a1d2a5ec4b36035b87b94"
-    },
     "magrittr": {
       "Package": "magrittr",
       "Version": "2.0.1",
@@ -753,13 +746,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "58baa74e4603fcfb9a94401c58c8f9b1"
-    },
-    "mgcv": {
-      "Package": "mgcv",
-      "Version": "1.8-33",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "eb7b6439bc6d812eed2cddba5edc6be3"
     },
     "mime": {
       "Package": "mime",
@@ -984,13 +970,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "bb5996d0bd962d214a11140d77589917"
-    },
-    "rgdal": {
-      "Package": "rgdal",
-      "Version": "1.5-21",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "954d311d7f11dd9ea58b3a47fa994195"
     },
     "rlang": {
       "Package": "rlang",
