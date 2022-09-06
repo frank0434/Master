@@ -127,7 +127,7 @@ targets1 <- tar_map(
                                         DUL_LL_range_arbitrary,
                                         resetSD,
                                         SW_initials_reset
-                                        ))
+                                        )),
   # Construct the configuration file
 
   tar_target(opt.res,
@@ -187,7 +187,7 @@ targets1 <- tar_map(
   #            format = "fst_dt"),
   # tar_target(observed, read_dbtab( factorialDB,
   #                                table = "ObsAllData"), format = "fst_dt")
-  )
+  # )
 
 # Combine plans ----
 list(targets0, targets1)
